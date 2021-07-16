@@ -1,0 +1,20 @@
+from .migrated import (  # noqa: F401
+    BingApiLookup,
+    BingApiTranslation,
+    BingApiTransliteration,
+    CachedDefinition,
+    Card,
+    Content,
+    Goal,
+    Import,
+    Survey,
+    UserList,
+    UserListWord,
+    UserSurvey,
+    UserWord,
+    ZhhansEnABCLookup,
+    ZhhansEnCCCLookup,
+    ZhHskLookup,
+    ZhSubtlexLookup,
+)
+from .user import AuthUser  # noqa: F401

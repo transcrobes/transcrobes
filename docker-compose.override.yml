@@ -1,0 +1,44 @@
+version: "3.3"
+services:
+  db:
+    ports:
+      - "15432:5432"
+
+  kafka:
+    ports:
+      - "9092:9092"
+
+  corenlpzh:
+    ports:
+      - "9001:9001"
+
+  backend:
+    ports:
+      - "8888:8888"
+      - "8880:80"
+    volumes:
+      - ./backend/app:/app
+      - ./frontend/dist:/fapp
+    environment:
+      - SERVER_HOST=http://${DOMAIN?Variable not set}
+    build:
+      context: ./backend
+      dockerfile: backend.dockerfile
+      args:
+        INSTALL_DEV: ${INSTALL_DEV-true}
+    # command: bash -c "while true; do sleep 1; done"  # Infinite loop to keep container live doing nothing
+    command: /start-reload.sh
+
+  faustworker:
+    ports:
+      - ${FAUST_PORT:-6066}:${FAUST_PORT:-6066}
+    volumes:
+      - ./backend/app:/app
+    environment:
+      - RUN=faust worker -A app.fworker -l info
+      - SERVER_HOST=http://${DOMAIN?Variable not set}
+    build:
+      context: ./backend
+      dockerfile: faustworker.dockerfile
+      args:
+        INSTALL_DEV: ${INSTALL_DEV-true}

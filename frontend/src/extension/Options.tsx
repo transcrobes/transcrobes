@@ -1,0 +1,207 @@
+import { useEffect, useState } from "react";
+import * as utils from "../lib/lib";
+import "./options.css";
+import * as ap from "../lib/JWTAuthProvider";
+import { getDb } from "../database/Database";
+import { RxDBDataProviderParams } from "../ra-data-rxdb";
+import Loader from "../img/loader.gif";
+import { USER_STATS_MODE } from "../lib/lib";
+import { TranscrobesDatabase } from "../database/Schema";
+import { onError } from "../lib/funclib";
+
+declare global {
+  interface Window {
+    tcb: TranscrobesDatabase;
+  }
+}
+
+function Status({ message }: { message: string }) {
+  return <div id="status">{message}</div>;
+}
+function Initialisation() {
+  return (
+    <div>
+      <div>
+        <h1>Initialisation started</h1>
+        <p>
+          Please be patient while the initialisation finishes. The initialisation will give some
+          updates but you should not be worried unless you see no update for over 5 minutes. No harm
+          should come if you stop the initialisation by navigating away or closing the browser. The
+          initialisation will pick up where it left off when you return.
+        </p>
+      </div>
+    </div>
+  );
+}
+function Intro() {
+  return (
+    <div>
+      <div>
+        <h1>Welcome! It's Transcrobes initialisation time!</h1>
+        <p>
+          Even though the client side of Transcrobes is entirely browser-based, a lot of
+          Transcrobes' data needs to be downloaded in order to save on bandwidth and dramatically
+          improve performance, and that is going to take a while (15-25 minutes, depending on how
+          fast your phone/tablet/computer is).
+        </p>
+        <p>
+          The system needs to do quite a lot of work (mainly building indexeddb indexes), so don't
+          be alarmed if your devices heat up a bit (should be less than a gaming session though!)
+          and the fan switches on. It's normal, and will only happen once, at initialisation time.
+          It's better to not interrupt the initialisation while it's happening (like any
+          initialisation!), so make sure your device has plenty of battery (or is plugged in). On an
+          Android device you MUST plug it in and keep the screen from going off or the
+          initialisation will freeze due to system optimisations. It will also download 25-50MB of
+          data so if you are not on wifi, make sure that is not a problem for your data plan.
+        </p>
+      </div>
+    </div>
+  );
+}
+export default function Options(): JSX.Element {
+  const [inited, setInited] = useState<boolean | null>(null);
+  const [running, setRunning] = useState<boolean | null>(null);
+  const [message, setMessage] = useState<string>("");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [baseUrl, setBaseUrl] = useState("");
+  const [glossing, setGlossing] = useState(USER_STATS_MODE.L1);
+
+  useEffect(() => {
+    chrome.storage.local.get(["isDbInitialised"], (result) => {
+      setInited(result.isDbInitialised);
+      // console.log("result.isDbInitialised", result);
+    });
+
+    // Restores select box and checkbox state using the preferences
+    Promise.all([
+      ap.getUsername(),
+      ap.getPassword(),
+      ap.getValue("baseUrl"),
+      ap.getValue("glossing"),
+    ]).then((items: any[]) => {
+      setUsername(items[0]);
+      setPassword(items[1]);
+      setBaseUrl(items[2]);
+      setGlossing(items[3] || USER_STATS_MODE.L1);
+    });
+  }, []);
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    utils.setUsername(username);
+    utils.setPassword(password);
+    utils.setBaseUrl(baseUrl.endsWith("/") ? baseUrl : baseUrl + "/");
+    utils.setGlossing(glossing);
+
+    await Promise.all([
+      ap.setUsername(utils.username),
+      ap.setPassword(utils.password),
+      ap.setValue("baseUrl", utils.baseUrl),
+      ap.setValue("glossing", utils.glossing.toString()),
+    ]);
+    setMessage("Options saved.");
+    setRunning(true);
+
+    await ap.refreshAccessToken(new URL(utils.baseUrl));
+    const items = await Promise.all([ap.getAccess(), ap.getRefresh()]);
+    if (!(items[0] && items[1])) {
+      throw new Error("Unable to get tokens");
+    }
+    utils.setAccessToken(items[0]);
+    utils.setRefreshToken(items[1]);
+
+    if (!utils.accessToken) {
+      setMessage(
+        "There was an error starting the initial synchronisation. Please try again in a short while.",
+      );
+      onError("Something bad happened, couldnt get an accessToken to start a syncDB()");
+    } else {
+      setMessage("");
+      const dbConfig: RxDBDataProviderParams = { url: new URL(utils.baseUrl) };
+
+      const progressCallback = (message: string) => {
+        console.debug("progressCallback in options.ts", message);
+        setMessage(message);
+      };
+      const db = await getDb(dbConfig, progressCallback);
+      try {
+        window.tcb = db;
+        setMessage("Initialisation Complete!");
+        console.debug("Synchronisation finished!");
+        await ap.setInitialised();
+        console.debug("Set isDbInitialised to true");
+      } catch (err: any) {
+        setMessage(`There was an error setting up Transcrobes.
+              Please try again in a little while, or contact Transcrobes support (<a href="https://transcrob.es/page/contact/">here</a>)`);
+        console.log("getDb() threw an error in options.ts");
+        console.dir(err);
+        console.error(err);
+      }
+    }
+  }
+
+  return (
+    <form onSubmit={(e) => handleSubmit(e)}>
+      <div className="credentials">
+        <div className="title">Transcrobes Server connection information</div>
+        <div className="frow">
+          Username:{" "}
+          <input
+            id="username"
+            value={username}
+            type="text"
+            onChange={(e) => {
+              setUsername(e.target.value);
+            }}
+          />
+        </div>
+        <div className="frow">
+          Password:{" "}
+          <input
+            id="password"
+            value={password}
+            type="password"
+            onChange={(e) => {
+              setPassword(e.target.value);
+            }}
+          />
+        </div>
+        <div className="frow">
+          Base URL:{" "}
+          <input
+            id="base-url"
+            value={baseUrl}
+            type="url"
+            onChange={(e) => {
+              setBaseUrl(e.target.value);
+            }}
+          />
+        </div>
+        <div className="frow">
+          {" "}
+          <label htmlFor="glossing">Glossing:</label>
+          <select
+            name="glossing"
+            value={glossing}
+            id="glossing"
+            onChange={(e) => {
+              setGlossing(parseInt(e.target.value));
+            }}
+          >
+            <option value={USER_STATS_MODE.UNMODIFIED}>None</option>
+            <option value={USER_STATS_MODE.L2_SIMPLIFIED}>Simple word</option>
+            <option value={USER_STATS_MODE.TRANSLITERATION}>Pinyin</option>
+            <option value={USER_STATS_MODE.L1}>English</option>
+          </select>
+        </div>
+        <div className="savestyle">
+          <button id="save">{!inited ? "Save" : "Reinitialise"}</button>
+        </div>
+      </div>
+      <Intro />
+      {running && <img src={Loader} /> && <Initialisation />}
+      <Status message={message} />
+    </form>
+  );
+}

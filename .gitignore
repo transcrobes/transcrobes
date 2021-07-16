@@ -1,0 +1,10 @@
+.vscode
+.mypy_cache
+docker-stack.yml
+tmp/
+
+cookiecutter-config-file.yml
+dist
+
+.env.local
+.env

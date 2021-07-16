@@ -1,0 +1,158 @@
+import { CreateParams, DataProvider, GetListParams, GetManyParams, GetOneParams } from "ra-core";
+import {
+  DeleteManyParams,
+  DeleteParams,
+  GetManyReferenceParams,
+  UpdateManyParams,
+  UpdateParams,
+} from "react-admin";
+import { v4 as uuidv4 } from "uuid";
+
+import { getDb } from "../database/Database";
+import { getNamedFileStorage } from "../lib/data";
+import { TranscrobesCollectionsKeys, TranscrobesDatabase } from "../database/Schema";
+
+type DbDataProvider = DataProvider & { db: () => Promise<TranscrobesDatabase> };
+
+export default function RxDBProvider(params: RxDBDataProviderParams): DbDataProvider {
+  const parameters = params;
+  const dbPromise = getDb(
+    params,
+    () => {
+      return;
+    },
+    false,
+  );
+
+  return {
+    getList: async (resource: TranscrobesCollectionsKeys, params: GetListParams) => {
+      // pagination: { page: 1, perPage: 5 }, sort: { field: 'title', order: 'ASC' }, filter: { author_id: 12 },
+      const finder: any = {};
+
+      if (params.filter) {
+        // FIXME: is this right??? IT IS NOT!!!
+        const sortField = Object.keys(params.filter)[0];
+        if (sortField) {
+          finder["selector"] = { [sortField]: Object.values(params.filter)[0] };
+        }
+      }
+      if (params.sort) {
+        const sortField = params.sort.field;
+        if (!finder["selector"]) finder["selector"] = {};
+
+        finder["selector"][sortField] = { $exists: true }; // a sort field MUST be in the selector
+        finder["sort"] = [{ [sortField]: params.sort.order.toLowerCase() }];
+      }
+      if (params.pagination) {
+        finder["limit"] = params.pagination.perPage;
+        finder["skip"] = params.pagination.perPage * (params.pagination.page - 1);
+      }
+
+      const db = await dbPromise;
+      const res = [...(await db[resource].find(finder).exec())];
+      const resTot = [...(await db[resource].find().exec())];
+      const resArr = res.map((val) => val.toJSON());
+
+      return { data: resArr, total: resTot.length };
+    },
+    getOne: async (resource: TranscrobesCollectionsKeys, params: GetOneParams) => {
+      const db = await dbPromise;
+      const query = { id: { $eq: params.id.toString() } };
+      const res = await db[resource].findOne({ selector: query }).exec();
+      const data = res?.toJSON();
+
+      if (resource === "surveys") {
+        const usres = await db.usersurveys
+          .findOne()
+          .where("surveyId")
+          .eq(params.id.toString())
+          .exec();
+        if (usres) {
+          const specialData = { data: { ...data, data: usres.data } };
+          return specialData;
+        }
+      }
+      return { data: data };
+    },
+    getMany: async (resource: TranscrobesCollectionsKeys, params: GetManyParams) => {
+      const db = await dbPromise;
+      const res = await db[resource].findByIds(params.ids.map((id) => id.toString()));
+      const resArr = [...res.values()].map((val) => val.toJSON());
+      return { data: resArr };
+    },
+    getManyReference: async (
+      resource: TranscrobesCollectionsKeys,
+      params: GetManyReferenceParams,
+    ) => {
+      const db = await dbPromise;
+      const res = await db[resource].find().where(params.target).eq(params.id).exec();
+      const resArr = [...res.values()].map((val) => val.toJSON());
+      return { data: resArr, total: resArr.length };
+    },
+    create: async (resource: TranscrobesCollectionsKeys, params: CreateParams) => {
+      const db = await dbPromise;
+      const insert = params.data;
+      if (!("id" in insert) || !insert.id) {
+        insert.id = uuidv4();
+      }
+      for (const key in insert) {
+        const obj = insert[key];
+        if (typeof obj === "object" && obj != null && "rawFile" in obj) {
+          if (obj.rawFile instanceof File) {
+            const importFileStore = await getNamedFileStorage(parameters);
+            const localFileName = `${insert.id}_${obj.title}`;
+            importFileStore.put(localFileName, obj.rawFile);
+            insert[key] = localFileName;
+          }
+        }
+      }
+      const res = await db[resource].insert(insert);
+      return { data: res.toJSON() };
+    },
+    update: async (resource: TranscrobesCollectionsKeys, params: UpdateParams) => {
+      const db = await dbPromise;
+      const one = await db[resource]
+        .findOne({ selector: { id: { $eq: params.id.toString() } } })
+        .exec();
+      if (one) {
+        delete params.data.id; // FIXME: there must be a less nasty way...
+        const res = await one.atomicPatch(params.data);
+        return { data: res.toJSON() };
+      } else {
+        return { data: null };
+      }
+    },
+    updateMany: async (resource: TranscrobesCollectionsKeys, params: UpdateManyParams) => {
+      const db = await dbPromise;
+      const many = [
+        ...(await db[resource].findByIds(params.ids.map((id) => id.toString()))).values(),
+      ];
+      const updates: string[] = [];
+      for (const upper of many) {
+        await upper.atomicPatch(params.data);
+        updates.push(upper.id.toString());
+      }
+      return { data: updates };
+    },
+    delete: async (resource: TranscrobesCollectionsKeys, params: DeleteParams) => {
+      const db = await dbPromise;
+      const one = await db[resource].findOne({ selector: { id: { $eq: params.id.toString() } } });
+      const res = await one.remove();
+      return { data: res?.toJSON() };
+    },
+    deleteMany: async (resource: TranscrobesCollectionsKeys, params: DeleteManyParams) => {
+      const db = await dbPromise;
+      const { success } = await db[resource].bulkRemove(params.ids.map((id) => id.toString()));
+      return { data: success.map((doc) => doc.id) };
+    },
+    db: () => {
+      return dbPromise;
+    },
+  } as DbDataProvider;
+}
+
+export interface RxDBDataProviderParams {
+  test?: boolean;
+  url: URL;
+  loggingEnabled?: boolean;
+}

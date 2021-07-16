@@ -1,0 +1,96 @@
+version: "3.3"
+services:
+  db:
+    image: postgres:13
+    volumes:
+      - app-db-data:/var/lib/postgresql/data/pgdata
+    env_file:
+      - .env
+    environment:
+      - PGDATA=/var/lib/postgresql/data/pgdata
+    deploy:
+      placement:
+        constraints:
+          - node.labels.${STACK_NAME?Variable not set}.app-db-data == true
+
+  corenlpzh:
+    image: transcrobes/corenlp-chinese:4.2.2
+    env_file:
+      - .env
+
+  zookeeper:
+    image: docker.io/bitnami/zookeeper:3.7
+    ports:
+      - "2181:2181"
+    volumes:
+      - "zookeeper_data:/bitnami"
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+
+  kafka:
+    image: docker.io/bitnami/kafka:2
+    volumes:
+      - "kafka_data:/bitnami"
+    environment:
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+      - ALLOW_PLAINTEXT_LISTENER=yes
+    depends_on:
+      - zookeeper
+
+  backend:
+    image: "${DOCKER_IMAGE_BACKEND?Variable not set}:${TAG-latest}"
+    depends_on:
+      - db
+    volumes:
+      - app-files-data:/media
+    env_file:
+      - .env
+    environment:
+      - SERVER_NAME=${DOMAIN?Variable not set}
+      - SERVER_HOST=https://${DOMAIN?Variable not set}
+      # Allow explicit env var override for tests
+      - SMTP_HOST=${SMTP_HOST}
+    build:
+      context: ./backend
+      dockerfile: backend.dockerfile
+      args:
+        INSTALL_DEV: ${INSTALL_DEV-false}
+
+  faustworker:
+    image: "${DOCKER_IMAGE_FAUSTWORKER?Variable not set}:${TAG-latest}"
+    volumes:
+      - app-files-data:/media
+    ports:
+      - "6066:6066"
+    depends_on:
+      - db
+      - zookeeper
+      - kafka
+    env_file:
+      - .env
+    environment:
+      - SERVER_NAME=${DOMAIN?Variable not set}
+      - SERVER_HOST=https://${DOMAIN?Variable not set}
+      # Allow explicit env var override for tests
+      - SMTP_HOST=${SMTP_HOST?Variable not set}
+      - FAUST_PORT=${FAUST_PORT?6066}
+    build:
+      context: ./backend
+      dockerfile: faustworker.dockerfile
+      args:
+        INSTALL_DEV: ${INSTALL_DEV-false}
+
+  # frontend:
+  #   image: "${DOCKER_IMAGE_FRONTEND?Variable not set}:${TAG-latest}"
+  #   build:
+  #     context: ./frontend
+  #     args:
+  #       FRONTEND_ENV: ${FRONTEND_ENV-production}
+
+volumes:
+  app-db-data:
+  app-files-data:
+  zookeeper_data:
+    driver: local
+  kafka_data:
+    driver: local

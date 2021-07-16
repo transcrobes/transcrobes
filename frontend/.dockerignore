@@ -1,0 +1,11 @@
+**/node_modules/
+**/build/
+**/builddev/
+**/extbuild/
+
+**/tmp/
+**/.vscode
+**/.env
+**/cookiecutter-config-file.yml
+
+**/.git
