@@ -43,7 +43,6 @@ const commonConfig = merge<Configuration>([
   parts.loadSVGR(),
   parts.loadSVG(),
   parts.clean(),
-  // parts.attachRevision(),
 ]);
 
 function loadStaticResources(sourceBase: string, outputDir: string) {
@@ -64,13 +63,14 @@ function loadStaticResources(sourceBase: string, outputDir: string) {
 const developmentConfig = merge<Configuration>([
   { entry: { main: ["webpack-plugin-serve/client"] } },
   parts.devServer(),
-  parts.generateSourceMaps({ type: "source-map" }),
+  parts.generateSourceMaps({ type: "eval-source-map" }),
+  parts.checkCircularDependencies(),
 ]);
 
 const productionConfig = merge<Configuration>([
   parts.minifyJavaScript(),
   parts.generateSourceMaps({ type: "source-map" }),
-  // parts.checkCircularDependencies(),
+  parts.checkCircularDependencies(),
 ]);
 
 const getConfig = (mode: "production" | "development") => {
