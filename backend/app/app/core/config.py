@@ -155,7 +155,8 @@ class Settings(BaseSettings):
 
     FAUST_PORT: int = 6066
     FAUST_HOST: str = "faustworker"
-    FAUST_PRODUCER_MAX_REQUEST_SIZE: int = 5000000  # default is 1MB, which is small for us
+    FAUST_PRODUCER_MAX_REQUEST_SIZE: int = 10000000  # default is 1MB, which is small for us
+    CONSUMER_MAX_FETCH_SIZE: int = 10000000  # default is 1MB, which is small for us
 
     @property
     def DEFINITIONS_CACHE_DIR(self) -> str:
