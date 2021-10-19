@@ -12,6 +12,9 @@ import VideoPlayer from "./contents/video/VideoPlayerScreen";
 import Reader from "./contents/books/Reader";
 import { USER_STATS_MODE } from "./lib/lib";
 import { ComponentsConfig } from "./lib/complexTypes";
+import Signup from "./system/Signup";
+import ResetPassword from "./system/ResetPassword";
+import RecoverPassword from "./system/RecoverPassword";
 
 // FIXME: I guess this is better done via redux?
 window.readerConfig = {
@@ -25,6 +28,14 @@ export default function routes(config: ComponentsConfig): CustomRoutes {
     <Route exact path="/init" render={() => <Init />} />,
     <Route exact path="/configuration" render={() => <Configuration />} />,
     <Route exact path="/system" render={() => <System />} />,
+    <RouteWithoutLayout exact path="/reset-password" render={() => <ResetPassword />} noLayout />,
+    <RouteWithoutLayout
+      exact
+      path="/recover-password"
+      render={() => <RecoverPassword />}
+      noLayout
+    />,
+    <RouteWithoutLayout exact path="/signup" render={() => <Signup />} noLayout />,
     <Route exact path="/listrobes" render={() => <Listrobes proxy={config.proxy} />} />,
     <Route exact path="/repetrobes" render={() => <Repetrobes proxy={config.proxy} />} />,
     <Route

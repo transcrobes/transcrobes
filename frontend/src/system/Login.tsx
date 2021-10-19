@@ -1,16 +1,23 @@
-import * as React from "react";
-import { useState } from "react";
+import { ReactElement, useState } from "react";
 import PropTypes from "prop-types";
 import { Field, withTypes } from "react-final-form";
-import { useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 
-import { Avatar, Button, Card, CardActions, CircularProgress, TextField } from "@material-ui/core";
+import {
+  Avatar,
+  Button,
+  Card,
+  CardActions,
+  CircularProgress,
+  TextField,
+  Typography,
+} from "@material-ui/core";
 import { createMuiTheme, makeStyles } from "@material-ui/core/styles";
 import { ThemeProvider } from "@material-ui/styles";
 import LockIcon from "@material-ui/icons/Lock";
 import { Notification, useTranslate, useLogin, useNotify } from "react-admin";
 
-import { lightTheme } from "./themes";
+import { lightTheme } from "../layout/themes";
 
 const useStyles = makeStyles((theme) => ({
   main: {
@@ -50,21 +57,26 @@ const useStyles = makeStyles((theme) => ({
   actions: {
     padding: "0 1em 1em 1em",
   },
+  userManagement: {
+    padding: "0 1em 1em 1em",
+  },
 }));
 
-const renderInput = ({
+function renderInput({
   meta: { touched, error } = { touched: false, error: undefined },
   input: { ...inputProps },
   ...props
-}) => (
-  <TextField
-    error={!!(touched && error)}
-    helperText={touched && error}
-    {...inputProps}
-    {...props}
-    fullWidth
-  />
-);
+}): ReactElement {
+  return (
+    <TextField
+      error={!!(touched && error)}
+      helperText={touched && error}
+      {...inputProps}
+      {...props}
+      fullWidth
+    />
+  );
+}
 
 interface FormValues {
   username?: string;
@@ -73,7 +85,7 @@ interface FormValues {
 
 const { Form } = withTypes<FormValues>();
 
-const Login = () => {
+function Login(): ReactElement {
   const [loading, setLoading] = useState(false);
   const translate = useTranslate();
   const classes = useStyles();
@@ -81,7 +93,7 @@ const Login = () => {
   const login = useLogin();
   const location = useLocation<{ nextPathname: string } | null>();
 
-  const handleSubmit = (auth: FormValues) => {
+  function handleSubmit(auth: FormValues) {
     setLoading(true);
     login(auth, location.state ? location.state.nextPathname : "/").catch((error: Error) => {
       setLoading(false);
@@ -97,9 +109,9 @@ const Login = () => {
         },
       );
     });
-  };
+  }
 
-  const validate = (values: FormValues) => {
+  function validate(values: FormValues) {
     const errors: FormValues = {};
     if (!values.username) {
       errors.username = translate("ra.validation.required");
@@ -108,7 +120,7 @@ const Login = () => {
       errors.password = translate("ra.validation.required");
     }
     return errors;
-  };
+  }
 
   return (
     <Form
@@ -157,6 +169,18 @@ const Login = () => {
                   {translate("ra.auth.sign_in")}
                 </Button>
               </CardActions>
+              <div>
+                <div className={classes.userManagement}>
+                  <Typography>
+                    <Link to="/reset-password">{translate("user.reset_password.label")}</Link>
+                  </Typography>
+                </div>
+                <div className={classes.userManagement}>
+                  <Typography>
+                    <Link to="/signup">{translate("user.signup")}</Link>
+                  </Typography>
+                </div>
+              </div>
             </Card>
             <Notification />
           </div>
@@ -164,7 +188,7 @@ const Login = () => {
       )}
     />
   );
-};
+}
 
 Login.propTypes = {
   authProvider: PropTypes.func,
@@ -174,10 +198,12 @@ Login.propTypes = {
 // We need to put the ThemeProvider decoration in another component
 // Because otherwise the useStyles() hook used in Login won't get
 // the right theme
-const LoginWithTheme = (props: any) => (
-  <ThemeProvider theme={createMuiTheme(lightTheme)}>
-    <Login {...props} />
-  </ThemeProvider>
-);
+function LoginWithTheme(props: any): ReactElement {
+  return (
+    <ThemeProvider theme={createMuiTheme(lightTheme)}>
+      <Login {...props} />
+    </ThemeProvider>
+  );
+}
 
 export default LoginWithTheme;

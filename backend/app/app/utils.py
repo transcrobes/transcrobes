@@ -74,7 +74,8 @@ def send_new_account_email(email_to: str, username: str, password: str) -> None:
     subject = f"{project_name} - New account for user {username}"
     with open(Path(settings.EMAIL_TEMPLATES_DIR) / "new_account.html", encoding="utf8") as f:
         template_str = f.read()
-    link = settings.SERVER_HOST
+    # FIXME: hardcoded URL
+    link = f"{settings.SERVER_HOST}/#/validate-email/?token{generate_validation_token(email_to)}"
     send_email(
         email_to=email_to,
         subject_template=subject,
@@ -82,14 +83,13 @@ def send_new_account_email(email_to: str, username: str, password: str) -> None:
         environment={
             "project_name": settings.PROJECT_NAME,
             "username": username,
-            "password": password,
             "email": email_to,
             "link": link,
         },
     )
 
 
-def generate_password_reset_token(email: str) -> str:
+def generate_validation_token(email: str) -> str:
     delta = timedelta(hours=settings.EMAIL_RESET_TOKEN_EXPIRE_HOURS)
     now = datetime.utcnow()
     expires = now + delta
@@ -102,9 +102,9 @@ def generate_password_reset_token(email: str) -> str:
     return encoded_jwt
 
 
-def verify_password_reset_token(token: str) -> Optional[str]:
+def verify_validation_token(token: str) -> Optional[str]:
     try:
         decoded_token = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
-        return decoded_token["email"]
+        return decoded_token["sub"]
     except jwt.JWTError:
         return None

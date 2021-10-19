@@ -174,7 +174,11 @@ const USER_STATS_MODE = {
 type USER_STATS_MODE_KEY = keyof typeof USER_STATS_MODE;
 type USER_STATS_MODE_KEY_VALUES = typeof USER_STATS_MODE[USER_STATS_MODE_KEY];
 
-async function getRequestOptions(baseUrl: string, body?: BodyInit): Promise<RequestInit> {
+async function getRequestOptions(
+  baseUrl: string,
+  forcePost = false,
+  body?: BodyInit,
+): Promise<RequestInit> {
   const options: RequestInit = {};
   let token = await getAccess();
   if (!token) {
@@ -185,7 +189,7 @@ async function getRequestOptions(baseUrl: string, body?: BodyInit): Promise<Requ
     throw Error("Unable to get authentication");
   }
 
-  if (body) {
+  if (body || forcePost) {
     options.method = "POST";
     options.body =
       typeof body === "string" || body instanceof FormData ? body : JSON.stringify(body);
@@ -240,23 +244,34 @@ export function bestGuess(token: TokenType, definition: DefinitionType): string 
   return best;
 }
 
-export async function fetchPlus(url: string | URL, body?: BodyInit, retries = 3): Promise<any> {
+export async function fetchPlus(
+  url: string | URL,
+  body?: BodyInit,
+  retries = 3,
+  forcePost = false,
+): Promise<any> {
   if (!retries || retries < 0) {
     throw new Error(`Exhausted all retry attempts, failing for ${url} with ${body}`);
   }
-  const options = await getRequestOptions(url.toString(), body);
+
+  console.log("well i got here and here too");
+  const options = await getRequestOptions(url.toString(), forcePost, body);
   let res;
 
   try {
     res = await fetch(url.toString(), options);
 
+    console.log("but maybe not here here and here too 1");
     if (res.status === 200) {
+      console.log("but maybe not here here and here too 1 good");
       return await res.json();
     }
+    console.log("but maybe not here here and here too 2");
     if (res.status === 401 || res.status === 403) {
       await refreshAccessToken(new URL(url.toString()));
     }
   } catch (error: any) {
+    console.log("but maybe not here here and here too 3");
     if ("status" in error && (error.status === 401 || error.status === 403)) {
       await refreshAccessToken(new URL(url.toString()));
     }

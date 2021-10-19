@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useParams } from "react-router-dom";
 
+import { useAuthenticated } from "react-admin";
 import D2Reader from "@d-i-t-a/reader";
 import { ChakraProvider } from "@chakra-ui/react";
 import { getTheme } from "../../webreader/ui/theme";
@@ -24,6 +25,7 @@ declare global {
 }
 
 export default function Reader(): JSX.Element {
+  useAuthenticated(); // redirects to login if not authenticated, required because shown as RouteWithoutLayout
   const { id } = useParams<ContentParams>();
   const url = new URL(`/api/v1/data/content/${id}/manifest.json`, window.location.href);
 

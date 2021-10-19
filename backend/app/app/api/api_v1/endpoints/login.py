@@ -12,7 +12,7 @@ from app.api import deps
 from app.core import security
 from app.core.config import settings
 from app.core.security import ALGORITHM, get_password_hash
-from app.utils import generate_password_reset_token, send_reset_password_email, verify_password_reset_token
+from app.utils import generate_validation_token, send_reset_password_email, verify_validation_token
 from fastapi import APIRouter, Body, Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
 from jose import jwt
@@ -140,7 +140,7 @@ async def recover_password(email: str, db: AsyncSession = Depends(deps.get_db)) 
             status_code=404,
             detail="The user with this username does not exist in the system.",
         )
-    password_reset_token = generate_password_reset_token(email=email)
+    password_reset_token = generate_validation_token(email=email)
 
     # assert None not in {user.email, email, password_reset_token}
     assert user.email is not None
@@ -159,7 +159,7 @@ async def reset_password(
     """
     Reset password
     """
-    email = verify_password_reset_token(token)
+    email = verify_validation_token(token)
     if not email:
         raise HTTPException(status_code=400, detail="Invalid token")
     user = await crud.user.get_by_email(db, email=email)
@@ -175,3 +175,27 @@ async def reset_password(
     db.add(user)
     await db.commit()
     return {"msg": "Password updated successfully"}
+
+@router.post("/validate-email/", response_model=schemas.Msg)
+async def validate_email(
+    token: str = Body(...),
+    db: AsyncSession = Depends(deps.get_db),
+) -> Any:
+    """
+    Validate email address with a JWT token
+    """
+    email = verify_validation_token(token)
+    if not email:
+        raise HTTPException(status_code=400, detail="Invalid token")
+    user = await crud.user.get_by_email(db, email=email)
+    if not user:
+        raise HTTPException(
+            status_code=404,
+            detail="The user with this username does not exist in the system.",
+        )
+    if not crud.user.is_active(user):
+        raise HTTPException(status_code=400, detail="Inactive user")
+    user.is_verified = True
+    db.add(user)
+    await db.commit()
+    return {"msg": "Email validated successfully"}

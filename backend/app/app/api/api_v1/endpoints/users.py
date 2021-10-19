@@ -31,7 +31,7 @@ async def create_user(
     *,
     db: AsyncSession = Depends(deps.get_db),
     user_in: schemas.UserCreate,
-    _current_user: models.AuthUser = Depends(deps.get_current_active_superuser),
+    # _current_user: models.AuthUser = Depends(deps.get_current_active_superuser),
 ) -> Any:
     """
     Create new user.
@@ -40,11 +40,11 @@ async def create_user(
     if user:
         raise HTTPException(
             status_code=400,
-            detail="The user with this username already exists in the system.",
+            detail="A user with this email already exists in the system.",
         )
     user = await crud.user.create(db, obj_in=user_in)
     if settings.EMAILS_ENABLED and user_in.email:
-        send_new_account_email(email_to=user_in.email, username=user_in.email, password=user_in.password)
+        send_new_account_email(email_to=user_in.email, username=user_in.username, password=user_in.password)
     return user
 
 
@@ -55,6 +55,7 @@ async def update_user_me(
     password: str = Body(None),
     full_name: str = Body(None),
     email: EmailStr = Body(None),
+    username: str = Body(None),
     current_user: models.AuthUser = Depends(deps.get_current_active_user),
 ) -> Any:
     """
@@ -68,6 +69,8 @@ async def update_user_me(
         user_in.full_name = full_name
     if email is not None:
         user_in.email = email
+    if username is not None:
+        user_in.username = username
     user = await crud.user.update(db, db_obj=current_user, obj_in=user_in)
     return user
 
@@ -81,33 +84,6 @@ async def read_user_me(
     Get current user.
     """
     return current_user
-
-
-@router.post("/open", response_model=schemas.User)
-async def create_user_open(
-    *,
-    db: AsyncSession = Depends(deps.get_db),
-    password: str = Body(...),
-    email: EmailStr = Body(...),
-    full_name: str = Body(None),
-) -> Any:
-    """
-    Create new user without the need to be logged in.
-    """
-    if not settings.USERS_OPEN_REGISTRATION:
-        raise HTTPException(
-            status_code=403,
-            detail="Open user registration is forbidden on this server",
-        )
-    user = await crud.user.get_by_email(db, email=email)
-    if user:
-        raise HTTPException(
-            status_code=400,
-            detail="The user with this username already exists in the system",
-        )
-    user_in = schemas.UserCreate(password=password, email=email, full_name=full_name)
-    user = await crud.user.create(db, obj_in=user_in)
-    return user
 
 
 @router.get("/{user_id}", response_model=schemas.User)

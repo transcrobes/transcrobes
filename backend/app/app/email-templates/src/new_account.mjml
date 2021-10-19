@@ -3,11 +3,35 @@
     <mj-section>
       <mj-column>
         <mj-divider border-color="#555"></mj-divider>
-        <mj-text font-size="20px" color="#555" font-family="helvetica">{{ project_name }} - New Account</mj-text>
-        <mj-text font-size="16px" color="#555">You have a new account:</mj-text>
-        <mj-text font-size="16px" color="#555">Username: {{ username }}</mj-text>
-        <mj-text font-size="16px" color="#555">Password: {{ password }}</mj-text>
-        <mj-button padding="50px 0px" href="{{ link }}">Go to Dashboard</mj-button>
+        <mj-text font-size="20px" color="#555" font-family="helvetica"
+          >{{ project_name }} - New Account</mj-text
+        >
+        <mj-text font-size="16px" color="#555"
+          >We received an account creation request with email {{ email
+          }}</mj-text
+        >
+        <mj-text font-size="16px" color="#555"
+          >Please validate your account by clicking the button below:</mj-text
+        >
+        <mj-button padding="50px 0px" href="{{ link }}"
+          >Validate email</mj-button
+        >
+        <mj-text font-size="16px" color="#555"
+          >Or open the following link:</mj-text
+        >
+        <mj-text font-size="16px" color="#555"
+          ><a href="{{ link }}">{{ link }}</a></mj-text
+        >
+        <mj-divider border-color="#555" border-width="2px" />
+        <mj-text font-size="14px" color="#555"
+          >The validation link / button will expire in {{ valid_hours }}
+          hours.</mj-text
+        >
+        <mj-text font-size="14px" color="#555"
+          >If you didn't request an account you can disregard this email.
+          Someone probably entered your email by mistake/typo. Sorry for the
+          incovenience!</mj-text
+        >
         <mj-divider border-color="#555" border-width="2px" />
       </mj-column>
     </mj-section>

@@ -86,10 +86,10 @@ function Init(): ReactElement {
   // WARNING! DO NOT DELETE THIS!
   // On mobile, unless there is constant communication between the page and the SW, the browser
   // will simply kill the SW to save battery, no matter how busy the SW is.
-  const progressUpdate = () => {
+  function progressUpdate() {
     progress = 0;
     isInitialised().then((inited) => {
-      if (!inited) {
+      if (!inited && location.href.endsWith("/#/init")) {
         window.componentsConfig.proxy.sendMessage(
           { source: "tmp-test", type: "heartbeat", value: "" },
           (datetime) => {
@@ -100,7 +100,7 @@ function Init(): ReactElement {
         );
       }
     });
-  };
+  }
 
   if (progress === 0) progress = window.setTimeout(progressUpdate, 5000);
 
