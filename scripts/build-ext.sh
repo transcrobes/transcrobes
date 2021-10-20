@@ -1,12 +1,6 @@
 #!/bin/bash
 set -e
 
-# TAG=${TAG?Variable not set} \
-# FRONTEND_ENV=${FRONTEND_ENV-production} \
-# docker-compose \
-# -f docker-compose.yml \
-# build
-
 TAG=${TRANSCROBES_BUILD_TAG:-$(git describe --tags)}
 MAIN_IMAGE=${TRANSCROBES_DOCKER_REPO}/transcrobes-ext:$TAG
 
