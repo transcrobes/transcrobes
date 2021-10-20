@@ -13,6 +13,8 @@ import { Link } from "react-router-dom";
 import CircularProgress from "@material-ui/core/CircularProgress";
 import { TextField } from "@material-ui/core";
 import { useCookies } from "react-cookie";
+import PasswordStrengthBar from "react-password-strength-bar";
+import { OnChange } from "react-final-form-listeners";
 import { setAccess, setPassword, setRefresh } from "../lib/JWTAuthProvider";
 
 const useStyles = makeStyles((theme) => ({
@@ -91,22 +93,26 @@ function ResetPassword(): ReactElement {
   const classes = useStyles();
   const notify = useNotify();
   const history = useHistory();
+  const [password, setLocalPassword] = useState("");
+  const [passwordScore, setPasswordScore] = useState(0);
 
   const [_cookies, _setCookie, removeCookie] = useCookies(["refresh", "session"]);
+
+  const token = new URLSearchParams(location.hash.substr(location.hash.indexOf("?"))).get("token");
 
   useEffect(() => {
     Promise.all([setRefresh(""), setAccess(""), setPassword("")]).then(() => {
       removeCookie("refresh");
       removeCookie("session");
     });
+    if (!token) {
+      notify("user.reset_password.error", "error");
+      history.push("/recover-password");
+    }
   }, []);
 
   function handleSubmit(auth: FormValues) {
     setLoading(true);
-
-    const token = new URLSearchParams(location.hash.substr(location.hash.indexOf("?"))).get(
-      "token",
-    );
 
     fetch(`${location.origin}/api/v1/reset-password/`, {
       method: "POST",
@@ -119,9 +125,8 @@ function ResetPassword(): ReactElement {
       }),
     })
       .then((res) => {
-        console.log("resetting password was", res.ok);
-        notify("user.reset_password.success");
-        // FIXME: hardcode url
+        console.debug("Resetting password was", res.ok);
+        notify("user.reset_password.success", "success");
         history.push("/login");
       })
       .catch((error: Error) => {
@@ -156,11 +161,8 @@ function ResetPassword(): ReactElement {
     if (values.password !== values.repeatPassword) {
       errors.password = translate("user.reset_password.passwords_different");
     }
-    const token = new URLSearchParams(location.hash.substr(location.hash.indexOf("?"))).get(
-      "token",
-    );
     if (!token) {
-      notify("user.reset_password.token_missing");
+      history.push("/recover-password");
     }
 
     return errors;
@@ -190,6 +192,20 @@ function ResetPassword(): ReactElement {
                     disabled={loading}
                   />
                 </div>
+                <OnChange name="password">
+                  {(value) => {
+                    setLocalPassword(value);
+                  }}
+                </OnChange>
+              </div>
+              <div className={classes.form}>
+                <div className={classes.input}>
+                  <PasswordStrengthBar
+                    minLength={8}
+                    onChangeScore={(score) => setPasswordScore(score)}
+                    password={password}
+                  />
+                </div>
               </div>
               <div className={classes.form}>
                 <div className={classes.input}>
@@ -207,7 +223,7 @@ function ResetPassword(): ReactElement {
                   variant="contained"
                   type="submit"
                   color="primary"
-                  disabled={loading}
+                  disabled={loading || passwordScore < 3}
                   fullWidth
                 >
                   {loading && <CircularProgress size={25} thickness={2} />}

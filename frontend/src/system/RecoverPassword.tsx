@@ -2,7 +2,7 @@ import { ReactElement, useState } from "react";
 import { Notification, useTranslate, useNotify } from "react-admin";
 import { Field, withTypes } from "react-final-form";
 import ReplayIcon from "@material-ui/icons/Replay";
-import { createMuiTheme, makeStyles } from "@material-ui/core/styles";
+import { makeStyles } from "@material-ui/core/styles";
 import Card from "@material-ui/core/Card";
 import Avatar from "@material-ui/core/Avatar";
 import CardActions from "@material-ui/core/CardActions";
@@ -84,11 +84,12 @@ export default function RecoverPassword(): ReactElement {
     // FIXME: hardcoded url
     fetch(`${location.origin}/api/v1/password-recovery/${auth.email}`, { method: "POST" })
       .then((res) => {
-        console.log("resetting password was", res.ok);
-        notify("user.reset_password.success");
+        console.log("Resetting password email was", res.ok);
+        notify("user.reset_password.email_success", "success");
         setLoading(false);
       })
       .catch((error: Error) => {
+        console.log("But somehow an error also?");
         setLoading(false);
         notify(
           typeof error === "string"
@@ -151,7 +152,7 @@ export default function RecoverPassword(): ReactElement {
                   fullWidth
                 >
                   {loading && <CircularProgress size={25} thickness={2} />}
-                  {translate("user.reset_password")}
+                  {translate("user.reset_password.recover")}
                 </Button>
               </CardActions>
               <div>

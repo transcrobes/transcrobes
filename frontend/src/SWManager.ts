@@ -147,7 +147,6 @@ export function manageEvent(sw: ServiceWorkerGlobalScope, event: ExtendableMessa
     console.debug("Received an event without a message", event);
     return;
   }
-
   const message = event.data;
   if (message.type === "syncDB") {
     loadDb(message, sw, event);

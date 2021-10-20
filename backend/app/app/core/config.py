@@ -308,3 +308,6 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+
+if settings.DEBUG:
+    print("Settings:", settings)

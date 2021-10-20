@@ -52,11 +52,12 @@ export async function setUsername(username: string): Promise<void> {
 export async function setPassword(password: string): Promise<void> {
   await setValue("password", password);
 }
-export async function isInitialised(): Promise<boolean> {
-  return (await getValue("initialised")) === "true";
+
+export function isInitialised(): boolean {
+  return localStorage.getItem("initialised") === "true";
 }
-export async function setInitialised(value = true): Promise<void> {
-  await setValue("initialised", value ? "true" : "false");
+export function setInitialised(value = true): void {
+  localStorage.setItem("initialised", value ? "true" : "false");
 }
 
 function jwtTokenAuthProvider(options: Options = {}): AuthProvider {

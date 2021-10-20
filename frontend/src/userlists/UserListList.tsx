@@ -1,4 +1,3 @@
-import * as React from "react";
 import { FC } from "react";
 
 import {
@@ -16,7 +15,7 @@ import {
 } from "react-admin";
 import { PROCESSING, reverseEnum } from "../lib/types";
 
-const ListActions: FC<any> = (props) => (
+const ListActions: FC<any> = () => (
   <TopToolbar>
     {/* {cloneElement(props.filters, { context: 'button' })} */}
     <CreateButton />

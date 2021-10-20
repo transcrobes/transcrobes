@@ -1,5 +1,5 @@
 import { ReactElement, useState } from "react";
-import { Notification, useTranslate, useNotify, BooleanInput } from "react-admin";
+import { Notification, useTranslate, useNotify } from "react-admin";
 import { Field, withTypes } from "react-final-form";
 import AddIcon from "@material-ui/icons/Add";
 import { makeStyles } from "@material-ui/core/styles";
@@ -12,7 +12,6 @@ import { Link } from "react-router-dom";
 import CircularProgress from "@material-ui/core/CircularProgress";
 import TextField from "@material-ui/core/TextField";
 import { OnChange } from "react-final-form-listeners";
-
 import PasswordStrengthBar from "react-password-strength-bar";
 
 const emailRegex =
@@ -116,9 +115,13 @@ export default function Signup(): ReactElement {
         password: form.password,
       }),
     })
-      .then(() => {
-        notify("user.reset_password.success");
-        setCreationSent(true);
+      .then((res) => {
+        if (res.ok) {
+          notify("user.reset_password.success", "success");
+          setCreationSent(true);
+        } else {
+          throw new Error("Error creating the user.");
+        }
       })
       .catch((error: Error) => {
         setLoading(false);
@@ -275,10 +278,12 @@ export default function Signup(): ReactElement {
                 </>
               )}
               {creationSent && (
-                <Typography>
-                  A validation email has been sent to the email address provide. Please validate
-                  this email by clicking in the link provided in the email.
-                </Typography>
+                <div className={classes.userManagement}>
+                  <Typography>
+                    A validation email has been sent to the email address provided. Please validate
+                    this email by clicking in the link in the email.
+                  </Typography>
+                </div>
               )}
               <div>
                 <div className={classes.userManagement}>

@@ -1,5 +1,5 @@
-import React, { FC } from "react";
-import { FieldProps, ReferenceField, Show, SimpleShowLayout, TextField } from "react-admin"; // eslint-disable-line import/no-unresolved
+import { FC } from "react";
+import { FieldProps, ReferenceField, Show, SimpleShowLayout, TextField } from "react-admin";
 import { Goal } from "../lib/types";
 
 const GoalShow: FC<FieldProps<Goal>> = (props) => (

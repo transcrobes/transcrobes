@@ -53,8 +53,7 @@ def send_reset_password_email(email_to: str, email: str, token: str) -> None:
     subject = f"{project_name} - Password recovery for user {email}"
     with open(Path(settings.EMAIL_TEMPLATES_DIR) / "reset_password.html", encoding="utf8") as f:
         template_str = f.read()
-    server_host = settings.SERVER_HOST
-    link = f"{server_host}/reset-password?token={token}"
+    link = f"{settings.SERVER_HOST}/#/reset-password?token={token}"
     send_email(
         email_to=email_to,
         subject_template=subject,
@@ -69,13 +68,12 @@ def send_reset_password_email(email_to: str, email: str, token: str) -> None:
     )
 
 
-def send_new_account_email(email_to: str, username: str, password: str) -> None:
+def send_new_account_email(email_to: str, username: str) -> None:
     project_name = settings.PROJECT_NAME
     subject = f"{project_name} - New account for user {username}"
     with open(Path(settings.EMAIL_TEMPLATES_DIR) / "new_account.html", encoding="utf8") as f:
         template_str = f.read()
-    # FIXME: hardcoded URL
-    link = f"{settings.SERVER_HOST}/#/validate-email/?token{generate_validation_token(email_to)}"
+    link = f"{settings.SERVER_HOST}{settings.API_V1_STR}/validate-email/{generate_validation_token(email_to)}"
     send_email(
         email_to=email_to,
         subject_template=subject,

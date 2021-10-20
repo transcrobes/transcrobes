@@ -15,6 +15,7 @@ import { ComponentsConfig } from "./lib/complexTypes";
 import Signup from "./system/Signup";
 import ResetPassword from "./system/ResetPassword";
 import RecoverPassword from "./system/RecoverPassword";
+import ValidateEmail from "./system/ValidateEmail";
 
 // FIXME: I guess this is better done via redux?
 window.readerConfig = {
@@ -25,9 +26,7 @@ window.readerConfig = {
 
 export default function routes(config: ComponentsConfig): CustomRoutes {
   return [
-    <Route exact path="/init" render={() => <Init />} />,
-    <Route exact path="/configuration" render={() => <Configuration />} />,
-    <Route exact path="/system" render={() => <System />} />,
+    // no auth
     <RouteWithoutLayout exact path="/reset-password" render={() => <ResetPassword />} noLayout />,
     <RouteWithoutLayout
       exact
@@ -36,6 +35,15 @@ export default function routes(config: ComponentsConfig): CustomRoutes {
       noLayout
     />,
     <RouteWithoutLayout exact path="/signup" render={() => <Signup />} noLayout />,
+    <RouteWithoutLayout exact path="/validate-email" render={() => <ValidateEmail />} noLayout />,
+
+    // manual auth in the page
+    <RouteWithoutLayout exact path="/contents/:id/read" render={() => <Reader />} noLayout />,
+    <RouteWithoutLayout exact path="/init" render={() => <Init />} noLayout />,
+
+    // authed
+    <Route exact path="/configuration" render={() => <Configuration />} />,
+    <Route exact path="/system" render={() => <System />} />,
     <Route exact path="/listrobes" render={() => <Listrobes proxy={config.proxy} />} />,
     <Route exact path="/repetrobes" render={() => <Repetrobes proxy={config.proxy} />} />,
     <Route
@@ -44,12 +52,10 @@ export default function routes(config: ComponentsConfig): CustomRoutes {
       render={() => <Notrobes proxy={config.proxy} url={config.url} />}
     />,
     <Route exact path="/brocrobes" render={() => <Brocrobes />} />,
-
     <Route
       exact
       path="/contents/:id/watch"
       children={<VideoPlayer proxy={config.proxy} dataProvider={config.dataProvider} />}
     />,
-    <RouteWithoutLayout exact path="/contents/:id/read" render={() => <Reader />} noLayout />,
   ];
 }

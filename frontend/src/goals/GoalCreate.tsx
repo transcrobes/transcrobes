@@ -1,4 +1,3 @@
-import React from "react";
 import { FC } from "react";
 import {
   Create,
@@ -19,7 +18,12 @@ const GoalCreate: FC<FieldProps<Goal>> = (props) => (
       <TextInput label="Goal name" source="title" validate={[required()]} />
       <TextInput label="Goal description" multiline source="description" />
       <NumberInput max={10} min={1} source="priority" step={1} />
-      <ReferenceInput label="User list" source="userList" reference="userlists">
+      <ReferenceInput
+        label="User list"
+        source="userList"
+        validate={[required()]}
+        reference="userlists"
+      >
         <SelectInput allowEmpty={false} optionText="title" />
       </ReferenceInput>
       <ReferenceInput label="Parent" source="parent" reference="goals">

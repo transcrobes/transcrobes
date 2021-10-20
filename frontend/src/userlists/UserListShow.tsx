@@ -1,4 +1,4 @@
-import React, { FC } from "react";
+import { FC } from "react";
 import {
   BooleanField,
   FieldProps,
@@ -7,7 +7,7 @@ import {
   Show,
   SimpleShowLayout,
   TextField,
-} from "react-admin"; // eslint-disable-line import/no-unresolved
+} from "react-admin";
 import { ORDER_BY, PROCESSING, reverseEnum, UserList } from "../lib/types";
 
 const UserListShow: FC<FieldProps<UserList>> = (props) => (

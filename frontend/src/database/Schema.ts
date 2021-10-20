@@ -332,21 +332,15 @@ const EFACTOR_DEFAULT = 2.5;
 const INTERVAL_DEFAULT = 0;
 const REPETITION_DEFAULT = 0;
 const NO_LIMIT = -1;
-// const GRADE = {
-//   UNKNOWN: 2,
-//   HARD: 3,
-//   GOOD: 4,
-//   KNOWN: 5,
-//   // gradeName : function(grade) {
-//   //   const name = Object.entries(this).find(i => i[1].toString() === grade.toString())
-//   //   return name ? name[0].toLowerCase() : undefined;
-//   // },
-// }
 enum GRADE {
   UNKNOWN = 2,
   HARD = 3,
   GOOD = 4,
   KNOWN = 5,
+  // gradeName : function(grade) {
+  //   const name = Object.entries(this).find(i => i[1].toString() === grade.toString())
+  //   return name ? name[0].toLowerCase() : undefined;
+  // },
 }
 const DEFAULT_BAD_REVIEW_WAIT_SECS = 600;
 
@@ -482,7 +476,7 @@ type ContentDocument = RxDocument<Content>;
 type ContentCollection = RxCollection<Content>;
 const CONTENTS_SCHEMA: RxJsonSchema<Content> = {
   version: 0,
-  required: ["id"],
+  required: ["id", "theImport"],
   primaryKey: "id",
   type: "object",
   properties: {
@@ -504,7 +498,7 @@ type UserListDocument = RxDocument<UserList>;
 type UserListCollection = RxCollection<UserList>;
 const USERLISTS_SCHEMA: RxJsonSchema<UserList> = {
   version: 0,
-  required: ["id"],
+  required: ["id", "theImport"],
   primaryKey: "id",
   type: "object",
   properties: {
@@ -528,7 +522,7 @@ type UserSurveyDocument = RxDocument<UserSurvey>;
 type UserSurveyCollection = RxCollection<UserSurvey>;
 const USERSURVEYS_SCHEMA: RxJsonSchema<UserSurvey> = {
   version: 0,
-  required: ["id"],
+  required: ["id", "surveyId"],
   primaryKey: "id",
   type: "object",
   properties: {
@@ -545,7 +539,7 @@ type GoalDocument = RxDocument<Goal>;
 type GoalCollection = RxCollection<Goal>;
 const GOALS_SCHEMA: RxJsonSchema<Goal> = {
   version: 0,
-  required: ["id"],
+  required: ["id", "userList"],
   primaryKey: "id",
   type: "object",
   properties: {

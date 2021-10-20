@@ -2,7 +2,7 @@ import { ReactElement, useState } from "react";
 import Card from "@material-ui/core/Card";
 import CardContent from "@material-ui/core/CardContent";
 import Button from "@material-ui/core/Button";
-import { useTranslate, Title } from "react-admin";
+import { useTranslate, Title, useAuthenticated } from "react-admin";
 import { makeStyles } from "@material-ui/core/styles";
 import NoSleep from "nosleep.js";
 
@@ -78,6 +78,7 @@ function RunningMessage({ message }: RunningMessageProps): ReactElement {
 let progress = 0;
 
 function Init(): ReactElement {
+  useAuthenticated(); // redirects to login if not authenticated, required because shown as RouteWithoutLayout
   const translate = useTranslate();
   const classes = useStyles();
   const [runStarted, setRunStarted] = useState<boolean | null>(null);
@@ -88,18 +89,17 @@ function Init(): ReactElement {
   // will simply kill the SW to save battery, no matter how busy the SW is.
   function progressUpdate() {
     progress = 0;
-    isInitialised().then((inited) => {
-      if (!inited && location.href.endsWith("/#/init")) {
-        window.componentsConfig.proxy.sendMessage(
-          { source: "tmp-test", type: "heartbeat", value: "" },
-          (datetime) => {
-            console.log("Heartbeat", datetime.toString());
-            if (progress === 0) progress = window.setTimeout(progressUpdate, 5000);
-            return "";
-          },
-        );
-      }
-    });
+    const inited = isInitialised();
+    if (!inited && location.href.endsWith("/#/init")) {
+      window.componentsConfig.proxy.sendMessage(
+        { source: "tmp-test", type: "heartbeat", value: "" },
+        (datetime) => {
+          console.log("Heartbeat", datetime.toString());
+          if (progress === 0) progress = window.setTimeout(progressUpdate, 5000);
+          return "";
+        },
+      );
+    }
   }
 
   if (progress === 0) progress = window.setTimeout(progressUpdate, 5000);
@@ -118,15 +118,13 @@ function Init(): ReactElement {
       noSleep.disable();
 
       // FIXME: NASTINESS!!!
-      setInitialised().then(() => {
-        window.location.href = "/";
-      });
-
+      setInitialised();
+      window.location.href = "/#/";
       return "";
     };
 
     const appConfig = {};
-    window.componentsConfig.proxy.init(appConfig, finishedCallback, progressCallback);
+    window.componentsConfig.proxy.init(appConfig, finishedCallback, progressCallback, true);
   }
 
   return (

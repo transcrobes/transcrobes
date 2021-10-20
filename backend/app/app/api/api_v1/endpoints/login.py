@@ -14,6 +14,7 @@ from app.core.config import settings
 from app.core.security import ALGORITHM, get_password_hash
 from app.utils import generate_validation_token, send_reset_password_email, verify_validation_token
 from fastapi import APIRouter, Body, Depends, HTTPException
+from fastapi.responses import RedirectResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from jose import jwt
 from pydantic import ValidationError
@@ -172,15 +173,14 @@ async def reset_password(
         raise HTTPException(status_code=400, detail="Inactive user")
     hashed_password = get_password_hash(new_password)
     user.hashed_password = hashed_password
+    user.is_verified = True
     db.add(user)
     await db.commit()
     return {"msg": "Password updated successfully"}
 
-@router.post("/validate-email/", response_model=schemas.Msg)
-async def validate_email(
-    token: str = Body(...),
-    db: AsyncSession = Depends(deps.get_db),
-) -> Any:
+
+@router.get("/validate-email/{token}", response_class=RedirectResponse, status_code=302)
+async def validate_email(token: str, db: AsyncSession = Depends(deps.get_db)) -> Any:
     """
     Validate email address with a JWT token
     """
@@ -198,4 +198,4 @@ async def validate_email(
     user.is_verified = True
     db.add(user)
     await db.commit()
-    return {"msg": "Email validated successfully"}
+    return "/#/login/?msg=001"

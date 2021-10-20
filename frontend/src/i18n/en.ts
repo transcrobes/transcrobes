@@ -28,21 +28,22 @@ const customEnglishMessages: TranslationMessages = {
   },
   user: {
     signup: "Create an account",
-    // reset_password: "Reset password",
-    // reset_password_error: "Error resetting password, please try again later",
     email: "Email",
     invalid_email: "Invalid email address",
+    email_validated: "Email successfully validated, please log in!",
+    validate_email_error:
+      "There was an error validating the email, please try again in a few minutes",
+    validating_email: "Please wait while the system validates your email",
     reset_password: {
       label: "Reset password",
+      recover: "Send reset email",
       error: "Error resetting password, please try again later",
-      success: "Reset email set, please check your email",
+      email_success: "Reset email set, please check your email",
+      success: "Password reset successfully, please log in with the new password",
       password: "Password",
       repeat_password: "Repeat password",
       passwords_different: "Passwords are not the same",
       token_missing: "Invalid reset URL",
-      validate_email_error:
-        "There was an error validating the email, please try again in a few minutes",
-      validating_email: "Please wait while the system validates your email",
     },
   },
   resources: {

@@ -34,10 +34,11 @@ function ValidateEmail(): ReactElement {
   const notify = useNotify();
   const history = useHistory();
 
-  const token = new URLSearchParams(location.hash.substr(location.hash.indexOf("?"))).get("token");
-
   useEffect(() => {
     setLoading(true);
+    const token = new URLSearchParams(location.hash.substr(location.hash.indexOf("?"))).get(
+      "token",
+    );
     fetch(`${location.origin}/api/v1/validate-email/`, {
       method: "POST",
       headers: {
@@ -45,13 +46,14 @@ function ValidateEmail(): ReactElement {
       },
       body: JSON.stringify({
         token: token,
+        r: "",
       }),
     })
       .then((res) => {
-        console.log("Validating email", res.ok);
-        notify("user.reset_password.success");
-        // FIXME: hardcode url
-
+        if (!res.ok) {
+          throw new Error("There was an issue validating the email");
+        }
+        notify("user.email_validated", "success");
         setLoading(false);
         history.push("/login");
       })

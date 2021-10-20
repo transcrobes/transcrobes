@@ -1,4 +1,3 @@
-import React from "react";
 import { FC } from "react";
 import {
   Create,
@@ -24,6 +23,7 @@ const UserListCreate: FC<FieldProps<UserList>> = (props) => (
         label="Source Import"
         source="theImport"
         reference="imports"
+        validate={[required()]}
         filter={{ status: STATUS.ACTIVE, processing: PROCESSING.FINISHED }}
       >
         <SelectInput allowEmpty={false} optionText="title" />

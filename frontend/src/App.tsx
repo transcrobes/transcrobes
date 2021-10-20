@@ -1,4 +1,4 @@
-import { ReactElement, useEffect, useState } from "react";
+import { ReactElement, useEffect } from "react";
 import { Admin, Resource } from "react-admin";
 import polyglotI18nProvider from "ra-i18n-polyglot";
 import { Workbox } from "workbox-window";
@@ -47,30 +47,32 @@ window.componentsConfig = {
 };
 
 function App(): ReactElement {
-  const [inited, setInited] = useState<boolean | null>(null);
-
   useEffect(() => {
-    (async function () {
-      const isInited = await isInitialised();
-      if (!isInited && window.location.href !== "/#/init") {
-        window.location.href = "/#/init";
-      } else {
-        setInited(isInited);
-      }
-    })();
+    if (isInitialised()) {
+      window.componentsConfig.proxy.init(
+        {},
+        () => "",
+        () => "",
+      );
+    } else if (shouldRedirectUninited(window.location.href)) {
+      window.location.href = "/#/init";
+    }
   }, []);
 
-  useEffect(() => {
-    window.componentsConfig.proxy.init(
-      {},
-      () => {
-        return "";
-      },
-      () => {
-        return "";
-      },
-    );
-  }, [inited]);
+  function shouldRedirectUninited(url: string): boolean {
+    const m = url.split("/#/")[1];
+    if (
+      (m && m.startsWith("login")) ||
+      m.startsWith("init") ||
+      m.startsWith("signup") ||
+      m.startsWith("reset-password") ||
+      m.startsWith("recover-password")
+    ) {
+      return false;
+    } else {
+      return true;
+    }
+  }
 
   return (
     <Admin

@@ -44,7 +44,7 @@ async def create_user(
         )
     user = await crud.user.create(db, obj_in=user_in)
     if settings.EMAILS_ENABLED and user_in.email:
-        send_new_account_email(email_to=user_in.email, username=user_in.username, password=user_in.password)
+        send_new_account_email(email_to=user_in.email, username=user_in.username)
     return user
 
 

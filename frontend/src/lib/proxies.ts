@@ -58,15 +58,12 @@ class ServiceWorkerProxy extends AbstractWorkerProxy {
   }
 
   async sendMessagePromise<Type>(eventData: EventData): Promise<Type> {
+    // FIXME: absolutely need to rationalise the messageSW vs chrome.sendMessage...
+    if (!isInitialised() && eventData.type !== "heartbeat") {
+      throw new Error("Unable to init outside the initialiser");
+    }
     const message = await this.wb.messageSW(eventData);
     return message.value;
-
-    // return new Promise((resolve, _reject) => {
-    //   this.sendMessage(eventData, (value) => {
-    //     resolve(value);
-    //     return "";
-    //   });
-    // });
   }
 
   getURL(relativePath: string): string {
@@ -87,7 +84,6 @@ class ServiceWorkerProxy extends AbstractWorkerProxy {
         console.error("There is a problem with mwc", mwc);
       }
       if (registration.active) registration.active.postMessage(mwc.message);
-      // return mwc.message;
     });
   }
 
@@ -95,13 +91,9 @@ class ServiceWorkerProxy extends AbstractWorkerProxy {
     message: EventData,
     callback: (x: any) => string,
     progressCallback?: (x: ProgressCallbackMessage) => string,
+    allowInstall = false,
   ): void {
-    if (message.type === "isDbInitialised") {
-      isInitialised().then((value) => {
-        callback(value);
-      });
-      return;
-    } else if (message.type === "heartbeat") {
+    if (message.type === "heartbeat") {
       this.postMessage({
         message: message,
         callback: callback,
@@ -118,6 +110,10 @@ class ServiceWorkerProxy extends AbstractWorkerProxy {
       return;
     } // else if !this.#initialised then throw error ???
 
+    if (!allowInstall && !isInitialised()) {
+      throw new Error("Unable to init outside the initialiser");
+    }
+
     this.postMessage({ message: message, callback: callback, progressCallback: progressCallback });
   }
 
@@ -125,7 +121,12 @@ class ServiceWorkerProxy extends AbstractWorkerProxy {
     config: ConfigType,
     callback: (x: any) => string,
     progressCallback: (x: ProgressCallbackMessage) => string,
+    allowInstall = false,
   ): void {
+    if (!allowInstall && !isInitialised()) {
+      window.location.href = "/#/init";
+      return;
+    }
     console.debug("Setting up ServiceWorkerProxy.init with config", config);
     this.#config = config;
 
@@ -152,6 +153,7 @@ class ServiceWorkerProxy extends AbstractWorkerProxy {
         }
         return progressCallback(progress);
       },
+      allowInstall,
     );
   }
 }
@@ -199,13 +201,9 @@ class BackgroundWorkerProxy extends AbstractWorkerProxy {
     message: EventData,
     callback?: (x: any) => string,
     progressCallback?: (x: ProgressCallbackMessage) => string,
+    allowInstall = false,
   ): void {
-    if (message.type === "isDbInitialised") {
-      isInitialised().then((value) => {
-        if (callback) callback(value);
-      });
-      return;
-    } else if (message.type === "heartbeat") {
+    if (message.type === "heartbeat") {
       this.postMessage({
         message: message,
         callback: callback,
@@ -222,6 +220,10 @@ class BackgroundWorkerProxy extends AbstractWorkerProxy {
       return;
     } // else if !this.#initialised then throw error ???
 
+    if (!allowInstall && !isInitialised()) {
+      throw new Error("Unable to init outside the initialiser");
+    }
+
     this.postMessage({ message: message, callback: callback, progressCallback: progressCallback });
   }
 
@@ -229,7 +231,12 @@ class BackgroundWorkerProxy extends AbstractWorkerProxy {
     config: ConfigType,
     callback: (x: any) => string,
     progressCallback: (x: ProgressCallbackMessage) => string,
+    allowInstall = false,
   ): void {
+    if (!allowInstall && !isInitialised()) {
+      throw new Error("Unable to init outside the initialiser");
+    }
+
     this.#config = config;
 
     const message = { source: this.DATA_SOURCE, type: "syncDB", value: this.#config };
@@ -246,6 +253,7 @@ class BackgroundWorkerProxy extends AbstractWorkerProxy {
       (progress) => {
         return progressCallback(progress);
       },
+      allowInstall,
     );
   }
 }

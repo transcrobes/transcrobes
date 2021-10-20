@@ -1,8 +1,7 @@
-import { ReactElement, useState } from "react";
+import { ReactElement, useEffect, useState } from "react";
 import PropTypes from "prop-types";
 import { Field, withTypes } from "react-final-form";
 import { Link, useLocation } from "react-router-dom";
-
 import {
   Avatar,
   Button,
@@ -16,8 +15,8 @@ import { createMuiTheme, makeStyles } from "@material-ui/core/styles";
 import { ThemeProvider } from "@material-ui/styles";
 import LockIcon from "@material-ui/icons/Lock";
 import { Notification, useTranslate, useLogin, useNotify } from "react-admin";
-
 import { lightTheme } from "../layout/themes";
+import { isInitialised } from "../lib/JWTAuthProvider";
 
 const useStyles = makeStyles((theme) => ({
   main: {
@@ -62,28 +61,18 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-function renderInput({
-  meta: { touched, error } = { touched: false, error: undefined },
-  input: { ...inputProps },
-  ...props
-}): ReactElement {
-  return (
-    <TextField
-      error={!!(touched && error)}
-      helperText={touched && error}
-      {...inputProps}
-      {...props}
-      fullWidth
-    />
-  );
-}
-
 interface FormValues {
   username?: string;
   password?: string;
 }
 
 const { Form } = withTypes<FormValues>();
+
+const messages = {
+  "001": "Email validated successfully",
+  "002": "Email validation error, please contact anton@transcrob.es",
+  "003": "Email validation expired, please contact anton@transcrob.es",
+};
 
 function Login(): ReactElement {
   const [loading, setLoading] = useState(false);
@@ -93,9 +82,25 @@ function Login(): ReactElement {
   const login = useLogin();
   const location = useLocation<{ nextPathname: string } | null>();
 
+  const incomingMessageId = new URLSearchParams(location.search).get("msg");
+
+  useEffect(() => {
+    if (incomingMessageId) {
+      notify(
+        messages[incomingMessageId as keyof typeof messages],
+        incomingMessageId === "001" ? "success" : "error",
+      );
+    }
+  }, []);
+
   function handleSubmit(auth: FormValues) {
     setLoading(true);
-    login(auth, location.state ? location.state.nextPathname : "/").catch((error: Error) => {
+    const nextPath = isInitialised()
+      ? location.state
+        ? location.state.nextPathname
+        : "/"
+      : "/init";
+    login(auth, nextPath).catch((error: Error) => {
       setLoading(false);
       notify(
         typeof error === "string"
@@ -141,20 +146,54 @@ function Login(): ReactElement {
                     autoFocus
                     name="username"
                     // @ts-ignore
-                    component={renderInput}
                     label={translate("ra.auth.username")}
                     disabled={loading}
-                  />
+                  >
+                    {({
+                      meta: { touched, error } = { touched: false, error: undefined },
+                      input: { ...inputProps },
+                      ...props
+                    }) => {
+                      return (
+                        <TextField
+                          id="username"
+                          autoComplete="username"
+                          error={!!(touched && error)}
+                          helperText={touched && error}
+                          {...inputProps}
+                          {...props}
+                          fullWidth
+                        />
+                      );
+                    }}
+                  </Field>
                 </div>
                 <div className={classes.input}>
                   <Field
                     name="password"
                     // @ts-ignore
-                    component={renderInput}
                     label={translate("ra.auth.password")}
                     type="password"
                     disabled={loading}
-                  />
+                  >
+                    {({
+                      meta: { touched, error } = { touched: false, error: undefined },
+                      input: { ...inputProps },
+                      ...props
+                    }) => {
+                      return (
+                        <TextField
+                          id="current-password"
+                          autoComplete="current-password"
+                          error={!!(touched && error)}
+                          helperText={touched && error}
+                          {...inputProps}
+                          {...props}
+                          fullWidth
+                        />
+                      );
+                    }}
+                  </Field>
                 </div>
               </div>
               <CardActions className={classes.actions}>
@@ -172,7 +211,7 @@ function Login(): ReactElement {
               <div>
                 <div className={classes.userManagement}>
                   <Typography>
-                    <Link to="/reset-password">{translate("user.reset_password.label")}</Link>
+                    <Link to="/recover-password">{translate("user.reset_password.label")}</Link>
                   </Typography>
                 </div>
                 <div className={classes.userManagement}>

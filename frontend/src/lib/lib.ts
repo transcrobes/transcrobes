@@ -254,24 +254,18 @@ export async function fetchPlus(
     throw new Error(`Exhausted all retry attempts, failing for ${url} with ${body}`);
   }
 
-  console.log("well i got here and here too");
   const options = await getRequestOptions(url.toString(), forcePost, body);
   let res;
-
   try {
     res = await fetch(url.toString(), options);
 
-    console.log("but maybe not here here and here too 1");
     if (res.status === 200) {
-      console.log("but maybe not here here and here too 1 good");
       return await res.json();
     }
-    console.log("but maybe not here here and here too 2");
     if (res.status === 401 || res.status === 403) {
       await refreshAccessToken(new URL(url.toString()));
     }
   } catch (error: any) {
-    console.log("but maybe not here here and here too 3");
     if ("status" in error && (error.status === 401 || error.status === 403)) {
       await refreshAccessToken(new URL(url.toString()));
     }
