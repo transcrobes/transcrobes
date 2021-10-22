@@ -87,10 +87,6 @@ function Notrobes({ proxy, url }: Props): ReactElement {
 
     if (cancel) {
       cancel.cancel();
-      if (timeoutId) {
-        window.clearTimeout(timeoutId);
-        timeoutId = 0;
-      }
     }
     cancel = axios.CancelToken.source();
 
@@ -186,6 +182,11 @@ function Notrobes({ proxy, url }: Props): ReactElement {
   }
 
   function handleOnInputChange(event: React.ChangeEvent<HTMLInputElement>) {
+    if (timeoutId) {
+      window.clearTimeout(timeoutId);
+      timeoutId = 0;
+    }
+
     const q = event.target.value;
     setQuery(q);
     setWord(null);
