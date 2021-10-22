@@ -1,3 +1,4 @@
+import { ReactElement } from "react";
 import { VocabItem } from "./vocab-item";
 import SearchLoading from "../components/SearchLoading";
 import { GraderConfig, VocabReview } from "../lib/types";
@@ -10,7 +11,6 @@ interface Props {
   onMouseOver: (index: number) => void;
   onMouseOut: () => void;
   onValidate: () => void;
-  // onConfigChange: (graderConfig: GraderConfig) => void;
 }
 
 export function VocabList({
@@ -21,7 +21,7 @@ export function VocabList({
   onMouseOut,
   onMouseOver,
   onValidate,
-}: Props) {
+}: Props): ReactElement {
   const unloaded = loading || !vocab;
   return (
     <>

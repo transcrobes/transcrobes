@@ -1,7 +1,7 @@
 import {
   MdSentimentNeutral,
-  MdSentimentDissatisfied,
-  MdSentimentSatisfied,
+  MdSentimentVeryDissatisfied,
+  MdSentimentVerySatisfied,
   MdDone,
 } from "react-icons/md";
 import dayjs from "dayjs";
@@ -12,12 +12,16 @@ import { CardType, GradesType } from "./types";
 export { CARD_ID_SEPARATOR } from "../database/Schema";
 
 const GRADES: GradesType[] = [
-  { id: GRADE.UNKNOWN.toString(), content: "Add as unknown", icon: MdSentimentDissatisfied({}) },
+  {
+    id: GRADE.UNKNOWN.toString(),
+    content: "Add as unknown",
+    icon: MdSentimentVeryDissatisfied({}),
+  },
   { id: GRADE.HARD.toString(), content: "Add as known (poorly)", icon: MdSentimentNeutral({}) },
   {
     id: GRADE.GOOD.toString(),
     content: "Add as known (to revise)",
-    icon: MdSentimentSatisfied({}),
+    icon: MdSentimentVerySatisfied({}),
   },
   { id: GRADE.KNOWN.toString(), content: "Add as known (no revision)", icon: MdDone({}) },
 ];
