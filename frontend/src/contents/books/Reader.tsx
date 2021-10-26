@@ -1,16 +1,11 @@
 import { useEffect } from "react";
 import { useParams } from "react-router-dom";
-
 import { useAuthenticated } from "react-admin";
 import D2Reader from "@d-i-t-a/reader";
 import { ChakraProvider } from "@chakra-ui/react";
-import { getTheme } from "../../webreader/ui/theme";
 import "@nypl/design-system-react-components/dist/styles.css";
-// import WebReader, { getTheme } from "@nypl/web-reader";
-// import { getTheme } from "@nypl/web-reader/dist/types/ui/theme";
-// import { getTheme } from "@nypl/web-reader/dist/types/ui/theme/index";
-// import injectables from "./injectables";
-import WebReader from "../../webreader";
+import WebReader, { getTheme } from "@nypl/web-reader";
+import injectables from "./injectables";
 
 type ContentParams = {
   id: string;
@@ -57,8 +52,7 @@ export default function Reader(): JSX.Element {
 
   return (
     <ChakraProvider theme={getTheme("day")}>
-      {/* <WebReader webpubManifestUrl={url.href} injectables={injectables} /> */}
-      <WebReader webpubManifestUrl={url.href} />
+      <WebReader webpubManifestUrl={url.href} injectables={injectables} />
     </ChakraProvider>
   );
 }

@@ -91,6 +91,7 @@
     "@emotion/styled": "^11.3.0",
     "@material-ui/core": "^4.12.3",
     "@nypl/design-system-react-components": "^0.25.0",
+    "@nypl/web-reader": "^0.2.3",
     "@use-it/event-listener": "^0.1.6",
     "@webcomponents/webcomponentsjs": "^2.6.0",
     "axios": "^0.22.0",
