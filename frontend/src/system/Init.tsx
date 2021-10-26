@@ -1,4 +1,4 @@
-import { ReactElement, useState } from "react";
+import { ReactElement, useEffect, useState } from "react";
 import Card from "@material-ui/core/Card";
 import CardContent from "@material-ui/core/CardContent";
 import Button from "@material-ui/core/Button";
@@ -6,7 +6,7 @@ import { useTranslate, Title, useAuthenticated } from "react-admin";
 import { makeStyles } from "@material-ui/core/styles";
 import NoSleep from "nosleep.js";
 
-import { isInitialised, setInitialised } from "../lib/JWTAuthProvider";
+import { getUsername, isInitialised, setInitialised } from "../lib/JWTAuthProvider";
 import Loading from "../icons/spinning-circles";
 import { ProgressCallbackMessage } from "../lib/proxies";
 
@@ -83,47 +83,72 @@ function Init(): ReactElement {
   const classes = useStyles();
   const [runStarted, setRunStarted] = useState<boolean | null>(null);
   const [message, setMessage] = useState<string>("");
+  const [username, setUsername] = useState<string>("");
+
+  if (progress === 0) progress = window.setTimeout(progressUpdate, 5000);
+
+  useEffect(() => {
+    (async () => {
+      const lusername = await getUsername();
+      if (!lusername) {
+        throw new Error("Unable to find a username");
+      }
+      setUsername(lusername);
+    })();
+  }, []);
 
   // WARNING! DO NOT DELETE THIS!
   // On mobile, unless there is constant communication between the page and the SW, the browser
   // will simply kill the SW to save battery, no matter how busy the SW is.
   function progressUpdate() {
     progress = 0;
-    const inited = isInitialised();
-    if (!inited && location.href.endsWith("/#/init")) {
-      window.componentsConfig.proxy.sendMessage(
-        { source: "tmp-test", type: "heartbeat", value: "" },
-        (datetime) => {
-          console.log("Heartbeat", datetime.toString());
-          if (progress === 0) progress = window.setTimeout(progressUpdate, 5000);
-          return "";
-        },
-      );
+    if (username) {
+      const inited = isInitialised(username);
+      if (!inited && location.href.endsWith("/#/init")) {
+        window.componentsConfig.proxy.sendMessage(
+          { source: "tmp-test", type: "heartbeat", value: "" },
+          (datetime) => {
+            console.log("Heartbeat", datetime.toString());
+            if (progress === 0) progress = window.setTimeout(progressUpdate, 5000);
+            return "";
+          },
+        );
+      }
     }
   }
-
-  if (progress === 0) progress = window.setTimeout(progressUpdate, 5000);
 
   function initialise(): void {
     noSleep.enable();
     setRunStarted(true);
 
-    const progressCallback = (progress: ProgressCallbackMessage): string => {
+    function progressCallback(progress: ProgressCallbackMessage): string {
       console.log("progressCallback", progress);
-      setMessage(progress.message);
+      if (progress.message === "RESTART_BROWSER") {
+        setMessage(
+          "You must completely close all browser instances and then restart the initialisation!",
+        );
+        throw new Error("Browser restart required");
+      } else setMessage(progress.message);
       return "";
-    };
-    const finishedCallback = (message: string): string => {
+    }
+    function finishedCallback(message: string): string {
       console.log("Initialisation Complete!", message);
       noSleep.disable();
 
       // FIXME: NASTINESS!!!
-      setInitialised();
+      if (username) {
+        setInitialised(username);
+      } else {
+        throw new Error("Unable to find username");
+      }
       window.location.href = "/#/";
       return "";
-    };
+    }
 
-    const appConfig = {};
+    const appConfig = { username: username || undefined };
+    if (!appConfig.username) {
+      throw new Error("Unable to find username");
+    }
     window.componentsConfig.proxy.init(appConfig, finishedCallback, progressCallback, true);
   }
 

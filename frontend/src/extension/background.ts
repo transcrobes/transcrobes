@@ -115,12 +115,7 @@ chrome.action.onClicked.addListener(function (tab) {
 chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
   const message = request;
   const debug = console.debug;
-  // TODO: decide whether to actually do in the worker with idb or localStorage in the proxy...
-  if (message.type === "isDbInitialised") {
-    console.debug("Checking whether the DB has been initialised");
-    const result = !!localStorage.getItem("isDbInitialised");
-    sendResponse({ source: message.source, type: message.type, value: result });
-  } else if (message.type === "syncDB") {
+  if (message.type === "syncDB") {
     console.log("Starting a background syncDB db load");
     loadDb(sendResponse, message);
   } else if (message.type === "heartbeat") {

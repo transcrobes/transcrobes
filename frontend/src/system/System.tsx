@@ -8,6 +8,7 @@ import { useTranslate, Title } from "react-admin";
 
 import { getUsername, setInitialised } from "../lib/JWTAuthProvider";
 import { getDatabaseName, deleteDatabase } from "../database/Database";
+import { AbstractWorkerProxy } from "../lib/proxies";
 
 const useStyles = makeStyles({
   label: { width: "10em", display: "inline-block" },
@@ -57,7 +58,7 @@ function RefreshDBButton({ onDBDeleted }: RefreshDBButtonProps): ReactElement {
         const message = `Removed ${dbName}`;
         onDBDeleted(message);
         console.log(message);
-        setInitialised(false);
+        setInitialised(username, false);
         window.location.href = "/";
       });
     }
@@ -71,6 +72,51 @@ function RefreshDBButton({ onDBDeleted }: RefreshDBButtonProps): ReactElement {
       onClick={handleClick}
     >
       Refresh DB
+    </Button>
+  );
+}
+
+interface ReloadDBButtonProps {
+  // onDBReloaded: (message: string) => void;
+  proxy: AbstractWorkerProxy;
+}
+function ReloadDBButton({ proxy }: ReloadDBButtonProps): ReactElement {
+  const classes = useStyles();
+
+  async function handleClick() {
+    const username = await getUsername();
+    if (username) {
+      // const dbName = getDatabaseName({ url: new URL(window.location.href) }, username);
+      proxy
+        .sendMessagePromise<string>({ source: "System", type: "resetDBConnections", value: "" })
+        .then((out) => {
+          getUsername().then((username) => {
+            if (username) {
+              proxy.init(
+                { username: username },
+                () => {
+                  return "";
+                },
+                () => {
+                  return "";
+                },
+              );
+            }
+          });
+        });
+    } else {
+      console.error("no username found");
+    }
+  }
+  return (
+    <Button
+      variant="contained"
+      className={classes.button}
+      // color={theme === 'dark' ? 'primary' : 'default'}
+      color={"primary"}
+      onClick={handleClick}
+    >
+      Reload DB
     </Button>
   );
 }
@@ -91,7 +137,11 @@ function RefreshDBButton({ onDBDeleted }: RefreshDBButtonProps): ReactElement {
 //   return <button onClick={handleClick}>Test WB</button>;
 // }
 
-function System(): ReactElement {
+interface Props {
+  proxy: AbstractWorkerProxy;
+}
+
+function System({ proxy }: Props): ReactElement {
   const translate = useTranslate();
   const [message, setMessage] = useState("");
   return (
@@ -118,6 +168,9 @@ function System(): ReactElement {
           </div>
           <div>
             <RefreshDBButton onDBDeleted={(message) => setMessage(message)} />
+          </div>
+          <div>
+            <ReloadDBButton proxy={proxy} />
           </div>
           {/* <TestWBButton /> */}
           <Typography>{message}</Typography>

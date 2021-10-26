@@ -2,7 +2,7 @@ import _ from "lodash";
 
 import { SubscriptionClient } from "subscriptions-transport-ws";
 
-import { addRxPlugin, createRxDatabase, removeRxDatabase } from "rxdb/plugins/core";
+import { addRxPlugin, clone, createRxDatabase, removeRxDatabase } from "rxdb/plugins/core";
 
 import {
   pullQueryBuilderFromRxSchema,
@@ -72,6 +72,18 @@ function getDatabaseName(config: RxDBDataProviderParams, username: string): stri
 
 function getHeaders(accessToken: string) {
   return { Authorization: "Bearer " + accessToken };
+}
+
+async function unloadDatabaseFromMemory(): Promise<void> {
+  if (dbPromise) {
+    // actually it unloads from memory, actually destroying is "remove()". Sigh...
+    console.log("Unloading database from memory");
+    const db = await dbPromise;
+    if (db) await db.destroy();
+    dbPromise = null;
+  } else {
+    console.log("Not unloading database from memory");
+  }
 }
 
 async function loadDatabase(
@@ -235,22 +247,26 @@ function setupTwoWayReplication(
   console.debug(`Start ${colName} replication`);
   const headers = getHeaders(jwtAccessToken);
 
+  // WARNING! pushQueryBuilderFromRxSchema modifies the input paramater object in place!
+  const pushQuery = pushQueryBuilderFromRxSchema(
+    _.camelCase(colName),
+    clone(DBTwoWayCollections[colName]),
+  );
+  // WARNING! pullQueryBuilderFromRxSchema modifies the input paramater object in place!
+  const pullQuery = pullQueryBuilderFromRxSchema(
+    _.camelCase(colName),
+    clone(DBTwoWayCollections[colName]),
+    BATCH_SIZE,
+  );
   const replicationState = db[colName].syncGraphQL({
     url: syncURL,
     headers: headers,
     push: {
-      queryBuilder: pushQueryBuilderFromRxSchema(
-        _.camelCase(colName),
-        DBTwoWayCollections[colName],
-      ),
+      queryBuilder: pushQuery,
       batchSize: 10, // FIXME: this doesn't appear to do anything
     },
     pull: {
-      queryBuilder: pullQueryBuilderFromRxSchema(
-        _.camelCase(colName),
-        DBTwoWayCollections[colName],
-        BATCH_SIZE,
-      ),
+      queryBuilder: pullQuery,
     },
     live: true,
     /**
@@ -261,6 +277,7 @@ function setupTwoWayReplication(
     liveInterval: 1000 * LIVE_INTERVAL, // liveInterval seconds * 1000
     deletedFlag: "deleted",
   });
+
   // show replication-errors in logs
   replicationState.error$.subscribe((err) => {
     console.error("replication two-way error:");
@@ -280,7 +297,8 @@ function setupPullReplication(
 ) {
   console.debug("Start pullonly replication", colName);
   const headers = getHeaders(jwtAccessToken);
-  const col = DBPullCollections[colName] as any;
+  // WARNING! pullQueryBuilderFromRxSchema modifies the input paramater object in place!
+  const col = clone(DBPullCollections[colName]) as any;
   const pullQueryBuilder =
     "pullQueryBuilder" in col
       ? col.pullQueryBuilder
@@ -290,7 +308,7 @@ function setupPullReplication(
     url: syncURL,
     headers: headers,
     pull: {
-      queryBuilder: pullQueryBuilder, // pullQueryBuilderFromRxSchema(_.camelCase(colName), DBPullCollections[colName], BATCH_SIZE)
+      queryBuilder: pullQueryBuilder,
     },
     live: true,
     liveInterval: 1000 * LIVE_INTERVAL, // liveInterval is in ms, so seconds * 1000
@@ -306,8 +324,12 @@ function setupPullReplication(
   return replicationState;
 }
 
-async function createDatabase(dbName: string) {
+async function createDatabase(dbName: string): Promise<TranscrobesDatabase> {
   console.log(`Create new database ${dbName}...`);
+  if (dbPromise) {
+    const db = await dbPromise;
+    if (db) await db.destroy();
+  }
   return await createRxDatabase<TranscrobesCollections>({
     name: dbName,
     storage: getRxStoragePouch("idb"),
@@ -318,6 +340,7 @@ async function createDatabase(dbName: string) {
 async function createCollections(db: TranscrobesDatabase) {
   console.log("Create collections...");
   await db.addCollections(DBCollections);
+
   // FIXME: this is no longer true but anyway
   return (await db.definitions.findByIds(["670"])).size === 0; // look for "de", if exists, we aren't new
 }
@@ -325,7 +348,8 @@ async function createCollections(db: TranscrobesDatabase) {
 async function deleteDatabase(dbName: string): Promise<void> {
   if (dbPromise) {
     console.log(`Delete existing database by object for ${dbName}...`);
-    await (await dbPromise).remove();
+    const db = await dbPromise;
+    if (db) await db.remove();
   } else {
     console.log(`Delete existing database by name ${dbName}...`);
     await removeRxDatabase(dbName, getRxStoragePouch("idb"));
@@ -401,7 +425,7 @@ async function loadFromExports(
   accessToken: string,
   reinitialise = false,
   progressCallback: (message: string, finished: boolean) => void,
-) {
+): Promise<TranscrobesDatabase> {
   const activateSubscription = true;
 
   const dbName = getDatabaseName(config, username);
@@ -413,23 +437,23 @@ async function loadFromExports(
   }/subscriptions`;
   const initialisationCacheName = "transcrobes.initialisation"; // was `${config.cacheName}.initialisation`;
 
-  console.log("loading stuffs", syncURL, wsEndpointUrl);
-
   if (reinitialise) {
     await deleteDatabase(dbName);
   }
-  let db = await createDatabase(dbName);
+  const db = await createDatabase(dbName);
   let justCreated = false;
 
   try {
     justCreated = await createCollections(db);
   } catch (error) {
-    console.log("killing the db!!!!!!!!!!!!!!!!!!!!!!");
+    console.error("Error trying to create the collections");
     console.error(error);
+    progressCallback("RESTART_BROWSER", true);
+    throw new Error("The browser must be restarted");
     // FIXME: NOOOOOOOOOOOOO!!!!!!!!!!!!!!!!!!
-    await removeRxDatabase(dbName, getRxStoragePouch("idb"));
-    db = await createDatabase(dbName);
-    justCreated = await createCollections(db);
+    //await removeRxDatabase(dbName, getRxStoragePouch("idb"));
+    //db = await createDatabase(dbName);
+    //justCreated = await createCollections(db);
   }
   if (justCreated || reinitialise) {
     await loadDatabase(
@@ -503,4 +527,4 @@ async function getDb(
   return prom;
 }
 
-export { getDb, getDatabaseName, deleteDatabase };
+export { getDb, getDatabaseName, deleteDatabase, unloadDatabaseFromMemory };

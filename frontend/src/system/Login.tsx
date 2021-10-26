@@ -95,7 +95,9 @@ function Login(): ReactElement {
 
   function handleSubmit(auth: FormValues) {
     setLoading(true);
-    const nextPath = isInitialised()
+    const username = auth.username;
+    if (!username) throw new Error("A username is required here"); // should be impossible
+    const nextPath = isInitialised(username)
       ? location.state
         ? location.state.nextPathname
         : "/"

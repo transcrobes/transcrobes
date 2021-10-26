@@ -16,13 +16,15 @@ type DbDataProvider = DataProvider & { db: () => Promise<TranscrobesDatabase> };
 
 export default function RxDBProvider(params: RxDBDataProviderParams): DbDataProvider {
   const parameters = params;
-  const dbPromise = getDb(
-    params,
-    () => {
-      return;
-    },
-    false,
-  );
+  function dbProm() {
+    return getDb(
+      params,
+      () => {
+        return;
+      },
+      false,
+    );
+  }
 
   return {
     getList: async (resource: TranscrobesCollectionsKeys, params: GetListParams) => {
@@ -48,7 +50,7 @@ export default function RxDBProvider(params: RxDBDataProviderParams): DbDataProv
         finder["skip"] = params.pagination.perPage * (params.pagination.page - 1);
       }
 
-      const db = await dbPromise;
+      const db = await dbProm();
       const res = [...(await db[resource].find(finder).exec())];
       const resTot = [...(await db[resource].find().exec())];
       const resArr = res.map((val) => val.toJSON());
@@ -56,7 +58,7 @@ export default function RxDBProvider(params: RxDBDataProviderParams): DbDataProv
       return { data: resArr, total: resTot.length };
     },
     getOne: async (resource: TranscrobesCollectionsKeys, params: GetOneParams) => {
-      const db = await dbPromise;
+      const db = await dbProm();
       const query = { id: { $eq: params.id.toString() } };
       const res = await db[resource].findOne({ selector: query }).exec();
       const data = res?.toJSON();
@@ -75,7 +77,7 @@ export default function RxDBProvider(params: RxDBDataProviderParams): DbDataProv
       return { data: data };
     },
     getMany: async (resource: TranscrobesCollectionsKeys, params: GetManyParams) => {
-      const db = await dbPromise;
+      const db = await dbProm();
       const res = await db[resource].findByIds(params.ids.map((id) => id.toString()));
       const resArr = [...res.values()].map((val) => val.toJSON());
       return { data: resArr };
@@ -84,13 +86,13 @@ export default function RxDBProvider(params: RxDBDataProviderParams): DbDataProv
       resource: TranscrobesCollectionsKeys,
       params: GetManyReferenceParams,
     ) => {
-      const db = await dbPromise;
+      const db = await dbProm();
       const res = await db[resource].find().where(params.target).eq(params.id).exec();
       const resArr = [...res.values()].map((val) => val.toJSON());
       return { data: resArr, total: resArr.length };
     },
     create: async (resource: TranscrobesCollectionsKeys, params: CreateParams) => {
-      const db = await dbPromise;
+      const db = await dbProm();
       const insert = params.data;
       if (!("id" in insert) || !insert.id) {
         insert.id = uuidv4();
@@ -110,7 +112,7 @@ export default function RxDBProvider(params: RxDBDataProviderParams): DbDataProv
       return { data: res.toJSON() };
     },
     update: async (resource: TranscrobesCollectionsKeys, params: UpdateParams) => {
-      const db = await dbPromise;
+      const db = await dbProm();
       const one = await db[resource]
         .findOne({ selector: { id: { $eq: params.id.toString() } } })
         .exec();
@@ -123,7 +125,7 @@ export default function RxDBProvider(params: RxDBDataProviderParams): DbDataProv
       }
     },
     updateMany: async (resource: TranscrobesCollectionsKeys, params: UpdateManyParams) => {
-      const db = await dbPromise;
+      const db = await dbProm();
       const many = [
         ...(await db[resource].findByIds(params.ids.map((id) => id.toString()))).values(),
       ];
@@ -135,18 +137,18 @@ export default function RxDBProvider(params: RxDBDataProviderParams): DbDataProv
       return { data: updates };
     },
     delete: async (resource: TranscrobesCollectionsKeys, params: DeleteParams) => {
-      const db = await dbPromise;
-      const one = await db[resource].findOne({ selector: { id: { $eq: params.id.toString() } } });
+      const db = await dbProm();
+      const one = db[resource].findOne({ selector: { id: { $eq: params.id.toString() } } });
       const res = await one.remove();
       return { data: res?.toJSON() };
     },
     deleteMany: async (resource: TranscrobesCollectionsKeys, params: DeleteManyParams) => {
-      const db = await dbPromise;
+      const db = await dbProm();
       const { success } = await db[resource].bulkRemove(params.ids.map((id) => id.toString()));
       return { data: success.map((doc) => doc.id) };
     },
     db: () => {
-      return dbPromise;
+      return dbProm();
     },
   } as DbDataProvider;
 }

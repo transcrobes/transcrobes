@@ -1,8 +1,8 @@
-import { ReactElement } from "react";
+import { ReactElement, useEffect } from "react";
 import { Card, CardHeader } from "@material-ui/core";
 import GoalsWidget from "./goals/GoalsWidget";
 import { ComponentsConfig } from "./lib/complexTypes";
-import { isInitialised } from "./lib/JWTAuthProvider";
+import { getUsername, isInitialised } from "./lib/JWTAuthProvider";
 
 const styles = {
   flex: { display: "flex" },
@@ -20,9 +20,14 @@ interface Props {
   config: ComponentsConfig;
 }
 export default function Dashboard({ config }: Props): ReactElement {
-  if (!isInitialised()) {
-    window.location.href = "/#/init";
-  }
+  useEffect(() => {
+    async () => {
+      const username = await getUsername();
+      if (!username || !isInitialised(username)) {
+        window.location.href = "/#/init";
+      }
+    };
+  }, []);
 
   return (
     <>

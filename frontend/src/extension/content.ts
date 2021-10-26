@@ -3,6 +3,7 @@ import { BackgroundWorkerProxy } from "../lib/proxies";
 import TranscrobesCSS from "../css/tccss";
 import { ModelType } from "../lib/types";
 import { textNodes } from "../lib/funclib";
+import { getUsername } from "../lib/JWTAuthProvider";
 
 const DATA_SOURCE = "content.ts";
 
@@ -103,29 +104,36 @@ async function ensureAllLoaded() {
   await ensureLoaded("getCardWords");
 }
 
-const conf = {};
-platformHelper.init(
-  conf,
-  () => {
-    ensureAllLoaded().then(() => {
-      spinnerDiv.classList.add("hidden");
-      enrichDocument();
-    });
-    return "";
-  },
-  () => {
-    return "";
-  },
-);
+getUsername().then((username) => {
+  if (!username) {
+    throw new Error("Unable to find the current username");
+  }
+  const conf = { username: username };
+  platformHelper.init(
+    conf,
+    () => {
+      ensureAllLoaded().then(() => {
+        spinnerDiv.classList.add("hidden");
+        enrichDocument();
+      });
+      return "";
+    },
+    () => {
+      return "";
+    },
+  );
 
-setInterval(
-  () =>
-    platformHelper.sendMessage(
-      { source: DATA_SOURCE, type: "getWordFromDBs", value: "的" },
-      (date) => {
-        console.debug("Heartbeat", date);
-        return "";
-      },
-    ),
-  5000,
-);
+  // This ensures that when the transcrobed tab has focus, the background script will
+  // be active or reactivated if unloaded (which happens regularly)
+  setInterval(
+    () =>
+      platformHelper.sendMessage(
+        { source: DATA_SOURCE, type: "getWordFromDBs", value: "的" },
+        (date) => {
+          console.debug("Heartbeat", date);
+          return "";
+        },
+      ),
+    5000,
+  );
+});

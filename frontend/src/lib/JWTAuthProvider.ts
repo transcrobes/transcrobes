@@ -28,6 +28,10 @@ export async function setValue(key: string, value: string): Promise<void> {
   await db.table("auth").put({ key: key, value: value });
 }
 
+export async function deleteValue(key: string): Promise<void> {
+  await db.table("auth").where("key").equals(key).delete();
+}
+
 export async function getUsername(): Promise<string | null | undefined> {
   return await getValue("username");
 }
@@ -53,11 +57,11 @@ export async function setPassword(password: string): Promise<void> {
   await setValue("password", password);
 }
 
-export function isInitialised(): boolean {
-  return localStorage.getItem("initialised") === "true";
+export function isInitialised(username: string): boolean {
+  return localStorage.getItem("initialised:" + username) === "true";
 }
-export function setInitialised(value = true): void {
-  localStorage.setItem("initialised", value ? "true" : "false");
+export function setInitialised(username: string, value = true): void {
+  localStorage.setItem("initialised:" + username, value ? "true" : "false");
 }
 
 function jwtTokenAuthProvider(options: Options = {}): AuthProvider {
@@ -78,13 +82,11 @@ function jwtTokenAuthProvider(options: Options = {}): AuthProvider {
       const response = await fetch(request);
       if (response.ok) {
         const responseJSON = await response.json();
-        await db.table("auth").put({ key: "username", value: username });
-        await db.table("auth").put({ key: "password", value: password });
-        await db.table("auth").put({ key: "access", value: responseJSON.access_token });
-        await db.table("auth").put({ key: "refresh", value: responseJSON.refresh_token });
-        await db
-          .table("auth")
-          .put({ key: "lang_pair", value: parseJwt(responseJSON.access_token).lang_pair });
+        await setUsername(username);
+        await setPassword(password);
+        await setAccess(responseJSON.access_token);
+        await setRefresh(responseJSON.refresh_token);
+        await setValue("lang_pair", parseJwt(responseJSON.access_token).lang_pair);
         return;
       }
       if (response.headers.get("content-type") !== "application/json") {
@@ -97,29 +99,34 @@ function jwtTokenAuthProvider(options: Options = {}): AuthProvider {
       throw new Error(error || response.statusText);
     },
     logout: async () => {
-      await db
-        .table("auth")
-        .where("key")
-        .anyOf("access", "refresh", "username", "password")
-        .delete();
+      await deleteValue("access");
+      await deleteValue("refresh");
+      await deleteValue("username");
+      await deleteValue("password");
       return Promise.resolve();
     },
     checkAuth: async () => {
-      const access = await db.table("auth").where("key").equals("access").first();
+      const access = await getAccess();
       return access ? Promise.resolve() : Promise.reject();
     },
     checkError: async (error) => {
       // FIXME: this makes no sense here...
       const status = error.status;
       if (status === 401 || status === 403) {
-        await db.table("auth").where("key").anyOf("access", "refresh").delete();
+        await deleteValue("access");
+        await deleteValue("refresh");
         return Promise.reject();
       }
       return Promise.resolve();
     },
     getPermissions: async () => {
       // FIXME: this is a bit of a hack... we don't really have permissions - if you have access etg is yours
-      return (await isInitialised()) ? Promise.resolve(["initialised"]) : Promise.resolve([]);
+      const username = await getUsername();
+      if (!username || !isInitialised(username)) {
+        return Promise.resolve([]);
+      } else {
+        return Promise.resolve(["initialised"]);
+      }
     },
   };
 }
@@ -237,7 +244,9 @@ export async function refreshAccessToken(url: URL): Promise<void> {
     return;
   } else if (res.status === 401 || res.status === 403 || res.status === 422) {
     // the refresh token is not valid
-    await db.table("auth").where("key").anyOf("access", "refresh").delete();
+    await deleteValue("access");
+    await deleteValue("refresh");
+
     const password = await getPassword();
     const username = await getUsername();
     if (username && password) {

@@ -4,6 +4,7 @@ import { isInitialised, setInitialised } from "./JWTAuthProvider";
 
 type ConfigType = {
   resourceRoot?: string;
+  username?: string;
 };
 
 type ProgressCallbackMessage = {
@@ -12,6 +13,13 @@ type ProgressCallbackMessage = {
 };
 
 abstract class AbstractWorkerProxy {
+  abstract init(
+    config: ConfigType,
+    callback: (x: any) => string,
+    progressCallback: (x: ProgressCallbackMessage) => string,
+    allowInstall?: boolean,
+  ): void;
+
   abstract sendMessage(
     message: EventData,
     callback?: (x: any) => string,
@@ -59,7 +67,15 @@ class ServiceWorkerProxy extends AbstractWorkerProxy {
 
   async sendMessagePromise<Type>(eventData: EventData): Promise<Type> {
     // FIXME: absolutely need to rationalise the messageSW vs chrome.sendMessage...
-    if (!isInitialised() && eventData.type !== "heartbeat") {
+    if (
+      !this.#config.username ||
+      (!isInitialised(this.#config.username) && eventData.type !== "heartbeat")
+    ) {
+      console.error(
+        "Uninitialised",
+        this.#config.username,
+        this.#config.username ? isInitialised(this.#config.username) : null,
+      );
       throw new Error("Unable to init outside the initialiser");
     }
     const message = await this.wb.messageSW(eventData);
@@ -110,7 +126,7 @@ class ServiceWorkerProxy extends AbstractWorkerProxy {
       return;
     } // else if !this.#initialised then throw error ???
 
-    if (!allowInstall && !isInitialised()) {
+    if (!this.#config.username || (!allowInstall && !isInitialised(this.#config.username))) {
       throw new Error("Unable to init outside the initialiser");
     }
 
@@ -123,13 +139,16 @@ class ServiceWorkerProxy extends AbstractWorkerProxy {
     progressCallback: (x: ProgressCallbackMessage) => string,
     allowInstall = false,
   ): void {
-    if (!allowInstall && !isInitialised()) {
-      window.location.href = "/#/init";
-      return;
-    }
     console.debug("Setting up ServiceWorkerProxy.init with config", config);
     this.#config = config;
 
+    if (!this.#config.username) {
+      throw new Error("Attempt to init without a username");
+    }
+    if (!allowInstall && !isInitialised(this.#config.username)) {
+      window.location.href = "/#/init";
+      return;
+    }
     const message = { source: this.DATA_SOURCE, type: "syncDB", value: {} }; // appConfig gets added in postMessage
     this.sendMessage(
       message,
@@ -147,10 +166,15 @@ class ServiceWorkerProxy extends AbstractWorkerProxy {
         return callback(response);
       },
       (progress) => {
-        // Or should I be in the normal callback?
-        if (progress.isFinished) {
-          setInitialised();
+        if (progress.message === "RESTART_BROWSER") {
+          throw new Error("Browser restart required");
         }
+
+        // Or should I be in the normal callback?
+        if (this.#config.username && progress.isFinished) {
+          setInitialised(this.#config.username);
+        }
+
         return progressCallback(progress);
       },
       allowInstall,
@@ -220,7 +244,7 @@ class BackgroundWorkerProxy extends AbstractWorkerProxy {
       return;
     } // else if !this.#initialised then throw error ???
 
-    if (!allowInstall && !isInitialised()) {
+    if (!this.#config.username || (!allowInstall && !isInitialised(this.#config.username))) {
       throw new Error("Unable to init outside the initialiser");
     }
 
@@ -233,11 +257,15 @@ class BackgroundWorkerProxy extends AbstractWorkerProxy {
     progressCallback: (x: ProgressCallbackMessage) => string,
     allowInstall = false,
   ): void {
-    if (!allowInstall && !isInitialised()) {
-      throw new Error("Unable to init outside the initialiser");
+    this.#config = config;
+
+    if (!this.#config.username) {
+      throw new Error("Attempt to init without a username");
     }
 
-    this.#config = config;
+    if (!allowInstall && !isInitialised(this.#config.username)) {
+      throw new Error("Unable to init outside the initialiser");
+    }
 
     const message = { source: this.DATA_SOURCE, type: "syncDB", value: this.#config };
     this.sendMessage(

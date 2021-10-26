@@ -1,6 +1,6 @@
 import { RxDatabase } from "rxdb/dist/types/core";
 
-import { getDb } from "./database/Database";
+import { getDb, unloadDatabaseFromMemory } from "./database/Database";
 import {
   setAccessToken,
   setRefreshToken,
@@ -25,7 +25,7 @@ import { clone } from "rxdb";
 // FIXME: move to redux!!! or something less nasty!!!
 let dayCardWords: DayCardWords | null;
 
-let db: RxDatabase<TranscrobesCollections>;
+let db: RxDatabase<TranscrobesCollections> | null;
 
 let url: URL;
 // FIXME: find some way to be able to stop the timer if required/desired
@@ -91,9 +91,12 @@ async function loadDb(
   };
   return getDb({ url: url }, progressCallback).then((dbObj) => {
     db = dbObj;
-    if (!sw.tcb) sw.tcb = new Promise<TranscrobesDatabase>((resolve, _reject) => resolve(db));
-    if (!eventQueueTimer) {
-      eventQueueTimer = setInterval(() => data.sendUserEvents(db, url), EVENT_QUEUE_PROCESS_FREQ);
+    if (!sw.tcb) sw.tcb = new Promise<TranscrobesDatabase>((resolve, _reject) => resolve(dbObj));
+    if (!eventQueueTimer && db) {
+      eventQueueTimer = setInterval(
+        () => data.sendUserEvents(dbObj, url),
+        EVENT_QUEUE_PROCESS_FREQ,
+      );
     }
     if (!pushFileTimer) {
       pushFileTimer = setInterval(() => data.pushFiles(url), PUSH_FILES_PROCESS_FREQ);
@@ -136,6 +139,18 @@ function addToLocalKnown(
       console.debug("NOT adding to known words", wordInfo);
     }
   });
+}
+
+export async function resetDBConnections(): Promise<void> {
+  db = null;
+  dayCardWords = null;
+  if (eventQueueTimer) {
+    clearInterval(eventQueueTimer);
+  }
+  if (pushFileTimer) {
+    clearInterval(pushFileTimer);
+  }
+  await unloadDatabaseFromMemory();
 }
 
 export function manageEvent(sw: ServiceWorkerGlobalScope, event: ExtendableMessageEvent): void {

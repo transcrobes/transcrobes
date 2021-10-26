@@ -458,7 +458,6 @@ class UserList(DetailedMixin, Base):
             # new_userlistwords.append(UserListWord(user_list_id=self.id, word_id=word_id[0], default_order=i))
 
             if i % 4000 == 0 and i > 0:  # 4000 == 28000 / 7, which keeps us under the params limit of 32k
-                print(f"{len(new_userwords)=}")
                 stmt = postgresql.insert(UserWord).values(new_userwords)
                 stmt = stmt.on_conflict_do_nothing(index_elements=["user_id", "word_id"])
                 await db.execute(stmt)

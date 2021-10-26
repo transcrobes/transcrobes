@@ -217,15 +217,12 @@ async def filter_cached_definitions(
         latest_name = os.path.basename(latest_definitions_json_dir_path(user))
         latest_cached_date = datetime.fromtimestamp(float(latest_name.split("-")[1]))
         latest_word_id = int(latest_name.split("-")[2])
-        print("yo didssso", latest_name, latest_cached_date, latest_word_id)
-        print(f"filter_cached_definitions: {user=}, {limit=}, {id=}, {updated_at=} ")
         stmt = stmt.where(
             models.CachedDefinition.cached_date == latest_cached_date,
             models.CachedDefinition.word_id == latest_word_id,
         )
         # the order by is probably not necessary, but may be in the future
         stmt = stmt.order_by(text("cached_date desc, word_id desc"))
-        print(stmt)
         result = await db.execute(stmt)
         try:
             return [DefinitionSet.from_model(result.scalar_one(), providers)]
@@ -415,7 +412,7 @@ class WordList:
             return WordList(
                 id=dj_model.id,
                 name=dj_model.title,
-                default=(dj_model.created_by_id == 1 and dj_model.shared is True),  # created by admin and shared
+                default=(dj_model.created_by_id == 1 and dj_model.shared == True),  # created by admin and shared
                 updated_at=dj_model.updated_at.timestamp(),
                 word_ids=[str(w) for w in ulws],
             )
@@ -743,7 +740,7 @@ async def filter_wordlists(
         .where(
             or_(
                 models.UserList.created_by_id == user_id,  # pylint: disable=W0143
-                and_(models.UserList.created_by_id == 1, models.UserList.shared is True),  # pylint: disable=W0143
+                and_(models.UserList.created_by_id == 1, models.UserList.shared == True),  # pylint: disable=W0143
             )
         )
         .options(selectinload(models.UserList.created_by))
@@ -764,8 +761,8 @@ async def filter_wordlists(
                     ),
                 )
             )
-
-    result = await db.execute(stmt.order_by("updated_at", "id").limit(limit))
+    query = stmt.order_by("updated_at", "id").limit(limit)
+    result = await db.execute(query)
     obj_list = result.scalars().all()
     objs = [WordList.from_model(dj_model) for dj_model in obj_list]
     logger.debug(

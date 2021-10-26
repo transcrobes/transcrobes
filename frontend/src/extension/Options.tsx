@@ -128,9 +128,8 @@ export default function Options(): JSX.Element {
       try {
         window.tcb = db;
         setMessage("Initialisation Complete!");
+        await ap.setInitialised(utils.username);
         console.debug("Synchronisation finished!");
-        await ap.setInitialised();
-        console.debug("Set isDbInitialised to true");
       } catch (err: any) {
         setMessage(`There was an error setting up Transcrobes.
               Please try again in a little while, or contact Transcrobes support (<a href="https://transcrob.es/page/contact/">here</a>)`);

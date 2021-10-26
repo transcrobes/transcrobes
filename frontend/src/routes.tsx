@@ -43,7 +43,7 @@ export default function routes(config: ComponentsConfig): CustomRoutes {
 
     // authed
     <Route exact path="/configuration" render={() => <Configuration />} />,
-    <Route exact path="/system" render={() => <System />} />,
+    <Route exact path="/system" render={() => <System proxy={config.proxy} />} />,
     <Route exact path="/listrobes" render={() => <Listrobes proxy={config.proxy} />} />,
     <Route exact path="/repetrobes" render={() => <Repetrobes proxy={config.proxy} />} />,
     <Route

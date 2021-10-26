@@ -11,20 +11,20 @@
 import { DataProvider } from "ra-core";
 import { DataProviderResult } from "react-admin";
 import { clientsClaim } from "workbox-core";
-import { precacheAndRoute, createHandlerBoundToURL } from "workbox-precaching";
+import { precacheAndRoute } from "workbox-precaching";
 import { TranscrobesDatabase } from "./database/Schema";
 
 import RxDBProvider from "./ra-data-rxdb";
-import { manageEvent } from "./SWManager";
+import { manageEvent, resetDBConnections } from "./SWManager";
 
 declare const self: ServiceWorkerGlobalScope;
 
 declare global {
   interface ServiceWorkerGlobalScope {
-    tcb: Promise<TranscrobesDatabase>;
+    tcb: Promise<TranscrobesDatabase> | null;
   }
 }
-let dataProvider: DataProvider;
+let dataProvider: DataProvider | null;
 
 clientsClaim();
 
@@ -81,6 +81,14 @@ if (process.env.mode === "production") {
 self.addEventListener("message", (event) => {
   if (event.data && event.data.type === "SKIP_WAITING") {
     self.skipWaiting();
+  } else if (event.data && event.data.type === "resetDBConnections") {
+    console.log("reset db connections");
+    dataProvider = null;
+    self.tcb = null;
+    resetDBConnections().then(() => {
+      console.log("Database unloaded");
+      event.ports[0].postMessage("Database unloaded");
+    });
   } else if (event.data && event.data.type === "DataProvider") {
     if (!dataProvider) {
       const url = new URL(self.location.href);

@@ -13,8 +13,9 @@ import surveys from "./surveys";
 import themeReducer from "./themeReducer";
 import { Layout } from "./layout";
 import Login from "./system/Login";
+import Logout from "./system/Logout";
 import englishMessages from "./i18n/en";
-import jwtTokenAuthProvider, { isInitialised } from "./lib/JWTAuthProvider";
+import jwtTokenAuthProvider, { getUsername, isInitialised } from "./lib/JWTAuthProvider";
 import SWDataProvider from "./ra-data-sw";
 import Dashboard from "./Dashboard";
 import { ComponentsAppConfig, ThemeName } from "./lib/types";
@@ -48,15 +49,21 @@ window.componentsConfig = {
 
 function App(): ReactElement {
   useEffect(() => {
-    if (isInitialised()) {
-      window.componentsConfig.proxy.init(
-        {},
-        () => "",
-        () => "",
-      );
-    } else if (shouldRedirectUninited(window.location.href)) {
-      window.location.href = "/#/init";
-    }
+    (async () => {
+      const lusername = await getUsername();
+      if (!lusername) {
+        throw new Error("Unable to find a username");
+      }
+      if (lusername && isInitialised(lusername)) {
+        window.componentsConfig.proxy.init(
+          { username: lusername },
+          () => "",
+          () => "",
+        );
+      } else if (shouldRedirectUninited(window.location.href)) {
+        window.location.href = "/#/init";
+      }
+    })();
   }, []);
 
   function shouldRedirectUninited(url: string): boolean {
@@ -84,6 +91,8 @@ function App(): ReactElement {
       title="Transcrobes"
       layout={Layout}
       loginPage={Login}
+      // @ts-ignore
+      logoutButton={(props) => <Logout proxy={window.componentsConfig.proxy} {...props} />}
       customRoutes={customRoutes(window.componentsConfig)}
       customReducers={{ theme: themeReducer }}
     >
