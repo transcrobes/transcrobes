@@ -38,10 +38,8 @@ function Intro() {
         alarmed if your devices heat up a bit (should be less than a gaming session though!) and the
         fan switches on. It's normal, and will only happen once, at initialisation time. It's better
         to not interrupt the initialisation while it's happening (like any initialisation!), so make
-        sure your device has plenty of battery (or is plugged in). On an Android device you MUST
-        plug it in and keep the screen from going off or the initialisation will freeze due to
-        system optimisations. It will also download 25-50MB of data so if you are not on wifi, make
-        sure that is not a problem for your data plan.
+        sure your device has plenty of battery (or is plugged in). It will also download 25-50MB of
+        data so if you are not on wifi, make sure that is not a problem for your data plan.
       </p>
     </>
   );
