@@ -24,7 +24,7 @@ function Intro() {
       <p>
         Even though Transcrobes is entirely browser-based, a lot of Transcrobes' functionality is
         available offline (it's a{" "}
-        <a target="_blank" rel="noreferrer" href="https://web.dev/progressive-web-apps/">
+        <a target="_blank" rel="noopener noreferrer" href="https://web.dev/progressive-web-apps/">
           "Progressive Web App"
         </a>
         ), which means you can keep reading your favourite books, watching your favourite movies or

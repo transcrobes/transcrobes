@@ -3,7 +3,7 @@ import Card from "@material-ui/core/Card";
 import CardContent from "@material-ui/core/CardContent";
 import Button from "@material-ui/core/Button";
 import { makeStyles } from "@material-ui/core/styles";
-import { Typography } from "@material-ui/core";
+import { CardHeader, Typography } from "@material-ui/core";
 import { useTranslate, Title } from "react-admin";
 
 import { getUsername, setInitialised } from "../lib/JWTAuthProvider";
@@ -38,7 +38,7 @@ function RefreshCacheButton({ onCacheEmptied }: RefreshCacheButtonProps): ReactE
       color={"primary"}
       onClick={handleClick}
     >
-      Refresh Caches
+      Refresh Caches (instant)
     </Button>
   );
 }
@@ -71,25 +71,23 @@ function RefreshDBButton({ onDBDeleted }: RefreshDBButtonProps): ReactElement {
       color={"primary"}
       onClick={handleClick}
     >
-      Refresh DB
+      Reinstall DB (takes ~20 minutes!)
     </Button>
   );
 }
 
-interface ReloadDBButtonProps {
-  // onDBReloaded: (message: string) => void;
+interface ReinstallDBButtonProps {
   proxy: AbstractWorkerProxy;
 }
-function ReloadDBButton({ proxy }: ReloadDBButtonProps): ReactElement {
+function ReinstallDBButton({ proxy }: ReinstallDBButtonProps): ReactElement {
   const classes = useStyles();
 
   async function handleClick() {
     const username = await getUsername();
     if (username) {
-      // const dbName = getDatabaseName({ url: new URL(window.location.href) }, username);
       proxy
         .sendMessagePromise<string>({ source: "System", type: "resetDBConnections", value: "" })
-        .then((out) => {
+        .then(() => {
           getUsername().then((username) => {
             if (username) {
               proxy.init(
@@ -105,7 +103,7 @@ function ReloadDBButton({ proxy }: ReloadDBButtonProps): ReactElement {
           });
         });
     } else {
-      console.error("no username found");
+      console.error("No username found");
     }
   }
   return (
@@ -116,7 +114,7 @@ function ReloadDBButton({ proxy }: ReloadDBButtonProps): ReactElement {
       color={"primary"}
       onClick={handleClick}
     >
-      Reload DB
+      Reload DB (almost instant)
     </Button>
   );
 }
@@ -162,15 +160,16 @@ function System({ proxy }: Props): ReactElement {
       </Card> */}
       <Card>
         <Title title={translate("pos.system")} />
+        <CardHeader title="Quick-fix actions" />
         <CardContent>
           <div>
             <RefreshCacheButton onCacheEmptied={(message) => setMessage(message)} />
           </div>
           <div>
-            <RefreshDBButton onDBDeleted={(message) => setMessage(message)} />
+            <ReinstallDBButton proxy={proxy} />
           </div>
           <div>
-            <ReloadDBButton proxy={proxy} />
+            <RefreshDBButton onDBDeleted={(message) => setMessage(message)} />
           </div>
           {/* <TestWBButton /> */}
           <Typography>{message}</Typography>

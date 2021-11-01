@@ -1,5 +1,7 @@
 {
   "compilerOptions": {
+    "importHelpers": true,
+    "removeComments": true,
     "types": [
       "chrome"
     ],
