@@ -8,6 +8,7 @@ import logging
 import os
 import pathlib
 import shutil
+import time
 from tempfile import mkdtemp
 from typing import List
 
@@ -120,12 +121,19 @@ def regenerate_character_jsons_multi() -> bool:
 
     logger.info(f"Generating character jsons, trying to download if a URL {settings.HANZI_WRITER_DATA_URL=}")
 
-    try:
-        strokes = requests.get(settings.HANZI_WRITER_DATA_URL).json()
-    except Exception:  # pylint: disable=W0703  # FIXME: do better
-        logger.info(f"Looks like it isn't a valid url, trying as a file path {settings.HANZI_WRITER_DATA_URL=}")
-        with open(settings.HANZI_WRITER_DATA_URL, encoding="utf8") as fstrokes:
-            strokes = json.load(fstrokes)
+    for _i in range(0, 3):
+        try:
+            strokes = requests.get(settings.HANZI_WRITER_DATA_URL).json()
+            break
+        except Exception:  # pylint: disable=W0703  # FIXME: do better
+            logger.info(f"Looks like it isn't a valid url, trying as a file path {settings.HANZI_WRITER_DATA_URL=}")
+            try:
+                with open(settings.HANZI_WRITER_DATA_URL, encoding="utf8") as fstrokes:
+                    strokes = json.load(fstrokes)
+                    break
+            except:
+                time.sleep(30)
+                pass
 
     cur = 0
     entries = []
