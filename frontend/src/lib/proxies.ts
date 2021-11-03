@@ -1,6 +1,6 @@
 import { Workbox } from "workbox-window";
 import { EventData } from "./types";
-import { isInitialised, setInitialised } from "./JWTAuthProvider";
+import { isInitialisedAsync, setInitialisedAsync } from "./JWTAuthProvider";
 
 type ConfigType = {
   resourceRoot?: string;
@@ -69,12 +69,12 @@ class ServiceWorkerProxy extends AbstractWorkerProxy {
     // FIXME: absolutely need to rationalise the messageSW vs chrome.sendMessage...
     if (
       !this.#config.username ||
-      (!isInitialised(this.#config.username) && eventData.type !== "heartbeat")
+      (!(await isInitialisedAsync(this.#config.username)) && eventData.type !== "heartbeat")
     ) {
       console.error(
         "Uninitialised",
         this.#config.username,
-        this.#config.username ? isInitialised(this.#config.username) : null,
+        this.#config.username ? await isInitialisedAsync(this.#config.username) : null,
       );
       throw new Error("Unable to init outside the initialiser");
     }
@@ -126,11 +126,21 @@ class ServiceWorkerProxy extends AbstractWorkerProxy {
       return;
     } // else if !this.#initialised then throw error ???
 
-    if (!this.#config.username || (!allowInstall && !isInitialised(this.#config.username))) {
-      throw new Error("Unable to init outside the initialiser");
+    if (!this.#config.username) {
+      throw new Error("Missing username in the proxy");
     }
 
-    this.postMessage({ message: message, callback: callback, progressCallback: progressCallback });
+    isInitialisedAsync(this.#config.username).then((inited) => {
+      if (!allowInstall && !inited) {
+        throw new Error("Unable to init outside the initialiser");
+      } else {
+        this.postMessage({
+          message: message,
+          callback: callback,
+          progressCallback: progressCallback,
+        });
+      }
+    });
   }
 
   init(
@@ -145,40 +155,43 @@ class ServiceWorkerProxy extends AbstractWorkerProxy {
     if (!this.#config.username) {
       throw new Error("Attempt to init without a username");
     }
-    if (!allowInstall && !isInitialised(this.#config.username)) {
-      window.location.href = "/#/init";
-      return;
-    }
-    const message = { source: this.DATA_SOURCE, type: "syncDB", value: {} }; // appConfig gets added in postMessage
-    this.sendMessage(
-      message,
-      (response) => {
-        console.debug(
-          `Got a response for message in ServiceWorkerProxy init returning to caller`,
-          message,
-          response,
-        );
-        this.#loaded = true;
-        while (this.#messageQueue.length > 0) {
-          const mess = this.#messageQueue.shift();
-          if (mess) this.postMessage(mess);
-        }
-        return callback(response);
-      },
-      (progress) => {
-        if (progress.message === "RESTART_BROWSER") {
-          throw new Error("Browser restart required");
-        }
 
-        // Or should I be in the normal callback?
-        if (this.#config.username && progress.isFinished) {
-          setInitialised(this.#config.username);
-        }
+    isInitialisedAsync(this.#config.username).then((inited) => {
+      if (!allowInstall && !inited) {
+        window.location.href = "/#/init";
+        return;
+      }
+      const message = { source: this.DATA_SOURCE, type: "syncDB", value: {} }; // appConfig gets added in postMessage
+      this.sendMessage(
+        message,
+        (response) => {
+          console.debug(
+            `Got a response for message in ServiceWorkerProxy init returning to caller`,
+            message,
+            response,
+          );
+          this.#loaded = true;
+          while (this.#messageQueue.length > 0) {
+            const mess = this.#messageQueue.shift();
+            if (mess) this.postMessage(mess);
+          }
+          return callback(response);
+        },
+        (progress) => {
+          if (progress.message === "RESTART_BROWSER") {
+            throw new Error("Browser restart required");
+          }
 
-        return progressCallback(progress);
-      },
-      allowInstall,
-    );
+          // Or should I be in the normal callback?
+          if (this.#config.username && progress.isFinished) {
+            setInitialisedAsync(this.#config.username);
+          }
+
+          return progressCallback(progress);
+        },
+        allowInstall,
+      );
+    });
   }
 }
 
@@ -234,6 +247,13 @@ class BackgroundWorkerProxy extends AbstractWorkerProxy {
         progressCallback: progressCallback,
       });
       return;
+    } else if (message.type === "getUsername") {
+      this.postMessage({
+        message: message,
+        callback: callback,
+        progressCallback: progressCallback,
+      });
+      return;
     } else if (!this.#loaded && `${this.DATA_SOURCE}-${"syncDB"}` in this.#callbacks) {
       // we are not yet initialised, queue the messages rather than actually send them
       this.#messageQueue.push({
@@ -244,11 +264,28 @@ class BackgroundWorkerProxy extends AbstractWorkerProxy {
       return;
     } // else if !this.#initialised then throw error ???
 
-    if (!this.#config.username || (!allowInstall && !isInitialised(this.#config.username))) {
-      throw new Error("Unable to init outside the initialiser");
+    if (!this.#config.username) {
+      throw new Error("Missing username in the proxy");
     }
 
-    this.postMessage({ message: message, callback: callback, progressCallback: progressCallback });
+    this.postMessage({
+      message: message,
+      callback: callback,
+      progressCallback: progressCallback,
+    });
+
+    // FIXME: should we check this somehow?
+    // isInitialisedAsync(this.#config.username).then((inited) => {
+    //   if (!allowInstall && !inited) {
+    //     console.log("this.#config", this.#config, allowInstall, inited, message);
+    //     throw new Error("Unable to init outside the initialiser");
+    //   }
+    //   this.postMessage({
+    //     message: message,
+    //     callback: callback,
+    //     progressCallback: progressCallback,
+    //   });
+    // });
   }
 
   init(
@@ -261,10 +298,6 @@ class BackgroundWorkerProxy extends AbstractWorkerProxy {
 
     if (!this.#config.username) {
       throw new Error("Attempt to init without a username");
-    }
-
-    if (!allowInstall && !isInitialised(this.#config.username)) {
-      throw new Error("Unable to init outside the initialiser");
     }
 
     const message = { source: this.DATA_SOURCE, type: "syncDB", value: this.#config };
@@ -283,6 +316,30 @@ class BackgroundWorkerProxy extends AbstractWorkerProxy {
       },
       allowInstall,
     );
+
+    // FIXME: should we check this somehow?
+    // isInitialisedAsync(this.#config.username).then((inited) => {
+    //   if (!allowInstall && !inited) {
+    //     throw new Error("Unable to init outside the initialiser");
+    //   }
+
+    //   const message = { source: this.DATA_SOURCE, type: "syncDB", value: this.#config };
+    //   this.sendMessage(
+    //     message,
+    //     (response) => {
+    //       this.#loaded = true;
+    //       while (this.#messageQueue.length > 0) {
+    //         const mess = this.#messageQueue.shift();
+    //         if (mess) this.postMessage(mess);
+    //       }
+    //       return callback(response);
+    //     },
+    //     (progress) => {
+    //       return progressCallback(progress);
+    //     },
+    //     allowInstall,
+    //   );
+    // });
   }
 }
 

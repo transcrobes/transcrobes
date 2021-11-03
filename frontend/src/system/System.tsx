@@ -6,7 +6,7 @@ import { makeStyles } from "@material-ui/core/styles";
 import { CardHeader, Typography } from "@material-ui/core";
 import { useTranslate, Title } from "react-admin";
 
-import { getUsername, setInitialised } from "../lib/JWTAuthProvider";
+import { getUsername, setInitialisedAsync } from "../lib/JWTAuthProvider";
 import { getDatabaseName, deleteDatabase } from "../database/Database";
 import { AbstractWorkerProxy } from "../lib/proxies";
 
@@ -54,11 +54,11 @@ function RefreshDBButton({ onDBDeleted }: RefreshDBButtonProps): ReactElement {
     const username = await getUsername();
     if (username) {
       const dbName = getDatabaseName({ url: new URL(window.location.href) }, username);
-      deleteDatabase(dbName).then(() => {
+      deleteDatabase(dbName).then(async () => {
         const message = `Removed ${dbName}`;
         onDBDeleted(message);
         console.log(message);
-        setInitialised(username, false);
+        await setInitialisedAsync(username, false);
         window.location.href = "/";
       });
     }
@@ -119,22 +119,6 @@ function ReinstallDBButton({ proxy }: ReinstallDBButtonProps): ReactElement {
   );
 }
 
-// function TestWBButton(): ReactElement {
-//   async function handleClick() {
-//     const wb = new Workbox("/service-worker.js");
-//
-//     wb.register();
-//     const alist = await wb.messageSW({
-//       type: "DB",
-//       method: "getList",
-//       collection: "imports",
-//       params: {},
-//     });
-//     console.log("Example nice async messaging", alist);
-//   }
-//   return <button onClick={handleClick}>Test WB</button>;
-// }
-
 interface Props {
   proxy: AbstractWorkerProxy;
 }
@@ -144,20 +128,6 @@ function System({ proxy }: Props): ReactElement {
   const [message, setMessage] = useState("");
   return (
     <div>
-      {/* <Card>
-        <Title title={translate("pos.system")} />
-        <CardContent>
-          <Button
-            variant="contained"
-            className={classes.button}
-            // color={theme === 'dark' ? 'primary' : 'default'}
-            color={"primary"}
-            onClick={() => initialise()}
-          >
-            {translate("resources.system.initialise")}
-          </Button>
-        </CardContent>
-      </Card> */}
       <Card>
         <Title title={translate("pos.system")} />
         <CardHeader title="Quick-fix actions" />
@@ -171,7 +141,6 @@ function System({ proxy }: Props): ReactElement {
           <div>
             <RefreshDBButton onDBDeleted={(message) => setMessage(message)} />
           </div>
-          {/* <TestWBButton /> */}
           <Typography>{message}</Typography>
         </CardContent>
       </Card>

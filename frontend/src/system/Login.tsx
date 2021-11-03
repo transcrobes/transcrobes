@@ -16,7 +16,7 @@ import { ThemeProvider } from "@material-ui/styles";
 import LockIcon from "@material-ui/icons/Lock";
 import { Notification, useTranslate, useLogin, useNotify } from "react-admin";
 import { lightTheme } from "../layout/themes";
-import { isInitialised } from "../lib/JWTAuthProvider";
+import { isInitialisedAsync } from "../lib/JWTAuthProvider";
 
 const useStyles = makeStyles((theme) => ({
   main: {
@@ -93,11 +93,11 @@ function Login(): ReactElement {
     }
   }, []);
 
-  function handleSubmit(auth: FormValues) {
+  async function handleSubmit(auth: FormValues) {
     setLoading(true);
     const username = auth.username;
     if (!username) throw new Error("A username is required here"); // should be impossible
-    const nextPath = isInitialised(username)
+    const nextPath = (await isInitialisedAsync(username))
       ? location.state
         ? location.state.nextPathname
         : "/"
@@ -218,7 +218,7 @@ function Login(): ReactElement {
                 </div>
                 <div className={classes.userManagement}>
                   <Typography>
-                    <Link to="/signup">{translate("user.signup")}</Link>
+                    <Link to="/signup">{translate("user.signup.label")}</Link>
                   </Typography>
                 </div>
               </div>

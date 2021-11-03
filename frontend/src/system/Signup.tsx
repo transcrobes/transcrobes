@@ -117,7 +117,7 @@ export default function Signup(): ReactElement {
     })
       .then((res) => {
         if (res.ok) {
-          notify("user.reset_password.success", "success");
+          notify("user.signup.success", "success");
           setCreationSent(true);
         } else {
           throw new Error("Error creating the user.");
@@ -272,7 +272,7 @@ export default function Signup(): ReactElement {
                       fullWidth
                     >
                       {loading && <CircularProgress size={25} thickness={2} />}
-                      {translate("user.signup")}
+                      {translate("user.signup.label")}
                     </Button>
                   </CardActions>
                 </>

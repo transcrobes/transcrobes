@@ -246,6 +246,10 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
     loadDb(console.debug, message).then(() => {
       sendResponse({ source: message.source, type: message.type, value: utils.glossing });
     });
+  } else if (message.type === "getUsername") {
+    getUsername().then((username) => {
+      sendResponse({ source: message.source, type: message.type, value: username });
+    });
   }
   return true;
 });

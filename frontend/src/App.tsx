@@ -15,7 +15,7 @@ import { Layout } from "./layout";
 import Login from "./system/Login";
 import Logout from "./system/Logout";
 import englishMessages from "./i18n/en";
-import jwtTokenAuthProvider, { getUsername, isInitialised } from "./lib/JWTAuthProvider";
+import jwtTokenAuthProvider, { getUsername, isInitialisedAsync } from "./lib/JWTAuthProvider";
 import SWDataProvider from "./ra-data-sw";
 import Dashboard from "./Dashboard";
 import { ComponentsAppConfig, ThemeName } from "./lib/types";
@@ -54,7 +54,7 @@ function App(): ReactElement {
       if (!lusername) {
         throw new Error("Unable to find a username");
       }
-      if (lusername && isInitialised(lusername)) {
+      if (lusername && (await isInitialisedAsync(lusername))) {
         window.componentsConfig.proxy.init(
           { username: lusername },
           () => "",

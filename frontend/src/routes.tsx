@@ -15,7 +15,6 @@ import { ComponentsConfig } from "./lib/complexTypes";
 import Signup from "./system/Signup";
 import ResetPassword from "./system/ResetPassword";
 import RecoverPassword from "./system/RecoverPassword";
-import ValidateEmail from "./system/ValidateEmail";
 
 // FIXME: I guess this is better done via redux?
 window.readerConfig = {
@@ -35,7 +34,6 @@ export default function routes(config: ComponentsConfig): CustomRoutes {
       noLayout
     />,
     <RouteWithoutLayout exact path="/signup" render={() => <Signup />} noLayout />,
-    <RouteWithoutLayout exact path="/validate-email" render={() => <ValidateEmail />} noLayout />,
 
     // manual auth in the page
     <RouteWithoutLayout exact path="/contents/:id/read" render={() => <Reader />} noLayout />,

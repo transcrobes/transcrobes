@@ -57,13 +57,12 @@ export async function setPassword(password: string): Promise<void> {
   await setValue("password", password);
 }
 
-export function isInitialised(username: string): boolean {
-  return localStorage.getItem("initialised:" + username) === "true";
+export async function isInitialisedAsync(username: string): Promise<boolean> {
+  return (await getValue("initialised:" + username)) === "true";
 }
-export function setInitialised(username: string, value = true): void {
-  localStorage.setItem("initialised:" + username, value ? "true" : "false");
+export async function setInitialisedAsync(username: string, value = true): Promise<void> {
+  await setValue("initialised:" + username, value ? "true" : "false");
 }
-
 function jwtTokenAuthProvider(options: Options = {}): AuthProvider {
   const opts = {
     obtainAuthTokenUrl: ACCESS_TOKEN_PATH,
@@ -122,7 +121,7 @@ function jwtTokenAuthProvider(options: Options = {}): AuthProvider {
     getPermissions: async () => {
       // FIXME: this is a bit of a hack... we don't really have permissions - if you have access etg is yours
       const username = await getUsername();
-      if (!username || !isInitialised(username)) {
+      if (!username || !(await isInitialisedAsync(username))) {
         return Promise.resolve([]);
       } else {
         return Promise.resolve(["initialised"]);

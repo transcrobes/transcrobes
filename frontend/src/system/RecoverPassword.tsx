@@ -83,13 +83,11 @@ export default function RecoverPassword(): ReactElement {
     setLoading(true);
     // FIXME: hardcoded url
     fetch(`${location.origin}/api/v1/password-recovery/${auth.email}`, { method: "POST" })
-      .then((res) => {
-        console.log("Resetting password email was", res.ok);
+      .then(() => {
         notify("user.reset_password.email_success", "success");
         setLoading(false);
       })
       .catch((error: Error) => {
-        console.log("But somehow an error also?");
         setLoading(false);
         notify(
           typeof error === "string"

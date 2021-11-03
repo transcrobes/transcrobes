@@ -6,7 +6,7 @@ import { useTranslate, Title, useAuthenticated } from "react-admin";
 import { makeStyles } from "@material-ui/core/styles";
 import NoSleep from "nosleep.js";
 
-import { getUsername, isInitialised, setInitialised } from "../lib/JWTAuthProvider";
+import { getUsername, isInitialisedAsync, setInitialisedAsync } from "../lib/JWTAuthProvider";
 import Loading from "../icons/spinning-circles";
 import { ProgressCallbackMessage } from "../lib/proxies";
 
@@ -101,17 +101,18 @@ function Init(): ReactElement {
   function progressUpdate() {
     progress = 0;
     if (username) {
-      const inited = isInitialised(username);
-      if (!inited && location.href.endsWith("/#/init")) {
-        window.componentsConfig.proxy.sendMessage(
-          { source: "tmp-test", type: "heartbeat", value: "" },
-          (datetime) => {
-            console.log("Heartbeat", datetime.toString());
-            if (progress === 0) progress = window.setTimeout(progressUpdate, 5000);
-            return "";
-          },
-        );
-      }
+      isInitialisedAsync(username).then((inited) => {
+        if (!inited && location.href.endsWith("/#/init")) {
+          window.componentsConfig.proxy.sendMessage(
+            { source: "tmp-test", type: "heartbeat", value: "" },
+            (datetime) => {
+              console.log("Heartbeat", datetime.toString());
+              if (progress === 0) progress = window.setTimeout(progressUpdate, 5000);
+              return "";
+            },
+          );
+        }
+      });
     }
   }
 
@@ -135,11 +136,12 @@ function Init(): ReactElement {
 
       // FIXME: NASTINESS!!!
       if (username) {
-        setInitialised(username);
+        setInitialisedAsync(username).then(() => {
+          window.location.href = "/#/";
+        });
       } else {
         throw new Error("Unable to find username");
       }
-      window.location.href = "/#/";
       return "";
     }
 

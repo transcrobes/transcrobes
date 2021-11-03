@@ -234,11 +234,9 @@ export function bestGuess(token: TokenType, definition: DefinitionType): string 
     }
   }
   if (!best && others.length > 0) {
-    // console.debug("No best found, using an other for ", token, others);
     best = others[0];
   }
   if (!best && allDefs.length > 0) {
-    // console.debug("No best found, using an allDefs for ", token, allDefs);
     best = allDefs[0].values[0];
   }
   return best;

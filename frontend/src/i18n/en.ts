@@ -27,7 +27,10 @@ const customEnglishMessages: TranslationMessages = {
     },
   },
   user: {
-    signup: "Create an account",
+    signup: {
+      label: "Create an account",
+      email_success: "Account creation email sent, please check your email",
+    },
     email: "Email",
     invalid_email: "Invalid email address",
     email_validated: "Email successfully validated, please log in!",
@@ -38,7 +41,7 @@ const customEnglishMessages: TranslationMessages = {
       label: "Reset password",
       recover: "Send reset email",
       error: "Error resetting password, please try again later",
-      email_success: "Reset email set, please check your email",
+      email_success: "Reset email sent, please check your email",
       success: "Password reset successfully, please log in with the new password",
       password: "Password",
       repeat_password: "Repeat password",

@@ -62,29 +62,28 @@ export default function Options(): JSX.Element {
   const [inited, setInited] = useState<boolean | null>(null);
   const [running, setRunning] = useState<boolean | null>(null);
   const [message, setMessage] = useState<string>("");
+
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [baseUrl, setBaseUrl] = useState("");
   const [glossing, setGlossing] = useState(USER_STATS_MODE.L1);
 
   useEffect(() => {
-    chrome.storage.local.get(["isDbInitialised"], (result) => {
-      setInited(result.isDbInitialised);
-      // console.log("result.isDbInitialised", result);
-    });
-
-    // Restores select box and checkbox state using the preferences
-    Promise.all([
-      ap.getUsername(),
-      ap.getPassword(),
-      ap.getValue("baseUrl"),
-      ap.getValue("glossing"),
-    ]).then((items: any[]) => {
-      setUsername(items[0]);
-      setPassword(items[1]);
-      setBaseUrl(items[2]);
-      setGlossing(items[3] || USER_STATS_MODE.L1);
-    });
+    (async () => {
+      const user = await ap.getUsername();
+      if (user) {
+        setUsername(user);
+        const ined = await ap.isInitialisedAsync(user);
+        setInited(ined);
+      }
+      const pwd = await ap.getPassword();
+      if (pwd) setPassword(pwd);
+      const bUrl = await ap.getValue("baseUrl");
+      if (bUrl) setBaseUrl(bUrl);
+      const gl = await ap.getValue("glossing");
+      if (gl) setGlossing(parseInt(gl));
+      else setGlossing(USER_STATS_MODE.L1);
+    })();
   }, []);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -124,11 +123,11 @@ export default function Options(): JSX.Element {
         console.debug("progressCallback in options.ts", message);
         setMessage(message);
       };
-      const db = await getDb(dbConfig, progressCallback);
+      const db = await getDb(dbConfig, progressCallback, !!inited);
       try {
         window.tcb = db;
         setMessage("Initialisation Complete!");
-        await ap.setInitialised(utils.username);
+        await ap.setInitialisedAsync(utils.username);
         console.debug("Synchronisation finished!");
       } catch (err: any) {
         setMessage(`There was an error setting up Transcrobes.
@@ -145,7 +144,7 @@ export default function Options(): JSX.Element {
       <div className="credentials">
         <div className="title">Transcrobes Server connection information</div>
         <div className="frow">
-          Username:{" "}
+          <label htmlFor="username">Username:</label>{" "}
           <input
             id="username"
             value={username}
@@ -156,7 +155,7 @@ export default function Options(): JSX.Element {
           />
         </div>
         <div className="frow">
-          Password:{" "}
+          <label htmlFor="password">Password:</label>{" "}
           <input
             id="password"
             value={password}
@@ -167,7 +166,7 @@ export default function Options(): JSX.Element {
           />
         </div>
         <div className="frow">
-          Base URL:{" "}
+          <label htmlFor="base-url">Base URL:</label>{" "}
           <input
             id="base-url"
             value={baseUrl}
@@ -199,7 +198,7 @@ export default function Options(): JSX.Element {
         </div>
       </div>
       <Intro />
-      {running && <img src={Loader} /> && <Initialisation />}
+      {running && <img alt="Running" src={Loader} /> && <Initialisation />}
       <Status message={message} />
     </form>
   );

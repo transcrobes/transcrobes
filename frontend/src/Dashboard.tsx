@@ -2,7 +2,7 @@ import { ReactElement, useEffect } from "react";
 import { Card, CardHeader } from "@material-ui/core";
 import GoalsWidget from "./goals/GoalsWidget";
 import { ComponentsConfig } from "./lib/complexTypes";
-import { getUsername, isInitialised } from "./lib/JWTAuthProvider";
+import { getUsername, isInitialisedAsync } from "./lib/JWTAuthProvider";
 
 const styles = {
   flex: { display: "flex" },
@@ -21,12 +21,12 @@ interface Props {
 }
 export default function Dashboard({ config }: Props): ReactElement {
   useEffect(() => {
-    async () => {
+    (async () => {
       const username = await getUsername();
-      if (!username || !isInitialised(username)) {
+      if (!username || !(await isInitialisedAsync(username))) {
         window.location.href = "/#/init";
       }
-    };
+    })();
   }, []);
 
   return (
