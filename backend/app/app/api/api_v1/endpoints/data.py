@@ -113,6 +113,7 @@ async def serve_content(  # pylint: disable=R0914  # FIXME: consider reducing
     is_data_file_request = destination.endswith(DATA_JS_SUFFIX) or destination.endswith(DATA_JSON_SUFFIX)
 
     if not os.path.isfile(destination_no_data_suffix):
+        logger.warning(f"Can't find {destination_no_data_suffix=}")
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Resource specified is not a file {resource_path=}",
@@ -126,6 +127,7 @@ async def serve_content(  # pylint: disable=R0914  # FIXME: consider reducing
     enrich_path = f"{destination_no_data_suffix}{ENRICH_JSON_SUFFIX}"
 
     if not os.path.isfile(parse_path):
+        logger.warning(f"Can't find {parse_path=}")
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Resource specified is not a file {resource_path=}",
