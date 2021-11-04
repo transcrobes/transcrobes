@@ -117,7 +117,7 @@ export default function Signup(): ReactElement {
     })
       .then((res) => {
         if (res.ok) {
-          notify("user.signup.success", "success");
+          notify("user.signup.email_success", "success");
           setCreationSent(true);
         } else {
           throw new Error("Error creating the user.");
@@ -129,7 +129,7 @@ export default function Signup(): ReactElement {
           typeof error === "string"
             ? error
             : typeof error === "undefined" || !error.message
-            ? "user.reset_password.error"
+            ? "user.signup.error"
             : error.message,
           "warning",
           {

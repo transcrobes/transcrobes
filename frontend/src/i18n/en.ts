@@ -29,6 +29,7 @@ const customEnglishMessages: TranslationMessages = {
   user: {
     signup: {
       label: "Create an account",
+      error: "Error creating account, please try again later",
       email_success: "Account creation email sent, please check your email",
     },
     email: "Email",
