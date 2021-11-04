@@ -32,10 +32,12 @@ export default function RxDBProvider(params: RxDBDataProviderParams): DbDataProv
       const finder: any = {};
 
       if (params.filter) {
-        // FIXME: is this right??? IT IS NOT!!!
-        const sortField = Object.keys(params.filter)[0];
-        if (sortField) {
-          finder["selector"] = { [sortField]: Object.values(params.filter)[0] };
+        finder["selector"] = {};
+        for (let i = 0; i < Object.keys(params.filter).length; i++) {
+          const filterField = Object.keys(params.filter)[i];
+          if (filterField) {
+            finder["selector"][filterField] = Object.values(params.filter)[i];
+          }
         }
       }
       if (params.sort) {
