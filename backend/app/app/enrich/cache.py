@@ -131,7 +131,7 @@ def regenerate_character_jsons_multi() -> bool:
                 with open(settings.HANZI_WRITER_DATA_URL, encoding="utf8") as fstrokes:
                     strokes = json.load(fstrokes)
                     break
-            except:
+            except Exception:  # pylint: disable=W0703  # FIXME: do better
                 time.sleep(30)
                 pass
 

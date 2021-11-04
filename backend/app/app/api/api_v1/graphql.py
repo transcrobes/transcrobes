@@ -227,7 +227,10 @@ async def filter_cached_definitions(
         try:
             return [DefinitionSet.from_model(result.scalar_one(), providers)]
         except Exception:
-            logger.exception(f"Error getting DefinitionSet for {stmt=}")
+            logger.exception(
+                f"Error getting DefinitionSet for {str(stmt)=}, {latest_cached_date=}, {latest_word_id=},"
+                f" {user.from_lang=}, {user.to_lang=}"
+            )
             raise
 
     updated_at_datetime = datetime.fromtimestamp(updated_at, pytz.utc)
@@ -412,7 +415,7 @@ class WordList:
             return WordList(
                 id=dj_model.id,
                 name=dj_model.title,
-                default=(dj_model.created_by_id == 1 and dj_model.shared == True),  # created by admin and shared
+                default=(dj_model.created_by_id == 1 and dj_model.shared == True),  # created by admin  # noqa: E712
                 updated_at=dj_model.updated_at.timestamp(),
                 word_ids=[str(w) for w in ulws],
             )
@@ -740,7 +743,9 @@ async def filter_wordlists(
         .where(
             or_(
                 models.UserList.created_by_id == user_id,  # pylint: disable=W0143
-                and_(models.UserList.created_by_id == 1, models.UserList.shared == True),  # pylint: disable=W0143
+                and_(
+                    models.UserList.created_by_id == 1, models.UserList.shared == True  # noqa: E712
+                ),  # pylint: disable=W0143
             )
         )
         .options(selectinload(models.UserList.created_by))
