@@ -4,10 +4,11 @@ import PropTypes from "prop-types";
 import { ListItemIcon, MenuItem, useMediaQuery } from "@material-ui/core";
 import { MenuItemProps } from "@material-ui/core/MenuItem";
 import { Theme, makeStyles } from "@material-ui/core/styles";
-
 import ExitIcon from "@material-ui/icons/PowerSettingsNew";
 import classnames from "classnames";
 import { useTranslate, useLogout } from "ra-core";
+import { useCookies } from "react-cookie";
+
 import { ServiceWorkerProxy } from "../lib/proxies";
 
 /*
@@ -45,9 +46,14 @@ const LogoutWithRef: FunctionComponent<
   const isXSmall = useMediaQuery((theme: Theme) => theme.breakpoints.down("xs"));
   const translate = useTranslate();
   const logout = useLogout();
-  // const handleClick = useCallback(() => logout(null, redirectTo, false), [redirectTo, logout]);
+  const [_cookies, _setCookie, removeCookie] = useCookies(["refresh", "session"]);
+
   function handleClick() {
     proxy.sendMessagePromise<string>({ source: "Logout", type: "resetDBConnections", value: "" });
+    removeCookie("refresh");
+    removeCookie("session");
+
+    // useCallback(() => logout(null, redirectTo, false), [redirectTo, logout]);
     return logout(null, redirectTo, false);
   }
   return (
