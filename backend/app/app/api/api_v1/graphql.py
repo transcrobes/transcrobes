@@ -934,8 +934,10 @@ class Query:
         updated_at: Optional[float] = -1,
     ) -> List[Survey]:
         async with async_session() as db:
-            user = await get_user(db, info.context.request)
-            objs = await filter_standard(db, user.id, limit, Survey, models.Survey, id, updated_at)
+            # user_id = (await get_user(db, info.context.request)).id
+            await get_user(db, info.context.request)  # raises exception if no logged in user
+            user_id = 1  # FIXME: slight hack - will admin always create all surveys? will they always be for everyone?
+            objs = await filter_standard(db, user_id, limit, Survey, models.Survey, id, updated_at)
             for obj in objs:
                 obj.survey_json = json.dumps(obj.survey_json)
             return objs
