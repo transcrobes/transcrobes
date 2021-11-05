@@ -1,15 +1,7 @@
-import * as React from "react";
 import { FC } from "react";
-import {
-  Datagrid,
-  Button,
-  List,
-  ListProps,
-  ReferenceField,
-  SortButton,
-  TextField,
-  TopToolbar,
-} from "react-admin";
+import { Datagrid, Button, List, ListProps, SortButton, TextField, TopToolbar } from "react-admin";
+
+import { STATUS } from "../lib/types";
 
 const ListActions: FC<any> = (props) => (
   <TopToolbar>
@@ -20,13 +12,10 @@ const ListActions: FC<any> = (props) => (
 
 export const SurveyList: FC<ListProps> = (props) => {
   return (
-    <List {...props} actions={<ListActions />}>
+    <List {...props} actions={<ListActions />} filter={{ status: STATUS.ACTIVE }}>
       <Datagrid rowClick="show">
         {/* <TextField source="id" /> */}
         <TextField source="title" />
-        <ReferenceField source="userList" reference="userlists">
-          <TextField source="title" />
-        </ReferenceField>
         <Button label="Answer" />
       </Datagrid>
     </List>
