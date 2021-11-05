@@ -10,7 +10,7 @@ import {
   ReferenceInput,
 } from "react-admin";
 
-import { Goal } from "../lib/types";
+import { Goal, PROCESSING, STATUS } from "../lib/types";
 
 const GoalCreate: FC<FieldProps<Goal>> = (props) => (
   <Create {...props}>
@@ -23,6 +23,7 @@ const GoalCreate: FC<FieldProps<Goal>> = (props) => (
         source="userList"
         validate={[required()]}
         reference="userlists"
+        filter={{ status: STATUS.ACTIVE, processing: PROCESSING.FINISHED }}
       >
         <SelectInput allowEmpty={false} optionText="title" />
       </ReferenceInput>
