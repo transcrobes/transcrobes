@@ -7,7 +7,6 @@ import typing
 import app
 from starlette.requests import Request
 from starlette.responses import HTMLResponse, Response
-from starlette.types import Receive, Scope, Send
 from starlette.websockets import WebSocket
 from strawberry.asgi import GraphQL
 
@@ -43,12 +42,3 @@ class TranscrobesGraphQL(GraphQL):
         html = get_graphiql_html()
 
         return HTMLResponse(html)
-
-    # copied from GraphQL for debugging
-    async def __call__(self, scope: Scope, receive: Receive, send: Send):
-        if scope["type"] == "http":
-            await self.handle_http(scope=scope, receive=receive, send=send)
-        elif scope["type"] == "websocket":
-            await self.handle_websocket(scope=scope, receive=receive, send=send)
-        else:  # pragma: no cover
-            raise ValueError("Unknown scope type: %r" % (scope["type"],))
