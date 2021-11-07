@@ -635,9 +635,7 @@ async def process_import(file_event: ProcessData):
         await db.commit()
 
         await (await get_broadcast()).publish(channel="imports", message=str(file_event.id))
-        logger.info("Successfully finished running import %s", file_event.id)
-
-    logger.info("Successfully finished running import %s", an_import.id)
+        logger.info("Finished running import %s", file_event.id)
 
 
 async def process_list(list_event: ProcessData):
@@ -673,7 +671,7 @@ async def process_list(list_event: ProcessData):
         await db.commit()
 
         await (await get_broadcast()).publish(channel="userlists", message=str(list_event.id))
-        logger.info("Successfully finished running list %s", list_event.id)
+        logger.info("Finished running list %s", list_event.id)
 
 
 async def process_content(content_event: ProcessData):
@@ -707,4 +705,4 @@ async def process_content(content_event: ProcessData):
         await db.commit()
 
         await (await get_broadcast()).publish(channel="contents", message=str(content_event.id))
-        logger.info("Successfully finished running content %s", content.id)
+        logger.info("Finished running content %s", content.id)
