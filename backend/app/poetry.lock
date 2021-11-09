@@ -263,6 +263,7 @@ description = "Simple broadcast channels."
 category = "main"
 optional = false
 python-versions = ">=3.7"
+develop = false
 
 [package.dependencies]
 asyncpg = {version = "*", optional = true, markers = "extra == \"postgres\""}
@@ -271,6 +272,13 @@ asyncpg = {version = "*", optional = true, markers = "extra == \"postgres\""}
 kafka = ["aiokafka"]
 postgres = ["asyncpg"]
 redis = ["asyncio-redis"]
+test = ["pytest", "pytest-asyncio"]
+
+[package.source]
+type = "git"
+url = "https://github.com/transcrobes/broadcaster.git"
+reference = "pg_reliability"
+resolved_reference = "d7ea696a4393c2580be4f266951072c2f74c9640"
 
 [[package]]
 name = "bs4"
@@ -371,7 +379,7 @@ python-versions = "*"
 
 [[package]]
 name = "colorlog"
-version = "6.5.0"
+version = "6.6.0"
 description = "Add colours to the output of Python's logging module."
 category = "main"
 optional = false
@@ -700,7 +708,7 @@ http2 = ["h2 (>=3,<5)"]
 
 [[package]]
 name = "identify"
-version = "2.3.3"
+version = "2.3.5"
 description = "File identification library for Python"
 category = "dev"
 optional = false
@@ -1039,7 +1047,7 @@ python-versions = "*"
 
 [[package]]
 name = "pycparser"
-version = "2.20"
+version = "2.21"
 description = "C parser in Python"
 category = "main"
 optional = false
@@ -1598,7 +1606,7 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "2a509c5124562a392bcdc68cf4eb940b364e3dca1988622d0bb8c93bcb8a79ad"
+content-hash = "167f001b22802085c05ced80dd19456af94e833a3a1ee768ed05bb98d3b832d3"
 
 [metadata.files]
 aiofiles = [
@@ -1781,10 +1789,7 @@ black = [
     {file = "black-21.10b0-py3-none-any.whl", hash = "sha256:6eb7448da9143ee65b856a5f3676b7dda98ad9abe0f87fce8c59291f15e82a5b"},
     {file = "black-21.10b0.tar.gz", hash = "sha256:a9952229092e325fe5f3dae56d81f639b23f7131eb840781947e4b2886030f33"},
 ]
-broadcaster = [
-    {file = "broadcaster-0.2.0-py3-none-any.whl", hash = "sha256:50f93d1af7e9097a87ef3b2da269b4b4c5630ec080dc5c7f941ef314291937b1"},
-    {file = "broadcaster-0.2.0.tar.gz", hash = "sha256:72056f9b77b091dd4bbad4d7484bd0e6835c3443d4564d0bbf41190c29c606c6"},
-]
+broadcaster = []
 bs4 = [
     {file = "bs4-0.0.1.tar.gz", hash = "sha256:36ecea1fd7cc5c0c6e4a1ff075df26d50da647b75376626cc186e2212886dd3a"},
 ]
@@ -1876,8 +1881,8 @@ colorclass = [
     {file = "colorclass-2.2.0.tar.gz", hash = "sha256:b05c2a348dfc1aff2d502527d78a5b7b7e2f85da94a96c5081210d8e9ee8e18b"},
 ]
 colorlog = [
-    {file = "colorlog-6.5.0-py2.py3-none-any.whl", hash = "sha256:d334b1b8dae5989b786232f05586a7a0111feb24ff9cfc8310c3347a91388717"},
-    {file = "colorlog-6.5.0.tar.gz", hash = "sha256:cf62a8e389d5660d0d22be17937b25b9abef9497ddc940197d1773aa1f604339"},
+    {file = "colorlog-6.6.0-py2.py3-none-any.whl", hash = "sha256:351c51e866c86c3217f08e4b067a7974a678be78f07f85fc2d55b8babde6d94e"},
+    {file = "colorlog-6.6.0.tar.gz", hash = "sha256:344f73204009e4c83c5b6beb00b3c45dc70fcdae3c80db919e0a4171d006fde8"},
 ]
 coverage = [
     {file = "coverage-6.1.1-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:42a1fb5dee3355df90b635906bb99126faa7936d87dfc97eacc5293397618cb7"},
@@ -2144,8 +2149,8 @@ httpx = [
     {file = "httpx-0.20.0.tar.gz", hash = "sha256:09606d630f070d07f9ff28104fbcea429ea0014c1e89ac90b4d8de8286c40e7b"},
 ]
 identify = [
-    {file = "identify-2.3.3-py2.py3-none-any.whl", hash = "sha256:ffab539d9121b386ffdea84628ff3eefda15f520f392ce11b393b0a909632cdf"},
-    {file = "identify-2.3.3.tar.gz", hash = "sha256:b9ffbeb7ed87e96ce017c66b80ca04fda3adbceb5c74e54fc7d99281d27d0859"},
+    {file = "identify-2.3.5-py2.py3-none-any.whl", hash = "sha256:ba945bddb4322394afcf3f703fa68eda08a6acc0f99d9573eb2be940aa7b9bba"},
+    {file = "identify-2.3.5.tar.gz", hash = "sha256:6f0368ba0f21c199645a331beb7425d5374376e71bc149e9cb55e45cb45f832d"},
 ]
 idna = [
     {file = "idna-3.3-py3-none-any.whl", hash = "sha256:84d9dd047ffa80596e0f246e2eab0b391788b0503584e8945f2368256d2735ff"},
@@ -2568,8 +2573,8 @@ pyasn1 = [
     {file = "pyasn1-0.4.8.tar.gz", hash = "sha256:aef77c9fb94a3ac588e87841208bdec464471d9871bd5050a287cc9a475cd0ba"},
 ]
 pycparser = [
-    {file = "pycparser-2.20-py2.py3-none-any.whl", hash = "sha256:7582ad22678f0fcd81102833f60ef8d0e57288b6b5fb00323d101be910e35705"},
-    {file = "pycparser-2.20.tar.gz", hash = "sha256:2d475327684562c3a96cc71adf7dc8c4f0565175cf86b6d7a404ff4c771f15f0"},
+    {file = "pycparser-2.21-py2.py3-none-any.whl", hash = "sha256:8ee45429555515e1f6b185e78100aea234072576aa43ab53aefcae078162fca9"},
+    {file = "pycparser-2.21.tar.gz", hash = "sha256:e644fdec12f7872f86c58ff790da456218b10f863970249516d60a5eaca77206"},
 ]
 pydantic = [
     {file = "pydantic-1.8.2-cp36-cp36m-macosx_10_9_x86_64.whl", hash = "sha256:05ddfd37c1720c392f4e0d43c484217b7521558302e7069ce8d318438d297739"},
