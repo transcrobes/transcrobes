@@ -119,7 +119,8 @@ class ZHHANS_EN_CCCedictTranslator(PersistenceProvider, Translator):
                         "confidence": confidence,
                         "trans_provider": "CEDICT",
                     }
-                    defie["phone"] = self._decode_phone(cc["phone"])
+                    phone = cc.get("phone") or cc.get("pinyin")
+                    defie["phone"] = self._decode_phone(phone) if phone else ""
                     std_format[defin_pos].append(defie)
 
         logger.debug("Finishing looking up '%s' in cccedict", lemma(token))
