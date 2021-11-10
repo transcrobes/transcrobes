@@ -666,6 +666,7 @@ async def process_list(list_event: ProcessData):
         except Exception as ex:  # pylint: disable=W0703
             a_list.processing = ERROR
             logger.exception("Error processing list %s, %s", a_list.id, ex)
+            await db.rollback()
 
         db.add(a_list)
         await db.commit()

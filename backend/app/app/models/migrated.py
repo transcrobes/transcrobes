@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, List, TypedDict
 from app.data.context import get_broadcast
 from app.data.models import NONE, REQUESTED
 from app.db.base_class import Base
+from app.db.session import async_session
 from app.models.mixins import CachedAPIJSONLookupMixin, DetailedMixin, JSONLookupMixin, RevisionableMixin, utcnow
 from app.models.user import AuthUser, absolute_imports_path, absolute_resources_path
 from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Index, Integer, String, Text, UniqueConstraint
@@ -339,8 +340,6 @@ class UserList(DetailedMixin, Base):
             data.append(UserListDict(word=word, import_frequency=int(freq)))
             # writer.writerow([word, freq, None, None])
 
-        cur = db
-
         # with connection.cursor() as cur:
         temp_table = f"import_{self.id}".replace("-", "_")
 
@@ -353,7 +352,7 @@ class UserList(DetailedMixin, Base):
 
         # FIXME: this algorithm needs some serious optimisation!!!
 
-        await cur.execute(text(sql))
+        await db.execute(text(sql))
 
         # Fill database temp table from the CSV
         # cur.copy_from(temp_file, temp_table, null="")
@@ -374,7 +373,7 @@ class UserList(DetailedMixin, Base):
         #     await rawcur.copy_to_table(temp_table, temp_file)
 
         # Get the ID for each word from the reference table (currently enrich_bingapilookup)
-        await cur.execute(
+        await db.execute(
             text(
                 f"""UPDATE {temp_table}
                 SET word_id = bingapilookup.id
@@ -386,7 +385,7 @@ class UserList(DetailedMixin, Base):
             {"from_lang": manager.from_lang, "to_lang": manager.to_lang},
         )
 
-        await cur.execute(
+        await db.execute(
             text(
                 f"""UPDATE {temp_table}
                 SET freq = ((zhsubtlexlookup.response_json::json->0)::jsonb->>'wcpm')::float
@@ -406,7 +405,7 @@ class UserList(DetailedMixin, Base):
             filters += [f"{temp_table}.import_frequency > {self.minimum_doc_frequency}"]
 
         sql += (" AND " + " AND ".join(filters)) if filters else ""
-        result = await cur.execute(text(sql))
+        result = await db.execute(text(sql))
 
         new_words = result.fetchall()
 
@@ -415,12 +414,14 @@ class UserList(DetailedMixin, Base):
             f" for UserList {self.id} for user {self.created_by.email}"
         )
 
-        # FIXME: make sure to want to do this!!! maybe better to have a filter on only dictionary words???
-        for word in new_words:
-            # TODO: this is a nasty hack with a side effect of creating bing_lookups, which are
-            # our reference values, thus ensuring that all words in the import exist in the db
-            token = {"word": word[0], "pos": "NN", "lemma": word[0]}
-            await manager.default().get_standardised_defs(db, token)
+        if new_words and len(new_words) > 0:
+            async with async_session() as lookups_db:  # must use a different db, as it can rollback
+                # FIXME: make sure to want to do this!!! maybe better to have a filter on only dictionary words???
+                for word in new_words:
+                    # TODO: this is a nasty hack with a side effect of creating bing_lookups, which are
+                    # our reference values, thus ensuring that all words in the import exist in the db
+                    token = {"word": word[0], "pos": "NN", "lemma": word[0]}
+                    await manager.default().get_standardised_defs(lookups_db, token)
 
         if new_words:
             sql = f"""UPDATE {temp_table}
@@ -428,7 +429,7 @@ class UserList(DetailedMixin, Base):
                       FROM bingapilookup
                       WHERE word = bingapilookup.source_text
                           AND from_lang = :from_lang AND to_lang = :to_lang"""
-            await cur.execute(text(sql), {"from_lang": manager.from_lang, "to_lang": manager.to_lang})
+            await db.execute(text(sql), {"from_lang": manager.from_lang, "to_lang": manager.to_lang})
 
         sql = f"""
             SELECT word_id
@@ -448,7 +449,7 @@ class UserList(DetailedMixin, Base):
 
         sql += f" LIMIT {self.nb_to_take} " if self.nb_to_take > 0 else ""
 
-        result = await cur.execute(text(sql))
+        result = await db.execute(text(sql))
 
         new_userwords = []
         new_userlistwords = []
@@ -557,7 +558,7 @@ class UserList(DetailedMixin, Base):
             # stmt = stmt.on_conflict_do_nothing (constraint="uniq_user_card")
             await db.execute(stmt)
 
-        await cur.execute(text(f"DROP TABLE {temp_table}"))
+        await db.execute(text(f"DROP TABLE {temp_table}"))
         await db.commit()
         await self.publish_updates((len(new_cards) > 0))
 
