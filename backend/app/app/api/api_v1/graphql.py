@@ -401,12 +401,7 @@ class WordList:
     @staticmethod
     async def from_model(dj_model):
         async with async_session() as db:
-            stmt = (
-                select(models.UserListWord.word_id)
-                .select_from(models.UserList)
-                .join(models.UserList.created_by)
-                .where(models.UserListWord.user_list_id == dj_model.id)
-            )
+            stmt = select(models.UserListWord.word_id).where(models.UserListWord.user_list_id == dj_model.id)
             #  stmt = select(models.UserListWord.word_id).select_from(
             #     models.UserList).join(models.UserList.created_by).where(
             #         models.UserListWord.user_list_id==dj_model.id).options(contains_eager(models.UserList.created_by))
@@ -750,7 +745,6 @@ async def filter_wordlists(
         )
         .options(selectinload(models.UserList.created_by))
     )
-
     if updated_at and updated_at > 0:
         updated_at_datetime = datetime.fromtimestamp(updated_at, pytz.utc)
         base_query = models.UserList.updated_at > updated_at_datetime
