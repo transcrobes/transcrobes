@@ -272,7 +272,7 @@ function setupTwoWayReplication(
     /**
      * Because the websocket is used to inform the client
      * when something has changed,
-     * we can set the liveIntervall to a high value
+     * we can set the liveInterval to a high value
      */
     liveInterval: 1000 * LIVE_INTERVAL, // liveInterval seconds * 1000
     deletedFlag: "deleted",

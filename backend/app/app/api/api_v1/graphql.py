@@ -222,7 +222,7 @@ async def filter_cached_definitions(
             models.CachedDefinition.word_id == latest_word_id,
         )
         # the order by is probably not necessary, but may be in the future
-        stmt = stmt.order_by(text("cached_date desc, word_id desc"))
+        # stmt = stmt.order_by(text("cached_date desc, word_id desc")).limit(limit)
         result = await db.execute(stmt)
         try:
             return [DefinitionSet.from_model(result.scalar_one(), providers)]
@@ -243,8 +243,10 @@ async def filter_cached_definitions(
             ),
         )
     )
+    stmt = stmt.order_by(text("cached_date, word_id")).limit(limit)
+    # print(f"{limit=}, {updated_at=}, {user.from_lang=}, {user.to_lang=}, {user.from_lang=},
+    # {updated_at_datetime=}, {int(id)=}", str(stmt))
     try:
-        stmt = stmt.order_by(text("cached_date desc, word_id desc")).limit(limit)
         result = await db.execute(stmt)
         definitions = [DefinitionSet.from_model(word, providers) for word in result.scalars().all()]
     except Exception:

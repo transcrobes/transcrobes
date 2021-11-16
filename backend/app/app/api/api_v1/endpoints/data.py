@@ -73,31 +73,29 @@ async def user_events(
         try:
             event = get_event(gevent, current_user.id)
             if isinstance(event, VocabEvent):
-                for k in event.data.keys():
-                    if len(k) > 10:
-                        print("The target_word is invalid", event)
-                        raise Exception("The target_word data is invalid")
-                len(json.dumps(event.data))
+                # for k in event.data.keys():
+                #     if len(k) > 10:
+                #         print("The target_word is invalid", event)
+                #         raise Exception("The target_word data is invalid")
                 logger.debug(
                     f"Submitting vocab event for user {current_user=} with size {len(json.dumps(event.data))=}"
                 )
                 print(f"Submitting vocab event for user {current_user=} with size {len(json.dumps(event.data))=}")
                 await vocab_event_topic.send(value=event)
             elif isinstance(event, CardEvent):
-                if len(event.target_word) > 10:
-                    print("The target_word is invalid", event)
-                    raise Exception("The target_word is invalid")
+                # if len(event.target_word) > 10:
+                #     print("The target_word is invalid", event)
+                #     raise Exception("The target_word is invalid")
                 await card_event_topic.send(value=event)
             else:
-                if len(event.target_word) > 10:
-                    print("The target_word is invalid", event)
-                    raise Exception("The target_word is invalid")
+                # if len(event.target_word) > 10:
+                #     print("The target_word is invalid", event)
+                #     raise Exception("The target_word is invalid")
                 await action_event_topic.send(value=event)
         except Exception as ex:  # pylint: disable=W0703  # FIXME:
             logger.exception(ex)
             logger.exception(gevent)
             return {"status": "failure"}
-            # return {"status": "success"}
 
     return {"status": "success"}
 
