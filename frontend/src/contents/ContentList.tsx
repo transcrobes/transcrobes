@@ -45,7 +45,7 @@ export const ContentList: FC<ListProps> = (props) => {
           render={(record: any) => reverseEnum(CONTENT_TYPE, record.contentType)}
         />
         <BooleanField source="shared" />
-        <ActionButton props={props} />
+        <ActionButton label="Action" props={props} />
         <EditButton />
         <ShowButton />
       </Datagrid>

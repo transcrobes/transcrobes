@@ -1,6 +1,10 @@
 import { ReactElement } from "react";
 import { Button, Identifier, Link, useRecordContext } from "react-admin";
 import { Content, CONTENT_TYPE, PROCESSING } from "../lib/types";
+import WatchIcon from "@material-ui/icons/Theaters";
+import EnrichIcon from "@material-ui/icons/Add";
+import ReadIcon from "@material-ui/icons/LocalLibrary";
+import React from "react";
 
 const DATA_SOURCE = "ActionButton.tsx";
 
@@ -24,13 +28,24 @@ function enrich(id: Identifier) {
 function ActionButton(props: any): ReactElement {
   const content = useRecordContext(props) as Content;
   if (content.processing === PROCESSING.FINISHED) {
-    const verb = content.contentType === CONTENT_TYPE.BOOK ? "Read" : "Watch";
+    let verb = "Watch";
+    let Icon = WatchIcon;
+    if (content.contentType === CONTENT_TYPE.BOOK) {
+      verb = "Read";
+      Icon = ReadIcon;
+    }
     return (
-      <Button label={verb} component={Link} to={`/contents/${content.id}/${verb.toLowerCase()}`} />
+      <Button
+        children={<Icon />}
+        label={verb}
+        component={Link}
+        to={`/contents/${content.id}/${verb.toLowerCase()}`}
+      />
     );
+  } else if (content.processing === PROCESSING.NONE) {
+    return <Button children={<EnrichIcon />} label="Enrich" onClick={() => enrich(content.id)} />;
   } else {
-    const verb = content.processing === PROCESSING.NONE ? "Enrich" : "";
-    return <Button label={verb} onClick={() => enrich(content.id)} />;
+    return <></>;
   }
 }
 

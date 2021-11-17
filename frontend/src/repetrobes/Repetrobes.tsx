@@ -282,7 +282,9 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
       (x) => !newToday.has(x) && !revisionsToday.has(x),
     );
     console.log(
-      "counters",
+      "getTodaysCounters",
+      state.existingCards,
+      todayStarts,
       newToday,
       revisionsToday,
       possibleRevisionsToday,
