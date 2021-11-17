@@ -1,4 +1,6 @@
+import { Button } from "@material-ui/core";
 import { ReactElement, useState } from "react";
+import styled from "styled-components";
 import { CharacterType } from "../lib/types";
 import CharacterGraph from "./CharacterGraph";
 
@@ -8,6 +10,11 @@ interface Props {
   charWidth?: number;
   charHeight?: number;
 }
+
+const CentredFlex = styled.div`
+  display: flex;
+  justify-content: center;
+`;
 
 export default function DefinitionGraph({
   characters,
@@ -34,34 +41,31 @@ export default function DefinitionGraph({
 
   console.debug("Rendering DefinitionGraph with chars", characters);
   return (
-    <div className="row" style={{ alignItems: "center", justifyContent: "center" }}>
-      {characters
-        .filter((x) => !!x)
-        .map((character, index) => {
-          return (
-            <CharacterGraph
-              width={charWidth}
-              height={charHeight}
-              animate={toAnimate[index]}
-              index={index}
-              key={`${character ? character.id : "nochar"}-${index}`}
-              character={character}
-              onAnimateFinished={onChildAnimateFinished}
-              showAnswer={showAnswer}
-            />
-          );
-        })}
+    <div>
+      <CentredFlex>
+        {characters
+          .filter((x) => !!x)
+          .map((character, index) => {
+            return (
+              <CharacterGraph
+                width={charWidth}
+                height={charHeight}
+                animate={toAnimate[index]}
+                index={index}
+                key={`${character ? character.id : "nochar"}-${index}`}
+                character={character}
+                onAnimateFinished={onChildAnimateFinished}
+                showAnswer={showAnswer}
+              />
+            );
+          })}
+      </CentredFlex>
       {showAnswer && (
-        <div>
-          <button
-            style={{ marginLeft: "2em" }}
-            type="button"
-            onClick={() => draw()}
-            className="btn btn-primary btn-user btn-block"
-          >
+        <CentredFlex>
+          <Button onClick={() => draw()} variant="contained" color="primary">
             Draw it!
-          </button>
-        </div>
+          </Button>
+        </CentredFlex>
       )}
     </div>
   );

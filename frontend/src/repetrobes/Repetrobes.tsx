@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { ReactElement, useEffect, useState } from "react";
 import { IconContext } from "react-icons";
 import dayjs from "dayjs";
 import _ from "lodash";
@@ -20,6 +20,7 @@ import {
   SelectableListElementType,
 } from "../lib/types";
 import { ServiceWorkerProxy } from "../lib/proxies";
+import styled from "styled-components";
 
 const DATA_SOURCE = "Repetrobes.tsx";
 
@@ -39,21 +40,45 @@ function getRandomNext(candidates: CardType[], nextWindowSize: number = RANDOM_N
   return shortList[Math.floor(Math.random() * Math.floor(shortList.length))];
 }
 
+const LauncherStyle = styled.div`
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5em;
+`;
+
+const ProgressStyle = styled.div<{ colour: string }>`
+  background-color: ${(props) => props.colour || "inherit"};
+  padding: 0.2em;
+`;
 interface ProgressProps {
   activityConfig: RepetrobesActivityConfigType;
   newToday: number;
   revisionsToday: number;
+  possibleRevisionsToday: number;
 }
 
-function Progress({ activityConfig, newToday, revisionsToday }: ProgressProps) {
+function Progress({
+  activityConfig,
+  newToday,
+  revisionsToday,
+  possibleRevisionsToday,
+}: ProgressProps) {
+  const allRevisionsToday = revisionsToday + possibleRevisionsToday;
   return (
-    <div className="something">
-      <div>
+    <div>
+      <ProgressStyle colour={newToday >= activityConfig.maxNew ? "green" : "inherit"}>
         New: {newToday} / {activityConfig.maxNew}
-      </div>
-      <div>
-        Revisions: {revisionsToday} / {activityConfig.maxRevisions}
-      </div>
+      </ProgressStyle>
+      <ProgressStyle
+        colour={
+          revisionsToday >= Math.min(allRevisionsToday, activityConfig.maxRevisions)
+            ? "green"
+            : "inherit"
+        }
+      >
+        Revisions: {revisionsToday} / {Math.min(allRevisionsToday, activityConfig.maxRevisions)} (
+        {allRevisionsToday} due)
+      </ProgressStyle>
     </div>
   );
 }
@@ -67,6 +92,7 @@ type ReviewInfosType = {
   currentCard: CardType | null;
   characters: CharacterType[] | null;
   revisionsToday: number;
+  possibleRevisionsToday: number;
   curNewWordIndex: number;
   newToday: number;
   todaysWordIds: Set<string>;
@@ -77,12 +103,13 @@ type ReviewInfosType = {
   allPotentialCharacters: Map<string, CharacterType>;
 };
 
-function Repetrobes({ proxy }: RepetrobesProps) {
+function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
   const [showAnswer, setShowAnswer] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
   const [daState, setDaState] = useState<ReviewInfosType>({
     newToday: 0,
     revisionsToday: 0,
+    possibleRevisionsToday: 0,
     curNewWordIndex: 0,
     characters: null,
     definition: null,
@@ -237,17 +264,31 @@ function Repetrobes({ proxy }: RepetrobesProps) {
 
   function getTodaysCounters(state: ReviewInfosType, activityConfig: RepetrobesActivityConfigType) {
     // FIXME: make functional? store counters in the state? if so, we need to not recount!
-    let newToday = 0;
-    let revisionsToday = 0;
+    const newToday = new Set<string>();
+    const revisionsToday = new Set<string>();
+    const possibleRevisionsToday = new Set<string>();
     const todayStarts = activityConfig.todayStarts;
-    for (const [k, v] of state.existingCards) {
+    for (const [_k, v] of state.existingCards) {
+      const wordIdStr = wordId(v);
       if (v.lastRevisionDate > todayStarts && v.firstRevisionDate >= todayStarts) {
-        newToday++;
+        newToday.add(wordIdStr);
       } else if (v.lastRevisionDate > todayStarts && v.firstRevisionDate < todayStarts) {
-        revisionsToday++;
+        revisionsToday.add(wordIdStr);
+      } else if (v.lastRevisionDate <= todayStarts && v.firstRevisionDate < todayStarts) {
+        possibleRevisionsToday.add(wordIdStr);
       }
     }
-    return [newToday, revisionsToday];
+    const uPossibleRevisionsToday = [...possibleRevisionsToday].filter(
+      (x) => !newToday.has(x) && !revisionsToday.has(x),
+    );
+    console.log(
+      "counters",
+      newToday,
+      revisionsToday,
+      possibleRevisionsToday,
+      uPossibleRevisionsToday,
+    );
+    return [newToday.size, revisionsToday.size, uPossibleRevisionsToday.length];
   }
 
   async function newCard(
@@ -337,7 +378,10 @@ function Repetrobes({ proxy }: RepetrobesProps) {
     let cardType: string;
     let definition: DefinitionType | null = null;
 
-    const [newToday, revisionsToday] = getTodaysCounters(state, activityConfig);
+    const [newToday, revisionsToday, possibleRevisionsToday] = getTodaysCounters(
+      state,
+      activityConfig,
+    );
     let getNew = true;
     if (newToday >= activityConfig.maxNew) {
       getNew = false;
@@ -375,6 +419,7 @@ function Repetrobes({ proxy }: RepetrobesProps) {
       curNewWordIndex: curNewWordIndex || state.curNewWordIndex,
       newToday,
       revisionsToday,
+      possibleRevisionsToday,
     };
     // return {
     //   newState: {
@@ -444,7 +489,7 @@ function Repetrobes({ proxy }: RepetrobesProps) {
   return (
     <IconContext.Provider value={{ color: "blue", size: "3em" }}>
       <div style={{ padding: "1em" }}>
-        <div className="d-flex justify-content-between">
+        <LauncherStyle>
           <RepetrobesConfigLauncher
             loading={loading}
             activityConfig={ac}
@@ -455,11 +500,12 @@ function Repetrobes({ proxy }: RepetrobesProps) {
               activityConfig={ac}
               newToday={daState.newToday}
               revisionsToday={daState.revisionsToday}
+              possibleRevisionsToday={daState.possibleRevisionsToday}
             />
           )}
-        </div>
+        </LauncherStyle>
 
-        <div className="d-flex flex-column">
+        <div>
           <VocabRevisor
             showAnswer={showAnswer}
             activityConfig={stateActivityConfig}

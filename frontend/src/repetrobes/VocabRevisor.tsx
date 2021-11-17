@@ -13,19 +13,23 @@ import {
 } from "../lib/types";
 import Loader from "../img/loader.gif";
 import { ReactElement } from "react";
+import { Button } from "@material-ui/core";
 
 const CentredFlex = styled.div`
   display: flex;
   justify-content: center;
+  padding: 0.2em;
 `;
 
 const QuestionWrapper = styled.div`
-  display: block;
+  display: flex;
   justify-content: center;
+  padding: 1em;
 `;
 const AnswerWrapper = styled.div`
   display: flex;
   justify-content: center;
+  padding: 1em;
 `;
 
 const GraphSoundQuestionStyle = styled.div`
@@ -41,15 +45,12 @@ const StyledAnswer = styled.div`
 `;
 
 const StyledQuestion = styled.div`
-  display: flex;
-  justify-content: center;
   font-size: 2em;
   padding: 1em;
 `;
 
 const MeaningWrapper = styled.div`
   display: block;
-  padding: 0.5em;
 `;
 
 interface MeaningProps {
@@ -114,22 +115,13 @@ interface SoundQuestionProps {
 function SoundQuestion({ card, definition, characters, showAnswer }: SoundQuestionProps) {
   return (
     <GraphSoundQuestionStyle>
-      <div className="row" style={{ justifyContent: "center", alignItems: "center" }}>
-        <div>{card && card.front ? card.front : definition.sound}</div>
-        <div>
-          <button
-            type="button"
-            onClick={() => say(definition.graph)}
-            className="btn btn-primary btn-user btn-block"
-            style={{ marginLeft: "2em" }}
-          >
-            Say it!
-          </button>
-        </div>
-      </div>
-      <div className="row" style={{ justifyContent: "center", alignItems: "center" }}>
-        <DefinitionGraph characters={characters} showAnswer={showAnswer}></DefinitionGraph>
-      </div>
+      <CentredFlex>{card && card.front ? card.front : definition.sound}</CentredFlex>
+      <CentredFlex>
+        <Button onClick={() => say(definition.graph)} variant="contained" color="primary">
+          Say it!
+        </Button>
+      </CentredFlex>
+      <DefinitionGraph characters={characters} showAnswer={showAnswer}></DefinitionGraph>
     </GraphSoundQuestionStyle>
   );
 }
@@ -152,24 +144,20 @@ function MeaningQuestion({
   showAnswer,
 }: MeaningQuestionProps) {
   return (
-    <>
-      <div className="row" style={{ justifyContent: "center", alignItems: "center" }}>
-        <StyledQuestion>
-          {" "}
-          {card && card.front ? (
-            card.front
-          ) : (
-            <MeaningWrapper>
-              <Meaning showSynonyms={showSynonyms} definition={definition} />
-              {showL2LengthHint && <div key="lenHint">(L2 length: {definition.graph.length})</div>}
-            </MeaningWrapper>
-          )}
-        </StyledQuestion>
-      </div>
-      <div className="row" style={{ justifyContent: "center", alignItems: "center" }}>
-        <DefinitionGraph characters={characters} showAnswer={showAnswer}></DefinitionGraph>
-      </div>
-    </>
+    <div>
+      <StyledQuestion>
+        {" "}
+        {card && card.front ? (
+          card.front
+        ) : (
+          <MeaningWrapper>
+            <Meaning showSynonyms={showSynonyms} definition={definition} />
+            {showL2LengthHint && <div key="lenHint">(L2 length: {definition.graph.length})</div>}
+          </MeaningWrapper>
+        )}
+      </StyledQuestion>
+      <DefinitionGraph characters={characters} showAnswer={showAnswer}></DefinitionGraph>
+    </div>
   );
 }
 
@@ -186,17 +174,12 @@ function GraphAnswer({ card, definition, showSynonyms }: SoundGraphAnswerProps) 
         card.back
       ) : (
         <>
-          <div style={{ display: "flex", alignItems: "center" }}>
+          <CentredFlex>
             <StyledAnswer> {definition.sound} </StyledAnswer>
-            <button
-              type="button"
-              onClick={() => say(definition.graph)}
-              className="btn btn-primary btn-user btn-block"
-              style={{ marginLeft: "2em" }}
-            >
+            <Button onClick={() => say(definition.graph)} variant="contained" color="primary">
               Say it!
-            </button>
-          </div>
+            </Button>
+          </CentredFlex>
           <MeaningWrapper>
             <Meaning showSynonyms={showSynonyms} definition={definition} />
           </MeaningWrapper>
@@ -231,17 +214,12 @@ function MeaningAnswer({ card, definition }: MeaningAnswerProps) {
       {card && card.back ? (
         card.back
       ) : (
-        <div style={{ display: "flex", alignItems: "center" }}>
+        <CentredFlex>
           <StyledAnswer> {definition.sound} </StyledAnswer>
-          <button
-            type="button"
-            onClick={() => say(definition.graph)}
-            className="btn btn-primary btn-user btn-block"
-            style={{ marginLeft: "2em" }}
-          >
+          <Button onClick={() => say(definition.graph)} variant="contained" color="primary">
             Say it!
-          </button>
-        </div>
+          </Button>
+        </CentredFlex>
       )}
     </div>
   );
@@ -339,13 +317,9 @@ export function VocabRevisor({
           </QuestionWrapper>
           {!showAnswer && (
             <CentredFlex>
-              <button
-                style={{ marginTop: "1em" }}
-                className="btn btn-large btn-primary"
-                onClick={onShowAnswer}
-              >
+              <Button onClick={onShowAnswer} variant="contained" color="primary">
                 Show Answer
-              </button>
+              </Button>
             </CentredFlex>
           )}
           {showAnswer && (
