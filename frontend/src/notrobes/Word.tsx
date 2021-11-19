@@ -2,6 +2,7 @@ import React, { ReactElement } from "react";
 import dayjs from "dayjs";
 import styled from "styled-components";
 import { $enum } from "ts-enum-util";
+import { Button } from "@material-ui/core";
 
 import { say } from "../lib/funclib";
 import { CARD_TYPES, cardType } from "../database/Schema";
@@ -28,11 +29,11 @@ interface WordInfoProps {
 function WordInfo({ definition, characters }: WordInfoProps): ReactElement {
   return (
     <>
-      <div className="row">
-        <div className="col-sm-2">
-          <h6 className="result-heading">Word info</h6>
+      <div>
+        <div>
+          <h4>Word info</h4>
         </div>
-        <div className="col-6 graph-item" style={{ fontSize: "2em" }}>
+        <div style={{ fontSize: "2em" }}>
           <DefinitionGraph
             charWidth={100}
             charHeight={100}
@@ -40,25 +41,16 @@ function WordInfo({ definition, characters }: WordInfoProps): ReactElement {
             showAnswer={true}
           />
         </div>
-        <div className="col sound-item" style={{ fontSize: "2em", display: "flex" }}>
-          <div
-            className="row"
-            style={{ marginLeft: ".5em", display: "flex", alignItems: "center" }}
-          >
+        <div style={{ margin: ".5em", fontSize: "2em", display: "flex", justifyContent: "center" }}>
+          <div style={{ marginLeft: ".5em", display: "flex", alignItems: "center" }}>
             <Sound definition={definition} />
-            <div>
-              <button
-                type="button"
-                onClick={() => say(definition.graph)}
-                style={{ marginLeft: "2em" }}
-                className="btn btn-primary btn-user btn-block"
-              >
+            <div style={{ marginLeft: ".5em" }}>
+              <Button onClick={() => say(definition.graph)} variant="contained" color="primary">
                 Say it!
-              </button>
+              </Button>
             </div>
           </div>
         </div>
-        {/* <div className="col sound-item" style={{ fontSize: '2em' }}> </div> */}
       </div>
     </>
   );
@@ -73,11 +65,11 @@ function Practicer({ wordId, onPractice }: PracticerProps): ReactElement {
   return (
     <>
       <ThinHR />
-      <div className="row">
-        <div className="col-sm-2">
-          <h6 className="result-heading">Card Actions</h6>
+      <div>
+        <div>
+          <h4>Card Actions</h4>
         </div>
-        <div className="col">
+        <div>
           <PracticerInput wordId={wordId} onPractice={onPractice} />
         </div>
       </div>
@@ -87,53 +79,43 @@ function Practicer({ wordId, onPractice }: PracticerProps): ReactElement {
 
 function ExistingCards({ cards }: { cards: CardType[] }): ReactElement {
   const cardsArray = [...cards.values()];
+  const cardsRows = cardsArray.map((card) => {
+    return (
+      card && (
+        <tr key={card.id}>
+          <td style={{ textTransform: "capitalize" }}>
+            {$enum(CARD_TYPES).getKeyOrThrow(parseInt(cardType(card)))}
+          </td>
+          <td>
+            {/* FIXME: don't hardcode the localeString!!! */}
+            {dayjs
+              .unix(card.dueDate || 0)
+              .toDate()
+              .toLocaleString("en-UK")}
+          </td>
+          <td>{card.known ? "Yes" : "No"}</td>
+        </tr>
+      )
+    );
+  });
+
   return (
     <>
       <ThinHR />
-      <div className="row">
-        <div className="col-sm-2">
-          <h6 className="result-heading">Existing Cards</h6>
+      <div>
+        <div>
+          <h4>Existing Cards</h4>
         </div>
-        <div className="col">
+        <div>
           {cardsArray.length > 0 ? ( // cards is a map
-            [
-              <div key="titles" className="row">
-                <span
-                  className="col-3 offset-md-1"
-                  style={{ fontWeight: "bold", borderBottomStyle: "solid" }}
-                >
-                  Type
-                </span>
-                <span className="col-5" style={{ fontWeight: "bold", borderBottomStyle: "solid" }}>
-                  Due Date
-                </span>
-                <span className="col" style={{ fontWeight: "bold", borderBottomStyle: "solid" }}>
-                  Is Known
-                </span>
-              </div>,
-              cardsArray.map((card) => {
-                return (
-                  card && (
-                    <div key={card.id} className="row">
-                      <span
-                        className="col-3 offset-md-1 def-item-title"
-                        style={{ textTransform: "capitalize" }}
-                      >
-                        {$enum(CARD_TYPES).getKeyOrThrow(parseInt(cardType(card)))}
-                      </span>
-                      <span className="col-5 def-card-due-date">
-                        {/* FIXME: don't hardcode the localeString!!! */}
-                        {dayjs
-                          .unix(card.dueDate || 0)
-                          .toDate()
-                          .toLocaleString("en-UK")}
-                      </span>
-                      <span className="col def-card-known">{card.known ? "Yes" : "No"}</span>
-                    </div>
-                  )
-                );
-              }),
-            ]
+            <table style={{ width: "400px", textAlign: "center" }}>
+              <tr>
+                <th>Type</th>
+                <th>Due Date</th>
+                <th>Known?</th>
+              </tr>
+              {cardsRows}
+            </table>
           ) : (
             <span>No cards for this item</span>
           )}
@@ -146,12 +128,12 @@ function WordLists({ lists }: { lists: SortableListElementType[] }): ReactElemen
   return (
     <>
       <ThinHR />
-      <div className="row lists-info" style={{ paddingTop: ".5em" }}>
-        <div className="col-md-2">
-          <h6 className="result-heading">Lists (name: position)</h6>
+      <div style={{ paddingTop: ".5em" }}>
+        <div>
+          <h4>Lists (name: freq. position in list)</h4>
         </div>
         {lists.length > 0 ? ( // cards is a map
-          <div className="col">
+          <div>
             {lists
               .map((wl) => `${wl.name}: ${wl.position}`)
               .reduce((prev, curr) => prev + ", " + curr)}
@@ -168,12 +150,12 @@ function Synonyms({ definition }: { definition: DefinitionType }): ReactElement 
   return (
     <>
       <ThinHR />
-      <div className="row">
-        <div className="col-md-2">
-          <h6 className="result-heading">Related Words</h6>
+      <div>
+        <div>
+          <h4>Related Words</h4>
         </div>
         {(definition.synonyms.length > 0 && (
-          <div className="col synonym-items">
+          <div>
             {definition.synonyms.map((result, ind) => {
               return (
                 // probably don't need the key, right?
@@ -190,22 +172,18 @@ function WordModelStats({ wordModelStats }: { wordModelStats: WordModelStatsType
   return (
     <>
       <ThinHR />
-      <div className="row">
-        <div className="col-md-2">
-          <h6 className="result-heading">Personal Word Stats</h6>
+      <div>
+        <div>
+          <h4>Personal Word Stats</h4>
         </div>
         {(wordModelStats && (
-          <div className="col meta-item">
+          <div>
             <div>
-              <span className="meta-item-title" style={{ fontWeight: "bold" }}>
-                Nb. seen:{" "}
-              </span>
+              <span style={{ fontWeight: "bold" }}>Nb. seen: </span>
               <span>{wordModelStats.nbSeen} </span>
             </div>
             <div>
-              <span className="meta-item-text" style={{ fontWeight: "bold" }}>
-                Last seen:{" "}
-              </span>
+              <span style={{ fontWeight: "bold" }}>Last seen: </span>
               {/* FIXME: nasty hardcoded locale!!! */}
               <span>
                 {dayjs
@@ -215,21 +193,15 @@ function WordModelStats({ wordModelStats }: { wordModelStats: WordModelStatsType
               </span>
             </div>
             <div>
-              <span className="meta-item-text" style={{ fontWeight: "bold" }}>
-                Nb. seen since last check:{" "}
-              </span>
+              <span style={{ fontWeight: "bold" }}>Nb. seen since last check: </span>
               <span>{wordModelStats.nbSeenSinceLastCheck} </span>
             </div>
             <div>
-              <span className="meta-item-text" style={{ fontWeight: "bold" }}>
-                Nb. Checked:{" "}
-              </span>
+              <span style={{ fontWeight: "bold" }}>Nb. Checked: </span>
               <span>{wordModelStats.nbChecked} </span>
             </div>
             <div>
-              <span className="meta-item-text" style={{ fontWeight: "bold" }}>
-                Last Checked:{" "}
-              </span>
+              <span style={{ fontWeight: "bold" }}>Last Checked: </span>
               <span>
                 {dayjs
                   .unix(wordModelStats.lastChecked || 0)
@@ -246,16 +218,14 @@ function WordModelStats({ wordModelStats }: { wordModelStats: WordModelStatsType
 
 function PosItem({ item }: { item: PosTranslationsType }): ReactElement {
   return (
-    <div className="pos-item">
+    <div>
       {item.values.length > 0 ? (
         <>
-          <span className="pos-tag" style={{ fontWeight: "bold" }}>
-            {item.posTag}:{" "}
-          </span>
-          <span className="pos-values">{item.values.join(", ")}</span>
+          <span style={{ fontWeight: "bold" }}>{item.posTag}: </span>
+          <span>{item.values.join(", ")}</span>
         </>
       ) : (
-        <span className="pos-tag">No {item.posTag} found</span>
+        <span>No {item.posTag} found</span>
       )}
     </div>
   );
@@ -265,9 +235,9 @@ function ProviderTranslations({ definition }: { definition: DefinitionType }): R
   return (
     <>
       <ThinHR />
-      <div className="row">
-        <div className="col">
-          <h6 className="result-heading">Entry Definitions</h6>
+      <div>
+        <div>
+          <h4>Entry Definitions</h4>
         </div>
       </div>
       {definition.providerTranslations.length &&
@@ -276,11 +246,11 @@ function ProviderTranslations({ definition }: { definition: DefinitionType }): R
             providerEntry.posTranslations.length > 0 && (
               <React.Fragment key={providerEntry.provider}>
                 <ThinHR />
-                <div className="row def-item">
-                  <div className="col-sm-1">
-                    <span className="provider-name">{providerEntry.provider}</span>
+                <div>
+                  <div>
+                    <span>{providerEntry.provider}</span>
                   </div>
-                  <div className="col">
+                  <div>
                     {providerEntry.posTranslations.map((posItem) => {
                       return <PosItem key={posItem.posTag} item={posItem} />;
                     })}
@@ -295,32 +265,28 @@ function ProviderTranslations({ definition }: { definition: DefinitionType }): R
 }
 
 function Sound({ definition }: { definition: DefinitionType }): ReactElement {
-  return <div className="sound-item">{definition.sound}</div>;
+  return <div>{definition.sound}</div>;
 }
 
 function WordMetadata({ definition }: { definition: DefinitionType }): ReactElement {
   return (
     <>
       <ThinHR />
-      <div className="row">
-        <div className="col-sm-2">
-          <h6 className="result-heading">Metadata</h6>
+      <div>
+        <div>
+          <h4>Metadata</h4>
         </div>
-        <div className="col meta-item">
-          <span className="meta-item-title" style={{ fontWeight: "bold" }}>
-            HSK:{" "}
-          </span>
-          <span className="meta-item-text">
+        <div>
+          <span style={{ fontWeight: "bold" }}>HSK: </span>
+          <span>
             {definition.hsk && definition.hsk.levels.length > 0
               ? definition.hsk.levels.join(", ")
               : "Not in the HSK"}
           </span>
         </div>
-        <div className="col meta-item">
-          <span className="meta-item-title" style={{ fontWeight: "bold" }}>
-            Freq:{" "}
-          </span>
-          <span className="meta-item-text">
+        <div>
+          <span style={{ fontWeight: "bold" }}>Freq: </span>
+          <span>
             {definition.frequency && definition.frequency.wcpm
               ? definition.frequency.wcpm
               : "No frequency data"}
@@ -350,8 +316,8 @@ function Word({
 }: WordProps): ReactElement {
   return (
     definition && (
-      <div className="word-container">
-        <div className="results-container">
+      <div>
+        <div>
           <WordInfo definition={definition} characters={characters} />
           <Practicer wordId={definition.id} onPractice={onPractice} />
           <ExistingCards cards={cards} />
