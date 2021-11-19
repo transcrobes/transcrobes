@@ -6,9 +6,12 @@ import { parseJwt } from "./funclib";
 export const ACCESS_TOKEN_PATH = "/api/v1/login/access-token";
 export const REFRESH_TOKEN_PATH = "/api/v1/refresh";
 
-const db = new Dexie("auth");
+const DB_NAME = "auth";
+const db = new Dexie(DB_NAME);
+const COLLECTION_NAME = "auth";
+
 db.version(1).stores({
-  auth: "key",
+  [COLLECTION_NAME]: "key",
 });
 
 export interface Options {
@@ -20,16 +23,16 @@ export function authDb(): Dexie {
 }
 
 export async function getValue(key: string): Promise<string | null | undefined> {
-  const val = await db.table("auth").where("key").equals(key).first();
+  const val = await db.table(COLLECTION_NAME).where("key").equals(key).first();
   return val == null ? val : (val["value"] as string);
 }
 
 export async function setValue(key: string, value: string): Promise<void> {
-  await db.table("auth").put({ key: key, value: value });
+  await db.table(COLLECTION_NAME).put({ key: key, value: value });
 }
 
 export async function deleteValue(key: string): Promise<void> {
-  await db.table("auth").where("key").equals(key).delete();
+  await db.table(COLLECTION_NAME).where("key").equals(key).delete();
 }
 
 export async function getUsername(): Promise<string | null | undefined> {

@@ -1,3 +1,4 @@
+import { ReactElement } from "react";
 import Select from "react-select";
 import "reactjs-popup/dist/index.css";
 import _ from "lodash";
@@ -10,7 +11,7 @@ interface Props {
   activityConfig: RepetrobesActivityConfigType;
   onConfigChange: (activityConfig: RepetrobesActivityConfigType) => void;
 }
-export default function RepetrobesConfig({ activityConfig, onConfigChange }: Props) {
+export default function RepetrobesConfig({ activityConfig, onConfigChange }: Props): ReactElement {
   function handleWordListsChange(sls: any) {
     // FIXME: this is SUPER nasty but see
     // https://github.com/DefinitelyTyped/DefinitelyTyped/issues/32553
@@ -57,7 +58,9 @@ export default function RepetrobesConfig({ activityConfig, onConfigChange }: Pro
     console.debug(`e handleSimpleChange`, e.target);
     const update = {
       ...activityConfig,
-      [e.target.name]: e.target.hasOwnProperty("checked") ? e.target.checked : e.target.value,
+      [e.target.name]: Object.prototype.hasOwnProperty.call(e.target, "checked")
+        ? e.target.checked
+        : e.target.value,
     };
     onConfigChange(update);
   }

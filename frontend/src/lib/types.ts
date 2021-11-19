@@ -99,6 +99,9 @@ export function reverseEnum(enume: any, value: any): string {
 
 export type ThemeName = "light" | "dark";
 
+export const APPLICATION_NAMES = ["repetrobes", "listrobes", "notrobes", "brocrobes"] as const;
+export type TCApplication = typeof APPLICATION_NAMES[number];
+
 export interface AppState extends ReduxState {
   theme: ThemeName;
 }

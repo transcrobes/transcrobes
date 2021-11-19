@@ -21,6 +21,7 @@ import {
 } from "../lib/types";
 import { ServiceWorkerProxy } from "../lib/proxies";
 import styled from "styled-components";
+import { getSettingsValue, setSettingsValue } from "../lib/appSettings";
 
 const DATA_SOURCE = "Repetrobes.tsx";
 
@@ -121,7 +122,7 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
     potentialWords: [],
     allPotentialCharacters: new Map<string, CharacterType>(),
   });
-  const [stateActivityConfig, setStateActivityConfig] = useState<RepetrobesActivityConfigType>({
+  const EMPTY_ACTIVITY = {
     badReviewWaitSecs: DEFAULT_BAD_REVIEW_WAIT_SECS,
     maxNew: DEFAULT_MAX_NEW,
     maxRevisions: DEFAULT_MAX_REVISIONS,
@@ -133,53 +134,46 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
     showL2LengthHint: false,
     activeCardTypes: [],
     todayStarts: 0,
-  });
+  };
+  const [stateActivityConfig, setStateActivityConfig] =
+    useState<RepetrobesActivityConfigType>(EMPTY_ACTIVITY);
 
   useEffect(() => {
     (async () => {
-      const dayStartsHour = DEFAULT_DAY_STARTS_HOUR; // FIXME: get from database/local config!
-      const badReviewWaitSecs = DEFAULT_BAD_REVIEW_WAIT_SECS; // FIXME: get from database/local config!
-      const maxNew = DEFAULT_MAX_NEW; // FIXME: get from database/local config!
-      const maxRevisions = DEFAULT_MAX_REVISIONS; // FIXME: get from database/local config!
-      const showSynonyms = DEFAULT_QUESTION_SHOW_SYNONYMS; // FIXME: get from database/local config!
-      const showProgress = DEFAULT_QUESTION_SHOW_PROGRESS; // FIXME: get from database/local config!
-      const showL2LengthHint = DEFAULT_QUESTION_SHOW_L2_LENGTH_HINT; // FIXME: get from database/local config!
+      const savedConf = await getSettingsValue("repetrobes", "config");
 
-      // FIXME: get from database/local config!
-      const activeCardTypes: SelectableListElementType[] = Array.from($enum(CARD_TYPES).entries())
-        .filter(([_l, v]) => !((v as any) instanceof Function))
-        .map(([label, value]) => {
-          return { label: label, value: value.toString(), selected: true };
-        });
-
-      const todayStarts = (
-        new Date().getHours() < dayStartsHour
-          ? dayjs().startOf("day").subtract(1, "day")
-          : dayjs().startOf("day")
-      )
-        .add(dayStartsHour, "hour")
-        .unix();
-
-      const wordLists = await proxy.sendMessagePromise<SelectableListElementType[]>({
-        source: DATA_SOURCE,
-        type: "getDefaultWordLists",
-        value: {},
-      });
+      let conf: RepetrobesActivityConfigType;
+      if (savedConf) {
+        conf = JSON.parse(savedConf);
+      } else {
+        // eslint-disable-next-line prefer-const
+        conf = {
+          ...EMPTY_ACTIVITY,
+          activeCardTypes: Array.from($enum(CARD_TYPES).entries())
+            .filter(([_l, v]) => !((v as any) instanceof Function))
+            .map(([label, value]) => {
+              return { label: label, value: value.toString(), selected: true };
+            }),
+          todayStarts: (new Date().getHours() < EMPTY_ACTIVITY.dayStartsHour
+            ? dayjs().startOf("day").subtract(1, "day")
+            : dayjs().startOf("day")
+          )
+            .add(EMPTY_ACTIVITY.dayStartsHour, "hour")
+            .unix(),
+          wordLists: await proxy.sendMessagePromise<SelectableListElementType[]>({
+            source: DATA_SOURCE,
+            type: "getDefaultWordLists",
+            value: {},
+          }),
+        };
+      }
+      setSettingsValue("repetrobes", "config", JSON.stringify(conf));
 
       const activityConfigNew = {
         ...stateActivityConfig,
-        wordLists,
-        activeCardTypes,
-        maxRevisions,
-        maxNew,
-        showSynonyms,
-        showProgress,
-        showL2LengthHint,
-        dayStartsHour,
-        badReviewWaitSecs,
-        todayStarts,
+        ...conf,
       };
-      if (wordLists.length === 0 || activeCardTypes.length === 0) {
+      if (conf.wordLists.length === 0 || conf.activeCardTypes.length === 0) {
         setLoading(true);
         return;
       }
@@ -257,6 +251,7 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
   function handleConfigChange(activityConfig: RepetrobesActivityConfigType) {
     if (!_.isEqual(activityConfig, stateActivityConfig)) {
       setStateActivityConfig(activityConfig);
+      setSettingsValue("repetrobes", "config", JSON.stringify(activityConfig));
     } else {
       setShowAnswer(false);
     }
@@ -423,16 +418,6 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
       revisionsToday,
       possibleRevisionsToday,
     };
-    // return {
-    //   newState: {
-    //     ...state,
-    //     currentCard,
-    //     definition,
-    //     characters,
-    //     curNewWordIndex: curNewWordIndex || state.curNewWordIndex,
-    //   },
-    //   today: { newToday, revisionsToday },
-    // };
   }
 
   function handleShowAnswer() {

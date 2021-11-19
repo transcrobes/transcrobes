@@ -1,6 +1,7 @@
 import RepetrobesConfig from "./RepetrobesConfig";
 import { StyledPopup, ConfigButton } from "../components/config";
 import { RepetrobesActivityConfigType } from "../lib/types";
+import { ReactElement } from "react";
 
 interface Props {
   loading: boolean;
@@ -12,7 +13,7 @@ export default function RepetrobesConfigLauncher({
   loading,
   activityConfig,
   onConfigChange,
-}: Props) {
+}: Props): ReactElement {
   return (
     <div id="popup-root">
       <StyledPopup
