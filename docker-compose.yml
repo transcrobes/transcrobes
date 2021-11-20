@@ -14,7 +14,7 @@ services:
           - node.labels.${STACK_NAME?Variable not set}.app-db-data == true
 
   corenlpzh:
-    image: transcrobes/corenlp-chinese:4.2.2
+    image: transcrobes/corenlp-chinese:4.3.1
     env_file:
       - .env
 
