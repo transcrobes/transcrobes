@@ -4,13 +4,15 @@ from __future__ import annotations
 from typing import List, TypedDict, Union
 
 
+# FIXME: these are no longer correct at all!!!
 class SlimPosDefinition(TypedDict):
     nt: str
     cf: str  # FIXME: is this a str?, confidence
     word: str
-    phone: str  # FIXME: honestly!
+    phone: str
 
 
+# FIXME: these are no longer correct at all!!!
 class PosDefinition(TypedDict):
     upos: str  # FIXME: make this an ENUM
     opos: str  # FIXME: make this an ENUM

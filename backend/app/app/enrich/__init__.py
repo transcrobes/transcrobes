@@ -128,7 +128,7 @@ class Enricher(ABC):
         pass
 
     @abstractmethod
-    def _set_slim_best_guess(self, sentence: Sentence, token: AnyToken, token_definition):
+    def _set_slim_best_guess(self, sentence: Sentence, token: AnyToken, token_definition, phone):
         pass
 
     @abstractmethod
@@ -421,6 +421,6 @@ class Enricher(ABC):
                     # no longer used, as we have this info in the client
                     # token["id"] = token_definition["id"]  # BingAPILookup id
                     # token["np"] = self.get_simple_pos(token)  # Normalised POS
-                    self._set_slim_best_guess(sentence, token, token_definition["defs"])
+                    self._set_slim_best_guess(sentence, token, token_definition["defs"], token_definition["p"])
 
         return sentence

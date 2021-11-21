@@ -7,8 +7,11 @@ import {
   ZH_TB_POS_TO_SIMPLE_POS,
   TREEBANK_POS_TYPES,
   TREEBANK_POS_VALUES,
+  PosTranslationsType,
 } from "./types";
 import { getAccess, refreshAccessToken } from "./JWTAuthProvider";
+
+import unidecode from "unidecode";
 
 // I am genuinely not intelligent enough to code like a proper human being in js
 // It is a horrible language, written by horrible people, for horrible people
@@ -208,12 +211,23 @@ async function getRequestOptions(
   return options;
 }
 
+function filterFakeBestGuess(entries: string[], phone: string[]): string[] {
+  const filtered: string[] = [];
+  for (const entry of entries) {
+    const local_phone = unidecode(phone.join("").split(/(\s+)/).join("")).toLowerCase();
+    if (local_phone != entry.split(/(\s+)/).join("").toLowerCase()) {
+      filtered.push(entry);
+    }
+  }
+  return filtered;
+}
+
 export function bestGuess(token: TokenType, definition: DefinitionType): string {
   // FIXME: this is a ZH-HANS -> EN only hack, and needs to be architected eventually
   // something like what the Python has with distinct managers for each L2 -> L1. Later.
   let best = "";
-  const others = [];
-  const allDefs = [];
+  const others: string[] = [];
+  const allDefs: PosTranslationsType[] = [];
   const dictEntries = definition.providerTranslations;
   for (const providerEntry of dictEntries) {
     if (!providerEntry.posTranslations) continue;
@@ -223,8 +237,11 @@ export function bestGuess(token: TokenType, definition: DefinitionType): string 
       if (token.pos && toSimplePos(token.pos) === posEntry.posTag) {
         // sorted_defs = sorted(defs, key=lambda i: i["cf"], reverse=True)  # original python
         // const sortedDefs = defs.sort((a: any, b: any) => a.cf - b.cf);  // possible js, if we had cf
-        best = posEntry.values[0];
-        break;
+        const filteredDefs = filterFakeBestGuess(posEntry.values, definition.sound);
+        if (filteredDefs) {
+          best = filteredDefs[0];
+          break;
+        }
       } else if (posEntry.posTag === "OTHER") {
         others.push(...posEntry.values);
       }
@@ -234,7 +251,10 @@ export function bestGuess(token: TokenType, definition: DefinitionType): string 
     }
   }
   if (!best && others.length > 0) {
-    best = others[0];
+    const filteredDefs = filterFakeBestGuess(others, definition.sound);
+    if (filteredDefs) {
+      best = filteredDefs[0];
+    }
   }
   if (!best && allDefs.length > 0) {
     best = allDefs[0].values[0];

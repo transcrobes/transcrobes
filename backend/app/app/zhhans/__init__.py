@@ -7,8 +7,9 @@ import unicodedata
 from typing import List
 
 import opencc
+import unidecode
 from app.enrich import Enricher, TransliterationException
-from app.enrich.etypes import AnyToken, PosDefinition, Sentence
+from app.enrich.etypes import AnyToken, Sentence
 from app.enrich.models import Token
 from app.enrich.transliterate import Transliterator
 from app.ndutils import ZHHANS_CHARS_RE, lemma
@@ -137,6 +138,15 @@ ZH_TB_POS_TO_SIMPLE_POS = {
 
 CORENLP_IGNORABLE_POS = ["PU", "OD", "CD", "NT", "URL", "FW"]
 CORENLP_IGNORABLE_POS_SHORT = ["PU", "URL"]
+
+
+def filter_fake_best_guess(entries, phone):
+    filtered = []
+    for entry in entries:
+        local_phone = unidecode.unidecode("".join((entry.get("p") or phone).split())).lower()
+        if local_phone != "".join(entry["nt"].split()).lower():
+            filtered.append(entry)
+    return filtered
 
 
 class CoreNLP_ZHHANS_Enricher(Enricher):
@@ -333,7 +343,7 @@ class CoreNLP_ZHHANS_Enricher(Enricher):
             return False
 
     # override Enricher
-    def _set_best_guess(self, _sentence, token: Token, token_definition: PosDefinition):
+    def _set_best_guess(self, _sentence, token: Token, token_definitions, phone):
         # TODO: do something intelligent here - sentence isn't used yet
         # ideally this will translate the sentence using some sort of statistical method but get the best
         # translation for each individual word of the sentence, not the whole sentence, giving us the
@@ -345,13 +355,13 @@ class CoreNLP_ZHHANS_Enricher(Enricher):
         best_guess = None
         others = []
         all_defs = []
-        for t in token_definition.keys():
+        for t in token_definitions.keys():
             # FIXME: currently the tokens are stored in keyed order of the "best" source, "fallback" and then the
             # secondary dictionaries. Actually only the "best" currently has any notion of confidence (cf)
             # and all the "fallback" are "OTHER", meaning the "fallback" will only be considered after
             # the secondaries. If anything changes in that, this algo may well not return the "best"
             # translation
-            for def_pos, defs in token_definition[t].items():
+            for def_pos, defs in token_definitions[t].items():
                 # {ZH_TB_POS_TO_SIMPLE_POS[token['pos']]=}, {ZH_TB_POS_TO_ABC_POS[token['pos']]=} {defs=}")
                 if not defs:
                     continue
@@ -361,9 +371,10 @@ class CoreNLP_ZHHANS_Enricher(Enricher):
                     ZH_TB_POS_TO_ABC_POS[token["pos"]],
                 ):
                     # get the most confident for the right POS
-                    sorted_defs = sorted(defs, key=lambda i: i["cf"], reverse=True)
-                    best_guess = sorted_defs[0]
-                    break
+                    sorted_defs = filter_fake_best_guess(sorted(defs, key=lambda i: i["cf"], reverse=True), phone)
+                    if len(sorted_defs) > 0:
+                        best_guess = sorted_defs[0]
+                        break
                 elif def_pos == "OTHER":
                     others += defs
             if best_guess:
@@ -376,8 +387,9 @@ class CoreNLP_ZHHANS_Enricher(Enricher):
                 lemma(token),
                 others,
             )
-
-            best_guess = sorted(others, key=lambda i: i["cf"], reverse=True)[0]
+            sorted_defs = filter_fake_best_guess(sorted(others, key=lambda i: i["cf"], reverse=True), phone)
+            if len(sorted_defs) > 0:
+                best_guess = sorted_defs[0]
 
         if not best_guess and len(all_defs) > 0:
             # it's really bad
@@ -397,8 +409,9 @@ class CoreNLP_ZHHANS_Enricher(Enricher):
         )
         token["bg"] = best_guess
 
-    def _set_slim_best_guess(self, sentence, token, token_definition):
-        self._set_best_guess(sentence, token, token_definition)
+    # override Enricher
+    def _set_slim_best_guess(self, sentence, token, token_definitions, phone):
+        self._set_best_guess(sentence, token, token_definitions, phone)
         token["bg"] = token["bg"]["nt"]
 
     # override Enricher
