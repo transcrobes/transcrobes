@@ -15,6 +15,7 @@ function page({ title, description }: { title: string; description: string }) {
         context: { title, description },
         template: "./src/index.html",
         chunks: ["main"],
+        hash: true,
       }),
     ],
   };
