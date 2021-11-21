@@ -2,9 +2,10 @@ import { useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { useAuthenticated } from "react-admin";
 import D2Reader from "@d-i-t-a/reader";
-import { ChakraProvider } from "@chakra-ui/react";
+import { ChakraProvider, Link, Text, Icon } from "@chakra-ui/react";
 import "@nypl/design-system-react-components/dist/styles.css";
 import WebReader, { getTheme } from "@nypl/web-reader";
+import { MdHome } from "react-icons/md";
 import injectables from "./injectables";
 
 type ContentParams = {
@@ -17,6 +18,32 @@ declare global {
     etfLoaded: Set<string>; // this could probably be a boolean?
     r2d2bcFontSize: number;
   }
+}
+
+function HeaderLeft(): React.ReactElement {
+  // const linkColor = useColorModeValue("gray.700", "gray.100", "gray.700");
+  return (
+    <Link
+      href="/#/contents"
+      aria-label="Return to Content"
+      tabIndex={0}
+      fontSize={0}
+      py={1}
+      textTransform="uppercase"
+      d="flex"
+      // color={linkColor}
+      height="100%"
+      alignItems="center"
+      _hover={{
+        textDecoration: "none",
+      }}
+    >
+      <Icon as={MdHome} w={6} h={6} />
+      <Text paddingLeft={2} variant="headerNav">
+        Back to Content
+      </Text>
+    </Link>
+  );
 }
 
 export default function Reader(): JSX.Element {
@@ -52,7 +79,11 @@ export default function Reader(): JSX.Element {
 
   return (
     <ChakraProvider theme={getTheme("day")}>
-      <WebReader webpubManifestUrl={url.href} injectables={injectables} />
+      <WebReader
+        headerLeft={<HeaderLeft />}
+        webpubManifestUrl={url.href}
+        injectables={injectables}
+      />
     </ChakraProvider>
   );
 }

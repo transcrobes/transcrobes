@@ -216,7 +216,9 @@ async def enrich_json(
             detail='Incorrectly formed query, you must provide a JSON like { "data": "好" }"',
         )
 
-    outdata = await manager.enricher().enrich_to_json(text, manager, full_enrich=False, deep_transliterations=False)
+    outdata = await manager.enricher().enrich_to_json(
+        text, manager, translate_sentence=False, best_guess=False, deep_transliterations=False
+    )
     return outdata
 
 
@@ -266,7 +268,9 @@ async def enrich_json_full(
             detail='Incorrectly formed query, you must provide a JSON like { "data": "好" }"',
         )
 
-    outdata = await manager.enricher().enrich_to_json(text, manager, full_enrich=True, deep_transliterations=True)
+    outdata = await manager.enricher().enrich_to_json_phat(
+        text, manager, translate_sentence=True, best_guess=True, deep_transliterations=True
+    )
     return outdata
 
 

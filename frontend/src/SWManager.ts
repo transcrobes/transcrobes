@@ -7,6 +7,9 @@ import {
   setUsername,
   EVENT_QUEUE_PROCESS_FREQ,
   PUSH_FILES_PROCESS_FREQ,
+  fetchPlus,
+  baseUrl,
+  DEFAULT_RETRIES,
 } from "./lib/lib";
 import * as data from "./lib/data";
 import {
@@ -419,6 +422,16 @@ export function manageEvent(sw: ServiceWorkerGlobalScope, event: ExtendableMessa
           type: msg.type,
           value: result,
         });
+      });
+    });
+  } else if (message.type === "sentenceTranslation") {
+    loadDb(message, sw).then(() => {
+      fetchPlus(
+        baseUrl + "api/v1/enrich/translate", // FIXME: hardcoded nastiness
+        JSON.stringify({ data: message.value }),
+        DEFAULT_RETRIES,
+      ).then((translation) => {
+        postIt(event, { source: message.source, type: message.type, value: translation });
       });
     });
   } else {

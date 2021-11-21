@@ -210,7 +210,7 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
       });
     });
   } else if (message.type === "sentenceTranslation") {
-    console.debug("the sentence be", message.value);
+    console.debug("Translating sentence", message.value);
     loadDb(console.debug, message).then(() => {
       utils
         .fetchPlus(

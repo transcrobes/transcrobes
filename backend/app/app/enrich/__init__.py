@@ -170,11 +170,13 @@ class Enricher(ABC):
         return True
 
     async def enrich_parse_to_aids_json(
-        self, timestamp, slim_model, manager, full_enrich: bool, deep_transliterations: bool
+        self, timestamp, slim_model, manager, translate_sentence: bool, best_guess: bool, deep_transliterations: bool
     ):
         logger.debug("Attempting to async slim_model enrich: '%s'", slim_model)
 
-        combined = await self._enrich_slim_model(slim_model, manager, full_enrich, deep_transliterations)
+        combined = await self._enrich_slim_model(
+            slim_model, manager, translate_sentence, best_guess, deep_transliterations
+        )
 
         # Here we are still using the old way of generating which adds new properties in-place
         # so we split to multiple files
@@ -182,22 +184,36 @@ class Enricher(ABC):
         for sentence in combined:
             hsentence = []
             for token in sentence["t"]:
-                if "p" in token:  # there is maybe a cleaner way to do this
-                    hsentence.append(dict((d, token.pop(d)) for d in ["p", "bg"]))
-                else:
-                    hsentence.append({})
-            aids_model["s"].append({"t": hsentence, "l1": sentence.pop("l1")})
+                extras = {}
+                if "p" in token:  # when deep_transliterations == True
+                    extras["p"] = token.pop("p")
+                if "bg" in token:  # when best_guess == True
+                    extras["bg"] = token.pop("bg")
+                hsentence.append(extras)
+            new_sentence = {"t": hsentence}
+            if "l1" in sentence:
+                new_sentence["l1"] = sentence.get("l1")
+            aids_model["s"].append(new_sentence)
 
         return {timestamp: aids_model}
 
     async def enrich_to_json(
-        self, text: str, manager: EnrichmentManager, full_enrich: bool, deep_transliterations: bool
+        self,
+        text: str,
+        manager: EnrichmentManager,
+        translate_sentence: bool,
+        best_guess: bool,
+        deep_transliterations: bool,
     ):
         logger.debug("Attempting to async enrich: '%s'", text)
         clean_text = self.clean_text(text)
         raw_model = await manager.parser().parse(clean_text)
         parsed_slim_model = manager.enricher().slim_parse(raw_model)
-        model = {"s": await self._enrich_slim_model(parsed_slim_model, manager, full_enrich, deep_transliterations)}
+        model = {
+            "s": await self._enrich_slim_model(
+                parsed_slim_model, manager, translate_sentence, best_guess, deep_transliterations
+            )
+        }
         match = re.match(r"^\s+", text)
         if match:
             model["sws"] = match.group(0)
@@ -207,12 +223,21 @@ class Enricher(ABC):
         model["id"] = time.time_ns()
         return model
 
-    async def enrich_to_json_phat(self, text: str, manager: EnrichmentManager, full_enrich: bool = False):
+    async def enrich_to_json_phat(
+        self,
+        text: str,
+        manager: EnrichmentManager,
+        translate_sentence: bool = False,
+        best_guess: bool = False,
+        deep_transliterations: bool = False,
+    ):
         logger.debug("Attempting to async enrich: '%s'", text)
 
         clean_text = self.clean_text(text)
         raw_model = await manager.parser().parse(clean_text)
-        model = {"s": await self._enrich_model(raw_model, manager, full_enrich)}
+        model = {
+            "s": await self._enrich_model(raw_model, manager, translate_sentence, best_guess, deep_transliterations)
+        }
         match = re.match(r"^\s+", text)
         if match:
             model["sws"] = match.group(0)
@@ -232,8 +257,9 @@ class Enricher(ABC):
                 if "id" in token or "bg" in token:
                     # if "bg" in token:
                     # new_token["id"] = token["id"]
-                    if full_enrich:
+                    if deep_transliterations:
                         new_token["p"] = token["phone"]
+                    if best_guess:
                         new_token["bg"] = token["bg"]["nt"]
                         new_token["np"] = token["np"]
                     new_token["pos"] = token["pos"]
@@ -282,30 +308,45 @@ class Enricher(ABC):
 
     #
     # FIXME: move - put here for easy navigation
-    async def _enrich_model(self, model, manager: EnrichmentManager, full_enrich: bool):
+    async def _enrich_model(
+        self, model, manager: EnrichmentManager, translate_sentence: bool, best_guess: bool, deep_transliterations: bool
+    ):
         sentences = await asyncio.gather(
-            *[self._enrich_sentence(sentence, manager, full_enrich) for sentence in model["sentences"]],
+            *[
+                self._enrich_sentence(sentence, manager, translate_sentence, best_guess, deep_transliterations)
+                for sentence in model["sentences"]
+            ],
         )
         return sentences
 
-    async def _enrich_sentence(self, sentence, manager: EnrichmentManager, full_enrich: bool):
+    async def _enrich_sentence(
+        self,
+        sentence,
+        manager: EnrichmentManager,
+        translate_sentence: bool,
+        best_guess: bool,
+        deep_transliterations: bool,
+    ):
         # FIXME: find out how to put this in the header without a circular dep
         from app.enrich.models import definition  # pylint: disable=C0415
 
+        raise Exception("Actually there are logic problems with this method..., namely the phone stuff")
+
         async with async_session() as db:
-            if full_enrich:
-                # transliterate the sentence as a whole - this will almost always hit the external API and
-                # the lift in accuracy is likely only for a few well known words - deep is definitely better
-                # but much slower and actually costs real money
-                # FIXME: actually we could check whether we've already transliterated the same/a similar sentence
-                # rather than do a whole new attempt, still without using translation credit...
-                await self._add_transliterations(db, sentence, manager.transliterator())
+            if translate_sentence:
                 original_sentence = self._text_from_sentence(sentence).strip()
                 sentence["os"] = original_sentence  # used to be _cleaned_sentence
                 # We aren't currently using the alignment, so ignore
                 # sentence["l1"], sentence["al"] = await manager.default().atranslate(original_sentence)
                 sentence["l1"], _ = await manager.default().translate(db, original_sentence)
 
+            if deep_transliterations:
+                # transliterate the sentence as a whole - this will almost always hit the external API and
+                # the lift in accuracy is likely only for a few well known words - deep is definitely better
+                # but much slower and actually costs real money
+                # FIXME: actually we could check whether we've already transliterated the same/a similar sentence
+                # rather than do a whole new attempt, still without using translation credit...
+                await self._add_transliterations(db, sentence, manager.transliterator())
             else:
                 for token in sentence["tokens"]:
                     token["phone"] = (await manager.transliterator().transliterate(db, token["originalText"])).split()
@@ -319,7 +360,7 @@ class Enricher(ABC):
                 token["id"] = token_definition["id"]  # BingAPILookup id
                 token["np"] = self.get_simple_pos(token)  # Normalised POS
 
-                if full_enrich:
+                if best_guess:
                     self._set_best_guess(sentence, token, token_definition["defs"])
 
         return sentence
@@ -327,16 +368,29 @@ class Enricher(ABC):
     #
     # FIXME: move - put here for easy navigation
     async def _enrich_slim_model(
-        self, slim_model, manager: EnrichmentManager, full_enrich: bool, deep_transliterations: bool
+        self,
+        slim_model,
+        manager: EnrichmentManager,
+        translate_sentence: bool,
+        best_guess: bool,
+        deep_transliterations: bool,
     ):
         # FIXME: clean later
         model = slim_model["s"] if isinstance(slim_model, dict) else slim_model
         return await asyncio.gather(
-            *[self._enrich_slim_sentence(sentence, manager, full_enrich, deep_transliterations) for sentence in model],
+            *[
+                self._enrich_slim_sentence(sentence, manager, translate_sentence, best_guess, deep_transliterations)
+                for sentence in model
+            ],
         )
 
     async def _enrich_slim_sentence(
-        self, sentence, manager: EnrichmentManager, full_enrich: bool, deep_transliterations: bool
+        self,
+        sentence,
+        manager: EnrichmentManager,
+        translate_sentence: bool,
+        best_guess: bool,
+        deep_transliterations: bool,
     ):
         # FIXME: find out how to put this in the header without a circular dep
         from app.enrich.models import definition  # pylint: disable=C0415
@@ -350,7 +404,7 @@ class Enricher(ABC):
                 # rather than do a whole new attempt, still without using translation credit...
                 await self._add_slim_transliterations(db, sentence, manager.transliterator())
 
-            if full_enrich:
+            if translate_sentence:
                 original_sentence = self._text_from_sentence(sentence).strip()
                 # We aren't currently using the alignment, so ignore
                 # sentence["l1"], sentence["al"] = await manager.default().translate(db, original_sentence)
@@ -358,13 +412,12 @@ class Enricher(ABC):
                 # Can recreate in the client, storing here is just a waste
                 # sentence["os"] = original_sentence  # used to be _cleaned_sentence
 
-                logger.debug("Looking for tokens to translate in %s", sentence)
-
+            logger.debug("Looking for tokens to translate in %s", sentence)
             for token in sentence["t"]:
                 if not self.is_clean(token) or not self.needs_enriching(token):
                     continue
                 token_definition = await definition(db, manager, token)
-                if full_enrich:
+                if best_guess:
                     # no longer used, as we have this info in the client
                     # token["id"] = token_definition["id"]  # BingAPILookup id
                     # token["np"] = self.get_simple_pos(token)  # Normalised POS

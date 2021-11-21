@@ -534,7 +534,9 @@ async def enrich_parse(content: Content, manager: EnrichmentManager):
         with open(os.path.join(fname), encoding="utf8") as file_contents:
             file_models = json.load(file_contents)
             model_futures = [
-                manager.enricher().enrich_parse_to_aids_json(timestamp, model, manager, True, False)
+                manager.enricher().enrich_parse_to_aids_json(
+                    timestamp, model, manager, translate_sentence=False, best_guess=True, deep_transliterations=False
+                )
                 for timestamp, model in file_models.items()
             ]
 
