@@ -139,7 +139,8 @@ async def serve_content(  # pylint: disable=R0914  # FIXME: consider reducing
                 enrich = json.load(enrich_file)
                 for parse_id, text_parse in combined.items():
                     for sindex, sentence in enumerate(text_parse["s"]):
-                        sentence["l1"] = enrich[parse_id]["s"][sindex]["l1"]
+                        if "l1" in enrich[parse_id]["s"][sindex]:
+                            sentence["l1"] = enrich[parse_id]["s"][sindex]["l1"]
                         for tindex, token in enumerate(sentence["t"]):
                             for prop, value in enrich[parse_id]["s"][sindex]["t"][tindex].items():
                                 token[prop] = value
