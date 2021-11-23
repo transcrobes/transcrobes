@@ -207,6 +207,7 @@ export interface CardType extends SuperMemoType {
   known: boolean;
   firstRevisionDate: number;
   lastRevisionDate: number;
+  firstSuccessDate: number;
   updatedAt: number;
 }
 
@@ -220,6 +221,7 @@ export const EMPTY_CARD: CardType = {
   known: false,
   firstRevisionDate: 0,
   lastRevisionDate: 0,
+  firstSuccessDate: 0,
   updatedAt: 0,
 };
 

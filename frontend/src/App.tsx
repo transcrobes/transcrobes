@@ -1,4 +1,4 @@
-import { ReactElement, useEffect } from "react";
+import { ReactElement, useEffect, useState } from "react";
 import { Admin, Resource } from "react-admin";
 import polyglotI18nProvider from "ra-i18n-polyglot";
 import { Workbox } from "workbox-window";
@@ -48,16 +48,22 @@ window.componentsConfig = {
 };
 
 function App(): ReactElement {
+  const [inited, setInited] = useState(false);
   useEffect(() => {
     (async () => {
       const lusername = await getUsername();
       if (!lusername) {
         throw new Error("Unable to find a username");
       }
+      console.log("doing the app", lusername, await isInitialisedAsync(lusername));
       if (lusername && (await isInitialisedAsync(lusername))) {
+        console.log("now doing the init");
         window.componentsConfig.proxy.init(
           { username: lusername },
-          () => "",
+          () => {
+            setInited(true);
+            return "";
+          },
           () => "",
         );
       } else if (shouldRedirectUninited(window.location.href)) {
@@ -87,7 +93,7 @@ function App(): ReactElement {
       authProvider={authProvider}
       dataProvider={dataProvider}
       i18nProvider={i18nProvider}
-      dashboard={() => Dashboard({ config: window.componentsConfig })}
+      dashboard={() => Dashboard({ config: window.componentsConfig, inited })}
       title="Transcrobes"
       layout={Layout}
       loginPage={Login}

@@ -6,6 +6,7 @@ import { ComponentsConfig } from "../lib/complexTypes";
 
 interface Props {
   config: ComponentsConfig;
+  inited: boolean;
 }
 const DATA_SOURCE = "GoalsWidget.tsx";
 
@@ -16,17 +17,19 @@ type GoalPercent = {
   percent: number;
 };
 
-export default function GoalsWidget({ config }: Props): ReactElement {
+export default function GoalsWidget({ config, inited }: Props): ReactElement {
   const [goals, setGoals] = useState<GoalPercent[]>([]);
 
   useEffect(() => {
     (async function () {
+      if (!inited) return;
       const userWords = await config.proxy.sendMessagePromise<DayCardWords>({
         source: DATA_SOURCE,
         type: "getCardWords",
         value: {},
       });
-      const locgoals = await config.proxy.sendMessagePromise<GoalDocument[]>({
+
+      const locgoals: GoalDocument[] = await config.proxy.sendMessagePromise<GoalDocument[]>({
         source: DATA_SOURCE,
         type: "getAllFromDB",
         value: {
@@ -36,7 +39,6 @@ export default function GoalsWidget({ config }: Props): ReactElement {
           },
         },
       });
-
       const lists: WordlistType[] = await config.proxy.sendMessagePromise<WordlistType[]>({
         source: DATA_SOURCE,
         type: "getAllFromDB",
@@ -75,22 +77,27 @@ export default function GoalsWidget({ config }: Props): ReactElement {
     return (
       <>
         <Grid item>
-          <div>{name}</div>
+          <a href={`#/goals/${goalId}/show`} style={{ textDecoration: "none" }}>
+            <div>{name}</div>
+          </a>
         </Grid>
         <Grid item>
-          <div>
-            <progress id={goalId} value={percent} max="100">
-              {percent}%
-            </progress>
-          </div>
+          <a href={`#/goals/${goalId}/show`}>
+            <div>
+              <progress id={goalId} value={percent} max="100">
+                {percent}%
+              </progress>
+            </div>
+          </a>
         </Grid>
         <Grid item>
-          <div>{percent}%</div>
+          <a href={`#/goals/${goalId}/show`} style={{ textDecoration: "none" }}>
+            <div>{percent}%</div>
+          </a>
         </Grid>
       </>
     );
   }
-
   return (
     <div style={{ padding: 20 }}>
       {goals.map((x) => (

@@ -367,7 +367,7 @@ const CardDocumentMethods: CardDocumentMethodsType = {
 type CardDocument = RxDocument<CardType, CardDocumentMethodsType>;
 type CardCollection = RxCollection<CardType, CardDocumentMethodsType>;
 const CARDS_SCHEMA: RxJsonSchema<CardType> = {
-  version: 0,
+  version: 1,
   required: ["id"],
   type: "object",
   primaryKey: "id",
@@ -412,6 +412,10 @@ const CARDS_SCHEMA: RxJsonSchema<CardType> = {
       default: 0,
     },
     lastRevisionDate: {
+      type: "number",
+      default: 0,
+    },
+    firstSuccessDate: {
       type: "number",
       default: 0,
     },
@@ -666,6 +670,13 @@ const DBTwoWayCollections = {
     subscription: true,
     subscriptionParams: {
       token: "String!",
+    },
+    migrationStrategies: {
+      // 1 means, this transforms data from version 0 to version 1
+      1: function (oldDoc: CardType): CardType {
+        oldDoc.firstSuccessDate = oldDoc.interval > 0 ? oldDoc.firstRevisionDate : 0;
+        return oldDoc;
+      },
     },
   },
 };

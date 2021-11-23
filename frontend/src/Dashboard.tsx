@@ -18,8 +18,9 @@ const VerticalSpacer = () => <span style={{ height: "1em" }} />;
 
 interface Props {
   config: ComponentsConfig;
+  inited: boolean;
 }
-export default function Dashboard({ config }: Props): ReactElement {
+export default function Dashboard({ config, inited }: Props): ReactElement {
   useEffect(() => {
     (async () => {
       const username = await getUsername();
@@ -40,7 +41,7 @@ export default function Dashboard({ config }: Props): ReactElement {
       <div style={styles.flex}>
         <Card>
           <CardHeader title="Goals Progress" />
-          <GoalsWidget config={config} />
+          <GoalsWidget config={config} inited={inited} />
         </Card>
       </div>
     </>

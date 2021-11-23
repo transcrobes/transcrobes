@@ -430,6 +430,7 @@ class Card:
     updated_at: Optional[float] = 0
     first_revision_date: Optional[float] = 0
     last_revision_date: Optional[float] = 0
+    first_success_date: Optional[float] = 0
     known: Optional[bool] = False
     suspended: Optional[bool] = False
     deleted: Optional[bool] = False
@@ -452,6 +453,8 @@ class Card:
             out_card.first_revision_date = dj_card.first_revision_date.timestamp()
         if dj_card.last_revision_date:
             out_card.last_revision_date = dj_card.last_revision_date.timestamp()
+        if dj_card.first_success_date:
+            out_card.first_success_date = dj_card.first_success_date.timestamp()
         if dj_card.due_date:
             out_card.due_date = dj_card.due_date.timestamp()
 
@@ -470,6 +473,7 @@ class CardsInput:
     updated_at: Optional[float] = 0
     first_revision_date: Optional[float] = 0
     last_revision_date: Optional[float] = 0
+    first_success_date: Optional[float] = 0
     known: Optional[bool] = False
     suspended: Optional[bool] = False
     deleted: Optional[bool] = False
@@ -1070,6 +1074,8 @@ class Mutation:
                 dj_card.first_revision_date = datetime.fromtimestamp(cards.first_revision_date, pytz.utc)
             if cards.last_revision_date:
                 dj_card.last_revision_date = datetime.fromtimestamp(cards.last_revision_date, pytz.utc)
+            if cards.first_success_date:
+                dj_card.first_success_date = datetime.fromtimestamp(cards.first_success_date, pytz.utc)
 
             dj_card.interval = cards.interval
             dj_card.repetition = cards.repetition

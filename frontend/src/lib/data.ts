@@ -26,6 +26,7 @@ import {
   CARD_TYPES,
   CharacterDocument,
   DefinitionDocument,
+  GRADE,
   TranscrobesCollectionsKeys,
   TranscrobesDatabase,
   TranscrobesDocumentTypes,
@@ -380,21 +381,30 @@ async function practiceCard(
     badReviewWaitSecs,
   );
   let cardObject: CardDocument;
+
+  const newDate = dayjs().unix();
   if (isCardDoc) {
     // It's an update
     cardObject = currentCard;
-    await currentCard.atomicPatch({
+    const newValues = {
       interval: cardToSave.interval,
       repetition: cardToSave.repetition,
       efactor: cardToSave.efactor,
       dueDate: cardToSave.dueDate,
       known: cardToSave.known,
-      lastRevisionDate: dayjs().unix(),
-    });
+      lastRevisionDate: newDate,
+      firstSuccessDate:
+        !currentCard.firstSuccessDate && grade >= GRADE.HARD
+          ? newDate
+          : currentCard.firstSuccessDate,
+    };
+    await currentCard.atomicPatch(newValues);
   } else {
-    const newDate = dayjs().unix();
     if (!cardToSave.firstRevisionDate) {
       cardToSave.firstRevisionDate = newDate;
+    }
+    if (!cardToSave.firstSuccessDate && grade >= GRADE.HARD) {
+      cardToSave.firstSuccessDate = newDate;
     }
     cardToSave.lastRevisionDate = newDate;
     cardObject = await db.cards.upsert(cardToSave);

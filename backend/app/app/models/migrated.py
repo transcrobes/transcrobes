@@ -5,6 +5,7 @@ import json
 import logging
 import os
 import uuid
+from datetime import datetime
 from typing import TYPE_CHECKING, List, TypedDict
 
 from app.data.context import get_broadcast
@@ -96,6 +97,7 @@ class Card(RevisionableMixin, Base):
     suspended = Column(Boolean, nullable=False, default=False)
     first_revision_date = Column(DateTime(True))
     last_revision_date = Column(DateTime(True))
+    first_success_date = Column(DateTime(True))
 
     # my changes
     user = relationship("AuthUser", back_populates="cards")
@@ -536,6 +538,7 @@ class UserList(DetailedMixin, Base):
                             "interval": 0,
                             "repetition": 0,
                             "efactor": 2.5,
+                            "first_success_date": datetime.now() if self.words_are_known else 0,
                             "deleted": False,
                             "suspended": False,
                         }
