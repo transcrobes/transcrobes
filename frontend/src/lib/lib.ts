@@ -12,6 +12,7 @@ import {
 import { getAccess, refreshAccessToken } from "./JWTAuthProvider";
 
 import unidecode from "unidecode";
+import dayjs, { OpUnitType, QUnitType } from "dayjs";
 
 // I am genuinely not intelligent enough to code like a proper human being in js
 // It is a horrible language, written by horrible people, for horrible people
@@ -90,6 +91,23 @@ function toSimplePos(complexPos: TREEBANK_POS_TYPES): TREEBANK_POS_VALUES {
     return ZH_TB_POS_TO_SIMPLE_POS[complexPos];
   }
   throw new Error(`Unknown from language "${fromLang()}", can't find standard/simple POS`);
+}
+
+export function dateRange(
+  start: Date | number,
+  end: Date | number,
+  interval: QUnitType | OpUnitType,
+  asUnixTimestamps = false,
+): (number | Date)[] {
+  const startDate = typeof start === "number" ? dayjs(start * 1000) : dayjs(start);
+  const endDate = typeof end === "number" ? dayjs(end * 1000) : dayjs(start);
+  const diffInUnits = endDate.diff(startDate, interval);
+  console.log("start is", startDate, "end", endDate, "diff", diffInUnits);
+  return Array.from(Array(diffInUnits + 1).keys()).map((i) => {
+    return asUnixTimestamps
+      ? startDate.add(i, interval).valueOf() / 1000
+      : startDate.add(i, interval).toDate();
+  });
 }
 
 function apiUnavailable(message: string, doc = document) {

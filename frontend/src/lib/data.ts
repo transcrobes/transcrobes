@@ -8,6 +8,7 @@ import {
   ContentConfigType,
   DailyReviewsType,
   DayCardWords,
+  Goal,
   GraderConfig,
   PracticeDetailsType,
   PROCESSING,
@@ -139,6 +140,31 @@ async function getKnownWordIds(db: TranscrobesDatabase): Promise<Set<string>> {
   );
 
   return knownWordIds;
+}
+
+async function getFirstSuccessCards(
+  db: TranscrobesDatabase,
+  goal: Goal,
+): Promise<[CardType[], number]> {
+  const knownCards = await db.cards
+    .find({
+      selector: { firstSuccessDate: { $gt: 0 } },
+    })
+    .exec();
+  const goalWordList = (await db.wordlists.findByIds([goal.userList.toString()])).get(
+    goal.userList.toString(),
+  );
+  if (!goalWordList) throw new Error("Invalid goal, no userList found");
+  const goalWordIds = new Set(goalWordList.wordIds);
+  const firsts = new Map<string, CardType>();
+  for (const card of knownCards) {
+    if (!goalWordIds.has(card.wordId())) continue;
+    const first = firsts.get(card.id);
+    if (!first || first.firstSuccessDate > card.firstSuccessDate) {
+      firsts.set(card.wordId(), card.toJSON());
+    }
+  }
+  return [[...firsts.values()], goalWordList.wordIds.length];
 }
 
 async function getCardWords(db: TranscrobesDatabase): Promise<DayCardWords> {
@@ -555,6 +581,7 @@ async function getSRSReviews(
 }
 
 export {
+  getFirstSuccessCards,
   getCardWords,
   sendUserEvents,
   getNamedFileStorage,

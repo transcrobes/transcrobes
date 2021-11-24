@@ -4,7 +4,6 @@ import { Content, CONTENT_TYPE, PROCESSING } from "../lib/types";
 import WatchIcon from "@material-ui/icons/Theaters";
 import EnrichIcon from "@material-ui/icons/Add";
 import ReadIcon from "@material-ui/icons/LocalLibrary";
-import React from "react";
 
 const DATA_SOURCE = "ActionButton.tsx";
 

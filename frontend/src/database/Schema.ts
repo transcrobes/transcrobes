@@ -1,3 +1,4 @@
+import dayjs from "dayjs";
 import { RxCollection, RxJsonSchema, RxDocument, RxDatabase } from "rxdb";
 
 import {
@@ -674,7 +675,12 @@ const DBTwoWayCollections = {
     migrationStrategies: {
       // 1 means, this transforms data from version 0 to version 1
       1: function (oldDoc: CardType): CardType {
-        oldDoc.firstSuccessDate = oldDoc.interval > 0 ? oldDoc.firstRevisionDate : 0;
+        if (oldDoc.interval) {
+          oldDoc.firstSuccessDate = oldDoc.firstRevisionDate;
+          oldDoc.updatedAt = dayjs().unix();
+        } else {
+          oldDoc.firstSuccessDate = 0;
+        }
         return oldDoc;
       },
     },

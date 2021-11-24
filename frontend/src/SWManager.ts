@@ -434,6 +434,16 @@ export function manageEvent(sw: ServiceWorkerGlobalScope, event: ExtendableMessa
         postIt(event, { source: message.source, type: message.type, value: translation });
       });
     });
+  } else if (message.type === "getFirstSuccessCards") {
+    loadDb(message, sw).then(([ldb, msg]) => {
+      data.getFirstSuccessCards(ldb, message.value).then((result) => {
+        postIt(event, {
+          source: msg.source,
+          type: msg.type,
+          value: result,
+        });
+      });
+    });
   } else {
     console.warn("Service Worker received a message event that I had no manager for", event);
   }
