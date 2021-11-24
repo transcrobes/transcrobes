@@ -228,6 +228,13 @@ export function manageEvent(sw: ServiceWorkerGlobalScope, event: ExtendableMessa
         postIt(event, { source: msg.source, type: msg.type, value: values });
       });
     });
+  } else if (message.type === "getWordListWordIds") {
+    loadDb(message, sw).then(([ldb, msg]) => {
+      data.getWordListWordIds(ldb, message.value).then((values) => {
+        console.debug("getWordListWordIds results in sw.js", msg, values);
+        postIt(event, { source: msg.source, type: msg.type, value: values });
+      });
+    });
   } else if (message.type === "createCards") {
     loadDb(message, sw).then(([ldb, msg]) => {
       data.createCards(ldb, msg.value).then((values) => {

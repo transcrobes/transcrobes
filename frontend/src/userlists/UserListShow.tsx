@@ -9,6 +9,7 @@ import {
   TextField,
 } from "react-admin";
 import { ORDER_BY, PROCESSING, reverseEnum, UserList } from "../lib/types";
+import UserListDetails from "./UserListDetails";
 
 const UserListShow: FC<FieldProps<UserList>> = (props) => (
   <Show {...props}>
@@ -32,6 +33,9 @@ const UserListShow: FC<FieldProps<UserList>> = (props) => (
       />
       <BooleanField source="wordsAreKnown" />
       <BooleanField source="shared" />
+      <hr />
+      <h3>Details</h3>
+      <UserListDetails />
     </SimpleShowLayout>
   </Show>
 );

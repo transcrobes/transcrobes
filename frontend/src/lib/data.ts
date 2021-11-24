@@ -242,6 +242,11 @@ async function saveSurvey(
   return "success";
 }
 
+async function getWordListWordIds(db: TranscrobesDatabase, wordListId: string): Promise<string[]> {
+  const wordList = await db.wordlists.findByIds([wordListId]);
+  return wordList.has(wordListId) ? wordList.get(wordListId)!.wordIds : [];
+}
+
 async function getDefaultWordLists(db: TranscrobesDatabase): Promise<SelectableListElementType[]> {
   return [...(await db.wordlists.find().exec())].map((x) => {
     return { label: x.name, value: x.id, selected: x.default };
@@ -592,6 +597,7 @@ export {
   getAllFromDB,
   getDefaultWordLists,
   getUserListWords,
+  getWordListWordIds,
   getWordDetails,
   getCharacterDetails,
   createCards,

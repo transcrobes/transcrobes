@@ -8,6 +8,7 @@ import {
   TextField,
 } from "react-admin";
 import { Import, PROCESSING, PROCESS_TYPE, reverseEnum } from "../lib/types";
+import ImportDetails from "./ImportDetails";
 
 const ImportShow: FC<FieldProps<Import>> = (props) => (
   <Show {...props}>
@@ -24,6 +25,9 @@ const ImportShow: FC<FieldProps<Import>> = (props) => (
         render={(record: any) => reverseEnum(PROCESSING, record.processing)}
       />
       <BooleanField source="shared" />
+      <hr />
+      <h3>Details</h3>
+      <ImportDetails />
     </SimpleShowLayout>
   </Show>
 );
