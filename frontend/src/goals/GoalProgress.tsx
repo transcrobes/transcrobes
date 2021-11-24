@@ -1,8 +1,7 @@
 import dayjs from "dayjs";
 import { ReactElement, useEffect, useState } from "react";
-import { GoalDocument } from "../database/Schema";
 import { dateRange } from "../lib/lib";
-import { CardType } from "../lib/types";
+import { CardType, Goal } from "../lib/types";
 
 import { bin } from "d3-array";
 import { useRecordContext } from "react-admin";
@@ -18,7 +17,7 @@ type HistoData = {
 // FIXME: any
 function GoalProgress(props: any): ReactElement {
   const [data, setData] = useState<HistoData[]>([]);
-  const goal = useRecordContext(props) as GoalDocument;
+  const goal = useRecordContext(props) as Goal;
 
   useEffect(() => {
     (async function () {
