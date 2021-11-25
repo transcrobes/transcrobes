@@ -9,10 +9,10 @@ const GoalShow: FC<FieldProps<Goal>> = (props) => (
       <TextField source="id" />
       <TextField source="title" />
       <TextField source="description" />
-      <ReferenceField source="userList" reference="userlists">
+      <ReferenceField source="userList" reference="userlists" link="show">
         <TextField source="title" />
       </ReferenceField>
-      <ReferenceField source="parent" reference="goals">
+      <ReferenceField source="parent" reference="goals" link="show">
         <TextField source="title" />
       </ReferenceField>
       <TextField source="priority" />

@@ -8,6 +8,7 @@ import {
   FunctionField,
   List,
   ListProps,
+  ReferenceField,
   SearchInput,
   SortButton,
   TextField,
@@ -35,6 +36,9 @@ export const UserListList: FC<ListProps> = (props) => {
     <List {...props} actions={<ListActions />} filters={<UserListFilter />}>
       <Datagrid rowClick="show">
         <TextField source="title" />
+        <ReferenceField label="Source import" source="theImport" reference="imports" link="show">
+          <TextField source="title" />
+        </ReferenceField>
         <FunctionField
           source="processing"
           render={(record: any) => reverseEnum(PROCESSING, record.processing)}

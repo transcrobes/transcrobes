@@ -17,7 +17,7 @@ const UserListShow: FC<FieldProps<UserList>> = (props) => (
       <TextField source="id" />
       <TextField source="title" />
       <TextField source="description" />
-      <ReferenceField label="Source import" source="theImport" reference="imports">
+      <ReferenceField label="Source import" source="theImport" reference="imports" link="show">
         <TextField source="title" />
       </ReferenceField>
       <FunctionField

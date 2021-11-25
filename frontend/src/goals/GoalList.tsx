@@ -32,10 +32,10 @@ export const GoalList: FC<ListProps> = (props) => {
     <List {...props} actions={<ListActions />} filters={<GoalFilter />}>
       <Datagrid rowClick="show">
         <TextField source="title" />
-        <ReferenceField source="userList" reference="userlists">
+        <ReferenceField source="userList" reference="userlists" link="show">
           <TextField source="title" />
         </ReferenceField>
-        <ReferenceField source="parent" reference="goals" sortable={false}>
+        <ReferenceField source="parent" reference="goals" sortable={false} link="show">
           <TextField source="title" />
         </ReferenceField>
         <TextField source="priority" />
