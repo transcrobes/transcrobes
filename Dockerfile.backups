@@ -1,0 +1,15 @@
+# Then build our backup image
+FROM postgres:14
+LABEL maintainer="Anton Melser <anton@transcrob.es>"
+
+RUN apt-get update && apt-get install -y \
+  xz-utils \
+  tar \
+  gzip \
+  rsync  \
+  openssh-client \
+  && rm -rf /var/lib/apt/lists/*
+
+ADD scripts/backups-entrypoint.sh /app/entrypoint.sh
+
+ENTRYPOINT [ "/app/entrypoint.sh" ]
