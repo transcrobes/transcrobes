@@ -46,7 +46,7 @@ async function loadDb(callback: any, message: any) {
   utils.setPassword(
     items[1] ||
       (() => {
-        throw new Error("Unable to get username");
+        throw new Error("Unable to get password");
       })(),
   );
   const baseUrl = items[2] ? items[2] + (items[2].endsWith("/") ? "" : "/") : "";
@@ -55,14 +55,14 @@ async function loadDb(callback: any, message: any) {
     parseInt(
       items[3] ||
         (() => {
-          throw new Error("Unable to get username");
+          throw new Error("Unable to get glossing");
         })(),
     ),
   );
   utils.setLangPair(
     items[4] ||
       (() => {
-        throw new Error("Unable to get username");
+        throw new Error("Unable to get langPair");
       })(),
   );
 
@@ -93,6 +93,7 @@ chrome.action.onClicked.addListener(function (tab) {
   Promise.all([getUsername(), getPassword(), getValue("baseUrl"), getValue("glossing")]).then(
     (items: any[]) => {
       if (!items[0] || !items[1] || !items[2]) {
+        // FIXME: this can't work in a service worker...
         alert(
           `You need an account on a Transcrobes server to Transcrobe a page. \n\nIf you have an account please fill in the options page (right-click on the Transcrobe Me! icon -> Extension Options) with your login information (username, password, server URL).\n\n For information on available servers or how to set one up for yourself, see the Transcrobes site https://transcrob.es`,
         );
@@ -185,7 +186,6 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
   } else if (message.type === "submitUserEvents") {
     loadDb(console.debug, message).then((ldb) => {
       data.submitUserEvents(ldb, message.value).then(() => {
-        // console.debug(message, values);
         sendResponse({
           source: message.source,
           type: message.type,
@@ -243,8 +243,8 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
       sendResponse({ source: message.source, type: message.type, value: utils.langPair });
     });
   } else if (message.type === "glossing") {
-    loadDb(console.debug, message).then(() => {
-      sendResponse({ source: message.source, type: message.type, value: utils.glossing });
+    getValue("glossing").then((glossing) => {
+      sendResponse({ source: message.source, type: message.type, value: glossing });
     });
   } else if (message.type === "getUsername") {
     getUsername().then((username) => {

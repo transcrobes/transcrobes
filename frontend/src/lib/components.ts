@@ -540,7 +540,7 @@ async function updateWordForEntry(
         );
 
         let innerGloss;
-        if (syns) {
+        if (syns && syns.length > 0) {
           const userSynonyms = utils.filterKnown(
             uCardWords.knownWordIdsCounter,
             uCardWords.knownCardWordGraphs,
@@ -554,7 +554,12 @@ async function updateWordForEntry(
       }
       // eslint-disable-next-line eqeqeq
     } else if (glossing == USER_STATS_MODE.TRANSLITERATION) {
-      gloss = token.p?.join("") || "";
+      if (token.p) {
+        gloss = token.p.join("");
+      } else {
+        const dictDefinition = await getWord(lemma);
+        gloss = dictDefinition.sound.join("");
+      }
     }
     word.dataset.tcrobeGloss = gloss;
     word.classList.add("tcrobe-gloss");

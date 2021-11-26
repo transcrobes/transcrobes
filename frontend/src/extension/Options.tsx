@@ -33,11 +33,12 @@ function Initialisation() {
     </div>
   );
 }
-function Intro() {
+function Intro({ inited }: { inited: boolean }) {
   return (
     <div>
       <div>
-        <h1>Welcome! It's Transcrobes initialisation time!</h1>
+        {!inited && <h1>Welcome! It's Transcrobes initialisation time!</h1>}
+        {inited && <h1>Reinitialise Transcrobes or update settings</h1>}
         <p>
           Even though the client side of Transcrobes is entirely browser-based, a lot of
           Transcrobes' data needs to be downloaded in order to save on bandwidth and dramatically
@@ -86,8 +87,7 @@ export default function Options(): JSX.Element {
     })();
   }, []);
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function saveFields() {
     utils.setUsername(username);
     utils.setPassword(password);
     utils.setBaseUrl(baseUrl.endsWith("/") ? baseUrl : baseUrl + "/");
@@ -100,8 +100,6 @@ export default function Options(): JSX.Element {
       ap.setValue("glossing", utils.glossing.toString()),
     ]);
     setMessage("Options saved.");
-    setRunning(true);
-
     await ap.refreshAccessToken(new URL(utils.baseUrl));
     const items = await Promise.all([ap.getAccess(), ap.getRefresh()]);
     if (!(items[0] && items[1])) {
@@ -109,6 +107,12 @@ export default function Options(): JSX.Element {
     }
     utils.setAccessToken(items[0]);
     utils.setRefreshToken(items[1]);
+  }
+
+  async function handleSubmit(forceReinit: boolean) {
+    await saveFields();
+
+    setRunning(true);
 
     if (!utils.accessToken) {
       setMessage(
@@ -123,7 +127,7 @@ export default function Options(): JSX.Element {
         console.debug("progressCallback in options.ts", message);
         setMessage(message);
       };
-      const db = await getDb(dbConfig, progressCallback, !!inited);
+      const db = await getDb(dbConfig, progressCallback, !!inited && forceReinit);
       try {
         window.tcb = db;
         setMessage("Initialisation Complete!");
@@ -140,7 +144,7 @@ export default function Options(): JSX.Element {
   }
 
   return (
-    <form onSubmit={(e) => handleSubmit(e)}>
+    <>
       <div className="credentials">
         <div className="title">Transcrobes Server connection information</div>
         <div className="frow">
@@ -194,12 +198,17 @@ export default function Options(): JSX.Element {
           </select>
         </div>
         <div className="savestyle">
-          <button id="save">{!inited ? "Save" : "Reinitialise"}</button>
+          <button onClick={() => handleSubmit(false)}>Save</button>
         </div>
+        {inited && (
+          <div className="savestyle">
+            <button onClick={() => handleSubmit(true)}>Force reinitialisation</button>
+          </div>
+        )}
       </div>
-      <Intro />
+      <Intro inited={!!inited} />
       {running && <img alt="Running" src={Loader} /> && <Initialisation />}
       <Status message={message} />
-    </form>
+    </>
   );
 }
