@@ -1,13 +1,18 @@
 import * as components from "../../lib/components";
 export * from "../../lib/components";
-const proxy = window.parent.componentsConfig.proxy;
-components.setPlatformHelper(proxy);
-components.setEventSource("readium.ts");
-components.setBaseUrl(window.parent.componentsConfig.url.origin);
-components.setLangPair(window.parent.componentsConfig.langPair);
-components.setSegmentation(window.parent.readerConfig.segmentation);
-components.setGlossing(window.parent.readerConfig.glossing);
-components.setPopupParent(window.parent.readerConfig.popupParent);
+
+function loadSettingsFromParentFrame() {
+  console.debug("Loading injectables");
+  components.setPlatformHelper(window.parent.componentsConfig.proxy);
+  components.setEventSource("readium.ts");
+  components.setBaseUrl(window.parent.componentsConfig.url.origin);
+  components.setLangPair(window.parent.componentsConfig.langPair);
+  components.setSegmentation(window.parent.readerConfig.segmentation);
+  components.setGlossing(window.parent.readerConfig.glossing);
+  components.setPopupParent(window.parent.readerConfig.popupParent);
+}
+
+loadSettingsFromParentFrame();
 
 function showHideMenus(event: MouseEvent) {
   if (!components.destroyPopup(event, document, window.parent.document)) {
@@ -34,9 +39,7 @@ document.addEventListener("click", (event: MouseEvent) => {
 //   showHideMenus(event)
 // });
 
-console.debug("Trying to sync in readium.ts");
-
 components.getUserCardWords().then(() => {
   components.defineElements();
-  console.log("Finished setting up elements for readium");
+  console.debug("Finished setting up elements for readium");
 });
