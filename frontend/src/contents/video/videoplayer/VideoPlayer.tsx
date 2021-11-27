@@ -93,8 +93,29 @@ const useStyles = makeStyles((theme: Theme) => ({
 
   fineControlIcons: {
     color: "#777",
+    fontSize: 20,
+    transform: "scale(0.9)",
+    "&:hover": {
+      color: "#fff",
+      transform: "scale(1)",
+    },
+  },
 
-    fontSize: 30,
+  select: {
+    justifyContent: "center",
+    color: "#777",
+    fontSize: 20,
+    transform: "scale(0.9)",
+    "&:hover": {
+      color: "#fff",
+      transform: "scale(1)",
+    },
+  },
+
+  switch: {
+    justifyContent: "center",
+    color: "#777",
+    fontSize: 20,
     transform: "scale(0.9)",
     "&:hover": {
       color: "#fff",
@@ -164,7 +185,22 @@ function VideoPlayer({
   const [subDelay, setSubDelay] = useState(0);
   const [subFontSize, setSubFontSize] = useState(1);
   const [subFontColour, setSubFontColour] = useState(createColor("white"));
-  const [subBoxWidth, setSubBoxWidth] = useState(0.7); // 70% of the screen
+  const [subBoxWidth, setSubBoxWidth] = useState(0.8); // 80% of the screen
+  const [glossing, setLocalGlossing] = useState(USER_STATS_MODE.L1);
+  const [segmentation, setLocalSegmentation] = useState(true);
+
+  function updateGlossing(newGlossing: number) {
+    if (contentConfig?.config) {
+      setLocalGlossing(newGlossing);
+    }
+    setGlossing(newGlossing);
+  }
+  function updateSegmentation(_event: any, newSegmentation: boolean) {
+    if (contentConfig?.config) {
+      setLocalSegmentation(newSegmentation);
+    }
+    setSegmentation(newSegmentation);
+  }
 
   useEffect(() => {
     if (contentConfig?.config) {
@@ -194,11 +230,14 @@ function VideoPlayer({
     // components.setEventSource(DATA_SOURCE);
     const platformHelper = window.componentsConfig.proxy;
 
+    updateGlossing(contentConfig?.config?.glossing || USER_STATS_MODE.L1);
+    updateSegmentation(null, contentConfig?.config?.segmentation === false ? false : true);
+    // FIXME: this is broken...
+    setLangPair(window.componentsConfig.langPair);
+
     setPlatformHelper(platformHelper);
     defineElements();
-    setGlossing(USER_STATS_MODE.L1);
-    setSegmentation(true);
-    setLangPair(window.componentsConfig.langPair);
+
     if (playerContainerRef.current) setPopupParent(playerContainerRef.current);
     setOnScreenDelayIsConsideredRead(ONSCREEN_DELAY_IS_CONSIDERED_READ);
   }, []);
@@ -215,13 +254,15 @@ function VideoPlayer({
         subBoxWidth,
         subFontColour,
         subPosition,
+        glossing,
+        segmentation,
       };
       onContentConfigUpdate({
         id: contentConfig.id,
         config: conf,
       });
     }
-  }, [volume, played, playbackRate, subDelay, subFontSize, subBoxWidth]);
+  }, [volume, played, playbackRate, subDelay, subFontSize, subBoxWidth, glossing, segmentation]);
 
   function shiftSubs(delay: number): void {
     if (track && track.cues) {
@@ -580,6 +621,8 @@ function VideoPlayer({
                       subBoxWidth={subBoxWidth}
                       subFontColour={subFontColour}
                       subPosition={subPosition}
+                      glossing={glossing}
+                      segmentation={segmentation}
                       onSubPositionChange={(position) => setSubPosition(position)}
                       onSubFontColourChange={(colour) => setSubFontColour(colour)}
                       onSubBoxWidthChange={(width) => setSubBoxWidth(width)}
@@ -596,6 +639,8 @@ function VideoPlayer({
                       }}
                       onToggleFullscreen={toggleFullscreen}
                       onVolumeChange={handleVolumeChange}
+                      onGlossingChange={updateGlossing}
+                      onSegmentationChange={updateSegmentation}
                     />
                   )}
                 </Grid>

@@ -1,4 +1,4 @@
-import React, { ReactElement, ReactInstance, useRef, useState } from "react";
+import React, { ChangeEvent, ReactElement, ReactInstance, useRef, useState } from "react";
 import Grid from "@material-ui/core/Grid";
 import Slider from "@material-ui/core/Slider";
 import IconButton from "@material-ui/core/IconButton";
@@ -12,7 +12,6 @@ import Button from "@material-ui/core/Button";
 import Typography from "@material-ui/core/Typography";
 import Popover from "@material-ui/core/Popover";
 import SettingsIcon from "@material-ui/icons/Settings";
-import InputLabel from "@material-ui/core/InputLabel";
 import Select from "@material-ui/core/Select";
 import MenuItem from "@material-ui/core/MenuItem";
 import { Color } from "material-ui-color";
@@ -22,7 +21,9 @@ import FontSize from "./SubFontSize";
 import SubFontColour from "./SubFontColour";
 import SubDelay from "./SubDelay";
 import PlaybackRate from "./SubPlaybackRate";
+import Segmentation from "./SubSegmentation";
 import { SubPosition } from "./types";
+import { USER_STATS_MODE } from "../../../lib/lib";
 
 interface Props {
   elapsedTime: string;
@@ -37,8 +38,9 @@ interface Props {
   subFontSize: number;
   subFontColour: Color;
   subPosition: SubPosition;
+  glossing: number;
+  segmentation: boolean;
   onSubPositionChange: (position: SubPosition) => void;
-
   onSubFontColourChange: (colour: Color) => void;
   onSubBoxWidthChange: (width: number) => void;
   onSubFontSizeChange: (size: number) => void;
@@ -58,6 +60,8 @@ interface Props {
   onMute: () => void;
   onContentConfigUpdate: (contentConfig: { id: string; configString: string }) => void;
   onSubDelayChange: (delay: number) => void;
+  onGlossingChange: (glossing: number) => void;
+  onSegmentationChange: (event: ChangeEvent<HTMLInputElement>, segmentation: boolean) => void;
 }
 
 function VideoBottomControls({
@@ -73,6 +77,8 @@ function VideoBottomControls({
   subFontSize,
   subFontColour,
   subPosition,
+  glossing,
+  segmentation,
   onSubPositionChange,
   onSubFontColourChange,
   onSubBoxWidthChange,
@@ -86,6 +92,8 @@ function VideoBottomControls({
   onVolumeChange,
   onSeekMouseDown,
   onToggleFullscreen,
+  onGlossingChange,
+  onSegmentationChange,
 }: Props): ReactElement {
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const ref = useRef<HTMLDivElement>(null);
@@ -183,24 +191,46 @@ function VideoBottomControls({
                   value={playbackRate}
                   classes={classes}
                 />
-                <Select
-                  // FIXME: This DOESN'T work in fullscreen, but it might be a known issue?
-                  className={classes.fineControlIcons}
-                  labelId="subs-position"
-                  id="subs-position-select"
-                  value={subPosition}
-                  label="Subs Position"
-                  onChange={(event) => {
-                    onSubPositionChange(event.target.value as SubPosition);
-                  }}
-                >
-                  <MenuItem value={"top"}>Top</MenuItem>
-                  <MenuItem value={"bottom"}>Bottom</MenuItem>
-                  <MenuItem value={"under"}>Under</MenuItem>
-                </Select>
-                <InputLabel className={classes.fineControlIcons} id="subs-position">
-                  Subs Position
-                </InputLabel>
+                <div className={classes.select} title="Subs Position">
+                  <Grid container direction="row" alignItems="center" justifyContent="center">
+                    <Select
+                      className={classes.select}
+                      value={subPosition}
+                      label="Position"
+                      onChange={(event) => {
+                        onSubPositionChange(event.target.value as SubPosition);
+                      }}
+                    >
+                      <MenuItem value={"top"}>Top</MenuItem>
+                      <MenuItem value={"bottom"}>Bottom</MenuItem>
+                      <MenuItem value={"under"}>Under</MenuItem>
+                    </Select>
+                  </Grid>
+                </div>
+                <div className={classes.select} title="Glossing">
+                  <Grid container direction="row" alignItems="center" justifyContent="center">
+                    <Select
+                      className={classes.select}
+                      value={glossing}
+                      label="Glossing"
+                      onChange={(event) => {
+                        onGlossingChange(event.target.value as number);
+                      }}
+                    >
+                      <MenuItem value={USER_STATS_MODE.NO_GLOSS}>None</MenuItem>
+                      <MenuItem value={USER_STATS_MODE.L2_SIMPLIFIED}>Simpler</MenuItem>
+                      <MenuItem value={USER_STATS_MODE.TRANSLITERATION}>Sounds</MenuItem>
+                      <MenuItem value={USER_STATS_MODE.L1}>English</MenuItem>
+                    </Select>
+                  </Grid>
+                </div>
+                <Segmentation
+                  cssClasses={classes}
+                  onValueChange={onSegmentationChange}
+                  value={segmentation}
+                />
+                {/* FIXME: this is extremely nasty. I am horrible. Default nav height is 48. Sometimes */}
+                <div style={{ height: "50px" }}></div>
               </Grid>
             </Popover>
           </div>

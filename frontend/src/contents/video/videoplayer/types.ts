@@ -12,6 +12,8 @@ export type VideoConfig = {
   subFontColour: Color;
   subBoxWidth: number;
   subPosition: SubPosition;
+  segmentation: boolean;
+  glossing: number;
 };
 
 export type VideoContentConfig = {

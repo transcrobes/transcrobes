@@ -8,7 +8,7 @@ import VideoPlayer from "./videoplayer/VideoPlayer";
 import { VideoConfig, VideoContentConfig } from "./videoplayer/types";
 import { ContentDocument } from "../../database/Schema";
 import { ContentConfigType } from "../../lib/types";
-import { fetchPlus } from "../../lib/lib";
+import { fetchPlus, USER_STATS_MODE } from "../../lib/lib";
 
 type ContentParams = {
   id: string;
@@ -67,8 +67,10 @@ export default function VideoPlayerScreen({ proxy, dataProvider }: ContentProps)
           subDelay: 0,
           subFontSize: 1,
           subFontColour: createColor("white"),
-          subBoxWidth: 0.7,
+          subBoxWidth: 0.8,
           subPosition: "bottom",
+          glossing: USER_STATS_MODE.L1,
+          segmentation: true,
         };
       }
       const videoConfig: VideoContentConfig = {
