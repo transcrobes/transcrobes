@@ -129,11 +129,11 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
     forceWcpm: DEFAULT_FORCE_WCPM,
     dayStartsHour: DEFAULT_DAY_STARTS_HOUR,
     wordLists: [],
-    showProgress: false,
-    showSynonyms: false,
-    showL2LengthHint: false,
+    showProgress: DEFAULT_QUESTION_SHOW_PROGRESS,
+    showSynonyms: DEFAULT_QUESTION_SHOW_SYNONYMS,
+    showL2LengthHint: DEFAULT_QUESTION_SHOW_L2_LENGTH_HINT,
     activeCardTypes: [],
-    todayStarts: 0,
+    todayStarts: DEFAULT_DAY_STARTS_HOUR,
   };
   const [stateActivityConfig, setStateActivityConfig] =
     useState<RepetrobesActivityConfigType>(EMPTY_ACTIVITY);
@@ -141,10 +141,20 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
   useEffect(() => {
     (async () => {
       const savedConf = await getSettingsValue("repetrobes", "config");
-
       let conf: RepetrobesActivityConfigType;
       if (savedConf) {
         conf = JSON.parse(savedConf);
+
+        // wordlists may have been added or removed since, therefore we get the current wordlists
+        // and replace with the existing ones where they still exist (because they might have been selected)
+        const wordListMap = new Map<string, SelectableListElementType>();
+        const wordLists = await proxy.sendMessagePromise<SelectableListElementType[]>({
+          source: DATA_SOURCE,
+          type: "getDefaultWordLists",
+          value: {},
+        });
+        conf.wordLists.map((wl) => wordListMap.set(wl.label, wl));
+        conf.wordLists = wordLists.map((wl) => wordListMap.get(wl.label) || wl);
       } else {
         // eslint-disable-next-line prefer-const
         conf = {
@@ -379,10 +389,7 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
       state,
       activityConfig,
     );
-    let getNew = true;
-    if (newToday >= activityConfig.maxNew) {
-      getNew = false;
-    }
+    let getNew = newToday < activityConfig.maxNew;
     if (newToday / revisionsToday > activityConfig.maxNew / activityConfig.maxRevisions) {
       getNew = false;
     }
