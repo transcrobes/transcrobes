@@ -27,7 +27,7 @@ from app.db.base_class import Base
 from app.db.session import async_session
 from app.enrich import latest_definitions_json_dir_path
 from app.enrich.data import managers
-from app.enrich.models import ensure_cache_preloaded
+from app.enrich.models import ensure_cache_preloaded, update_cache
 from app.models.mixins import ActivatorMixin, DetailedMixin
 from app.models.user import AuthUser
 from app.schemas.files import ProcessData
@@ -302,6 +302,10 @@ class WordModelStats:
         return ws
 
 
+class MissingCacheValueException(Exception):
+    pass
+
+
 def add_word_ids(user_words: list, lang_pair: str) -> list:
     cds = cached_definitions[lang_pair]
     filtered_words = []
@@ -315,7 +319,9 @@ def add_word_ids(user_words: list, lang_pair: str) -> list:
         val = cds.get(uw[0])
         if not val:
             print(uw)
-            raise Exception(f"Unable to find entry in cache for {uw[0]}, this should not be possible...")
+            raise MissingCacheValueException(
+                f"Unable to find entry in cache for {uw[0]}, this should not be possible..."
+            )
         uw.append(val[2])
     return filtered_words
 
@@ -338,7 +344,15 @@ async def filter_word_model_stats_faust(
         query = f"http://{settings.FAUST_HOST}:{settings.FAUST_PORT}/user_word_updates/{user_id}/{updated_at or 0}"
         async with session.get(query) as resp:
             resp.raise_for_status()
-            updates = add_word_ids(await resp.json(), lang_pair)
+            try:
+                updates = add_word_ids(await resp.json(), lang_pair)
+            except MissingCacheValueException:
+                # This happens because broadcaster actually doesn't work... sigh... encode...
+                async with async_session() as db:
+                    cached_max_timestamp = next(reversed(cached_definitions[lang_pair].values()))[0]
+                    await update_cache(db, lang_pair.split(":")[0], lang_pair.split(":")[1], cached_max_timestamp)
+                updates = add_word_ids(await resp.json(), lang_pair)
+
             updates = sorted(updates, key=lambda k: (k[7], k[8]))
             if limit > 0:
                 updates = updates[:limit]
