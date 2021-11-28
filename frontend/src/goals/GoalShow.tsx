@@ -1,7 +1,7 @@
 import { FC } from "react";
 import { FieldProps, ReferenceField, Show, SimpleShowLayout, TextField } from "react-admin";
 import { Goal } from "../lib/types";
-import GoalProgress from "./GoalProgress";
+import { UserListProgress } from "../userlists/UserListProgress";
 
 const GoalShow: FC<FieldProps<Goal>> = (props) => (
   <Show {...props}>
@@ -18,7 +18,7 @@ const GoalShow: FC<FieldProps<Goal>> = (props) => (
       <TextField source="priority" />
       <hr />
       <h3>Progress</h3>
-      <GoalProgress />
+      <UserListProgress />
     </SimpleShowLayout>
   </Show>
 );

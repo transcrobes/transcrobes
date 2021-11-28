@@ -8,8 +8,11 @@ import {
   ContentConfigType,
   DailyReviewsType,
   DayCardWords,
-  Goal,
+  FirstSuccess,
+  ImportFirstSuccessStats,
+  ListFirstSuccessStats,
   GraderConfig,
+  ImportAnalysis,
   PracticeDetailsType,
   PROCESSING,
   RepetrobesActivityConfigType,
@@ -27,7 +30,6 @@ import {
   CARD_TYPES,
   CharacterDocument,
   DefinitionDocument,
-  GRADE,
   TranscrobesCollectionsKeys,
   TranscrobesDatabase,
   TranscrobesDocumentTypes,
@@ -142,29 +144,159 @@ async function getKnownWordIds(db: TranscrobesDatabase): Promise<Set<string>> {
   return knownWordIds;
 }
 
-async function getFirstSuccessCards(
-  db: TranscrobesDatabase,
-  goal: Goal,
-): Promise<[CardType[], number]> {
-  const knownCards = await db.cards
-    .find({
-      selector: { firstSuccessDate: { $gt: 0 } },
-    })
-    .exec();
-  const goalWordList = (await db.wordlists.findByIds([goal.userList.toString()])).get(
-    goal.userList.toString(),
-  );
-  if (!goalWordList) throw new Error("Invalid goal, no userList found");
-  const goalWordIds = new Set(goalWordList.wordIds);
-  const firsts = new Map<string, CardType>();
-  for (const card of knownCards) {
-    if (!goalWordIds.has(card.wordId())) continue;
-    const first = firsts.get(card.id);
+async function getKnownCards(db: TranscrobesDatabase): Promise<Map<string, CardType>> {
+  const knownCards = new Map<string, CardType>();
+  (
+    await db.cards
+      .find({
+        selector: { firstSuccessDate: { $gt: 0 } },
+      })
+      .exec()
+  ).map((card) => {
+    const wordId = card.wordId();
+    const first = knownCards.get(wordId);
     if (!first || first.firstSuccessDate > card.firstSuccessDate) {
-      firsts.set(card.wordId(), card.toJSON());
+      knownCards.set(wordId, card.toJSON());
+    }
+  });
+  return knownCards;
+}
+
+async function getGraphs(db: TranscrobesDatabase, wordIds: string[]): Promise<Map<string, string>> {
+  const graphs = new Map<string, string>();
+  [...(await db.definitions.findByIds(wordIds)).values()].map((def) => {
+    graphs.set(def.id, def.graph);
+  });
+  return graphs;
+}
+
+function getKnownChars(
+  knownCards: Map<string, CardType>,
+  knownGraphs: Map<string, string>,
+): Map<string, number> {
+  const knownChars = new Map<string, number>();
+  for (const [wordId, card] of knownCards.entries()) {
+    const chars = (knownGraphs.get(wordId) || "").split("");
+    for (const char of chars) {
+      const first = knownChars.get(char);
+      if (!first || first > card.firstSuccessDate) {
+        knownChars.set(char, card.firstSuccessDate);
+      }
     }
   }
-  return [[...firsts.values()], goalWordList.wordIds.length];
+  return knownChars;
+}
+
+async function getFirstSuccessStatsForImport(
+  db: TranscrobesDatabase,
+  importId: string,
+): Promise<ImportFirstSuccessStats> {
+  const theImport = (await db.imports.findByIds([importId])).get(importId);
+  if (!theImport) throw new Error("Invalid, import not found");
+
+  const knownCards = await getKnownCards(db);
+  const knownGraphs = await getGraphs(db, [...knownCards.keys()]);
+  const knownChars = getKnownChars(knownCards, knownGraphs);
+
+  const analysis: ImportAnalysis = JSON.parse(theImport.analysis);
+  const allWords: [string, number][] = [];
+  let nbUniqueWords = 0;
+  let nbTotalWords = 0;
+  let allChars = "";
+
+  for (const [nbOccurances, wordList] of Object.entries(analysis.vocabulary.buckets)) {
+    allWords.push(
+      ...wordList.map((word: string) => [word, parseInt(nbOccurances)] as [string, number]),
+    );
+    nbTotalWords += parseInt(nbOccurances) * wordList.length;
+    nbUniqueWords += wordList.length;
+    allChars += wordList.join("").repeat(parseInt(nbOccurances));
+  }
+  const nbTotalCharacters = allChars.length;
+  const uniqueListChars = new Set([...allChars]);
+  const nbUniqueCharacters = uniqueListChars.size;
+  const allWordsMap = new Map(allWords);
+  const successWords = getSuccessWords(knownCards, knownGraphs, allWordsMap);
+  const allCharCounts = pythonCounter(allChars);
+  const successChars: FirstSuccess[] = [];
+  for (const [char, firstSuccessDate] of knownChars.entries()) {
+    if (allCharCounts[char] > 0) {
+      successChars.push({
+        firstSuccess: firstSuccessDate,
+        nbOccurrences: allCharCounts[char],
+      });
+    }
+  }
+
+  return {
+    successChars,
+    successWords,
+    nbTotalCharacters,
+    nbTotalWords,
+    nbUniqueCharacters,
+    nbUniqueWords,
+  };
+}
+
+function getSuccessWords(
+  knownCards: Map<string, CardType>,
+  knownGraphs: Map<string, string>,
+  allWordsMap: Map<string, number>,
+): FirstSuccess[] {
+  const successWords: FirstSuccess[] = [];
+  for (const [wordId, card] of knownCards.entries()) {
+    const graph = knownGraphs.get(wordId);
+    const nbOccurrences = allWordsMap.get(graph || "");
+    if (nbOccurrences) {
+      successWords.push({
+        // wordId: wordId,
+        // graph: knownGraphs.get(wordId),
+        firstSuccess: card.firstSuccessDate,
+        nbOccurrences: nbOccurrences,
+      });
+    }
+  }
+  return successWords;
+}
+
+async function getFirstSuccessStatsForList(
+  db: TranscrobesDatabase,
+  listId: string,
+): Promise<ListFirstSuccessStats> {
+  const knownCards = await getKnownCards(db);
+  const goalWordList = (await db.wordlists.findByIds([listId])).get(listId);
+
+  if (!goalWordList) throw new Error("Invalid goal, no userList found");
+
+  const allListGraphs = await getGraphs(db, goalWordList.wordIds);
+  let allChars = "";
+
+  const knownGraphs = await getGraphs(db, [...knownCards.keys()]);
+  for (const graph of allListGraphs.values()) {
+    allChars += graph;
+  }
+  const nbUniqueWords = goalWordList.wordIds.length;
+  const uniqueListChars = new Set([...allChars]);
+  const nbUniqueCharacters = uniqueListChars.size;
+  const allWordsMap = new Map([...allListGraphs.values()].map((graph) => [graph, 1]));
+  const successWords = getSuccessWords(knownCards, knownGraphs, allWordsMap);
+  const knownChars = getKnownChars(knownCards, knownGraphs);
+  const successChars: FirstSuccess[] = [];
+  for (const [char, firstSuccessDate] of knownChars.entries()) {
+    if (uniqueListChars.has(char)) {
+      successChars.push({
+        firstSuccess: firstSuccessDate,
+        nbOccurrences: 1,
+      });
+    }
+  }
+
+  return {
+    successChars,
+    successWords,
+    nbUniqueCharacters,
+    nbUniqueWords,
+  };
 }
 
 async function getCardWords(db: TranscrobesDatabase): Promise<DayCardWords> {
@@ -423,19 +555,13 @@ async function practiceCard(
       efactor: cardToSave.efactor,
       dueDate: cardToSave.dueDate,
       known: cardToSave.known,
+      firstSuccessDate: cardToSave.firstSuccessDate,
       lastRevisionDate: newDate,
-      firstSuccessDate:
-        !currentCard.firstSuccessDate && grade >= GRADE.HARD
-          ? newDate
-          : currentCard.firstSuccessDate,
     };
     await currentCard.atomicPatch(newValues);
   } else {
     if (!cardToSave.firstRevisionDate) {
       cardToSave.firstRevisionDate = newDate;
-    }
-    if (!cardToSave.firstSuccessDate && grade >= GRADE.HARD) {
-      cardToSave.firstSuccessDate = newDate;
     }
     cardToSave.lastRevisionDate = newDate;
     cardObject = await db.cards.upsert(cardToSave);
@@ -586,7 +712,8 @@ async function getSRSReviews(
 }
 
 export {
-  getFirstSuccessCards,
+  getFirstSuccessStatsForList,
+  getFirstSuccessStatsForImport,
   getCardWords,
   sendUserEvents,
   getNamedFileStorage,

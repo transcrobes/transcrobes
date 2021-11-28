@@ -100,7 +100,9 @@ function practice(flashcard: CardType, grade: GRADE, failureSeconds: number): Ca
     interval > 0
       ? dayjs().add(interval, "day").unix()
       : dayjs().add(failureSeconds, "seconds").unix();
-  return { ...flashcard, interval, repetition, efactor, dueDate, known };
+
+  const firstSuccessDate = flashcard.firstSuccessDate || (grade >= GRADE.HARD ? dayjs().unix() : 0);
+  return { ...flashcard, interval, repetition, efactor, dueDate, known, firstSuccessDate };
 }
 
 export { GRADES, shuffleArray, practice };

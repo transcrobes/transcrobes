@@ -398,7 +398,34 @@ export type ModelType = {
   ews?: string; // end whitespace
 };
 
-// FIXME: any
+export type ImportAnalysis = {
+  vocabulary: { buckets: { [key: string]: string[] }; counts: { [key: string]: number } };
+  grammar_rules: { [key: string]: number };
+};
+
+export type FirstSuccess = { firstSuccess: number; nbOccurrences: number };
+
+export type HistoData = {
+  name: string;
+  value: number;
+};
+
+export type ImportFirstSuccessStats = {
+  successChars: FirstSuccess[];
+  successWords: FirstSuccess[];
+  nbUniqueWords: number;
+  nbTotalWords: number;
+  nbUniqueCharacters: number;
+  nbTotalCharacters: number;
+};
+
+export type ListFirstSuccessStats = {
+  successChars: FirstSuccess[];
+  successWords: FirstSuccess[];
+  nbUniqueWords: number;
+  nbUniqueCharacters: number;
+};
+
 export type GraderConfig = {
   gradeOrder: GradesType[];
   forceWcpm: boolean;

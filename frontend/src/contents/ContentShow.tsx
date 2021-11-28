@@ -1,4 +1,4 @@
-import React, { FC } from "react";
+import { FC } from "react";
 import {
   BooleanField,
   FieldProps,
@@ -7,9 +7,10 @@ import {
   Show,
   SimpleShowLayout,
   TextField,
-} from "react-admin"; // eslint-disable-line import/no-unresolved
+} from "react-admin";
 import { Content, CONTENT_TYPE, PROCESSING, reverseEnum } from "../lib/types";
 import ActionButton from "./ActionButton";
+import { ImportProgress } from "../imports/ImportProgress";
 
 const ContentShow: FC<FieldProps<Content>> = (props) => (
   <Show {...props}>
@@ -17,7 +18,7 @@ const ContentShow: FC<FieldProps<Content>> = (props) => (
       <TextField source="id" />
       <TextField source="title" />
       <TextField source="description" />
-      <ReferenceField label="Source import" source="theImport" reference="imports">
+      <ReferenceField label="Source import" source="theImport" reference="imports" link="show">
         <TextField source="title" />
       </ReferenceField>
       <FunctionField
@@ -33,6 +34,9 @@ const ContentShow: FC<FieldProps<Content>> = (props) => (
       <TextField label="Language" source="lang" />
       <BooleanField source="shared" />
       <ActionButton props={props} />
+      <hr />
+      <h3>Progress</h3>
+      <ImportProgress />
     </SimpleShowLayout>
   </Show>
 );

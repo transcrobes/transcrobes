@@ -1,20 +1,19 @@
 import { ReactElement } from "react";
 import { useRecordContext } from "react-admin";
-import { Import } from "../lib/types";
+import { Import, ImportAnalysis } from "../lib/types";
 
 export default function ImportDetails(props: any): ReactElement {
   const theImport = useRecordContext(props) as Import;
-  const analysis = JSON.parse(theImport.analysis);
+  const analysis: ImportAnalysis = JSON.parse(theImport.analysis);
 
   let nbTotalCharacters = 0;
   let nbUniqueWords = 0;
   let nbTotalWords = 0;
   let allChars = "";
   for (const [nbOccurances, wordList] of Object.entries(analysis.vocabulary.buckets)) {
-    const wl = wordList as string[];
-    nbTotalWords += parseInt(nbOccurances) * wl.length;
-    nbUniqueWords += wl.length;
-    nbTotalCharacters += parseInt(nbOccurances) * wl.join("").length;
+    nbTotalWords += parseInt(nbOccurances) * wordList.length;
+    nbUniqueWords += wordList.length;
+    nbTotalCharacters += parseInt(nbOccurances) * wordList.join("").length;
     allChars += (wordList as string[]).join("");
   }
   const nbUniqueCharacters = new Set([...allChars]).size;

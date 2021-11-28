@@ -1,4 +1,6 @@
-import { PythonCounter } from "./types";
+import { HistogramGeneratorNumber } from "d3-array";
+import dayjs from "dayjs";
+import { FirstSuccess, HistoData, PythonCounter } from "./types";
 
 export function UUID(): string {
   return Date.now().toString(36) + Math.random().toString(36).substring(2);
@@ -117,4 +119,35 @@ export function parseJwt(token: string): any {
 
   return JSON.parse(atob(base64));
   // return JSON.parse(Buffer.from(base64, "base64"));
+}
+
+export function binnedData(
+  binFunc: HistogramGeneratorNumber<number, number>,
+  thresholds: number[],
+  successes: FirstSuccess[],
+  total: number,
+): HistoData[] {
+  const data: HistoData[] = [];
+  const successTotals: Map<number, number> = new Map<number, number>();
+  for (const success of successes) {
+    successTotals.set(
+      success.firstSuccess,
+      (successTotals.get(success.firstSuccess) || 0) + success.nbOccurrences,
+    );
+  }
+  const rawBins = binFunc([...successTotals.keys()].map((c) => c));
+  let temp = 0;
+  const binnedRaw = rawBins.map(
+    (v: Array<number>) =>
+      (temp += v.reduce((prev, next) => prev + (successTotals.get(next) || 0), 0)),
+  );
+
+  const binnedPercents = binnedRaw.map((b: number) => (b / total) * 100);
+  for (let i = 0; i < thresholds.length; i++) {
+    data.push({
+      name: dayjs(thresholds[i] * 1000).format("YYYY-MM-DD"),
+      value: binnedPercents[i],
+    });
+  }
+  return data;
 }

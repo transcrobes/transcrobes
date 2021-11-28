@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, ReactElement } from "react";
 import _ from "lodash";
 import styled from "styled-components";
 import { $enum } from "ts-enum-util";
@@ -54,7 +54,7 @@ interface Props {
   proxy: AbstractWorkerProxy;
 }
 
-export function Listrobes({ proxy }: Props) {
+export function Listrobes({ proxy }: Props): ReactElement {
   const [vocab, setVocab] = useState<VocabReview[]>([]);
 
   const [graderConfig, setGraderConfig] = useState<GraderConfig>({

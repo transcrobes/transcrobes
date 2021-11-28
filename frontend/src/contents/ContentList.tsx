@@ -33,7 +33,7 @@ export const ContentList: FC<ListProps> = (props) => {
     <List {...props}>
       <Datagrid>
         <TextField source="title" />
-        <ReferenceField label="Source import" source="theImport" reference="imports" link={"show"}>
+        <ReferenceField label="Source import" source="theImport" reference="imports" link="show">
           <TextField source="title" />
         </ReferenceField>
         <FunctionField

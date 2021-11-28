@@ -8,7 +8,7 @@ import {
   TextField,
 } from "react-admin";
 import { Import, PROCESSING, PROCESS_TYPE, reverseEnum } from "../lib/types";
-import ImportDetails from "./ImportDetails";
+import { ImportProgress } from "./ImportProgress";
 
 const ImportShow: FC<FieldProps<Import>> = (props) => (
   <Show {...props}>
@@ -26,8 +26,8 @@ const ImportShow: FC<FieldProps<Import>> = (props) => (
       />
       <BooleanField source="shared" />
       <hr />
-      <h3>Details</h3>
-      <ImportDetails />
+      <h3>Progress</h3>
+      <ImportProgress />
     </SimpleShowLayout>
   </Show>
 );

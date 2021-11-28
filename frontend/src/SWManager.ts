@@ -441,9 +441,19 @@ export function manageEvent(sw: ServiceWorkerGlobalScope, event: ExtendableMessa
         postIt(event, { source: message.source, type: message.type, value: translation });
       });
     });
-  } else if (message.type === "getFirstSuccessCards") {
+  } else if (message.type === "getFirstSuccessStatsForList") {
     loadDb(message, sw).then(([ldb, msg]) => {
-      data.getFirstSuccessCards(ldb, message.value).then((result) => {
+      data.getFirstSuccessStatsForList(ldb, message.value).then((result) => {
+        postIt(event, {
+          source: msg.source,
+          type: msg.type,
+          value: result,
+        });
+      });
+    });
+  } else if (message.type === "getFirstSuccessStatsForImport") {
+    loadDb(message, sw).then(([ldb, msg]) => {
+      data.getFirstSuccessStatsForImport(ldb, message.value).then((result) => {
         postIt(event, {
           source: msg.source,
           type: msg.type,
