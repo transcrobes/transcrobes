@@ -20,7 +20,15 @@ const useStyles = makeStyles({
 function Intro() {
   return (
     <>
-      <h1 className="h4 text-gray-900 mb-4">Welcome to Transcrobes! It's initialisation time!</h1>
+      <h1>Welcome to Transcrobes!</h1>
+      <h2>It's initialisation time (10-20 minutes)!</h2>
+      <p>
+        Transcrobes has been tested and works best on either Google Chrome, Microsoft Edge or Yandex
+        Browser (Chromium-based browsers) on either the desktop (Windows, Linux, Mac) or on Android.
+        Unfortunately, other browsers (including everything on iOS) don't properly support all the
+        latest web standards, so some things might not work properly. We are working hard on
+        bringing compatibility to all platforms.
+      </p>
       <p>
         Even though Transcrobes is entirely browser-based, a lot of Transcrobes' functionality is
         available offline (it's a{" "}
@@ -31,7 +39,7 @@ function Intro() {
         doing active learning exercises wherever you are, whenever you want. On a mountain or behind
         a Great Big Firewall, nothing should get in the way of your learning! This does mean that
         the system needs to download and prepare some things, and that is going to take a while
-        (15-30 minutes depending on how fast your phone/tablet/computer is).
+        (10-20 minutes depending on how fast your phone/tablet/computer is).
       </p>
       <p>
         The system needs to do quite a lot of work (mainly building indexeddb indexes), so don't be
