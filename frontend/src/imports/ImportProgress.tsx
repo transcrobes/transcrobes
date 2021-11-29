@@ -26,6 +26,10 @@ export function ImportProgress(props: any): ReactElement {
   const obj = useRecordContext(props);
   const importId = "theImport" in obj ? obj.theImport : obj.id;
 
+  // FIXME: currently the word tokens data are only shown if
+  // stats && stats.nbTotalWords !== stats.nbUniqueWords but we still calculate them
+  // This is wasteful
+
   useEffect(() => {
     (async function () {
       const locStats: ImportFirstSuccessStats =
@@ -98,7 +102,9 @@ export function ImportProgress(props: any): ReactElement {
           <YAxis tickFormatter={(tick) => `${tick}%`} name="Progress" />
           <CartesianGrid stroke="#eee" strokeDasharray="5 5" />
           <Line type="monotone" dataKey="wordTypes" stroke={blue} />
-          <Line type="monotone" dataKey="wordTokens" stroke={yellow} />
+          {stats && stats.nbTotalWords !== stats.nbUniqueWords && (
+            <Line type="monotone" dataKey="wordTokens" stroke={yellow} />
+          )}
           <Line type="monotone" dataKey="charTypes" stroke={green} />
           <Line type="monotone" dataKey="charTokens" stroke={pink} />
         </LineChart>
@@ -111,12 +117,14 @@ export function ImportProgress(props: any): ReactElement {
             </td>
             <td>{stats?.nbUniqueWords}</td>
           </tr>
-          <tr>
-            <td>
-              <span style={{ color: yellow }}>Total words (tokens)</span>
-            </td>
-            <td>{stats?.nbTotalWords}</td>
-          </tr>
+          {stats && stats.nbTotalWords !== stats.nbUniqueWords && (
+            <tr>
+              <td>
+                <span style={{ color: yellow }}>Total words (tokens)</span>
+              </td>
+              <td>{stats?.nbTotalWords}</td>
+            </tr>
+          )}
           <tr>
             <td>
               <span style={{ color: green }}>Unique chars (types)</span>
