@@ -11,6 +11,13 @@ const SEGMENTED_BASE_PADDING = 6;
 const EVENT_SOURCE = "components";
 const DATA_SOURCE = EVENT_SOURCE;
 
+declare global {
+  interface Window {
+    transcrobesModel: { [key: string]: ModelType };
+    cachedDefinitions: Map<string, DefinitionType>;
+  }
+}
+
 let userCardWords: DayCardWords | null;
 const timeouts: { [key: string]: number } = {};
 const readObserver = new IntersectionObserver(onScreen, {
@@ -532,9 +539,9 @@ async function updateWordForEntry(
       if (token.us && token.us.length > 0) {
         gloss = token.us[0];
       } else {
-        // FIXME: this will almost certainly be VERY slow!!!
         // try and get a local user known synonym
-        const dictDefinition = await getWord(lemma);
+        const dictDefinition =
+          (token.id && window.cachedDefinitions.get(token.id.toString())) || (await getWord(lemma));
         const syns = dictDefinition.synonyms.filter(
           (x) => x.posTag === utils.toSimplePos(token.pos!),
         );
@@ -557,8 +564,10 @@ async function updateWordForEntry(
       if (token.p) {
         gloss = token.p.join("");
       } else {
-        const dictDefinition = await getWord(lemma);
-        gloss = dictDefinition.sound.join("");
+        gloss = (
+          (token.id && window.cachedDefinitions.get(token.id.toString())) ||
+          (await getWord(lemma))
+        ).sound.join("");
       }
     }
     word.dataset.tcrobeGloss = gloss;
@@ -717,106 +726,110 @@ class TokenDetails extends HTMLParsedElement {
     }
     const token = JSON.parse(entryEl.dataset.tcrobeEntry) as TokenType;
     // create the html block
-    platformHelper.sendMessage(
-      { source: DATA_SOURCE, type: "getWordFromDBs", value: token.l },
-      (wordInfo: DefinitionType) => {
-        popup.innerHTML = "";
-        popup.classList.remove("loader");
 
-        const defHeader = doCreateElement(doc, "div", "tcrobe-def-header", null, null, popup);
-        defHeader.appendChild(
-          doCreateElement(
-            doc,
-            "div",
-            "tcrobe-def-pinyin",
-            (token.p || wordInfo.sound).join(""),
-            null,
-          ),
-        );
-        defHeader.appendChild(
-          doCreateElement(
-            doc,
-            "div",
-            "tcrobe-def-best",
-            token.bg ? token.bg.split(",")[0].split(";")[0] : bestGuess(token, wordInfo),
-            null,
-          ),
-        );
+    // If the word definition is cached. It won't be (yet) for the "loading..." case
+    let promise: Promise<DefinitionType> | null = null;
+    if (token.id && window.cachedDefinitions.has(token.id.toString())) {
+      promise = Promise.resolve(window.cachedDefinitions.get(token.id.toString())!);
+    } else {
+      console.warn("Token is not in the cache", token, [...window.cachedDefinitions.values()]);
+      promise = platformHelper.sendMessagePromise<DefinitionType>({
+        source: DATA_SOURCE,
+        type: "getWordFromDBs",
+        value: token.l,
+      });
+    }
+    promise.then((wordInfo) => {
+      popup.innerHTML = "";
+      popup.classList.remove("loader");
 
-        const sentButton = doCreateElement(
+      const defHeader = doCreateElement(doc, "div", "tcrobe-def-header", null, null, popup);
+      defHeader.appendChild(
+        doCreateElement(
           doc,
           "div",
-          "tcrobe-def-sentbutton",
+          "tcrobe-def-pinyin",
+          // prefer the potentially server version, which might have been deep transliterated
+          (token.p || wordInfo.sound).join(""),
           null,
-          null,
-          defHeader,
-        );
-        sentButton.dataset.sentCleaned = sentenceEl.dataset.sentCleaned;
-        sentButton.dataset.tcrobeWord = token.l;
-
-        const popupExtras = doCreateElement(
+        ),
+      );
+      defHeader.appendChild(
+        doCreateElement(
           doc,
           "div",
-          "tcrobe-def-extras hidden",
+          "tcrobe-def-best",
+          token.bg ? token.bg.split(",")[0].split(";")[0] : bestGuess(token, wordInfo),
           null,
-          null,
-          popup,
-        );
-        const sentTrans = sentenceEl.dataset.sentTrans || "loading...";
-        const sentTransDiv = doCreateElement(
-          doc,
-          "div",
-          "tcrobe-def-sentence",
-          sentTrans,
-          null,
-          popupExtras,
-        );
-        if (sentenceEl.dataset.sentTrans) {
-          sentTransDiv.dataset.sentTrans = sentTrans;
-        }
+        ),
+      );
 
-        doCreateElement(doc, "div", "tcrobe-def-messages hidden", null, null, popup);
+      const sentButton = doCreateElement(
+        doc,
+        "div",
+        "tcrobe-def-sentbutton",
+        null,
+        null,
+        defHeader,
+      );
+      sentButton.dataset.sentCleaned = sentenceEl.dataset.sentCleaned;
+      sentButton.dataset.tcrobeWord = token.l;
 
-        createSVG(
-          SVG_SOLID_EXPAND,
-          null,
-          [
-            ["title", "See translated sentence"],
-            ["width", "32"],
-            ["height", "32"],
-          ],
-          sentButton,
-        ).addEventListener("click", (event) => {
-          toggleSentenceVisible(event, popupExtras);
-        });
-        createSVG(
-          SVG_SOLID_COMPRESS,
-          "hidden",
-          [
-            ["title", "Hide translated sentence"],
-            ["width", "32"], // FIXME: nasty hardcoding
-            ["height", "32"],
-          ],
-          sentButton,
-        ).addEventListener("click", (event) => {
-          toggleSentenceVisible(event, popupExtras);
-        });
+      const popupExtras = doCreateElement(
+        doc,
+        "div",
+        "tcrobe-def-extras hidden",
+        null,
+        null,
+        popup,
+      );
+      const sentTrans = sentenceEl.dataset.sentTrans || "loading...";
+      const sentTransDiv = doCreateElement(
+        doc,
+        "div",
+        "tcrobe-def-sentence",
+        sentTrans,
+        null,
+        popupExtras,
+      );
+      if (sentenceEl.dataset.sentTrans) {
+        sentTransDiv.dataset.sentTrans = sentTrans;
+      }
 
-        const popupContainer = doCreateElement(
-          doc,
-          "div",
-          "tcrobe-def-container",
-          null,
-          null,
-          popup,
-        );
-        printInfosRx(doc, wordInfo, popupContainer);
-        printSynonymsRx(doc, wordInfo, token, popupContainer);
-        printActionsRx(doc, wordInfo, token, popupContainer, target);
-        popupDefinitionsRx(doc, wordInfo, popupContainer);
-        return "";
-      },
-    );
+      doCreateElement(doc, "div", "tcrobe-def-messages hidden", null, null, popup);
+
+      createSVG(
+        SVG_SOLID_EXPAND,
+        null,
+        [
+          ["title", "See translated sentence"],
+          ["width", "32"],
+          ["height", "32"],
+        ],
+        sentButton,
+      ).addEventListener("click", (event) => {
+        toggleSentenceVisible(event, popupExtras);
+      });
+      createSVG(
+        SVG_SOLID_COMPRESS,
+        "hidden",
+        [
+          ["title", "Hide translated sentence"],
+          ["width", "32"], // FIXME: nasty hardcoding
+          ["height", "32"],
+        ],
+        sentButton,
+      ).addEventListener("click", (event) => {
+        toggleSentenceVisible(event, popupExtras);
+      });
+
+      const popupContainer = doCreateElement(doc, "div", "tcrobe-def-container", null, null, popup);
+      printInfosRx(doc, wordInfo, popupContainer);
+      printSynonymsRx(doc, wordInfo, token, popupContainer);
+      printActionsRx(doc, wordInfo, token, popupContainer, target);
+      popupDefinitionsRx(doc, wordInfo, popupContainer);
+      return "";
+    });
   }
 }
 

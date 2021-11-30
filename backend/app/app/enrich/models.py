@@ -72,7 +72,7 @@ async def update_cache(db: AsyncSession, from_lang: str, to_lang: str, cached_ma
 
 async def definition(  # pylint: disable=R0914
     db: AsyncSession, manager: EnrichmentManager, token: Token, refresh: bool = False
-) -> CachedDefinition:  # noqa:C901  # pylint: disable=R0912
+):  # noqa:C901  # pylint: disable=R0912
     word = lemma(token)
     if not word:  # calling the api with empty string will put rubbish in the DB
         return None

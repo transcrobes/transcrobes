@@ -6,8 +6,8 @@ import { createColor } from "material-ui-color";
 import { ServiceWorkerProxy } from "../../lib/proxies";
 import VideoPlayer from "./videoplayer/VideoPlayer";
 import { VideoConfig, VideoContentConfig } from "./videoplayer/types";
-import { ContentDocument } from "../../database/Schema";
-import { ContentConfigType } from "../../lib/types";
+import { ContentDocument, DefinitionDocument } from "../../database/Schema";
+import { ContentConfigType, DefinitionType } from "../../lib/types";
 import { fetchPlus, USER_STATS_MODE } from "../../lib/lib";
 
 type ContentParams = {
@@ -81,6 +81,23 @@ export default function VideoPlayerScreen({ proxy, dataProvider }: ContentProps)
 
       // FIXME: this nastiness needs fixing... via redux ?
       window.transcrobesModel = await fetchPlus(`${SUBS_URL}.data.json`);
+      const uniqueIds = new Set<string>();
+      [...Object.entries(window.transcrobesModel).values()].map((model) => {
+        model[1].s.map((s) =>
+          s.t.map((t) => {
+            if (t.id) uniqueIds.add(t.id);
+          }),
+        );
+      });
+      window.cachedDefinitions = new Map<string, DefinitionType>();
+      (
+        await dataProvider.getMany<DefinitionDocument>("definitions", {
+          ids: [...uniqueIds],
+        })
+      ).data.map((rec) => {
+        if (rec.id) window.cachedDefinitions.set(rec.id.toString(), rec);
+      });
+
       const doc = await dataProvider.getOne<ContentDocument>("contents", { id: id });
       if (doc.data) setContentDocument(doc.data);
     })();

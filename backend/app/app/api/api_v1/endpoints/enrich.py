@@ -13,7 +13,7 @@ from app.api import deps
 from app.api.api_v1.graphql import DefinitionSet
 from app.cache import cached_definitions
 from app.core.config import settings
-from app.enrich import definitions_json_paths, hanzi_json_paths
+from app.enrich import TokenPhoneType, definitions_json_paths, hanzi_json_paths
 from app.enrich.data import EnrichmentManager, managers
 from app.enrich.models import definition, reload_definitions_cache
 from app.fworker import import_process_topic, regenerate
@@ -217,7 +217,7 @@ async def enrich_json(
         )
 
     outdata = await manager.enricher().enrich_to_json(
-        text, manager, translate_sentence=False, best_guess=False, deep_transliterations=False
+        text, manager, translate_sentence=False, best_guess=False, phone_type=TokenPhoneType.NONE, fill_id=True
     )
     return outdata
 

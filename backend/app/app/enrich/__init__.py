@@ -8,6 +8,7 @@ import os
 import re
 import time
 from abc import ABC, abstractmethod
+from enum import Enum
 from typing import TYPE_CHECKING
 
 from app.core.config import settings
@@ -29,6 +30,12 @@ DEFINITIONS_JSON_CACHE_FILE_PREFIX_REGEX = r"definitions-\d{10}\.\d{1,8}-\d{1,8}
 DEFINITIONS_JSON_CACHE_FILE_SUFFIX_REGEX = r"\.json"
 DEFINITIONS_JSON_CACHE_DIR_SUFFIX_REGEX = r"\_json"
 HANZI_JSON_CACHE_FILE_REGEX = r"hanzi-\d{3}\.json"
+
+
+class TokenPhoneType(Enum):
+    NONE = 0
+    DEFAULT = 1
+    DEEP = 2
 
 
 def latest_definitions_json_dir_path(user: AuthUser) -> str:
@@ -170,12 +177,24 @@ class Enricher(ABC):
         return True
 
     async def enrich_parse_to_aids_json(
-        self, timestamp, slim_model, manager, translate_sentence: bool, best_guess: bool, deep_transliterations: bool
+        self,
+        timestamp,
+        slim_model,
+        manager,
+        translate_sentence: bool,
+        best_guess: bool,
+        phone_type: TokenPhoneType,
+        fill_id: bool,
     ):
         logger.debug("Attempting to async slim_model enrich: '%s'", slim_model)
 
         combined = await self._enrich_slim_model(
-            slim_model, manager, translate_sentence, best_guess, deep_transliterations
+            slim_model,
+            manager,
+            translate_sentence,
+            best_guess,
+            phone_type,
+            fill_id,
         )
 
         # Here we are still using the old way of generating which adds new properties in-place
@@ -185,14 +204,16 @@ class Enricher(ABC):
             hsentence = []
             for token in sentence["t"]:
                 extras = {}
-                if "p" in token:  # when deep_transliterations == True
+                if "p" in token:  # when phone_type >= TokenPhoneType.NONE
                     extras["p"] = token.pop("p")
                 if "bg" in token:  # when best_guess == True
                     extras["bg"] = token.pop("bg")
+                if "id" in token:  # when fill_id == True
+                    extras["id"] = token.pop("id")
                 hsentence.append(extras)
             new_sentence = {"t": hsentence}
             if "l1" in sentence:
-                new_sentence["l1"] = sentence.get("l1")
+                new_sentence["l1"] = sentence["l1"]
             aids_model["s"].append(new_sentence)
 
         return {timestamp: aids_model}
@@ -203,7 +224,8 @@ class Enricher(ABC):
         manager: EnrichmentManager,
         translate_sentence: bool,
         best_guess: bool,
-        deep_transliterations: bool,
+        phone_type: TokenPhoneType,
+        fill_id: bool,
     ):
         logger.debug("Attempting to async enrich: '%s'", text)
         clean_text = self.clean_text(text)
@@ -211,7 +233,7 @@ class Enricher(ABC):
         parsed_slim_model = manager.enricher().slim_parse(raw_model)
         model = {
             "s": await self._enrich_slim_model(
-                parsed_slim_model, manager, translate_sentence, best_guess, deep_transliterations
+                parsed_slim_model, manager, translate_sentence, best_guess, phone_type, fill_id
             )
         }
         match = re.match(r"^\s+", text)
@@ -255,8 +277,8 @@ class Enricher(ABC):
                     "l": lemma(token),
                 }
                 if "id" in token or "bg" in token:
-                    # if "bg" in token:
-                    # new_token["id"] = token["id"]
+                    if "id" in token:
+                        new_token["id"] = token["id"]
                     if deep_transliterations:
                         new_token["p"] = token["phone"]
                     if best_guess:
@@ -373,13 +395,14 @@ class Enricher(ABC):
         manager: EnrichmentManager,
         translate_sentence: bool,
         best_guess: bool,
-        deep_transliterations: bool,
+        phone_type: TokenPhoneType,
+        fill_id: bool,
     ):
         # FIXME: clean later
         model = slim_model["s"] if isinstance(slim_model, dict) else slim_model
         return await asyncio.gather(
             *[
-                self._enrich_slim_sentence(sentence, manager, translate_sentence, best_guess, deep_transliterations)
+                self._enrich_slim_sentence(sentence, manager, translate_sentence, best_guess, phone_type, fill_id)
                 for sentence in model
             ],
         )
@@ -390,13 +413,14 @@ class Enricher(ABC):
         manager: EnrichmentManager,
         translate_sentence: bool,
         best_guess: bool,
-        deep_transliterations: bool,
+        phone_type: TokenPhoneType,
+        fill_id: bool,
     ):
         # FIXME: find out how to put this in the header without a circular dep
         from app.enrich.models import definition  # pylint: disable=C0415
 
         async with async_session() as db:
-            if deep_transliterations:
+            if phone_type == TokenPhoneType.DEEP:
                 # transliterate the sentence as a whole - this will almost always hit the external API and
                 # the lift in accuracy is likely only for a few well known words - deep is definitely better
                 # but much slower and actually costs real money
@@ -416,10 +440,14 @@ class Enricher(ABC):
             for token in sentence["t"]:
                 if not self.is_clean(token) or not self.needs_enriching(token):
                     continue
+                # calling definition also ensures the token is properly in the db, so is required
                 token_definition = await definition(db, manager, token)
+                if fill_id:
+                    token["id"] = token_definition["id"]
+                if phone_type == TokenPhoneType.DEFAULT:
+                    token["p"] = token_definition["p"].split()
                 if best_guess:
                     # no longer used, as we have this info in the client
-                    # token["id"] = token_definition["id"]  # BingAPILookup id
                     # token["np"] = self.get_simple_pos(token)  # Normalised POS
                     self._set_slim_best_guess(sentence, token, token_definition["defs"], token_definition["p"])
 

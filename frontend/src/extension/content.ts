@@ -1,18 +1,14 @@
 import * as components from "../lib/components";
 import { BackgroundWorkerProxy } from "../lib/proxies";
 import TranscrobesCSS from "../css/tccss";
-import { ModelType } from "../lib/types";
+import { DefinitionType, ModelType } from "../lib/types";
 import { textNodes } from "../lib/funclib";
 
 const DATA_SOURCE = "content.ts";
 
-declare global {
-  interface Window {
-    transcrobesModel: { [key: string]: ModelType };
-  }
-}
-
 window.transcrobesModel = {};
+window.cachedDefinitions = new Map<string, DefinitionType>();
+
 const transcroberObserver: IntersectionObserver = new IntersectionObserver(onEntryId, {
   threshold: [0.9],
 });
@@ -49,11 +45,30 @@ function onEntryId(entries: IntersectionObserverEntry[]) {
             // FIXME: this appears not to be usable on the other side in chrome extensions
             // etf.setAttribute('data-model', JSON.stringify(data));
             window.transcrobesModel[data["id"].toString()] = data;
-            etf.setAttribute("id", data["id"].toString());
-            // FIXME: this appears not to be usable on the other side in chrome extensions so not setting here
-            etf.appendChild(document.createTextNode(text));
-            item.replaceWith(etf);
-            (element.dataset as any).tced = true;
+
+            const newTokenIds = data.s
+              .flatMap((s) =>
+                s.t
+                  .map((t) => t.id?.toString())
+                  .filter((id) => id && !window.cachedDefinitions.has(id)),
+              )
+              .filter((id) => id) as string[];
+            platformHelper
+              .sendMessagePromise<DefinitionType[]>({
+                source: DATA_SOURCE,
+                type: "getDefinitions",
+                value: newTokenIds,
+              })
+              .then((definitions) => {
+                definitions.map((definition) =>
+                  window.cachedDefinitions.set(definition.id, definition),
+                );
+                etf.setAttribute("id", data["id"].toString());
+                // FIXME: this appears not to be usable on the other side in chrome extensions so not setting here
+                etf.appendChild(document.createTextNode(text));
+                item.replaceWith(etf);
+                (element.dataset as any).tced = true;
+              });
             return "";
           },
         );

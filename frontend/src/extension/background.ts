@@ -122,6 +122,14 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
   } else if (message.type === "heartbeat") {
     console.debug("got a heartbeat request in sw.js, replying with datetime");
     sendResponse({ source: message.source, type: message.type, value: dayjs().format() });
+  } else if (message.type === "getDefinitions") {
+    loadDb(debug, message).then((ldb) => {
+      data.getDefinitions(ldb, message.value).then((values) => {
+        // console.debug("back from data.getDefinitions", values);
+        const saveDefinitions = [...values.values()].map((def) => def.toJSON());
+        sendResponse({ source: message.source, type: message.type, value: saveDefinitions });
+      });
+    });
   } else if (message.type === "getWordFromDBs") {
     loadDb(debug, message).then((ldb) => {
       data.getWordFromDBs(ldb, message.value).then((values) => {

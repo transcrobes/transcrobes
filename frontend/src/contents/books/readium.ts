@@ -1,10 +1,13 @@
 import * as components from "../../lib/components";
+import { DefinitionType } from "../../lib/types";
 export * from "../../lib/components";
+
+const DATA_SOURCE = "readium.ts";
 
 function loadSettingsFromParentFrame() {
   console.debug("Loading injectables");
   components.setPlatformHelper(window.parent.componentsConfig.proxy);
-  components.setEventSource("readium.ts");
+  components.setEventSource(DATA_SOURCE);
   components.setBaseUrl(window.parent.componentsConfig.url.origin);
   components.setLangPair(window.parent.componentsConfig.langPair);
   components.setSegmentation(window.parent.readerConfig.segmentation);
@@ -40,6 +43,27 @@ document.addEventListener("click", (event: MouseEvent) => {
 // });
 
 components.getUserCardWords().then(() => {
-  components.defineElements();
-  console.debug("Finished setting up elements for readium");
+  const uniqueIds = new Set<string>();
+  [...Object.entries(window.transcrobesModel).values()].map((model) => {
+    model[1].s.map((s) =>
+      s.t.map((t) => {
+        if (t.id) uniqueIds.add(t.id.toString());
+      }),
+    );
+  });
+
+  window.parent.componentsConfig.proxy
+    .sendMessagePromise<DefinitionType[]>({
+      source: DATA_SOURCE,
+      type: "getDefinitions",
+      value: [...uniqueIds],
+    })
+    .then((definitions) => {
+      window.cachedDefinitions = window.cachedDefinitions || new Map<string, DefinitionType>();
+      definitions.map((definition) => {
+        window.cachedDefinitions.set(definition.id, definition);
+      });
+      components.defineElements();
+      console.debug("Finished setting up elements for readium");
+    });
 });

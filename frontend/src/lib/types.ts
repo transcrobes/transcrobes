@@ -351,6 +351,10 @@ export type TokenType = {
    */
   l: string; // lemma
   /**
+   * Token word id (bingapilookup.id)
+   */
+  id?: string;
+  /**
    * CoreNLP pos, if absent then the word can't have a meaning == punctuation
    */
   pos?: TREEBANK_POS_TYPES;

@@ -450,6 +450,13 @@ async function createCards(
   return await db.cards.bulkInsert(newCards);
 }
 
+async function getDefinitions(
+  db: TranscrobesDatabase,
+  ids: string[],
+): Promise<Map<string, DefinitionDocument>> {
+  return await db.definitions.findByIds(ids);
+}
+
 async function getWordFromDBs(
   db: TranscrobesDatabase,
   word: string,
@@ -728,6 +735,7 @@ export {
   getWordDetails,
   getCharacterDetails,
   createCards,
+  getDefinitions,
   getWordFromDBs,
   getContentConfigFromStore,
   setContentConfigToStore,

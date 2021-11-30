@@ -431,6 +431,13 @@ export function manageEvent(sw: ServiceWorkerGlobalScope, event: ExtendableMessa
         });
       });
     });
+  } else if (message.type === "getDefinitions") {
+    loadDb(message, sw).then(([ldb, msg]) => {
+      data.getDefinitions(ldb, message.value).then((values) => {
+        const saveDefinitions = [...values.values()].map((def) => def.toJSON());
+        postIt(event, { source: msg.source, type: msg.type, value: saveDefinitions });
+      });
+    });
   } else if (message.type === "sentenceTranslation") {
     loadDb(message, sw).then(() => {
       fetchPlus(

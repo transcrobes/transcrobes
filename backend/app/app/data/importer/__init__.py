@@ -36,6 +36,7 @@ from app.data.models import (
     WEBVTT_FILE,
 )
 from app.db.session import async_session
+from app.enrich import TokenPhoneType
 from app.enrich.data import EnrichmentManager, managers
 from app.enrich.models import ensure_cache_preloaded
 from app.models.migrated import Content, Import, UserList
@@ -535,7 +536,13 @@ async def enrich_parse(content: Content, manager: EnrichmentManager):
             file_models = json.load(file_contents)
             model_futures = [
                 manager.enricher().enrich_parse_to_aids_json(
-                    timestamp, model, manager, translate_sentence=False, best_guess=True, deep_transliterations=False
+                    timestamp,
+                    model,
+                    manager,
+                    translate_sentence=False,
+                    best_guess=True,
+                    phone_type=TokenPhoneType.NONE,
+                    fill_id=True,
                 )
                 for timestamp, model in file_models.items()
             ]
