@@ -1,5 +1,4 @@
-/* eslint react/jsx-key: off */
-import React, { FC } from "react";
+import { FC } from "react";
 import { Edit, SimpleForm, TextField, TextInput, required, FieldProps } from "react-admin";
 import { Import } from "../lib/types";
 
