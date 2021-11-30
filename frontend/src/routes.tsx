@@ -3,6 +3,7 @@ import { CustomRoutes, RouteWithoutLayout } from "react-admin";
 
 import Configuration from "./configuration/Configuration";
 import System from "./system/System";
+import Help from "./help/Help";
 import Init from "./system/Init";
 import Listrobes from "./listrobes/listrobes";
 import Repetrobes from "./repetrobes/Repetrobes";
@@ -41,7 +42,6 @@ export default function routes(config: ComponentsConfig): CustomRoutes {
 
     // authed
     <Route exact path="/configuration" render={() => <Configuration />} />,
-    <Route exact path="/system" render={() => <System proxy={config.proxy} />} />,
     <Route exact path="/listrobes" render={() => <Listrobes proxy={config.proxy} />} />,
     <Route exact path="/repetrobes" render={() => <Repetrobes proxy={config.proxy} />} />,
     <Route
@@ -55,5 +55,7 @@ export default function routes(config: ComponentsConfig): CustomRoutes {
       path="/contents/:id/watch"
       children={<VideoPlayer proxy={config.proxy} dataProvider={config.dataProvider} />}
     />,
+    <Route exact path="/system" render={() => <System proxy={config.proxy} />} />,
+    <Route exact path="/help" render={() => <Help />} />,
   ];
 }

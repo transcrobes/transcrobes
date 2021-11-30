@@ -21,6 +21,7 @@ import listrobes from "../listrobes";
 import notrobes from "../notrobes";
 import repetrobes from "../repetrobes";
 import system from "../system";
+import help from "../help";
 
 import SubMenu from "./SubMenu";
 import { AppState } from "../lib/types";
@@ -159,6 +160,14 @@ function Menu({ dense = false }: MenuProps): ReactElement {
                   smart_count: 2,
                 })}
                 leftIcon={<system.icon />}
+                dense={dense}
+              />
+              <MenuItemLink
+                to={`/help`}
+                primaryText={translate(`resources.help.name`, {
+                  smart_count: 2,
+                })}
+                leftIcon={<help.icon />}
                 dense={dense}
               />
             </>

@@ -7,6 +7,7 @@ const customEnglishMessages: TranslationMessages = {
     search: "Search",
     configuration: "Configuration",
     system: "System",
+    help: "Help!",
     language: "Language",
     theme: {
       name: "Theme",
@@ -81,6 +82,9 @@ const customEnglishMessages: TranslationMessages = {
     system: {
       name: "System",
       initialise: "Initialise",
+    },
+    help: {
+      name: "Help!",
     },
   },
 };
