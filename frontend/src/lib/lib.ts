@@ -102,7 +102,6 @@ export function dateRange(
   const startDate = typeof start === "number" ? dayjs(start * 1000) : dayjs(start);
   const endDate = typeof end === "number" ? dayjs(end * 1000) : dayjs(start);
   const diffInUnits = endDate.diff(startDate, interval);
-  console.log("start is", startDate, "end", endDate, "diff", diffInUnits);
   return Array.from(Array(diffInUnits + 1).keys()).map((i) => {
     return asUnixTimestamps
       ? startDate.add(i, interval).valueOf() / 1000

@@ -133,14 +133,15 @@ function addToLocalKnown(
   getLocalCardWords(message, sw).then((dayCW) => {
     dayCW.allCardWordGraphs.add(wordInfo.graph);
     if (grade > GRADE.UNKNOWN) {
-      console.debug("Adding to known words", wordInfo);
+      // console.debug("Adding to known words", wordInfo);
       dayCW.knownCardWordGraphs.add(wordInfo.graph);
       dayCW.knownWordIdsCounter[wordInfo.id] = dayCW.knownWordIdsCounter[wordInfo.id]
         ? dayCW.knownWordIdsCounter[wordInfo.id] + 1
         : 1;
-    } else {
-      console.debug("NOT adding to known words", wordInfo);
     }
+    // else {
+    //   console.debug("NOT adding to known words", wordInfo);
+    // }
   });
 }
 
@@ -217,28 +218,28 @@ export function manageEvent(sw: ServiceWorkerGlobalScope, event: ExtendableMessa
   } else if (message.type === "getUserListWords") {
     loadDb(message, sw).then(([ldb, msg]) => {
       data.getUserListWords(ldb).then((values) => {
-        console.debug("getUserListWords results in sw.js", msg, values);
+        // console.debug("getUserListWords results in sw.js", msg, values);
         postIt(event, { source: msg.source, type: msg.type, value: values });
       });
     });
   } else if (message.type === "getDefaultWordLists") {
     loadDb(message, sw).then(([ldb, msg]) => {
       data.getDefaultWordLists(ldb).then((values) => {
-        console.debug("getDefaultWordLists results in sw.js", msg, values);
+        // console.debug("getDefaultWordLists results in sw.js", msg, values);
         postIt(event, { source: msg.source, type: msg.type, value: values });
       });
     });
   } else if (message.type === "getWordListWordIds") {
     loadDb(message, sw).then(([ldb, msg]) => {
       data.getWordListWordIds(ldb, message.value).then((values) => {
-        console.debug("getWordListWordIds results in sw.js", msg, values);
+        // console.debug("getWordListWordIds results in sw.js", msg, values);
         postIt(event, { source: msg.source, type: msg.type, value: values });
       });
     });
   } else if (message.type === "createCards") {
     loadDb(message, sw).then(([ldb, msg]) => {
       data.createCards(ldb, msg.value).then((values) => {
-        console.debug("createCards results in sw.js", msg, values);
+        // console.debug("createCards results in sw.js", msg, values);
         dayCardWords = null; // simpler to set to null rather than try and merge lots
         const success = values.success.map((x) => x.toJSON());
         postIt(event, {
@@ -251,7 +252,7 @@ export function manageEvent(sw: ServiceWorkerGlobalScope, event: ExtendableMessa
   } else if (message.type === "setContentConfigToStore") {
     loadDb(message, sw).then(([ldb, msg]) => {
       data.setContentConfigToStore(ldb, msg.value).then((values) => {
-        console.debug("setContentConfigToStore results in sw.js", msg, values);
+        // console.debug("setContentConfigToStore results in sw.js", msg, values);
         postIt(event, {
           source: msg.source,
           type: msg.type,
@@ -262,7 +263,7 @@ export function manageEvent(sw: ServiceWorkerGlobalScope, event: ExtendableMessa
   } else if (message.type === "getCharacterDetails") {
     loadDb(message, sw).then(([ldb, msg]) => {
       data.getCharacterDetails(ldb, msg.value).then((values) => {
-        console.debug("getCharacterDetails results in sw.js", msg, values);
+        // console.debug("getCharacterDetails results in sw.js", msg, values);
         let chars: (CharacterType | null)[] = [];
         if (msg.value && msg.value.length > 0) {
           chars = msg.value.map((w: string) => {
@@ -281,7 +282,7 @@ export function manageEvent(sw: ServiceWorkerGlobalScope, event: ExtendableMessa
   } else if (message.type === "getAllFromDB") {
     loadDb(message, sw).then(([ldb, msg]) => {
       data.getAllFromDB(ldb, msg.value.collection, msg.value.queryObj).then((values) => {
-        console.debug("getAllFromDB results in sw.js", msg, values);
+        // console.debug("getAllFromDB results in sw.js", msg, values);
         postIt(event, {
           source: msg.source,
           type: msg.type,
@@ -292,21 +293,21 @@ export function manageEvent(sw: ServiceWorkerGlobalScope, event: ExtendableMessa
   } else if (message.type === "getContentConfigFromStore") {
     loadDb(message, sw).then(([ldb, msg]) => {
       data.getContentConfigFromStore(ldb, msg.value).then((values) => {
-        console.debug("getContentConfigFromStore results in sw.js", msg, values);
+        // console.debug("getContentConfigFromStore results in sw.js", msg, values);
         postIt(event, { source: msg.source, type: msg.type, value: values });
       });
     });
   } else if (message.type === "getVocabReviews") {
     loadDb(message, sw).then(([ldb, msg]) => {
       data.getVocabReviews(ldb, msg.value).then((values) => {
-        console.debug("getVocabReviews results in sw.js", msg, values);
+        // console.debug("getVocabReviews results in sw.js", msg, values);
         postIt(event, { source: msg.source, type: msg.type, value: values });
       });
     });
   } else if (message.type === "getSRSReviews") {
     loadDb(message, sw).then(([ldb, msg]) => {
       data.getSRSReviews(ldb, msg.value).then((values) => {
-        console.debug("getSRSReviews results in sw.js", msg, values);
+        // console.debug("getSRSReviews results in sw.js", msg, values);
         // todaysWordIds,  // Set of words reviewed today already: string ids
         // allNonReviewedWordsMap,  // Map of words in selected lists not already reviewed today: RxDocument
         // existingCards,  // Map of all cards reviewed at least once: RxDocument
@@ -357,7 +358,7 @@ export function manageEvent(sw: ServiceWorkerGlobalScope, event: ExtendableMessa
     const { currentCard, grade, badReviewWaitSecs } = message.value;
     loadDb(message, sw).then(([ldb, msg]) => {
       data.practiceCard(ldb, currentCard, grade, badReviewWaitSecs).then((values) => {
-        console.debug("practiceCard in sw.js", msg, values);
+        // console.debug("practiceCard in sw.js", msg, values);
         postIt(event, {
           source: msg.source,
           type: msg.type,
@@ -371,7 +372,7 @@ export function manageEvent(sw: ServiceWorkerGlobalScope, event: ExtendableMessa
     loadDb(message, sw).then(([ldb, msg]) => {
       data.practiceCardsForWord(ldb, practiceDetails).then((values) => {
         addToLocalKnown(msg, wordInfo, grade, sw);
-        console.debug("Practiced in sw.js", msg, values);
+        // console.debug("Practiced in sw.js", msg, values);
         postIt(event, { source: msg.source, type: msg.type, value: "Cards Practiced" });
       });
     });
@@ -379,7 +380,7 @@ export function manageEvent(sw: ServiceWorkerGlobalScope, event: ExtendableMessa
     const { wordId, grade } = message.value;
     loadDb(message, sw).then(([ldb, msg]) => {
       data.addOrUpdateCardsForWord(ldb, wordId, grade).then((cards) => {
-        console.debug("addOrUpdateCards in sw.js", cards);
+        // console.debug("addOrUpdateCards in sw.js", cards);
         postIt(event, {
           source: msg.source,
           type: msg.type,
@@ -391,7 +392,7 @@ export function manageEvent(sw: ServiceWorkerGlobalScope, event: ExtendableMessa
     const { graph } = message.value;
     loadDb(message, sw).then(([ldb, msg]) => {
       data.getWordDetails(ldb, graph).then((details) => {
-        console.debug("getWordDetails result in sw.js", details);
+        // console.debug("getWordDetails result in sw.js", details);
         let chars: (CharacterType | null)[] = [];
         if (details.word) {
           chars = details.word.graph.split("").map((w) => {
