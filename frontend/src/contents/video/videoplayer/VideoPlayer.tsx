@@ -6,7 +6,7 @@ import { makeStyles, Theme } from "@material-ui/core/styles";
 import ReactPlayer from "react-player";
 import screenful from "screenfull";
 import useEventListener from "@use-it/event-listener";
-import { createColor } from "material-ui-color";
+import { Color, createColor } from "material-ui-color";
 
 import VideoBottomControls from "./VideoBottomControls";
 import SubtitleControl from "./SubtitleControl";
@@ -262,7 +262,17 @@ function VideoPlayer({
         config: conf,
       });
     }
-  }, [volume, played, playbackRate, subDelay, subFontSize, subBoxWidth, glossing, segmentation]);
+  }, [
+    volume,
+    played,
+    playbackRate,
+    subDelay,
+    subFontColour,
+    subFontSize,
+    subBoxWidth,
+    glossing,
+    segmentation,
+  ]);
 
   function shiftSubs(delay: number): void {
     if (track && track.cues) {
@@ -624,7 +634,9 @@ function VideoPlayer({
                       glossing={glossing}
                       segmentation={segmentation}
                       onSubPositionChange={(position) => setSubPosition(position)}
-                      onSubFontColourChange={(colour) => setSubFontColour(colour)}
+                      onSubFontColourChange={(colour) =>
+                        setSubFontColour(typeof colour === "string" ? createColor(colour) : colour)
+                      }
                       onSubBoxWidthChange={(width) => setSubBoxWidth(width)}
                       onSubFontSizeChange={(size) => setSubFontSize(size)}
                       onSubDelayChange={(delay) => shiftSubs(delay)}

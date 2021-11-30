@@ -108,7 +108,6 @@ function VideoBottomControls({
 
   const open = Boolean(anchorEl);
   const id = open ? "simple-popover" : undefined;
-
   return (
     <Grid
       container
