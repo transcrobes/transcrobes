@@ -1,9 +1,21 @@
 import { HistogramGeneratorNumber } from "d3-array";
 import dayjs from "dayjs";
-import { FirstSuccess, HistoData, PythonCounter } from "./types";
+import { FirstSuccess, HistoData, KeyedModels, PythonCounter } from "./types";
 
 export function UUID(): string {
   return Date.now().toString(36) + Math.random().toString(36).substring(2);
+}
+
+export function wordIdsFromModels(models: KeyedModels): Set<string> {
+  const uniqueIds = new Set<string>();
+  [...Object.entries(models).values()].map((model) => {
+    model[1].s.map((s) =>
+      s.t.map((t) => {
+        if (t.id) uniqueIds.add(t.id.toString());
+      }),
+    );
+  });
+  return uniqueIds;
 }
 
 export function toggleFullscreen(doc: Document, videoWrapper: HTMLElement): void {

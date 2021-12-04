@@ -1,1 +1,5 @@
 Generic single-database configuration.
+
+Example to autogenerate a a migration
+
+`alembic revision --autogenerate -m "Added account table"`

@@ -7,8 +7,19 @@ import {
   WordModelStatsDocument,
 } from "../database/Schema";
 
-export const ZH_TB_POS_TO_SIMPLE_POS = {
-  // see src/enrichers/zhhans/__init__.py for more details, if that is updated, then this should be too
+export type SIMPLE_POS_TYPES =
+  | "ADV"
+  | "OTHER"
+  | "CONJ"
+  | "DET"
+  | "NOUN"
+  | "VERB"
+  | "PREP"
+  | "PRON"
+  | "ADJ";
+
+export const ZH_TB_POS_TO_SIMPLE_POS: { [key: string]: SIMPLE_POS_TYPES } = {
+  // see src/app/zhhans/__init__.py for more details, if that is updated, then this should be too
   // TODO: consider getting/updating this via the API, to guarantee python and js always agree
   AD: "ADV", // adverb
   AS: "OTHER", // aspect marker
@@ -40,7 +51,7 @@ export const ZH_TB_POS_TO_SIMPLE_POS = {
   SB: "OTHER", // in short bei-const ,
   SP: "OTHER", // sentence-final particle
   VA: "ADJ", // predicative adjective
-  VC: "VERB",
+  VC: "VERB", // copula verb
   VE: "VERB", // as the main verb
   VV: "VERB", // other verb
   // Others added since then
@@ -48,7 +59,57 @@ export const ZH_TB_POS_TO_SIMPLE_POS = {
 };
 
 export type TREEBANK_POS_TYPES = keyof typeof ZH_TB_POS_TO_SIMPLE_POS;
-export type TREEBANK_POS_VALUES = typeof ZH_TB_POS_TO_SIMPLE_POS[TREEBANK_POS_TYPES];
+
+export const SIMPLE_POS_ENGLISH_NAMES: { [key in SIMPLE_POS_TYPES]: string } = {
+  NOUN: "Noun",
+  VERB: "Verb",
+  ADJ: "Adjective",
+  ADV: "Adverb",
+  PREP: "Preposition",
+  PRON: "Pronoun",
+  CONJ: "Conjunction",
+  DET: "Determiner",
+  OTHER: "Other",
+};
+
+// FIXME: This shouldn't be here...
+export const ZH_TB_POS_LABELS: { [key in TREEBANK_POS_TYPES]: string } = {
+  AD: "Adverb", // adverb
+  AS: "Aspect Marker", // aspect marker
+  BA: "BA-construction", // in ba-construction ,
+  CC: "Coordinating conjunction", // coordinating conjunction
+  CD: "Cardinal number", // cardinal number
+  CS: "Subordinating conjunction", // subordinating conjunction
+  DEC: "DE-relative clause", // in a relative-clause
+  DEG: "DE-associative", // associative
+  DER: "DE-V-de-R", // in V-de const. and V-de-R
+  DEV: "DE-before verb", // before VP
+  DT: "Determiner", // determiner
+  ETC: '"etc" marker', // for words , ,
+  FW: "Foreign word", // foreign words
+  IJ: "Interjection", // interjection
+  JJ: "Adjective", // other noun-modifier ,
+  LB: 'Long "BEI"', // in long bei-const ,
+  LC: "Localizer", // localizer
+  M: "Measure word", // measure word
+  MSP: "Other particle", // other particle
+  NN: "Common noun", // common noun
+  NR: "Proper noun", // proper noun
+  NT: "Temporal noun", // temporal noun
+  OD: "Ordinal number", // ordinal number
+  ON: "Onomatopoeia", // onomatopoeia ,
+  P: 'Preposition (excl "and"', // preposition excl. and
+  PN: "Pronoun", // pronoun
+  PU: "Punctuation", // punctuation
+  SB: 'Short "BEI"', // in short bei-const ,
+  SP: "Phrase-final particle", // sentence-final particle
+  VA: "Predicative adjective", // predicative adjective
+  VC: "Copula verb",
+  VE: "YOU as main verb", // as the main verb
+  VV: "Other verb", // other verb
+  // Others added since then
+  URL: "URL",
+};
 
 export type ComponentsAppConfig = {
   segmentation: boolean;
@@ -260,10 +321,12 @@ export type CharacterType = {
   structure: any; // FIXME: but not really _that_ important to type this, I don't control it
 };
 
+// FIXME: these types should never be seen outside data.ts...
 export type WordDetailsRxType = {
   word: DefinitionDocument | null;
   cards: Map<string, CardDocument>;
   characters: Map<string, CharacterDocument>;
+  recentPosSentences: PosSentences | null;
   wordModelStats: WordModelStatsDocument | null;
 };
 
@@ -272,6 +335,7 @@ export type WordDetailsType = {
   cards: CardType[];
   characters: (CharacterType | null)[];
   wordModelStats: WordModelStatsType | null;
+  recentPosSentences: PosSentences | null;
 };
 
 export type WordListNamesType = {
@@ -370,6 +434,10 @@ export type TokenType = {
    * User Synonyms, server-side calculated synonyms that the learner already knows
    */
   us?: string[];
+  /**
+   * TODO: is this horrible???, allow adding style kvs in the data...
+   */
+  style?: { [key: string]: string };
 };
 
 export type SentenceType = {
@@ -387,7 +455,7 @@ export type ModelType = {
   /**
    * Model Id, a nano-second timestamp of the parse (or enrich) time
    */
-  id: bigint;
+  id: bigint | number;
   /**
    * Sentences
    */
@@ -400,6 +468,29 @@ export type ModelType = {
    * End WhiteSpace, any whitespace found after the last meaningful character
    */
   ews?: string; // end whitespace
+};
+
+export type KeyedModels = { [key: string]: ModelType };
+
+export type RecentSentencesStoredType = {
+  id: string; // wordId
+  lzContent: string; // LZ-String content, see https://github.com/pieroxy/lz-string
+  updatedAt: number;
+};
+
+export type PosSentences = {
+  [key in TREEBANK_POS_TYPES]?: {
+    dateViewed: number;
+    sentence: SentenceType;
+    manual: boolean;
+    source?: string; //URL
+    modelId?: number; //the nanosecond timestamp from the API
+  }[];
+};
+
+export type RecentSentencesType = {
+  id: string; // wordId
+  posSentences: PosSentences;
 };
 
 export type ImportAnalysis = {

@@ -1,8 +1,12 @@
 import { MangoQuery } from "rxdb/dist/types/core";
 import { isRxDocument } from "rxdb/plugins/core";
+import dayjs from "dayjs";
+import { $enum } from "ts-enum-util";
+import { v4 as uuidv4 } from "uuid";
+import { RxStorageBulkWriteError } from "rxdb/dist/types/types";
+import LZString from "lz-string";
 
 import { sortByWcpm, shortMeaning, simpOnly } from "./lib";
-import dayjs from "dayjs";
 import {
   CardType,
   ContentConfigType,
@@ -21,8 +25,9 @@ import {
   VocabReview,
   WordDetailsRxType,
   WordListNamesType,
+  RecentSentencesType,
+  PosSentences,
 } from "./types";
-import { $enum } from "ts-enum-util";
 
 import {
   CardDocument,
@@ -42,8 +47,6 @@ import { getFileStorage, IDBFileStorage } from "./IDBFileStorage";
 import { getUsername } from "./JWTAuthProvider";
 import { getDatabaseName } from "../database/Database";
 import { RxDBDataProviderParams } from "../ra-data-rxdb";
-import { v4 as uuidv4 } from "uuid";
-import { RxStorageBulkWriteError } from "rxdb/dist/types/types";
 
 const IMPORT_FILE_STORAGE = "import_file_storage";
 
@@ -128,6 +131,14 @@ async function getAllFromDB(
   queryObj?: MangoQuery<TranscrobesDocumentTypes>,
 ) {
   return await db[collection].find(queryObj).exec();
+}
+
+async function getByIds(
+  db: TranscrobesDatabase,
+  collection: TranscrobesCollectionsKeys,
+  ids: string[],
+) {
+  return await db[collection].findByIds(ids);
 }
 
 async function getKnownWordIds(db: TranscrobesDatabase): Promise<Set<string>> {
@@ -426,12 +437,16 @@ async function getWordDetails(db: TranscrobesDatabase, graph: string): Promise<W
     const wordModelStats = [...(await db.word_model_stats.findByIds([word.id])).values()][0];
     const characters = await getCharacterDetails(db, graph.split(""));
 
-    return { word, cards, characters, wordModelStats };
+    const sents = await getRecentSentences(db, [word.id]);
+    const recentPosSentences = (sents.length > 0 && sents[0][1].posSentences) || null;
+
+    return { word, cards, characters, wordModelStats, recentPosSentences };
   }
   return {
     word: null,
     cards: new Map<string, CardDocument>(),
     characters: new Map<string, CharacterDocument>(),
+    recentPosSentences: null,
     wordModelStats: null,
   };
 }
@@ -450,11 +465,49 @@ async function createCards(
   return await db.cards.bulkInsert(newCards);
 }
 
-async function getDefinitions(
+async function updateRecentSentences(
+  db: TranscrobesDatabase,
+  sentences: RecentSentencesType[],
+): Promise<void> {
+  for (const s of sentences) {
+    // Don't wait. Is this Ok?
+    db.recentsentences.atomicUpsert({
+      id: s.id.toString(),
+      lzContent: LZString.compressToUTF16(JSON.stringify(s.posSentences)),
+    });
+  }
+}
+
+async function addRecentSentences(
+  db: TranscrobesDatabase,
+  sentences: RecentSentencesType[],
+): Promise<void> {
+  await db.recentsentences.bulkInsert(
+    sentences.map((s) => {
+      return {
+        id: s.id.toString(),
+        lzContent: LZString.compressToUTF16(JSON.stringify(s.posSentences)),
+        updatedAt: 0,
+      };
+    }),
+  );
+}
+
+function recentSentencesFromLZ(wordId: string, lzContent: string): RecentSentencesType | null {
+  const uncompress = LZString.decompressFromUTF16(lzContent);
+  return uncompress ? { id: wordId, posSentences: JSON.parse(uncompress) as PosSentences } : null;
+}
+
+async function getRecentSentences(
   db: TranscrobesDatabase,
   ids: string[],
-): Promise<Map<string, DefinitionDocument>> {
-  return await db.definitions.findByIds(ids);
+): Promise<Array<[string, RecentSentencesType]>> {
+  const sents = new Array<[string, RecentSentencesType]>();
+  for (const [key, value] of (await db.recentsentences.findByIds(ids)).entries()) {
+    const recents = recentSentencesFromLZ(key, value.lzContent);
+    if (recents) sents.push([key, recents]);
+  }
+  return sents;
 }
 
 async function getWordFromDBs(
@@ -719,6 +772,10 @@ async function getSRSReviews(
 }
 
 export {
+  getByIds,
+  getRecentSentences,
+  addRecentSentences,
+  updateRecentSentences,
   getFirstSuccessStatsForList,
   getFirstSuccessStatsForImport,
   getCardWords,
@@ -735,7 +792,6 @@ export {
   getWordDetails,
   getCharacterDetails,
   createCards,
-  getDefinitions,
   getWordFromDBs,
   getContentConfigFromStore,
   setContentConfigToStore,

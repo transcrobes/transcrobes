@@ -31,6 +31,7 @@ const TipText = styled.div`
 `;
 
 const DescriptionText = styled.div`
+  transform: translateY(35px);
   display: none;
   position: absolute;
   border: 1px solid #000;
@@ -71,8 +72,8 @@ export function VocabItem({
   return (
     <TipText>
       <div onClick={handleClick} onMouseEnter={handleMouseOver} onMouseLeave={onMouseOut}>
-        <RowItem item={item} gradeOrder={gradeOrder} />
         <MeaningTooltip item={item} />
+        <RowItem item={item} gradeOrder={gradeOrder} />
       </div>
     </TipText>
   );

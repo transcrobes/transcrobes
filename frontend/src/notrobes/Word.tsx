@@ -1,10 +1,11 @@
-import React, { ReactElement } from "react";
+import React, { ReactElement, useState } from "react";
 import dayjs from "dayjs";
 import styled from "styled-components";
 import { $enum } from "ts-enum-util";
 import { Button } from "@material-ui/core";
+import makeStyles from "@material-ui/core/styles/makeStyles";
 
-import { say } from "../lib/funclib";
+import { say, wordIdsFromModels } from "../lib/funclib";
 import { CARD_TYPES, cardType } from "../database/Schema";
 import DefinitionGraph from "../components/DefinitionGraph";
 import PracticerInput from "../components/PracticerInput";
@@ -12,14 +13,38 @@ import {
   CardType,
   CharacterType,
   DefinitionType,
+  PosSentences,
   PosTranslationsType,
+  SentenceType,
+  SIMPLE_POS_TYPES,
   SortableListElementType,
+  TREEBANK_POS_TYPES,
   WordModelStatsType,
+  ZH_TB_POS_LABELS,
 } from "../lib/types";
+
+import {
+  defineElements,
+  getUserCardWords,
+  setGlossing,
+  setLangPair,
+  setPlatformHelper,
+  setSegmentation,
+  toSimplePosLabels,
+  USER_STATS_MODE,
+} from "../lib/components";
+
+const DATA_SOURCE = "Word.tsx";
+
+defineElements();
 
 const ThinHR = styled.hr`
   margin: 0.3rem;
 `;
+
+const useStyles = makeStyles({
+  recent: { paddingLeft: ".3em" },
+});
 
 interface WordInfoProps {
   definition: DefinitionType;
@@ -109,12 +134,14 @@ function ExistingCards({ cards }: { cards: CardType[] }): ReactElement {
         <div>
           {cardsArray.length > 0 ? ( // cards is a map
             <table style={{ width: "400px", textAlign: "center" }}>
-              <tr>
-                <th>Type</th>
-                <th>Due Date</th>
-                <th>Known?</th>
-              </tr>
-              {cardsRows}
+              <thead>
+                <tr>
+                  <th>Type</th>
+                  <th>Due Date</th>
+                  <th>Known?</th>
+                </tr>
+              </thead>
+              <tbody>{cardsRows}</tbody>
             </table>
           ) : (
             <span>No cards for this item</span>
@@ -168,6 +195,53 @@ function Synonyms({ definition }: { definition: DefinitionType }): ReactElement 
     </>
   );
 }
+
+function RecentSentenceExample({ modelId }: { modelId: BigInt | number }): ReactElement {
+  return (
+    <div>
+      - <enriched-text-fragment id={modelId}>loading...</enriched-text-fragment>
+    </div>
+  );
+}
+
+function RecentSentencesElement({
+  recentPosSentences,
+  loaded,
+}: {
+  recentPosSentences: PosSentences | null;
+  word: string;
+  loaded: boolean;
+}): ReactElement {
+  return (
+    <>
+      <ThinHR />
+      <div style={{ paddingTop: ".5em" }}>
+        <div>
+          <h4>Recently seen phrases</h4>
+        </div>
+      </div>
+      <div>
+        {recentPosSentences &&
+          Object.entries(recentPosSentences).length > 0 &&
+          Object.entries(recentPosSentences).map(([pos, entry]) => {
+            const typedPos = pos as TREEBANK_POS_TYPES;
+            const simpleName = ZH_TB_POS_LABELS[typedPos];
+            return (
+              <div key={pos}>
+                {simpleName}:{" "}
+                {entry &&
+                  entry.map((s, index) => {
+                    return <RecentSentenceExample key={index} modelId={s.modelId || 0} />;
+                  })}
+              </div>
+            );
+          })}
+        {!recentPosSentences && <div>No recent sentences found</div>}
+      </div>
+    </>
+  );
+}
+
 function WordModelStats({ wordModelStats }: { wordModelStats: WordModelStatsType }): ReactElement {
   return (
     <>
@@ -217,15 +291,16 @@ function WordModelStats({ wordModelStats }: { wordModelStats: WordModelStatsType
 }
 
 function PosItem({ item }: { item: PosTranslationsType }): ReactElement {
+  const posLabel = toSimplePosLabels(item.posTag as SIMPLE_POS_TYPES);
   return (
     <div>
       {item.values.length > 0 ? (
         <>
-          <span style={{ fontWeight: "bold" }}>{item.posTag}: </span>
+          <span style={{ fontWeight: "bold" }}>{posLabel}: </span>
           <span>{item.values.join(", ")}</span>
         </>
       ) : (
-        <span>No {item.posTag} found</span>
+        <span>No {posLabel} found</span>
       )}
     </div>
   );
@@ -301,6 +376,7 @@ interface WordProps {
   definition: DefinitionType;
   cards: CardType[];
   wordModelStats: WordModelStatsType;
+  recentPosSentences: PosSentences | null;
   lists: SortableListElementType[];
   characters: (CharacterType | null)[];
   onPractice: (wordId: string, grade: number) => void;
@@ -310,10 +386,56 @@ function Word({
   definition,
   cards,
   wordModelStats,
+  recentPosSentences,
   lists,
   characters,
   onPractice,
 }: WordProps): ReactElement {
+  const [loaded, setLoaded] = useState(false);
+  setGlossing(USER_STATS_MODE.NO_GLOSS);
+  setSegmentation(true);
+  setLangPair(window.componentsConfig.langPair);
+  setPlatformHelper(window.componentsConfig.proxy);
+
+  if (recentPosSentences) {
+    window.transcrobesModel = window.transcrobesModel || {};
+    Object.entries(recentPosSentences).forEach(([pos, s]) => {
+      const lemma = definition.graph;
+      if (s) {
+        s.forEach((sent) => {
+          const now = Date.now() + Math.random();
+          sent.sentence.t.forEach((t) => {
+            if (t.l == lemma && t.pos === pos) {
+              t.style = { color: "green", "font-weight": "bold" };
+            }
+          });
+          window.transcrobesModel[now] = { id: now, s: [sent.sentence] };
+          sent.modelId = now;
+        });
+      }
+    });
+    const uniqueIds = wordIdsFromModels(window.transcrobesModel);
+
+    getUserCardWords().then(() => {
+      window.componentsConfig.proxy
+        .sendMessagePromise<DefinitionType[]>({
+          source: DATA_SOURCE,
+          type: "getByIds",
+          value: { collection: "definitions", ids: [...uniqueIds] },
+        })
+        .then((definitions) => {
+          window.cachedDefinitions = window.cachedDefinitions || new Map<string, DefinitionType>();
+          definitions.map((definition) => {
+            window.cachedDefinitions.set(definition.id, definition);
+          });
+          setLoaded(true);
+        });
+      document.addEventListener("click", () => {
+        document.querySelectorAll("token-details").forEach((el) => el.remove());
+      });
+    });
+  }
+
   return (
     definition && (
       <div>
@@ -322,6 +444,11 @@ function Word({
           <Practicer wordId={definition.id} onPractice={onPractice} />
           <ExistingCards cards={cards} />
           <WordLists lists={lists} />
+          <RecentSentencesElement
+            loaded={loaded}
+            word={definition.graph}
+            recentPosSentences={recentPosSentences}
+          />
           <WordMetadata definition={definition} />
           <ProviderTranslations definition={definition} />
           <Synonyms definition={definition} />

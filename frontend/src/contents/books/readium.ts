@@ -1,4 +1,5 @@
 import * as components from "../../lib/components";
+import { wordIdsFromModels } from "../../lib/funclib";
 import { DefinitionType } from "../../lib/types";
 export * from "../../lib/components";
 
@@ -43,20 +44,12 @@ document.addEventListener("click", (event: MouseEvent) => {
 // });
 
 components.getUserCardWords().then(() => {
-  const uniqueIds = new Set<string>();
-  [...Object.entries(window.transcrobesModel).values()].map((model) => {
-    model[1].s.map((s) =>
-      s.t.map((t) => {
-        if (t.id) uniqueIds.add(t.id.toString());
-      }),
-    );
-  });
-
+  const uniqueIds = wordIdsFromModels(window.transcrobesModel);
   window.parent.componentsConfig.proxy
     .sendMessagePromise<DefinitionType[]>({
       source: DATA_SOURCE,
-      type: "getDefinitions",
-      value: [...uniqueIds],
+      type: "getByIds",
+      value: { collection: "definitions", ids: [...uniqueIds] },
     })
     .then((definitions) => {
       window.cachedDefinitions = window.cachedDefinitions || new Map<string, DefinitionType>();

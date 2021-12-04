@@ -6,8 +6,10 @@ import {
   TokenType,
   ZH_TB_POS_TO_SIMPLE_POS,
   TREEBANK_POS_TYPES,
-  TREEBANK_POS_VALUES,
   PosTranslationsType,
+  ZH_TB_POS_LABELS,
+  SIMPLE_POS_ENGLISH_NAMES,
+  SIMPLE_POS_TYPES,
 } from "./types";
 import { getAccess, refreshAccessToken } from "./JWTAuthProvider";
 
@@ -86,11 +88,32 @@ function fromLang() {
   return langPair.split(":")[0];
 }
 
-function toSimplePos(complexPos: TREEBANK_POS_TYPES): TREEBANK_POS_VALUES {
+function toSimplePos(complexPos: TREEBANK_POS_TYPES): SIMPLE_POS_TYPES {
   if (fromLang() === "zh-Hans") {
     return ZH_TB_POS_TO_SIMPLE_POS[complexPos];
   }
   throw new Error(`Unknown from language "${fromLang()}", can't find standard/simple POS`);
+}
+
+export function toPosLabels(complexPos: TREEBANK_POS_TYPES): string {
+  if (fromLang() === "zh-Hans") {
+    return ZH_TB_POS_LABELS[complexPos];
+  }
+  throw new Error(`Unknown from language "${fromLang()}", can't find POS label`);
+}
+
+export function toSimplePosLabels(pos: SIMPLE_POS_TYPES): string {
+  if (fromLang() === "zh-Hans") {
+    return SIMPLE_POS_ENGLISH_NAMES[pos];
+  }
+  throw new Error(`Unknown from language "${fromLang()}", can't find simple POS label`);
+}
+
+export function complexPosToSimplePosLabels(pos: TREEBANK_POS_TYPES): string {
+  if (fromLang() === "zh-Hans") {
+    return SIMPLE_POS_ENGLISH_NAMES[ZH_TB_POS_TO_SIMPLE_POS[pos]];
+  }
+  throw new Error(`Unknown from language "${fromLang()}", can't find simple POS label`);
 }
 
 export function dateRange(

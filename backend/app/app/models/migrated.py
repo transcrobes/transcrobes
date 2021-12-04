@@ -184,6 +184,34 @@ class UserGrammarRule(Base):
     user = relationship("AuthUser")
 
 
+class UserRecentSentences(Base):
+    __table_args__ = (UniqueConstraint("user_id", "word_id"),)
+
+    id = Column(Integer, primary_key=True)
+    lz_content = Column(String(25000), nullable=False)
+    user_id = Column(
+        ForeignKey("authuser.id", deferrable=True, initially="DEFERRED"),
+        nullable=False,
+        index=True,
+    )
+    word_id = Column(
+        ForeignKey("bingapilookup.id", deferrable=True, initially="DEFERRED"),
+        nullable=False,
+        index=True,
+    )
+    updated_at = Column(
+        DateTime(True),
+        nullable=False,
+        onupdate=utcnow(),
+        server_default=utcnow(),
+        index=True,
+    )
+
+    deleted = Column(Boolean, nullable=False, default=False)
+    user = relationship("AuthUser")
+    word = relationship("BingApiLookup")
+
+
 class UserWord(Base):
     __table_args__ = (UniqueConstraint("user_id", "word_id"),)
 

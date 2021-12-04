@@ -13,6 +13,7 @@ import {
   CardType,
   CharacterType,
   DefinitionType,
+  PosSentences,
   SortableListElementType,
   UserListWordType,
   WordDetailsType,
@@ -44,6 +45,7 @@ function Notrobes({ proxy, url }: Props): ReactElement {
   const [characters, setCharacters] = useState<(CharacterType | null)[] | null>(null);
   const [cards, setCards] = useState<CardType[] | null>(null);
   const [wordModelStats, setWordModelStats] = useState<WordModelStatsType | null>(null);
+  const [recentPosSentences, setRecentPosSentences] = useState<PosSentences | null>(null);
   const [lists, setLists] = useState<SortableListElementType[] | null>(null);
 
   let cancel: CancelTokenSource;
@@ -102,6 +104,7 @@ function Notrobes({ proxy, url }: Props): ReactElement {
       setCards(details.cards ? Array.from(details.cards.values()) : []);
       setCharacters(details.characters ? Array.from(details.characters.values()) : []);
       setWordModelStats(details.wordModelStats || { id: details.word.graph, updatedAt: 0 });
+      setRecentPosSentences(details.recentPosSentences);
       setMessage("");
       setLoading(false);
       setLists(
@@ -144,6 +147,7 @@ function Notrobes({ proxy, url }: Props): ReactElement {
         setWord(definition);
         setCards([]);
         setWordModelStats({ id: definition.graph, updatedAt: 0 });
+        setRecentPosSentences(null);
         setLists([]);
         setMessage(resultNotFoundMsg);
         setLoading(false);
@@ -194,6 +198,7 @@ function Notrobes({ proxy, url }: Props): ReactElement {
     setCards(null);
     setCharacters(null);
     setWordModelStats(null);
+    setRecentPosSentences(null);
     setLists(null);
     setLoading(false);
 
@@ -224,6 +229,7 @@ function Notrobes({ proxy, url }: Props): ReactElement {
             characters={characters}
             cards={cards}
             wordModelStats={wordModelStats}
+            recentPosSentences={recentPosSentences}
             lists={lists}
             onPractice={addOrUpdateCards}
           />

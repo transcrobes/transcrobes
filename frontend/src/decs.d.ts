@@ -7,3 +7,9 @@ declare module "*.gif" {
   const value: string;
   export default value;
 }
+
+declare namespace JSX {
+  interface IntrinsicElements {
+    "enriched-text-fragment": any;
+  }
+}

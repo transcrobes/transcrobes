@@ -46,18 +46,21 @@ function onEntryId(entries: IntersectionObserverEntry[]) {
             // etf.setAttribute('data-model', JSON.stringify(data));
             window.transcrobesModel[data["id"].toString()] = data;
 
-            const newTokenIds = data.s
-              .flatMap((s) =>
-                s.t
-                  .map((t) => t.id?.toString())
-                  .filter((id) => id && !window.cachedDefinitions.has(id)),
-              )
-              .filter((id) => id) as string[];
+            const uniqueIds: Set<string> = new Set<string>(
+              data.s
+                .flatMap((s) =>
+                  s.t
+                    .map((t) => t.id?.toString())
+                    .filter((id) => id && !window.cachedDefinitions.has(id)),
+                )
+                .filter((id) => id) as string[],
+            );
+
             platformHelper
               .sendMessagePromise<DefinitionType[]>({
                 source: DATA_SOURCE,
-                type: "getDefinitions",
-                value: newTokenIds,
+                type: "getByIds",
+                value: { collection: "definitions", ids: [...uniqueIds] },
               })
               .then((definitions) => {
                 definitions.map((definition) =>

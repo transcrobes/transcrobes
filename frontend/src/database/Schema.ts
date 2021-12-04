@@ -12,6 +12,7 @@ import {
   Import,
   PROCESSING,
   PROCESS_TYPE,
+  RecentSentencesStoredType,
   SurveyType,
   UserList,
   UserSurvey,
@@ -428,6 +429,27 @@ const CARDS_SCHEMA: RxJsonSchema<CardType> = {
   // indexes: ['lastRevisionDate', 'dueDate', 'firstRevisionDate', 'suspended'],
 };
 
+type RecentSentencesDocument = RxDocument<RecentSentencesStoredType>;
+type RecentSentencesCollection = RxCollection<RecentSentencesStoredType>;
+const RECENTSENTENCES_SCHEMA: RxJsonSchema<RecentSentencesStoredType> = {
+  version: 0,
+  required: ["id"],
+  primaryKey: "id",
+  type: "object",
+  properties: {
+    id: {
+      type: "string",
+    },
+    lzContent: {
+      type: "string",
+    },
+    updatedAt: {
+      type: "number",
+    },
+  },
+  indexes: ["updatedAt"],
+};
+
 const COMMON_INFO = {
   id: { type: "string" },
   title: { type: "string" },
@@ -663,6 +685,15 @@ const DBTwoWayCollections = {
       token: "String!",
     },
   },
+  recentsentences: {
+    schema: RECENTSENTENCES_SCHEMA,
+    feedKeys: ["id", "updatedAt"],
+    deletedFlag: "deleted",
+    subscription: true,
+    subscriptionParams: {
+      token: "String!",
+    },
+  },
   cards: {
     schema: CARDS_SCHEMA,
     methods: CardDocumentMethods,
@@ -711,6 +742,7 @@ type TranscrobesCollections = {
   userlists: UserListCollection;
   usersurveys: UserSurveyCollection;
   wordlists: WordlistCollection;
+  recentsentences: RecentSentencesCollection;
   cards: CardCollection;
   definitions: DefinitionCollection;
   word_model_stats: WordModelStatsCollection;
@@ -736,7 +768,8 @@ type TranscrobesDocumentTypes =
   | ContentDocument
   | UserListDocument
   | UserSurveyDocument
-  | GoalDocument;
+  | GoalDocument
+  | RecentSentencesDocument;
 
 export {
   // RxDB schemata

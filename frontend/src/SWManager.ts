@@ -279,6 +279,16 @@ export function manageEvent(sw: ServiceWorkerGlobalScope, event: ExtendableMessa
         });
       });
     });
+  } else if (message.type === "getByIds") {
+    loadDb(message, sw).then(([ldb, msg]) => {
+      data.getByIds(ldb, msg.value.collection, msg.value.ids).then((values) => {
+        postIt(event, {
+          source: msg.source,
+          type: msg.type,
+          value: [...values.values()].map((x) => x.toJSON()),
+        });
+      });
+    });
   } else if (message.type === "getAllFromDB") {
     loadDb(message, sw).then(([ldb, msg]) => {
       data.getAllFromDB(ldb, msg.value.collection, msg.value.queryObj).then((values) => {
@@ -405,6 +415,7 @@ export function manageEvent(sw: ServiceWorkerGlobalScope, event: ExtendableMessa
           word: details.word ? clone(details.word.toJSON()) : null,
           cards: [...details.cards.values()].map((x) => clone(x.toJSON())),
           characters: chars,
+          recentPosSentences: details.recentPosSentences,
           wordModelStats: details.wordModelStats ? clone(details.wordModelStats.toJSON()) : null,
         };
         postIt(event, { source: msg.source, type: msg.type, value: safe });
@@ -432,13 +443,6 @@ export function manageEvent(sw: ServiceWorkerGlobalScope, event: ExtendableMessa
         });
       });
     });
-  } else if (message.type === "getDefinitions") {
-    loadDb(message, sw).then(([ldb, msg]) => {
-      data.getDefinitions(ldb, message.value).then((values) => {
-        const saveDefinitions = [...values.values()].map((def) => def.toJSON());
-        postIt(event, { source: msg.source, type: msg.type, value: saveDefinitions });
-      });
-    });
   } else if (message.type === "sentenceTranslation") {
     loadDb(message, sw).then(() => {
       fetchPlus(
@@ -447,6 +451,36 @@ export function manageEvent(sw: ServiceWorkerGlobalScope, event: ExtendableMessa
         DEFAULT_RETRIES,
       ).then((translation) => {
         postIt(event, { source: message.source, type: message.type, value: translation });
+      });
+    });
+  } else if (message.type === "updateRecentSentences") {
+    loadDb(message, sw).then(([ldb, msg]) => {
+      data.updateRecentSentences(ldb, message.value).then((result) => {
+        postIt(event, {
+          source: msg.source,
+          type: msg.type,
+          value: result,
+        });
+      });
+    });
+  } else if (message.type === "addRecentSentences") {
+    loadDb(message, sw).then(([ldb, msg]) => {
+      data.addRecentSentences(ldb, message.value).then((result) => {
+        postIt(event, {
+          source: msg.source,
+          type: msg.type,
+          value: result,
+        });
+      });
+    });
+  } else if (message.type === "getRecentSentences") {
+    loadDb(message, sw).then(([ldb, msg]) => {
+      data.getRecentSentences(ldb, message.value).then((result) => {
+        postIt(event, {
+          source: msg.source,
+          type: msg.type,
+          value: result,
+        });
       });
     });
   } else if (message.type === "getFirstSuccessStatsForList") {

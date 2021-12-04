@@ -1,14 +1,13 @@
 import { ReactElement, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import Button from "@material-ui/core/Button";
-import { DataProvider } from "ra-core";
 import { createColor } from "material-ui-color";
 import { ServiceWorkerProxy } from "../../lib/proxies";
 import VideoPlayer from "./videoplayer/VideoPlayer";
 import { VideoConfig, VideoContentConfig } from "./videoplayer/types";
-import { ContentDocument, DefinitionDocument } from "../../database/Schema";
-import { ContentConfigType, DefinitionType } from "../../lib/types";
+import { ContentConfigType, DefinitionType, Content } from "../../lib/types";
 import { fetchPlus, USER_STATS_MODE } from "../../lib/lib";
+import { wordIdsFromModels } from "../../lib/funclib";
 
 type ContentParams = {
   id: string;
@@ -16,16 +15,16 @@ type ContentParams = {
 
 type ContentProps = {
   proxy: ServiceWorkerProxy;
-  dataProvider: DataProvider;
 };
 
+const DATA_SOURCE = "VideoPlayerScreen.tsx";
 // Obtain a ref if you need to call any methods.
-export default function VideoPlayerScreen({ proxy, dataProvider }: ContentProps): ReactElement {
+export default function VideoPlayerScreen({ proxy }: ContentProps): ReactElement {
   const { id } = useParams<ContentParams>();
   const SUBS_URL = `/api/v1/data/content/${id}/subtitles.vtt`;
   const [fileURL, setFileURL] = useState<string>("");
   const [contentConfig, setContentConfig] = useState<VideoContentConfig | null>(null);
-  const [contentDocument, setContentDocument] = useState<ContentDocument | null>(null);
+  const [content, setContent] = useState<Content | null>(null);
 
   function handleFileSelect(files: FileList | null): void {
     if (files && files.length > 0) {
@@ -81,25 +80,30 @@ export default function VideoPlayerScreen({ proxy, dataProvider }: ContentProps)
 
       // FIXME: this nastiness needs fixing... via redux ?
       window.transcrobesModel = await fetchPlus(`${SUBS_URL}.data.json`);
-      const uniqueIds = new Set<string>();
-      [...Object.entries(window.transcrobesModel).values()].map((model) => {
-        model[1].s.map((s) =>
-          s.t.map((t) => {
-            if (t.id) uniqueIds.add(t.id);
-          }),
-        );
-      });
-      window.cachedDefinitions = new Map<string, DefinitionType>();
-      (
-        await dataProvider.getMany<DefinitionDocument>("definitions", {
-          ids: [...uniqueIds],
+      const uniqueIds = wordIdsFromModels(window.transcrobesModel);
+      window.componentsConfig.proxy
+        .sendMessagePromise<DefinitionType[]>({
+          source: DATA_SOURCE,
+          type: "getByIds",
+          value: { collection: "definitions", ids: [...uniqueIds] },
         })
-      ).data.map((rec) => {
-        if (rec.id) window.cachedDefinitions.set(rec.id.toString(), rec);
-      });
-
-      const doc = await dataProvider.getOne<ContentDocument>("contents", { id: id });
-      if (doc.data) setContentDocument(doc.data);
+        .then((definitions) => {
+          window.cachedDefinitions = window.cachedDefinitions || new Map<string, DefinitionType>();
+          definitions.map((definition) => {
+            window.cachedDefinitions.set(definition.id, definition);
+          });
+        });
+      window.componentsConfig.proxy
+        .sendMessagePromise<Content[]>({
+          source: DATA_SOURCE,
+          type: "getByIds",
+          value: { collection: "contents", ids: [id] },
+        })
+        .then((contents) => {
+          if (contents && contents.length > 0) {
+            setContent(contents[0]);
+          }
+        });
     })();
   }, []);
 
@@ -127,9 +131,9 @@ export default function VideoPlayerScreen({ proxy, dataProvider }: ContentProps)
           subsUrl={SUBS_URL}
           videoUrl={fileURL}
           contentConfig={contentConfig}
-          contentLabel={contentDocument?.title}
+          contentLabel={content?.title}
           onContentConfigUpdate={handleConfigUpdate}
-          srcLang={contentDocument?.lang || ""}
+          srcLang={content?.lang || ""}
         />
       </div>
     );

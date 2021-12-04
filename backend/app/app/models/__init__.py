@@ -10,6 +10,7 @@ from .migrated import (  # noqa: F401
     Survey,
     UserList,
     UserListWord,
+    UserRecentSentences,
     UserSurvey,
     UserWord,
     ZhhansEnABCLookup,

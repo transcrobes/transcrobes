@@ -50,11 +50,7 @@ export default function routes(config: ComponentsConfig): CustomRoutes {
       render={() => <Notrobes proxy={config.proxy} url={config.url} />}
     />,
     <Route exact path="/brocrobes" render={() => <Brocrobes />} />,
-    <Route
-      exact
-      path="/contents/:id/watch"
-      children={<VideoPlayer proxy={config.proxy} dataProvider={config.dataProvider} />}
-    />,
+    <Route exact path="/contents/:id/watch" children={<VideoPlayer proxy={config.proxy} />} />,
     <Route exact path="/system" render={() => <System proxy={config.proxy} />} />,
     <Route exact path="/help" render={() => <Help />} />,
   ];

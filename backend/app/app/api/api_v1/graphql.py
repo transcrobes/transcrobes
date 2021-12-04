@@ -433,6 +433,32 @@ class WordList:
 
 
 @strawberry.type
+class RecentSentenceSet:
+    id: str  # wordId
+    lz_content: Optional[str] = ""
+    updated_at: Optional[float] = 0
+    deleted: Optional[bool] = False
+
+    @staticmethod
+    def from_model(dj_recentsentenceset):
+        out = RecentSentenceSet(
+            id=str(dj_recentsentenceset.word_id),
+            lz_content=dj_recentsentenceset.lz_content,
+            updated_at=dj_recentsentenceset.updated_at.timestamp(),
+            deleted=dj_recentsentenceset.deleted,
+        )
+        return out
+
+
+@strawberry.input
+class RecentsentencesInput:
+    id: str
+    lz_content: Optional[str] = ""
+    updated_at: Optional[float] = 0
+    deleted: Optional[bool] = False
+
+
+@strawberry.type
 class Card:
     id: str
     interval: Optional[int] = 0
@@ -491,6 +517,39 @@ class CardsInput:
     known: Optional[bool] = False
     suspended: Optional[bool] = False
     deleted: Optional[bool] = False
+
+
+async def filter_recentsentences(
+    db: AsyncSession,
+    user_id: int,
+    limit: int,
+    id: Optional[str] = "",
+    updated_at: Optional[float] = -1,
+) -> List[RecentSentenceSet]:
+    logger.debug(f"{user_id=}, {limit=}, {id=}, {updated_at=} ")
+    stmt = select(models.UserRecentSentences).where(models.UserRecentSentences.user_id == user_id)
+
+    if updated_at and updated_at > 0:
+        updated_at_datetime = datetime.fromtimestamp(updated_at, pytz.utc)
+        base_query = models.UserRecentSentences.updated_at > updated_at_datetime
+        if not id:
+            stmt = stmt.where(base_query)
+        else:
+            stmt = stmt.where(
+                or_(
+                    base_query,
+                    and_(
+                        models.UserRecentSentences.updated_at == updated_at_datetime,
+                        models.UserRecentSentences.word_id > int(id),
+                    ),
+                )
+            )
+
+    result = await db.execute(stmt.order_by("updated_at", "word_id").limit(limit))
+
+    model_list = result.scalars().all()
+    item_list = [RecentSentenceSet.from_model(dj_obj) for dj_obj in model_list]
+    return item_list
 
 
 async def filter_cards(
@@ -930,6 +989,17 @@ class Query:
             return await filter_cards(db, user.id, limit, id, updated_at)
 
     @strawberry.field
+    async def feed_recentsentences(  # pylint: disable=E0213
+        info: Info[Context, Any],
+        limit: int,
+        id: Optional[str] = "",
+        updated_at: Optional[float] = -1,
+    ) -> List[RecentSentenceSet]:
+        async with async_session() as db:
+            user = await get_user(db, info.context.request)
+            return await filter_recentsentences(db, user.id, limit, id, updated_at)
+
+    @strawberry.field
     async def feed_definitions(  # pylint: disable=E0213
         info: Info[Context, Any],
         limit: int,
@@ -1151,6 +1221,52 @@ class Mutation:
         return ulist
 
     @strawberry.mutation
+    async def set_recentsentences(
+        self, info: Info[Context, Any], recentsentences: RecentsentencesInput = None
+    ) -> RecentSentenceSet:
+        channel = "recentsentences"
+        obj = recentsentences
+        logger.debug(f"The info is: {info=}, and the {channel=} is: {obj=}")
+
+        async with async_session() as db:
+            user = await get_user(db, info.context.request)
+            word_id = int(obj.id)
+
+            result = await db.execute(
+                select(models.UserRecentSentences)
+                .where(
+                    models.UserRecentSentences.user == user,
+                    models.UserRecentSentences.word_id == word_id,
+                )
+                .options(selectinload(models.UserRecentSentences.user))
+            )
+            dj_obj = result.scalar_one_or_none() or models.UserRecentSentences(word_id=word_id, user=user)
+            dj_obj.lz_content = obj.lz_content
+            # FIXME: does this get done automatically???
+            # dj_card.updated_at = datetime.now(pytz.utc)  # int(time.time())  # time_ns()? something else?
+            dj_obj.deleted = obj.deleted
+
+            try:
+                db.add(dj_obj)
+                await db.commit()
+                await info.context.broadcast.publish(channel="recentsentences", message=str(user.id))
+            except Exception as e:
+                logger.exception(f"Error saving updated recentsentence: {json.dumps(dataclasses.asdict(obj))}")
+                logger.error(e)
+                raise
+
+            result = await db.execute(
+                select(models.UserRecentSentences)
+                .where(
+                    models.UserRecentSentences.user == user,
+                    models.UserRecentSentences.word_id == word_id,
+                )
+                .options(selectinload(models.UserRecentSentences.user))
+            )
+            dj_obj = result.scalar_one_or_none()
+            return RecentSentenceSet.from_model(dj_obj)
+
+    @strawberry.mutation
     async def set_goals(self, info: Info[Context, Any], goals: GoalsInput = None) -> Goal:
         channel = "goals"
         obj = goals
@@ -1171,6 +1287,9 @@ async def changed_standard(info: Info[Context, Any], token: str, ref: type[Commo
 
     async with info.context.broadcast.subscribe(channel=f"{ref.__name__}s") as subscriber:
         async for event in subscriber:
+            # FIXME: how is this not necessary??? shouldn't it be??? why did i not put it???
+            # if clean_broadcaster_string(event.message) == str(user_id):
+
             logger.debug(f"Got a {ref.__name__}s subscription event for {event.message}")
             yield ref(id="42")
 
@@ -1234,6 +1353,10 @@ class Subscription:
     @strawberry.subscription
     async def changed_imports(self, info: Info[Context, Any], token: str) -> Import:
         return changed_standard(info, token, Import)
+
+    @strawberry.subscription
+    async def changed_recentsentences(self, info: Info[Context, Any], token: str) -> RecentSentenceSet:
+        return changed_standard(info, token, RecentSentenceSet)
 
     @strawberry.subscription
     async def changed_goals(self, info: Info[Context, Any], token: str) -> Goal:

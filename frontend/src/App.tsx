@@ -21,6 +21,7 @@ import Dashboard from "./Dashboard";
 import { ComponentsAppConfig, ThemeName } from "./lib/types";
 import { ServiceWorkerProxy } from "./lib/proxies";
 import { ComponentsConfig } from "./lib/complexTypes";
+import { defineElements } from "./lib/components";
 
 declare global {
   interface Window {
@@ -33,6 +34,7 @@ const authProvider = jwtTokenAuthProvider();
 
 const wb = new Workbox("/service-worker.js");
 wb.register();
+defineElements();
 
 const dataProvider = SWDataProvider({ wb: wb });
 

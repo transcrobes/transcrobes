@@ -1,19 +1,39 @@
+import dayjs from "dayjs";
+import HTMLParsedElement from "html-parsed-element";
+import levenshtein from "js-levenshtein-esm";
 import * as utils from "./lib";
 import { bestGuess, USER_STATS_MODE } from "./lib";
-import HTMLParsedElement from "html-parsed-element";
 import { GRADE } from "../database/Schema";
 import TranscrobesCSS from "../css/tccss";
 import { AbstractWorkerProxy } from "./proxies";
-import { DayCardWords, DefinitionType, ModelType, SentenceType, TokenType } from "./types";
+import {
+  DayCardWords,
+  DefinitionType,
+  KeyedModels,
+  ModelType,
+  PosSentences,
+  RecentSentencesType,
+  SentenceType,
+  SIMPLE_POS_TYPES,
+  TokenType,
+  TREEBANK_POS_TYPES,
+} from "./types";
 export * from "./lib";
 
+// FIXME: turn into config, this is likely only useful for Chinese
 const SEGMENTED_BASE_PADDING = 6;
+const NB_RECENT_SENTS_TO_KEEP = 3;
+const MIN_LEVENSHTEIN_DIST_TO_KEEP = 4;
+const IDEAL_RECENT_SENTS_LENGTH = 10;
+
 const EVENT_SOURCE = "components";
 const DATA_SOURCE = EVENT_SOURCE;
+let timeoutId: number;
+const MIN_LOOKED_AT_EVENT_DURATION = 2000; // milliseconds
 
 declare global {
   interface Window {
-    transcrobesModel: { [key: string]: ModelType };
+    transcrobesModel: KeyedModels;
     cachedDefinitions: Map<string, DefinitionType>;
   }
 }
@@ -92,6 +112,60 @@ const GRADE_SVGS: GRADE_SVGS_TYPE = {
   [GRADE.KNOWN]: [SVG_SOLID_CHECK, "Set word known (don't need to revise)"],
 };
 
+function originalSentenceFromTokens(tokens: TokenType[]): string {
+  // currently just use
+  return tokens.map((x) => x.l).join("");
+}
+
+async function generateSentences(
+  doc: Document,
+  sentences: SentenceType[],
+  uCardWords: DayCardWords,
+  addClick = true,
+  addMouseInOut = true,
+): Promise<HTMLElement> {
+  const resolvedSents = await Promise.all(
+    sentences.map(async (sentence) => {
+      const sent = doCreateElement(doc, "span", "tcrobe-sent", null, null);
+
+      const tokens = sentence.t;
+      sent.dataset.sentCleaned = originalSentenceFromTokens(tokens);
+      sent.dataset.sentTrans = sentence.l1 || "";
+
+      const resolvedTokens = await Promise.all(
+        tokens.map(async (token) => {
+          const word = token.l;
+          if (token.pos || token.bg) {
+            // if there is a Best Guess key (even if empty) then we might want to look it up
+            return await updateWordForEntry(
+              doCreateElement(doc, "span", "tcrobe-entry", null, null),
+              utils.glossing,
+              utils.segmentation,
+              token,
+              doc,
+              uCardWords,
+              utils.glossNumberNouns,
+              addClick,
+              addMouseInOut,
+            );
+          } else {
+            return doc.createTextNode(!utils.toEnrich(word) ? " " + word : word);
+          }
+        }),
+      );
+      for (const token of resolvedTokens) {
+        sent.appendChild(token);
+      }
+      return sent;
+    }),
+  );
+  const sents = doCreateElement(doc, "span", "tcrobe-sents", null, null);
+  for (const sentence of resolvedSents) {
+    sents.appendChild(sentence);
+  }
+  return sents;
+}
+
 function createSVG(
   template: SVGTemplate,
   elClass: string[] | string | null,
@@ -141,6 +215,135 @@ async function vocabCountersFromETF(model: ModelType, glossing: number) {
   });
 }
 
+// TODO: should min/max be configurable? by language maybe?
+async function addToRecentSentences(
+  model: ModelType,
+  minTokens = 5,
+  maxTokens = 25,
+): Promise<void> {
+  // TODO: think about the following...
+  // This method has lots of "failures". As there can be lots of parallel executions (so we don't
+  // block anything, and cos we don't really care...), there can be items that insert *after* another
+  // instance of the method has queried for the "existing" items. That means the second one will think
+  // there *isn't* a document when there really is. However, this doesn't really matter... as all we
+  // care about is having sentences and if we are getting lots like this then that could well be
+  // sub-optimal anyway.
+  // It *might* be worth adding all these to a queue like it's done with the events (they are sort of
+  // events anyway...), or even just adding this process to the normal events management, to have all
+  // these user content consumption associated stuff done in a single place. For the moment this is
+  // exploratory though, so we need to see how it performs, how much space it takes, etc, before
+  // spending large amounts of time on it...
+
+  const usableSentences = model.s.filter((s) => s.t.length >= minTokens && s.t.length <= maxTokens);
+  // sort the list of sentences, with the closest in length to the ideal first
+  if (usableSentences.length < 1) return;
+
+  usableSentences.sort(
+    (a, b) =>
+      Math.abs(IDEAL_RECENT_SENTS_LENGTH - a.t.length) -
+      Math.abs(IDEAL_RECENT_SENTS_LENGTH - b.t.length),
+  );
+
+  const wordIds = usableSentences
+    .flatMap((s) => s.t.map((t) => t.id?.toString()))
+    .filter((x) => x) as string[];
+  if (wordIds.length < 1) return;
+
+  const bestNewSentsForWord = new Map<string, { pos: TREEBANK_POS_TYPES; sent: SentenceType }[]>(); // string =bbi
+  const newWordCombos = new Set<string>(); // wordId + # + pos
+  for (const sent of usableSentences) {
+    for (const token of sent.t) {
+      if (token.id && token.pos) {
+        const key = `${token.id.toString()}#${token.pos}`;
+        if (!newWordCombos.has(key)) {
+          newWordCombos.add(key);
+          if (!bestNewSentsForWord.has(token.id.toString())) {
+            bestNewSentsForWord.set(token.id.toString(), []);
+          }
+          bestNewSentsForWord.get(token.id.toString())?.push({ pos: token.pos, sent: sent });
+        }
+      }
+    }
+  }
+  const existingRSents = new Map<string, RecentSentencesType>(
+    await platformHelper.sendMessagePromise<Array<[string, RecentSentencesType]>>({
+      source: DATA_SOURCE,
+      type: "getRecentSentences",
+      value: wordIds,
+    }),
+  );
+  const inserts: RecentSentencesType[] = [];
+  const updatedSents: RecentSentencesType[] = [];
+  for (const wordId of wordIds) {
+    const wordToUpdate = existingRSents.get(wordId);
+    if (!wordToUpdate) {
+      const posSentences: PosSentences = {};
+      const s = bestNewSentsForWord.get(wordId);
+      if (s) {
+        for (const entry of s) {
+          posSentences[entry.pos] = [
+            { dateViewed: dayjs().unix(), sentence: entry.sent, manual: false },
+          ];
+          // FIXME: think about these...
+          // source?: string; //URL
+          // modelId?: number; //the nanosecond timestamp from the API
+        }
+        inserts.push({ id: wordId, posSentences: posSentences });
+      }
+    } else {
+      const s = bestNewSentsForWord.get(wordId);
+      if (s) {
+        for (const entry of s) {
+          const array = wordToUpdate.posSentences[entry.pos] || [];
+          let keep = true;
+          const plainSent = entry.sent.t.map((t) => t.l).join("");
+          if (
+            array.length === NB_RECENT_SENTS_TO_KEEP &&
+            array[0].dateViewed > dayjs().add(-1, "d").unix()
+          ) {
+            // Only update a given word-pos max once per 24 hours
+            continue;
+          }
+          // Only update if there isn't a very similar sentence already in the list
+          for (const existing of array) {
+            if (
+              levenshtein(plainSent, existing.sentence.t.map((t) => t.l).join("")) <
+              MIN_LEVENSHTEIN_DIST_TO_KEEP
+            ) {
+              keep = false;
+              break;
+            }
+          }
+          if (keep) {
+            array.unshift({
+              dateViewed: dayjs().valueOf() / 1000,
+              sentence: entry.sent,
+              manual: false,
+            });
+            wordToUpdate.posSentences[entry.pos] = array.slice(0, NB_RECENT_SENTS_TO_KEEP);
+            updatedSents.push(wordToUpdate);
+          }
+        }
+      }
+    }
+  }
+  // TODO: Should we wait here? Almost certainly NOT!
+  if (inserts.length > 0) {
+    platformHelper.sendMessagePromise<void>({
+      source: DATA_SOURCE,
+      type: "addRecentSentences",
+      value: inserts,
+    });
+  }
+  if (updatedSents.length > 0) {
+    platformHelper.sendMessagePromise<void>({
+      source: DATA_SOURCE,
+      type: "updateRecentSentences",
+      value: updatedSents,
+    });
+  }
+}
+
 // the callback function that will be fired when the enriched-text-fragment element apears in the viewport
 function onScreen(entries: IntersectionObserverEntry[], observer: IntersectionObserver): void {
   const tcModel = window.transcrobesModel; // FIXME: this is not beautiful
@@ -175,6 +378,9 @@ function onScreen(entries: IntersectionObserverEntry[], observer: IntersectionOb
               value: userEvent,
             });
           }
+          // We are NOT waiting here, as this is a nice-to-have really, and we don't want it to
+          // hold up other, immediately user-visible tasks
+          addToRecentSentences(tcModel[entry.target.id]);
         });
       }, utils.onScreenDelayIsConsideredRead);
     } else {
@@ -182,24 +388,21 @@ function onScreen(entries: IntersectionObserverEntry[], observer: IntersectionOb
     }
   }
 }
-function getUserCardWords(): Promise<DayCardWords> {
+async function getUserCardWords(): Promise<DayCardWords> {
   if (userCardWords == null) {
-    return new Promise<DayCardWords>((resolve, _reject) => {
-      platformHelper.sendMessage(
-        { source: DATA_SOURCE, type: "getCardWords", value: "" },
-        (value) => {
-          userCardWords = {
-            knownCardWordGraphs: new Set<string>(value.knownCardWordGraphs),
-            allCardWordGraphs: new Set<string>(value.allCardWordGraphs),
-            knownWordIdsCounter: value.knownWordIdsCounter,
-          };
-          resolve(userCardWords);
-          return "";
-        },
-      );
+    const value = await platformHelper.sendMessagePromise<DayCardWords>({
+      source: DATA_SOURCE,
+      type: "getCardWords",
+      value: "",
     });
+    userCardWords = {
+      knownCardWordGraphs: new Set<string>(value.knownCardWordGraphs),
+      allCardWordGraphs: new Set<string>(value.allCardWordGraphs),
+      knownWordIdsCounter: value.knownWordIdsCounter,
+    };
+    return userCardWords;
   } else {
-    return Promise.resolve(userCardWords);
+    return userCardWords;
   }
 }
 
@@ -296,6 +499,47 @@ function cleanupAfterCardsUpdate(doc: Document, grade: number, wordInfo: Definit
   // while (plusImgs.length > 0) plusImgs[0].remove();
 }
 
+async function printRecentExamplesRx(doc: Document, token: TokenType, parentDiv: HTMLElement) {
+  if (!token.pos || !token.id) return; // nothing found
+  const dictDefinition =
+    window.cachedDefinitions.get(token.id.toString()) || (await getWord(token.l));
+  const existingRSents = new Map<string, RecentSentencesType>(
+    await platformHelper.sendMessagePromise<Array<[string, RecentSentencesType]>>({
+      source: DATA_SOURCE,
+      type: "getRecentSentences",
+      value: [dictDefinition.id],
+    }),
+  );
+  const recents = existingRSents.get(dictDefinition.id);
+  if (!recents) return; // nothing found
+  const posRecents = recents.posSentences[token.pos];
+  if (!posRecents || posRecents.length === 0) return; // nothing found
+
+  doCreateElement(doc, "hr", null, null, null, parentDiv);
+  const infoDiv = doCreateElement(doc, "div", "tc-recentsentences", null, null, parentDiv);
+
+  const sentsDiv = doCreateElement(
+    doc,
+    "div",
+    "tc-recentsentences-header",
+    "Similar examples",
+    null,
+    infoDiv,
+  );
+  const uCardWords = await getUserCardWords();
+  for (const pr of posRecents) {
+    for (const t of pr.sentence.t) {
+      if (t.l == token.l && t.pos === token.pos) {
+        t.style = { color: "green", "font-weight": "bold" };
+      }
+    }
+    const entryDiv = doCreateElement(doc, "div", "tc-recentsentences-entry", " - ", null, sentsDiv);
+    const textBlock = await generateSentences(doc, [pr.sentence], uCardWords, false, true);
+    entryDiv.appendChild(textBlock);
+  }
+  doCreateElement(doc, "hr", null, null, null, sentsDiv);
+}
+
 function printInfosRx(doc: Document, wordInfo: DefinitionType, parentDiv: HTMLElement) {
   // FIXME: this is no longer generic, and will need rewriting... later
   const infoDiv = doCreateElement(doc, "div", "tc-stats", null, null, parentDiv);
@@ -346,6 +590,14 @@ function printSynonymsRx(
   doCreateElement(doc, "div", "tc-synonym-list", syns[0].values.join(", "), null, synonymsDiv);
 }
 
+function printPosRx(doc: Document, token: TokenType, parentDiv: HTMLElement) {
+  if (!token.pos) return;
+  const pos = utils.toPosLabels(token.pos);
+  const posDiv = doCreateElement(doc, "div", "tc-pos", null, null, parentDiv);
+  doCreateElement(doc, "hr", null, null, null, posDiv);
+  doCreateElement(doc, "div", null, `POS: ${pos}`, null, posDiv);
+}
+
 function printActionsRx(
   doc: Document,
   wordInfo: DefinitionType,
@@ -353,6 +605,7 @@ function printActionsRx(
   parentDiv: HTMLElement,
   originElement: HTMLElement,
 ) {
+  doCreateElement(doc, "hr", null, null, null, parentDiv);
   const actionsDiv = doCreateElement(doc, "div", "tcrobe-def-actions", null, null, parentDiv);
   for (const [grade, gradeObj] of Object.entries(GRADE_SVGS))
     createSVG(
@@ -381,7 +634,13 @@ function popupDefinitionsRx(doc: Document, wordInfo: DefinitionType, popupContai
       if (translation.values.length === 0) continue;
 
       defSource.appendChild(
-        doCreateElement(doc, "div", "tcrobe-def-source-pos", translation.posTag, null),
+        doCreateElement(
+          doc,
+          "div",
+          "tcrobe-def-source-pos",
+          utils.toSimplePosLabels(translation.posTag as SIMPLE_POS_TYPES),
+          null,
+        ),
       );
       const defSourcePosDefs = doCreateElement(
         doc,
@@ -412,6 +671,47 @@ function destroyPopup(event: MouseEvent, doc: Document, popupParent: Document): 
   return false;
 }
 
+function populateMouseover(
+  event: MouseEvent,
+  doc: Document,
+  uCardWords: DayCardWords,
+  token: TokenType,
+) {
+  const target = event.target! as HTMLElement;
+  if (target && target.dataset.tcrobeEntry) {
+    if (!timeoutId) {
+      timeoutId = window.setTimeout(() => {
+        if (target.dataset.tcrobeEntry) {
+          const word = JSON.parse(target.dataset.tcrobeEntry) as TokenType;
+          const userEvent = {
+            type: "bc_word_lookup",
+            data: {
+              target_word: word.l,
+              target_sentence: target.parentElement?.dataset.sentCleaned,
+            },
+            userStatsMode: utils.glossing,
+            source: EVENT_SOURCE,
+          };
+          platformHelper.sendMessage({
+            source: DATA_SOURCE,
+            type: "submitUserEvents",
+            value: userEvent,
+          });
+
+          timeoutId = 0;
+        }
+      }, MIN_LOOKED_AT_EVENT_DURATION);
+    }
+  }
+  getPopoverText(token, uCardWords).then((popoverText) => {
+    const popup = doCreateElement(doc, "div", "tc-mouseover-popup", popoverText, null);
+    const pstyle =
+      "min-width: 120px; margin-left: -60px; bottom: 100%; left: 50%; background-color: black; color: #fff; text-align: center; padding: 5px 0; border-radius: 6px; position: absolute; z-index: 1;";
+    popup.setAttribute("style", pstyle);
+    target.append(popup);
+  });
+}
+
 function populatePopup(event: MouseEvent, doc: Document) {
   const parent = (event.target! as HTMLElement).parentElement;
   if (parent && parent.dataset.tcrobeEntry) {
@@ -427,7 +727,6 @@ function populatePopup(event: MouseEvent, doc: Document) {
     };
     platformHelper.sendMessage({ source: DATA_SOURCE, type: "submitUserEvents", value: userEvent });
   }
-
   // We clicked on the same element twice, it's probably a link, so we shouldn't try and do any more
   // In any case, we close the popup
   const currentTarget = doc.querySelector(".tcrobe-popup-target");
@@ -488,28 +787,121 @@ function populatePopup(event: MouseEvent, doc: Document) {
   return popup;
 }
 
+async function getL2Simplified(
+  token: TokenType,
+  previousGloss: string,
+  uCardWords: DayCardWords,
+): Promise<string> {
+  let gloss = previousGloss;
+  // server-side set user known synonym
+  if (token.us && token.us.length > 0) {
+    gloss = token.us[0];
+  } else {
+    // try and get a local user known synonym
+    const dictDefinition =
+      (token.id && window.cachedDefinitions.get(token.id.toString())) || (await getWord(token.l));
+    const syns = dictDefinition.synonyms.filter((x) => x.posTag === utils.toSimplePos(token.pos!));
+
+    let innerGloss;
+    if (syns && syns.length > 0) {
+      const userSynonyms = utils.filterKnown(
+        uCardWords.knownWordIdsCounter,
+        uCardWords.knownCardWordGraphs,
+        syns[0].values,
+      );
+      if (userSynonyms.length > 0) {
+        innerGloss = userSynonyms[0];
+      }
+    }
+    gloss = innerGloss || gloss || bestGuess(token, dictDefinition);
+  }
+  return gloss;
+}
+async function getL1(token: TokenType): Promise<string> {
+  let gloss = token.bg ? token.bg.split(",")[0].split(";")[0] : "";
+  if (gloss) return gloss;
+
+  const dictDefinition =
+    (token.id && window.cachedDefinitions.get(token.id.toString())) || (await getWord(token.l));
+  // FIXME: need to add a timer or something to the dom element to keep
+  // looking for the actual definition when it arrives
+  if (dictDefinition && dictDefinition.providerTranslations) {
+    gloss = bestGuess(token, dictDefinition);
+  } else {
+    gloss = "loading...";
+  }
+
+  return gloss;
+}
+async function getSound(token: TokenType): Promise<string> {
+  let gloss = "";
+  if (token.p) {
+    gloss = token.p.join("");
+  } else {
+    gloss = (
+      (token.id && window.cachedDefinitions.get(token.id.toString())) ||
+      (await getWord(token.l))
+    ).sound.join("");
+  }
+  return gloss;
+}
+
+async function getPopoverText(token: TokenType, uCardWords: DayCardWords): Promise<string> {
+  const l1 = await getL1(token);
+  const l2 = await getL2Simplified(token, l1, uCardWords);
+  const sound = await getSound(token);
+  return `${utils.complexPosToSimplePosLabels(token.pos!)}: ${l1} ${
+    l2 != l1 ? `: ${l2}` : ""
+  }: ${sound}`;
+}
+
 async function updateWordForEntry(
   entry: HTMLElement,
   glossing: number,
   entryPadding: boolean,
   tokenData: TokenType,
   doc: Document,
-  glossNumberNouns = false,
   uCardWords: DayCardWords,
+  glossNumberNouns = false,
+  addClick = true,
+  addMouseInOut = true,
 ): Promise<HTMLElement> {
   entry.dataset.tcrobeEntry = JSON.stringify(tokenData);
+  const token = tokenData; // || (JSON.parse(entry.dataset.tcrobeEntry!) as TokenType);
   if (entryPadding) {
     // FIXME: this should be the class but how do i make it variable? with css variables?
     entry.style.paddingLeft = `${(SEGMENTED_BASE_PADDING * utils.fontSize) / 100}px`; // should this be padding or margin?
   }
-  const token = tokenData; // || (JSON.parse(entry.dataset.tcrobeEntry!) as TokenType);
+  if (token.style) {
+    for (const [name, value] of Object.entries(token.style)) {
+      (entry.style as any)[name] = value;
+    }
+  }
 
   const lemma = token.l;
   const word = doCreateElement(doc, "span", "tcrobe-word", lemma, null);
   entry.appendChild(word);
-  entry.addEventListener("click", (event: MouseEvent) => {
-    populatePopup(event, doc);
-  });
+  if (addClick) {
+    entry.addEventListener("click", (event: MouseEvent) => {
+      populatePopup(event, doc);
+    });
+  }
+  if (addMouseInOut) {
+    entry.addEventListener("mouseenter", (event: MouseEvent) => {
+      populateMouseover(event, doc, uCardWords, token);
+    });
+    entry.addEventListener("mouseleave", () => {
+      if (timeoutId) {
+        window.clearTimeout(timeoutId);
+        timeoutId = 0;
+      }
+      // TODO: understand why the F document.querySelectorAll DOESN'T work, while entry.querySelectorAll does...
+      const daf = entry.querySelectorAll(".tc-mouseover-popup");
+      daf.forEach((el) => {
+        el.remove();
+      });
+    });
+  }
 
   const needsGloss =
     glossing > USER_STATS_MODE.NO_GLOSS &&
@@ -521,54 +913,13 @@ async function updateWordForEntry(
     // Default L1, context-aware, "best guess" gloss
     let gloss = token.bg ? token.bg.split(",")[0].split(";")[0] : "";
 
-    // eslint-disable-next-line eqeqeq
     if (glossing == USER_STATS_MODE.L1 && !gloss) {
-      const dictDefinition = await getWord(lemma);
-      // FIXME: need to add a timer or something to the dom element to keep
-      // looking for the actual definition when it arrives
-      if (dictDefinition && dictDefinition.providerTranslations) {
-        gloss = bestGuess(token, dictDefinition);
-      } else {
-        gloss = "loading...";
-      }
+      gloss = await getL1(token);
     }
-
-    // eslint-disable-next-line eqeqeq
     if (glossing == USER_STATS_MODE.L2_SIMPLIFIED) {
-      // server-side set user known synonym
-      if (token.us && token.us.length > 0) {
-        gloss = token.us[0];
-      } else {
-        // try and get a local user known synonym
-        const dictDefinition =
-          (token.id && window.cachedDefinitions.get(token.id.toString())) || (await getWord(lemma));
-        const syns = dictDefinition.synonyms.filter(
-          (x) => x.posTag === utils.toSimplePos(token.pos!),
-        );
-
-        let innerGloss;
-        if (syns && syns.length > 0) {
-          const userSynonyms = utils.filterKnown(
-            uCardWords.knownWordIdsCounter,
-            uCardWords.knownCardWordGraphs,
-            syns[0].values,
-          );
-          if (userSynonyms.length > 0) {
-            innerGloss = userSynonyms[0];
-          }
-        }
-        gloss = innerGloss || gloss || bestGuess(token, dictDefinition);
-      }
-      // eslint-disable-next-line eqeqeq
+      gloss = await getL2Simplified(token, gloss, uCardWords);
     } else if (glossing == USER_STATS_MODE.TRANSLITERATION) {
-      if (token.p) {
-        gloss = token.p.join("");
-      } else {
-        gloss = (
-          (token.id && window.cachedDefinitions.get(token.id.toString())) ||
-          (await getWord(lemma))
-        ).sound.join("");
-      }
+      gloss = await getSound(token);
     }
     word.dataset.tcrobeGloss = gloss;
     word.classList.add("tcrobe-gloss");
@@ -633,9 +984,19 @@ function toggleSentenceVisible(event: MouseEvent, l1Sentence: HTMLElement) {
             value: parent.dataset.sentCleaned,
           })
           .then((translation) => {
-            l1Sentence.dataset.sentTrans = translation;
-            l1Sentence.innerHTML = translation;
+            const obj = l1Sentence.querySelector(".tcrobe-def-sentence");
+            if (obj) {
+              (obj as HTMLElement).dataset.sentTrans = translation;
+              obj.innerHTML = translation;
+            }
           });
+    }
+    if (parent.dataset.tcToken) {
+      const obj = l1Sentence.querySelector(".tcrobe-def-recentsentences");
+      if (obj) {
+        obj.innerHTML = "";
+        printRecentExamplesRx(document, JSON.parse(parent.dataset.tcToken), obj as HTMLElement);
+      }
     }
     for (const button of parent.querySelectorAll("svg")) {
       button.classList.toggle("hidden");
@@ -664,6 +1025,7 @@ const popupStyle = `
     }
   }
   .tcrobe-def-container { text-align: left; }
+  .tc-recentsentences-entry { text-align: left; }
   .tcrobe-def-source { margin-left: 6px; padding: 5px 0; }
   .tcrobe-def-source-name { box-sizing: border-box; text-align: left; }
   .tcrobe-def-source-pos { margin-left: 12px; }
@@ -774,6 +1136,7 @@ class TokenDetails extends HTMLParsedElement {
       );
       sentButton.dataset.sentCleaned = sentenceEl.dataset.sentCleaned;
       sentButton.dataset.tcrobeWord = token.l;
+      sentButton.dataset.tcToken = JSON.stringify(token);
 
       const popupExtras = doCreateElement(
         doc,
@@ -796,6 +1159,7 @@ class TokenDetails extends HTMLParsedElement {
         sentTransDiv.dataset.sentTrans = sentTrans;
       }
 
+      doCreateElement(doc, "div", "tcrobe-def-recentsentences", "", null, popupExtras);
       doCreateElement(doc, "div", "tcrobe-def-messages hidden", null, null, popup);
 
       createSVG(
@@ -825,6 +1189,7 @@ class TokenDetails extends HTMLParsedElement {
 
       const popupContainer = doCreateElement(doc, "div", "tcrobe-def-container", null, null, popup);
       printInfosRx(doc, wordInfo, popupContainer);
+      printPosRx(doc, token, popupContainer);
       printSynonymsRx(doc, wordInfo, token, popupContainer);
       printActionsRx(doc, wordInfo, token, popupContainer, target);
       popupDefinitionsRx(doc, wordInfo, popupContainer);
@@ -836,11 +1201,6 @@ class TokenDetails extends HTMLParsedElement {
 class EnrichedTextFragment extends HTMLParsedElement {
   static get observedAttributes(): ["data-model", "id"] {
     return ["data-model", "id"];
-  }
-
-  originalSentenceFromTokens(tokens: TokenType[]): string {
-    // currently just use
-    return tokens.map((x) => x.l).join("");
   }
 
   ensureStyle(): void {
@@ -860,51 +1220,6 @@ class EnrichedTextFragment extends HTMLParsedElement {
     }
   }
 
-  async generateSentences(
-    doc: Document,
-    sentences: SentenceType[],
-    uCardWords: DayCardWords,
-  ): Promise<HTMLElement> {
-    const resolvedSents = await Promise.all(
-      sentences.map(async (sentence) => {
-        const sent = doCreateElement(doc, "span", "tcrobe-sent", null, null);
-
-        const tokens = sentence.t;
-        sent.dataset.sentCleaned = this.originalSentenceFromTokens(tokens);
-        sent.dataset.sentTrans = sentence.l1 || "";
-
-        const resolvedTokens = await Promise.all(
-          tokens.map(async (token) => {
-            const word = token.l;
-            if (token.pos || token.bg) {
-              // if there is a Best Guess key (even if empty) then we might want to look it up
-              return await updateWordForEntry(
-                doCreateElement(doc, "span", "tcrobe-entry", null, null),
-                utils.glossing,
-                utils.segmentation,
-                token,
-                doc,
-                utils.glossNumberNouns,
-                uCardWords,
-              );
-            } else {
-              return doc.createTextNode(!utils.toEnrich(word) ? " " + word : word);
-            }
-          }),
-        );
-        for (const token of resolvedTokens) {
-          sent.appendChild(token);
-        }
-        return sent;
-      }),
-    );
-    const sents = doCreateElement(doc, "span", "tcrobe-sents", null, null);
-    for (const sentence of resolvedSents) {
-      sents.appendChild(sentence);
-    }
-    return sents;
-  }
-
   constructor() {
     super();
     // FIXME: how to best get the document???
@@ -914,19 +1229,17 @@ class EnrichedTextFragment extends HTMLParsedElement {
   async connectedCallback(): Promise<void> {
     this.ensureStyle();
     let sentences: SentenceType[] | null = null;
-
-    if ("model" in this.dataset && JSON.parse(this.dataset.model)["s"].length > 0) {
-      sentences = JSON.parse(this.dataset.model)["s"];
+    const localModel: ModelType | null =
+      "model" in this.dataset ? JSON.parse(this.dataset.model) : null;
+    if (localModel && localModel["s"].length > 0) {
+      sentences = localModel["s"];
     } else if (this.id) {
       sentences = window.transcrobesModel[this.id]["s"];
     }
-    // else {
-    //   console.debug("Unable to find model sentences: connectedCallback");
-    // }
     if (sentences) {
       const uCardWords = await getUserCardWords();
       if (uCardWords == null) {
-        throw new Error("uCardWords is null in updateWordForEntry");
+        throw new Error("uCardWords is null in connectedCallback");
       }
       // FIXME: this doesn't work in chrome extensions with polyfills it seems,
       // so that means we can't have text there and then replace. And this is all
@@ -935,9 +1248,10 @@ class EnrichedTextFragment extends HTMLParsedElement {
       // this.getRootNode().innerText = '';
 
       if (!this.querySelector(".tcrobe-sent")) {
-        const sents = await this.generateSentences(this.doc, sentences, uCardWords);
+        const textBlock = await generateSentences(this.doc, sentences, uCardWords, true, true);
         this.innerHTML = "";
-        this.appendChild(sents);
+        this.appendChild(textBlock);
+
         window.etfLoaded.add("loaded");
         readObserver.observe(this as unknown as Element); // FIXME: there are no types for HTMLParsedElement
       }
@@ -957,12 +1271,13 @@ class EnrichedTextFragment extends HTMLParsedElement {
     if (sentences) {
       const uCardWords = await getUserCardWords();
       if (uCardWords == null) {
-        throw new Error("uCardWords is null in updateWordForEntry");
+        throw new Error("uCardWords is null in attributeChangedCallback");
       }
       if (!this.querySelector(".tcrobe-sent")) {
-        const textBlock = await this.generateSentences(this.doc, sentences, uCardWords);
+        const textBlock = await generateSentences(this.doc, sentences, uCardWords, true, true);
         this.innerHTML = "";
         this.appendChild(textBlock);
+
         window.etfLoaded.add("loaded");
         readObserver.observe(this as unknown as Element); // FIXME: there are no types for HTMLParsedElement
       }
