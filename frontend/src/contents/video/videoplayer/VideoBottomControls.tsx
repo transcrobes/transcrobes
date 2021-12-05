@@ -21,9 +21,9 @@ import FontSize from "./SubFontSize";
 import SubFontColour from "./SubFontColour";
 import SubDelay from "./SubDelay";
 import PlaybackRate from "./SubPlaybackRate";
-import Segmentation from "./SubSegmentation";
+import SubSwitch from "./SubSwitch";
 import { SubPosition } from "./types";
-import { USER_STATS_MODE } from "../../../lib/lib";
+import GlossingSelector from "../../../components/GlossingSelector";
 
 interface Props {
   elapsedTime: string;
@@ -40,6 +40,7 @@ interface Props {
   subPosition: SubPosition;
   glossing: number;
   segmentation: boolean;
+  mouseover: boolean;
   onSubPositionChange: (position: SubPosition) => void;
   onSubFontColourChange: (colour: Color) => void;
   onSubBoxWidthChange: (width: number) => void;
@@ -62,6 +63,7 @@ interface Props {
   onSubDelayChange: (delay: number) => void;
   onGlossingChange: (glossing: number) => void;
   onSegmentationChange: (event: ChangeEvent<HTMLInputElement>, segmentation: boolean) => void;
+  onMouseoverChange: (event: ChangeEvent<HTMLInputElement>, mouseover: boolean) => void;
 }
 
 function VideoBottomControls({
@@ -79,6 +81,7 @@ function VideoBottomControls({
   subPosition,
   glossing,
   segmentation,
+  mouseover,
   onSubPositionChange,
   onSubFontColourChange,
   onSubBoxWidthChange,
@@ -94,6 +97,7 @@ function VideoBottomControls({
   onToggleFullscreen,
   onGlossingChange,
   onSegmentationChange,
+  onMouseoverChange,
 }: Props): ReactElement {
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const ref = useRef<HTMLDivElement>(null);
@@ -208,22 +212,21 @@ function VideoBottomControls({
                 </div>
                 <div className={classes.select} title="Glossing">
                   <Grid container direction="row" alignItems="center" justifyContent="center">
-                    <Select
+                    <GlossingSelector
                       className={classes.select}
                       value={glossing}
-                      label="Glossing"
-                      onChange={(event) => {
-                        onGlossingChange(event.target.value as number);
-                      }}
-                    >
-                      <MenuItem value={USER_STATS_MODE.NO_GLOSS}>None</MenuItem>
-                      <MenuItem value={USER_STATS_MODE.L2_SIMPLIFIED}>Simpler</MenuItem>
-                      <MenuItem value={USER_STATS_MODE.TRANSLITERATION}>Sounds</MenuItem>
-                      <MenuItem value={USER_STATS_MODE.L1}>English</MenuItem>
-                    </Select>
+                      onGlossingChange={onGlossingChange}
+                    />
                   </Grid>
                 </div>
-                <Segmentation
+                <SubSwitch
+                  label="Mouseover"
+                  cssClasses={classes}
+                  onValueChange={onMouseoverChange}
+                  value={mouseover}
+                />
+                <SubSwitch
+                  label="Segmentation"
                   cssClasses={classes}
                   onValueChange={onSegmentationChange}
                   value={segmentation}

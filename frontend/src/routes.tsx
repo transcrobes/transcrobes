@@ -20,6 +20,7 @@ import RecoverPassword from "./system/RecoverPassword";
 // FIXME: I guess this is better done via redux?
 window.readerConfig = {
   segmentation: true,
+  mouseover: true,
   glossing: USER_STATS_MODE.L1,
   popupParent: window.document.body,
 };

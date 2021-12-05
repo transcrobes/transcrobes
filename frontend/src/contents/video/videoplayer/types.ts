@@ -13,6 +13,7 @@ export type VideoConfig = {
   subBoxWidth: number;
   subPosition: SubPosition;
   segmentation: boolean;
+  mouseover: boolean;
   glossing: number;
 };
 

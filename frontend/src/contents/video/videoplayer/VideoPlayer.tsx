@@ -23,7 +23,7 @@ import {
   setLangPair,
   setPopupParent,
 } from "../../../lib/components";
-import { USER_STATS_MODE } from "../../../lib/lib";
+import { setMouseover, USER_STATS_MODE } from "../../../lib/lib";
 
 let count = 0;
 let configCount = 0;
@@ -188,6 +188,7 @@ function VideoPlayer({
   const [subBoxWidth, setSubBoxWidth] = useState(0.8); // 80% of the screen
   const [glossing, setLocalGlossing] = useState(USER_STATS_MODE.L1);
   const [segmentation, setLocalSegmentation] = useState(true);
+  const [mouseover, setLocalMouseover] = useState(true);
 
   function updateGlossing(newGlossing: number) {
     if (contentConfig?.config) {
@@ -200,6 +201,13 @@ function VideoPlayer({
       setLocalSegmentation(newSegmentation);
     }
     setSegmentation(newSegmentation);
+  }
+
+  function updateMouseover(_event: any, newMouseover: boolean) {
+    if (contentConfig?.config) {
+      setLocalMouseover(newMouseover);
+    }
+    setMouseover(newMouseover);
   }
 
   useEffect(() => {
@@ -232,6 +240,7 @@ function VideoPlayer({
 
     updateGlossing(contentConfig?.config?.glossing || USER_STATS_MODE.L1);
     updateSegmentation(null, contentConfig?.config?.segmentation === false ? false : true);
+    updateMouseover(null, contentConfig?.config?.mouseover === false ? false : true);
     // FIXME: this is broken...
     setLangPair(window.componentsConfig.langPair);
 
@@ -256,6 +265,7 @@ function VideoPlayer({
         subPosition,
         glossing,
         segmentation,
+        mouseover,
       };
       onContentConfigUpdate({
         id: contentConfig.id,
@@ -272,6 +282,7 @@ function VideoPlayer({
     subBoxWidth,
     glossing,
     segmentation,
+    mouseover,
   ]);
 
   function shiftSubs(delay: number): void {
@@ -633,6 +644,7 @@ function VideoPlayer({
                       subPosition={subPosition}
                       glossing={glossing}
                       segmentation={segmentation}
+                      mouseover={mouseover}
                       onSubPositionChange={(position) => setSubPosition(position)}
                       onSubFontColourChange={(colour) =>
                         setSubFontColour(typeof colour === "string" ? createColor(colour) : colour)
@@ -653,6 +665,7 @@ function VideoPlayer({
                       onVolumeChange={handleVolumeChange}
                       onGlossingChange={updateGlossing}
                       onSegmentationChange={updateSegmentation}
+                      onMouseoverChange={updateMouseover}
                     />
                   )}
                 </Grid>

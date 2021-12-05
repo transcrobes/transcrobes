@@ -12,6 +12,7 @@ function loadSettingsFromParentFrame() {
   components.setBaseUrl(window.parent.componentsConfig.url.origin);
   components.setLangPair(window.parent.componentsConfig.langPair);
   components.setSegmentation(window.parent.readerConfig.segmentation);
+  components.setMouseover(window.parent.readerConfig.mouseover);
   components.setGlossing(window.parent.readerConfig.glossing);
   components.setPopupParent(window.parent.readerConfig.popupParent);
 }

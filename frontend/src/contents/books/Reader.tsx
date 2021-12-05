@@ -9,6 +9,7 @@ import { MdHome } from "react-icons/md";
 import injectables from "./injectables";
 import SettingsCard from "./SettingsCard";
 import { USER_STATS_MODE } from "../../lib/lib";
+import { MouseoverType, SegmentationType } from "../../lib/types";
 
 type ContentParams = {
   id: string;
@@ -29,13 +30,15 @@ type HeaderLeftProps = {
 // FIXME: This should be done as content preferences saved at each change, like the video player
 window.readerConfig = {
   segmentation: true,
+  mouseover: true,
   glossing: USER_STATS_MODE.L1,
   popupParent: window.document.body,
 };
 
 function HeaderLeft({ doUpdate }: HeaderLeftProps): React.ReactElement {
   const [glossing, setGlossing] = useState(USER_STATS_MODE.L1.toString());
-  const [segmentation, setSegmentation] = useState("segmented");
+  const [segmentation, setSegmentation] = useState<SegmentationType>("segmented");
+  const [mouseover, setMouseover] = useState<MouseoverType>("mouseover");
   // const linkColor = useColorModeValue("gray.700", "gray.100", "gray.700");
 
   function updateGlossing(glossIt: string) {
@@ -44,9 +47,15 @@ function HeaderLeft({ doUpdate }: HeaderLeftProps): React.ReactElement {
     doUpdate();
   }
 
-  function updateSegmentation(segmentIt: string) {
+  function updateSegmentation(segmentIt: SegmentationType) {
     setSegmentation(segmentIt);
     window.readerConfig.segmentation = segmentIt === "segmented";
+    doUpdate();
+  }
+
+  function updateMouseover(mouseoverIt: MouseoverType) {
+    setMouseover(mouseoverIt);
+    window.readerConfig.mouseover = mouseoverIt === "mouseover";
     doUpdate();
   }
 
@@ -77,6 +86,8 @@ function HeaderLeft({ doUpdate }: HeaderLeftProps): React.ReactElement {
         setGlossing={updateGlossing}
         segmentation={segmentation}
         setSegmentation={updateSegmentation}
+        mouseover={mouseover}
+        setMouseover={updateMouseover}
       />
     </>
   );

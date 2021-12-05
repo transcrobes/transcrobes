@@ -216,10 +216,11 @@ const USER_STATS_MODE = {
   L2_SIMPLIFIED: 4, // e.g, using "simple" Chinese characters
   TRANSLITERATION: 6, // e.g, pinyin
   L1: 8, // e.g, English
+  TRANSLITERATION_L1: 9, // e.g, pinyin + English
 };
 
 type USER_STATS_MODE_KEY = keyof typeof USER_STATS_MODE;
-type USER_STATS_MODE_KEY_VALUES = typeof USER_STATS_MODE[USER_STATS_MODE_KEY];
+export type USER_STATS_MODE_KEY_VALUES = typeof USER_STATS_MODE[USER_STATS_MODE_KEY];
 
 async function getRequestOptions(
   baseUrl: string,

@@ -8,12 +8,15 @@ import Button from "./Button";
 
 // import useColorModeValue from "./hooks/useColorModeValue";
 import GlossingSettings from "./GlossingSettings";
+import { MouseoverType, SegmentationType } from "../../lib/types";
 
 type SettingsCardProps = {
   glossing: string;
   setGlossing: (glossing: string) => void;
   segmentation: string;
-  setSegmentation: (segmentation: string) => void;
+  setSegmentation: (segmentation: SegmentationType) => void;
+  mouseover: string;
+  setMouseover: (mouseover: MouseoverType) => void;
 };
 export default function SettingsCard(props: SettingsCardProps): React.ReactElement {
   const [isOpen, setIsOpen] = React.useState(false);
@@ -40,6 +43,8 @@ export default function SettingsCard(props: SettingsCardProps): React.ReactEleme
               setGlossing={props.setGlossing}
               segmentation={props.segmentation}
               setSegmentation={props.setSegmentation}
+              mouseover={props.mouseover}
+              setMouseover={props.setMouseover}
             />
           </PopoverBody>
         </PopoverContent>

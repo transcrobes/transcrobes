@@ -114,8 +114,12 @@ export const ZH_TB_POS_LABELS: { [key in TREEBANK_POS_TYPES]: string } = {
 export type ComponentsAppConfig = {
   segmentation: boolean;
   glossing: number;
+  mouseover: boolean;
   popupParent: HTMLElement;
 };
+
+export type SegmentationType = "segmented" | "none";
+export type MouseoverType = "mouseover" | "none";
 
 export enum PROCESSING {
   NONE = 0,

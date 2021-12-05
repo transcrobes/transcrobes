@@ -914,11 +914,12 @@ async function updateWordForEntry(
 
     if (glossing == USER_STATS_MODE.L1 && !gloss) {
       gloss = await getL1(token);
-    }
-    if (glossing == USER_STATS_MODE.L2_SIMPLIFIED) {
+    } else if (glossing == USER_STATS_MODE.L2_SIMPLIFIED) {
       gloss = await getL2Simplified(token, gloss, uCardWords);
     } else if (glossing == USER_STATS_MODE.TRANSLITERATION) {
       gloss = await getSound(token);
+    } else if (glossing == USER_STATS_MODE.TRANSLITERATION_L1) {
+      gloss = `${await getSound(token)}: ${await getL1(token)}`;
     }
     word.dataset.tcrobeGloss = gloss;
     word.classList.add("tcrobe-gloss");

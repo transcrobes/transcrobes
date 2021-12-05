@@ -70,6 +70,7 @@ export default function VideoPlayerScreen({ proxy }: ContentProps): ReactElement
           subPosition: "bottom",
           glossing: USER_STATS_MODE.L1,
           segmentation: true,
+          mouseover: true,
         };
       }
       const videoConfig: VideoContentConfig = {

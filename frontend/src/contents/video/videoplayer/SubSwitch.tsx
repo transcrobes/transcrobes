@@ -4,21 +4,22 @@ import { FormControlLabel, FormGroup, Switch } from "@material-ui/core";
 interface SwitchProps {
   value: boolean;
   cssClasses: any; // FIXME: any
+  label: string;
   onValueChange: (event: ChangeEvent<HTMLInputElement>, checked: boolean) => void;
 }
 
-function SubSegmentation({ cssClasses, value, onValueChange }: SwitchProps): ReactElement {
+function SubSwitch({ cssClasses, value, label, onValueChange }: SwitchProps): ReactElement {
   return (
-    <div title="Segmentation" className={cssClasses.switch}>
+    <div title={label} className={cssClasses.switch}>
       <FormGroup>
         <FormControlLabel
           className={cssClasses.switch}
           control={<Switch defaultChecked={value} onChange={onValueChange} />}
-          label="Segmentation"
+          label={label}
         />
       </FormGroup>
     </div>
   );
 }
 
-export default SubSegmentation;
+export default SubSwitch;

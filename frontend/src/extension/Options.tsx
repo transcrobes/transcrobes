@@ -23,6 +23,7 @@ import {
   TextField,
   Typography,
 } from "@material-ui/core";
+import GlossingSelector from "../components/GlossingSelector";
 
 declare global {
   interface Window {
@@ -236,20 +237,7 @@ export default function Options(): JSX.Element {
       <FormGroup className={classes.groups}>
         <FormControl className={classes.controls}>
           <InputLabel shrink>Glossing</InputLabel>
-          <Select
-            labelId="glossing"
-            id="glossing"
-            value={glossing}
-            onChange={(event, value) => {
-              if (value) setGlossing(event.target.value as number);
-            }}
-            displayEmpty
-          >
-            <MenuItem value={USER_STATS_MODE.UNMODIFIED}>None</MenuItem>
-            <MenuItem value={USER_STATS_MODE.L2_SIMPLIFIED}>Simple word</MenuItem>
-            <MenuItem value={USER_STATS_MODE.TRANSLITERATION}>Pinyin</MenuItem>
-            <MenuItem value={USER_STATS_MODE.L1}>English</MenuItem>
-          </Select>
+          <GlossingSelector value={glossing} onGlossingChange={setGlossing} />
         </FormControl>
         <FormControlLabel
           className={classes.controls}
