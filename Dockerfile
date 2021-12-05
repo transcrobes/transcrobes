@@ -9,8 +9,9 @@ RUN npm install --legacy-peer-deps
 
 COPY ./frontend/ /app/
 
-RUN npm run build:prod
+ARG ENVIRONMENT=prod
 
+RUN npm run build:${ENVIRONMENT}
 # FROM registry.transcrob.es/transcrobes/fastapi-rocks:latest
 FROM antonapetrov/uvicorn-gunicorn-fastapi:python3.9
 

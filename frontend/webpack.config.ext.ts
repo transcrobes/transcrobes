@@ -61,10 +61,6 @@ function loadStaticResources(sourceBase: string, outputDir: string) {
             from: path.join(sourceBase, "public/*.png"),
             to: path.join(outputDir, "img/[name][ext]"),
           },
-          // {
-          //   from: path.join(sourceBase, "src/img/*.gif"),
-          //   to: path.join(outputDir, "img/[name][ext]"),
-          // },
           {
             from: "node_modules/@webcomponents/webcomponentsjs/bundles/webcomponents-sd-ce.js",
             to: path.join(outputDir, "[name][ext]"),
@@ -80,21 +76,8 @@ const developmentConfig = merge<Configuration>([
 ]);
 
 const productionConfig = merge<Configuration>([
-  {
-    optimization: {
-      splitChunks: {
-        cacheGroups: {
-          commons: {
-            test: /[\\/]node_modules[\\/]/,
-            name: "vendor",
-            chunks: "initial",
-          },
-        },
-      },
-    },
-  },
   parts.minifyJavaScript(),
-  // parts.generateSourceMaps({ type: "source-map" }),
+  parts.generateSourceMaps({ type: "source-map" }),
 ]);
 
 const getConfig = (mode: "production" | "development") => {

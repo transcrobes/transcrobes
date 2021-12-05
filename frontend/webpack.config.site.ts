@@ -70,7 +70,7 @@ const developmentConfig = merge<Configuration>([
 
 const productionConfig = merge<Configuration>([
   parts.minifyJavaScript(),
-  // parts.generateSourceMaps({ type: "source-map" }),
+  parts.generateSourceMaps({ type: "source-map" }),
   parts.checkCircularDependencies(),
 ]);
 

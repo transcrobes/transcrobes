@@ -1,8 +1,8 @@
 [tool.poetry]
-name = "app"
-version = "0.1.0"
+name = "transcrobes"
+version = "0.6.0"
 description = ""
-authors = ["Anton Melser <anton@melser.org>"]
+authors = ["Anton Melser <anton@transcrob.es>"]
 license = "AGPLv3"
 
 [tool.poetry.dependencies]
