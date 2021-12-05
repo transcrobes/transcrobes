@@ -1,18 +1,27 @@
 import React, { ReactElement } from "react";
-import { Card, CardContent, CardHeader } from "@material-ui/core";
+import { Card, CardContent, CardHeader, Typography } from "@material-ui/core";
 
-interface Props {}
-
-export default function Brocrobes(props: Props): ReactElement {
+export default function Brocrobes(): ReactElement {
   return (
     <Card>
       <CardHeader title="Brocrobes" />
       <CardContent>
-        <p>
+        <Typography paragraph={true}>
           Brocrobes is a browser extension, compatible with Google Chrome, Microsoft Edge, and other
           Chromium-derived browsers.
-        </p>
-        <p>
+        </Typography>
+        <Typography paragraph={true}>
+          On Android, you can use the{" "}
+          <a
+            target="_blank"
+            rel="noopener noreferrer"
+            href="https://play.google.com/store/apps/details?id=com.kiwibrowser.browser&hl=en&gl=GB"
+          >
+            Kiwi Browser
+          </a>
+          . We are working with Yandex support to allow for support of Yandex at a future date.
+        </Typography>
+        <Typography paragraph={true}>
           You can download Brocrobes on the{" "}
           <a
             target="_blank"
@@ -21,7 +30,7 @@ export default function Brocrobes(props: Props): ReactElement {
           >
             Chrome Web Store
           </a>
-        </p>
+        </Typography>
       </CardContent>
     </Card>
   );
