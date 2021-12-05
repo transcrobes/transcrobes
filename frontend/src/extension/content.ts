@@ -111,13 +111,23 @@ spinnerDiv.classList.add("loader");
 spinnerDiv.classList.add("centre-loader");
 document.body.appendChild(spinnerDiv);
 
+function getFromSettingsDB(qtype: string) {
+  return platformHelper.sendMessagePromise<string>({
+    source: DATA_SOURCE,
+    type: "getFromSettingsDB",
+    value: qtype,
+  });
+}
+
 function ensureLoaded(qtype: string) {
   return platformHelper.sendMessagePromise<string>({ source: DATA_SOURCE, type: qtype, value: "" });
 }
 
 async function ensureAllLoaded() {
   components.setLangPair(await ensureLoaded("langPair"));
-  components.setGlossing(parseInt(await ensureLoaded("glossing")));
+  components.setGlossing(parseInt(await getFromSettingsDB("glossing")));
+  components.setMouseover(parseInt(await getFromSettingsDB("mouseover")) > 0);
+  components.setSegmentation(parseInt(await getFromSettingsDB("segmentation")) > 0);
   await ensureLoaded("getCardWords");
 }
 

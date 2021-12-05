@@ -36,6 +36,7 @@ let baseUrl = "";
 let glossing = -1;
 let fontSize = 100;
 let segmentation = true;
+let mouseover = true;
 let themeName = "dark";
 let eventSource = "lib.ts";
 let glossNumberNouns = false;
@@ -75,6 +76,9 @@ function setFontSize(value: number): void {
 }
 function setSegmentation(value: boolean): void {
   segmentation = value;
+}
+function setMouseover(value: boolean): void {
+  mouseover = value;
 }
 // FIXME: should be an enum
 function setThemeName(value: string): void {
@@ -395,6 +399,7 @@ export {
   password,
   baseUrl,
   glossing,
+  mouseover,
   fontSize,
   segmentation,
   onScreenDelayIsConsideredRead,
@@ -411,6 +416,7 @@ export {
   setGlossNumberNouns,
   setFontSize,
   setSegmentation,
+  setMouseover,
   setOnScreenDelayIsConsideredRead,
   setThemeName,
   setEventSource,

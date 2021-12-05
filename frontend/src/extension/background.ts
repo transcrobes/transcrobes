@@ -35,6 +35,8 @@ async function loadDb(callback: any, message: any) {
     getValue("baseUrl"),
     getValue("glossing"),
     getValue("lang_pair"),
+    getValue("segmentation"),
+    getValue("mouseover"),
   ]);
   console.debug("DB NOT loaded, (re)loading", db);
   utils.setUsername(
@@ -65,6 +67,22 @@ async function loadDb(callback: any, message: any) {
         throw new Error("Unable to get langPair");
       })(),
   );
+  utils.setSegmentation(
+    parseInt(
+      items[5] ||
+        (() => {
+          throw new Error("Unable to get segmentation");
+        })(),
+    ) > 0,
+  );
+  utils.setMouseover(
+    parseInt(
+      items[6] ||
+        (() => {
+          throw new Error("Unable to get mouseover");
+        })(),
+    ) > 0,
+  );
 
   const progressCallback = (progressMessage: string, isFinished: boolean) => {
     const progress = { message: progressMessage, isFinished };
@@ -90,27 +108,25 @@ async function loadDb(callback: any, message: any) {
 }
 
 chrome.action.onClicked.addListener(function (tab) {
-  Promise.all([getUsername(), getPassword(), getValue("baseUrl"), getValue("glossing")]).then(
-    (items: any[]) => {
-      if (!items[0] || !items[1] || !items[2]) {
-        // FIXME: this can't work in a service worker...
-        alert(
-          `You need an account on a Transcrobes server to Transcrobe a page. \n\nIf you have an account please fill in the options page (right-click on the Transcrobe Me! icon -> Extension Options) with your login information (username, password, server URL).\n\n For information on available servers or how to set one up for yourself, see the Transcrobes site https://transcrob.es`,
-        );
-      } else {
-        if (tab.id) {
-          chrome.scripting.executeScript({
-            target: { tabId: tab.id, allFrames: true },
-            files: ["webcomponents-sd-ce.js"],
-          });
-          chrome.scripting.executeScript({
-            target: { tabId: tab.id, allFrames: true },
-            files: ["content-bundle.js"],
-          });
-        }
+  Promise.all([getUsername(), getPassword(), getValue("baseUrl")]).then((items: any[]) => {
+    if (!items[0] || !items[1] || !items[2]) {
+      // FIXME: this can't work in a service worker...
+      alert(
+        `You need an account on a Transcrobes server to Transcrobe a page. \n\nIf you have an account please fill in the options page (right-click on the Transcrobe Me! icon -> Extension Options) with your login information (username, password, server URL).\n\n For information on available servers or how to set one up for yourself, see the Transcrobes site https://transcrob.es`,
+      );
+    } else {
+      if (tab.id) {
+        chrome.scripting.executeScript({
+          target: { tabId: tab.id, allFrames: true },
+          files: ["webcomponents-sd-ce.js"],
+        });
+        chrome.scripting.executeScript({
+          target: { tabId: tab.id, allFrames: true },
+          files: ["content-bundle.js"],
+        });
       }
-    },
-  );
+    }
+  });
 });
 
 chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
@@ -248,9 +264,9 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
     loadDb(console.debug, message).then(() => {
       sendResponse({ source: message.source, type: message.type, value: utils.langPair });
     });
-  } else if (message.type === "glossing") {
-    getValue("glossing").then((glossing) => {
-      sendResponse({ source: message.source, type: message.type, value: glossing });
+  } else if (message.type === "getFromSettingsDB") {
+    getValue(message.value).then((value) => {
+      sendResponse({ source: message.source, type: message.type, value: value });
     });
   } else if (message.type === "getUsername") {
     getUsername().then((username) => {

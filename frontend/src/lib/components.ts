@@ -122,7 +122,6 @@ async function generateSentences(
   sentences: SentenceType[],
   uCardWords: DayCardWords,
   addClick = true,
-  addMouseInOut = true,
 ): Promise<HTMLElement> {
   const resolvedSents = await Promise.all(
     sentences.map(async (sentence) => {
@@ -146,7 +145,7 @@ async function generateSentences(
               uCardWords,
               utils.glossNumberNouns,
               addClick,
-              addMouseInOut,
+              utils.mouseover,
             );
           } else {
             return doc.createTextNode(!utils.toEnrich(word) ? " " + word : word);
@@ -534,7 +533,7 @@ async function printRecentExamplesRx(doc: Document, token: TokenType, parentDiv:
       }
     }
     const entryDiv = doCreateElement(doc, "div", "tc-recentsentences-entry", " - ", null, sentsDiv);
-    const textBlock = await generateSentences(doc, [pr.sentence], uCardWords, false, true);
+    const textBlock = await generateSentences(doc, [pr.sentence], uCardWords, false);
     entryDiv.appendChild(textBlock);
   }
   doCreateElement(doc, "hr", null, null, null, sentsDiv);
@@ -1248,7 +1247,7 @@ class EnrichedTextFragment extends HTMLParsedElement {
       // this.getRootNode().innerText = '';
 
       if (!this.querySelector(".tcrobe-sent")) {
-        const textBlock = await generateSentences(this.doc, sentences, uCardWords, true, true);
+        const textBlock = await generateSentences(this.doc, sentences, uCardWords, true);
         this.innerHTML = "";
         this.appendChild(textBlock);
 
@@ -1274,7 +1273,7 @@ class EnrichedTextFragment extends HTMLParsedElement {
         throw new Error("uCardWords is null in attributeChangedCallback");
       }
       if (!this.querySelector(".tcrobe-sent")) {
-        const textBlock = await generateSentences(this.doc, sentences, uCardWords, true, true);
+        const textBlock = await generateSentences(this.doc, sentences, uCardWords, true);
         this.innerHTML = "";
         this.appendChild(textBlock);
 
