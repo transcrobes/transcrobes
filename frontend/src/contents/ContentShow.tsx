@@ -11,9 +11,13 @@ import {
 import { Content, CONTENT_TYPE, PROCESSING, reverseEnum } from "../lib/types";
 import ActionButton from "./ActionButton";
 import { ImportProgress } from "../imports/ImportProgress";
+import { HelpShowActions } from "../components/HelpShowActions";
 
 const ContentShow: FC<FieldProps<Content>> = (props) => (
-  <Show {...props}>
+  <Show
+    actions={<HelpShowActions helpUrl="https://transcrob.es/page/software/configure/contents/" />}
+    {...props}
+  >
     <SimpleShowLayout>
       <TextField source="id" />
       <TextField source="title" />

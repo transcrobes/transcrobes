@@ -8,11 +8,15 @@ import {
   SimpleShowLayout,
   TextField,
 } from "react-admin";
+import { HelpShowActions } from "../components/HelpShowActions";
 import { ORDER_BY, PROCESSING, reverseEnum, UserList } from "../lib/types";
 import { UserListProgress } from "./UserListProgress";
 
 const UserListShow: FC<FieldProps<UserList>> = (props) => (
-  <Show {...props}>
+  <Show
+    actions={<HelpShowActions helpUrl="https://transcrob.es/page/software/configure/wordlists/" />}
+    {...props}
+  >
     <SimpleShowLayout>
       <TextField source="id" />
       <TextField source="title" />

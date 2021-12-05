@@ -10,10 +10,14 @@ import {
   ReferenceInput,
   SelectInput,
 } from "react-admin";
+import { HelpEditActions } from "../components/HelpEditActions";
 import { Goal } from "../lib/types";
 
 const GoalEdit: FC<FieldProps<Goal>> = (props) => (
-  <Edit {...props}>
+  <Edit
+    actions={<HelpEditActions helpUrl="https://transcrob.es/page/software/configure/goals/" />}
+    {...props}
+  >
     <SimpleForm redirect="list">
       <TextField source="id" />
       <TextInput label="Goal name" source="title" validate={[required()]} />

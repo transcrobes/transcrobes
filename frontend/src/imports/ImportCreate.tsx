@@ -10,11 +10,15 @@ import {
   SelectInput,
   FileField,
 } from "react-admin";
+import { HelpCreateActions } from "../components/HelpCreateActions";
 
 import { Import, PROCESS_TYPE } from "../lib/types";
 
 const ImportCreate: FC<FieldProps<Import>> = (props) => (
-  <Create {...props}>
+  <Create
+    actions={<HelpCreateActions helpUrl="https://transcrob.es/page/software/configure/imports/" />}
+    {...props}
+  >
     <SimpleForm redirect="list">
       <TextInput label="Import name" source="title" validate={[required()]} />
       <TextInput label="Import description" multiline source="description" />

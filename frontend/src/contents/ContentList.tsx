@@ -10,16 +10,17 @@ import {
   ReferenceField,
   ShowButton,
   TextField,
+  TopToolbar,
 } from "react-admin";
+import HelpButton from "../components/HelpButton";
 import { CONTENT_TYPE, PROCESSING, reverseEnum } from "../lib/types";
 import ActionButton from "./ActionButton";
 
-// const ListActions: FC<any> = (props) => (
-//   <TopToolbar>
-//     <CreateButton />
-//     <SortButton fields={["id"]} />
-//   </TopToolbar>
-// );
+const ContentActions: FC<any> = () => (
+  <TopToolbar>
+    <HelpButton url="https://transcrob.es/page/software/configure/contents/" />
+  </TopToolbar>
+);
 
 // const ContentFilter: FC = (props) => (
 //   <Filter {...props}>
@@ -27,10 +28,11 @@ import ActionButton from "./ActionButton";
 //   </Filter>
 // );
 
+//
+
 export const ContentList: FC<ListProps> = (props) => {
   return (
-    // <List {...props} actions={<ListActions />} filters={<ContentFilter />}>
-    <List {...props}>
+    <List {...props} actions={<ContentActions />}>
       <Datagrid>
         <TextField source="title" />
         <ReferenceField label="Source import" source="theImport" reference="imports" link="show">

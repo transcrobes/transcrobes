@@ -11,12 +11,14 @@ import {
   TextField,
   TopToolbar,
 } from "react-admin";
+import HelpButton from "../components/HelpButton";
 
 const ListActions: FC<any> = (props) => (
   <TopToolbar>
     {/* {cloneElement(props.filters, { context: 'button' })} */}
     <CreateButton />
     <SortButton fields={["id"]} />
+    <HelpButton url="https://transcrob.es/page/software/configure/goals/" />
   </TopToolbar>
 );
 

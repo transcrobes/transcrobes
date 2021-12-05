@@ -7,11 +7,15 @@ import {
   SimpleShowLayout,
   TextField,
 } from "react-admin";
+import { HelpShowActions } from "../components/HelpShowActions";
 import { Import, PROCESSING, PROCESS_TYPE, reverseEnum } from "../lib/types";
 import { ImportProgress } from "./ImportProgress";
 
 const ImportShow: FC<FieldProps<Import>> = (props) => (
-  <Show {...props}>
+  <Show
+    actions={<HelpShowActions helpUrl="https://transcrob.es/page/software/configure/imports/" />}
+    {...props}
+  >
     <SimpleShowLayout>
       <TextField source="id" />
       <TextField source="title" />

@@ -1,5 +1,4 @@
-/* eslint react/jsx-key: off */
-import React, { FC } from "react";
+import { FC } from "react";
 import {
   Edit,
   SimpleForm,
@@ -9,10 +8,14 @@ import {
   FieldProps,
   BooleanInput,
 } from "react-admin";
+import { HelpEditActions } from "../components/HelpEditActions";
 import { Content } from "../lib/types";
 
 const ContentEdit: FC<FieldProps<Content>> = (props) => (
-  <Edit {...props}>
+  <Edit
+    actions={<HelpEditActions helpUrl="https://transcrob.es/page/software/configure/contents/" />}
+    {...props}
+  >
     <SimpleForm redirect="list">
       <TextField source="id" />
       <TextInput label="Content name" source="title" validate={[required()]} />

@@ -7,11 +7,11 @@ import {
   FunctionField,
   List,
   ListProps,
-  SearchInput,
   SortButton,
   TextField,
   TopToolbar,
 } from "react-admin";
+import HelpButton from "../components/HelpButton";
 import { PROCESSING, PROCESS_TYPE, reverseEnum } from "../lib/types";
 
 const ListActions: FC<any> = () => (
@@ -19,19 +19,13 @@ const ListActions: FC<any> = () => (
     {/* {cloneElement(props.filters, { context: 'button' })} */}
     <CreateButton />
     <SortButton fields={["id", "processing"]} />
+    <HelpButton url="https://transcrob.es/page/software/configure/imports/" />
   </TopToolbar>
-);
-
-const ImportFilter: FC = (props) => (
-  <Filter {...props}>
-    <SearchInput source="q" alwaysOn />
-    {/* <TextInput label="Title" source="title" defaultValue="hello" /> */}
-  </Filter>
 );
 
 export const ImportList: FC<ListProps> = (props) => {
   return (
-    <List {...props} actions={<ListActions />} filters={<ImportFilter />}>
+    <List {...props} actions={<ListActions />}>
       <Datagrid rowClick="show">
         <TextField source="title" />
         <FunctionField

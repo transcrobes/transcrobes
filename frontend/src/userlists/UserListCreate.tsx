@@ -10,11 +10,17 @@ import {
   NumberInput,
   ReferenceInput,
 } from "react-admin";
+import { HelpCreateActions } from "../components/HelpCreateActions";
 
 import { UserList, STATUS, PROCESSING } from "../lib/types";
 
 const UserListCreate: FC<FieldProps<UserList>> = (props) => (
-  <Create {...props}>
+  <Create
+    actions={
+      <HelpCreateActions helpUrl="https://transcrob.es/page/software/configure/wordlists/" />
+    }
+    {...props}
+  >
     <SimpleForm redirect="list">
       <TextInput label="List name" source="title" validate={[required()]} />
       <TextInput label="List description" multiline source="description" />
