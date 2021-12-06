@@ -882,6 +882,10 @@ async function updateWordForEntry(
   entry.appendChild(word);
   if (addClick) {
     entry.addEventListener("click", (event: MouseEvent) => {
+      // remove any mouseovers - this is mainly useful for the click on mobile, which doesn't have a mouseleave
+      entry.querySelectorAll(".tc-mouseover-popup").forEach((el) => {
+        el.remove();
+      });
       populatePopup(event, doc);
     });
   }
@@ -895,8 +899,7 @@ async function updateWordForEntry(
         timeoutId = 0;
       }
       // TODO: understand why the F document.querySelectorAll DOESN'T work, while entry.querySelectorAll does...
-      const daf = entry.querySelectorAll(".tc-mouseover-popup");
-      daf.forEach((el) => {
+      entry.querySelectorAll(".tc-mouseover-popup").forEach((el) => {
         el.remove();
       });
     });
