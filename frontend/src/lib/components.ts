@@ -20,16 +20,19 @@ import {
 } from "./types";
 export * from "./lib";
 
+let timeoutId: number;
 // FIXME: turn into config, this is likely only useful for Chinese
 const SEGMENTED_BASE_PADDING = 6;
 const NB_RECENT_SENTS_TO_KEEP = 3;
 const MIN_LEVENSHTEIN_DIST_TO_KEEP = 4;
 const IDEAL_RECENT_SENTS_LENGTH = 10;
-
 const EVENT_SOURCE = "components";
 const DATA_SOURCE = EVENT_SOURCE;
-let timeoutId: number;
 const MIN_LOOKED_AT_EVENT_DURATION = 2000; // milliseconds
+const UPDATE_SUBMITTED_SPINNER_DURATION_MS = 2000;
+const DEFINITION_LOADING = "loading...";
+const RETRY_DEFINITION_MS = 5000;
+const RETRY_DEFINITION_MAX_TRIES = 20;
 
 declare global {
   interface Window {
@@ -470,7 +473,7 @@ async function addOrUpdateCards(
             icon.classList.remove("hidden");
           }
           actions.classList.remove("loader");
-        }, 2000);
+        }, UPDATE_SUBMITTED_SPINNER_DURATION_MS);
       }
       cleanupAfterCardsUpdate(doc, grade, wordInfo);
       return "success";
@@ -540,6 +543,7 @@ async function printRecentExamplesRx(doc: Document, token: TokenType, parentDiv:
 }
 
 function printInfosRx(doc: Document, wordInfo: DefinitionType, parentDiv: HTMLElement) {
+  if (!wordInfo) return;
   // FIXME: this is no longer generic, and will need rewriting... later
   const infoDiv = doCreateElement(doc, "div", "tc-stats", null, null, parentDiv);
   let meta = "HSK";
@@ -575,8 +579,7 @@ function printSynonymsRx(
   parentDiv: HTMLElement,
 ) {
   // TODO: maybe show that there are none?
-
-  if (!token.pos) return;
+  if (!token.pos || !wordInfo) return;
   const pos = utils.toSimplePos(token.pos);
   const syns = wordInfo.synonyms.filter((x) => x.posTag === pos);
   if (!syns || syns.length === 0) {
@@ -680,32 +683,32 @@ function populateMouseover(
 ) {
   const target = event.target! as HTMLElement;
   target.dataset.isMouseOn = "1";
-  if (target && target.dataset.tcrobeEntry) {
-    if (!timeoutId) {
-      timeoutId = window.setTimeout(() => {
-        if (target.dataset.tcrobeEntry) {
-          const word = JSON.parse(target.dataset.tcrobeEntry) as TokenType;
-          const userEvent = {
-            type: "bc_word_lookup",
-            data: {
-              target_word: word.l,
-              target_sentence: target.parentElement?.dataset.sentCleaned,
-            },
-            userStatsMode: utils.glossing,
-            source: EVENT_SOURCE,
-          };
-          platformHelper.sendMessage({
-            source: DATA_SOURCE,
-            type: "submitUserEvents",
-            value: userEvent,
-          });
-
-          timeoutId = 0;
-        }
-      }, MIN_LOOKED_AT_EVENT_DURATION);
-    }
-  }
   getPopoverText(token, uCardWords).then((popoverText) => {
+    if (target && target.dataset.tcrobeEntry) {
+      if (!timeoutId) {
+        timeoutId = window.setTimeout(() => {
+          if (target.dataset.tcrobeEntry) {
+            const word = JSON.parse(target.dataset.tcrobeEntry) as TokenType;
+            const userEvent = {
+              type: "bc_word_lookup",
+              data: {
+                target_word: word.l,
+                target_sentence: target.parentElement?.dataset.sentCleaned,
+              },
+              userStatsMode: utils.glossing,
+              source: EVENT_SOURCE,
+            };
+            platformHelper.sendMessage({
+              source: DATA_SOURCE,
+              type: "submitUserEvents",
+              value: userEvent,
+            });
+
+            timeoutId = 0;
+          }
+        }, MIN_LOOKED_AT_EVENT_DURATION);
+      }
+    }
     if (target.dataset.isMouseOn) {
       // the mouse is still on me, do the popup
       const popup = doCreateElement(doc, "div", "tc-mouseover-popup", popoverText, null);
@@ -814,6 +817,7 @@ async function getL2Simplified(
     // try and get a local user known synonym
     const dictDefinition =
       (token.id && window.cachedDefinitions.get(token.id.toString())) || (await getWord(token.l));
+    if (!dictDefinition) return DEFINITION_LOADING;
     const syns = dictDefinition.synonyms.filter((x) => x.posTag === utils.toSimplePos(token.pos!));
 
     let innerGloss;
@@ -842,7 +846,7 @@ async function getL1(token: TokenType): Promise<string> {
   if (dictDefinition && dictDefinition.providerTranslations) {
     gloss = bestGuess(token, dictDefinition);
   } else {
-    gloss = "loading...";
+    gloss = DEFINITION_LOADING;
   }
 
   return gloss;
@@ -852,21 +856,89 @@ async function getSound(token: TokenType): Promise<string> {
   if (token.p) {
     gloss = token.p.join("");
   } else {
-    gloss = (
-      (token.id && window.cachedDefinitions.get(token.id.toString())) ||
-      (await getWord(token.l))
-    ).sound.join("");
+    gloss =
+      (
+        (token.id && window.cachedDefinitions.get(token.id.toString())) ||
+        (await getWord(token.l))
+      )?.sound.join("") || DEFINITION_LOADING;
   }
   return gloss;
 }
 
 async function getPopoverText(token: TokenType, uCardWords: DayCardWords): Promise<string> {
   const l1 = await getL1(token);
+  if (l1 === DEFINITION_LOADING) return DEFINITION_LOADING;
   const l2 = await getL2Simplified(token, l1, uCardWords);
   const sound = await getSound(token);
   return `${utils.complexPosToSimplePosLabels(token.pos!)}: ${l1} ${
     l2 != l1 ? `: ${l2}` : ""
   }: ${sound}`;
+}
+
+function awaitDefinitionReady({
+  token,
+  word,
+  attemptsRemaining,
+}: {
+  token: TokenType;
+  word: HTMLElement;
+  attemptsRemaining: number;
+}): void {
+  if (attemptsRemaining < 0) {
+    word.dataset.tcrobeGloss = "[Error loading gloss]";
+    return;
+  }
+  let promise: Promise<DefinitionType> | null;
+  if (token.id && window.cachedDefinitions.has(token.id.toString())) {
+    promise = Promise.resolve(window.cachedDefinitions.get(token.id.toString())!);
+  } else {
+    promise = getWord(token.l);
+  }
+  promise.then((def) => {
+    if (!def) {
+      window.setTimeout(awaitDefinitionReady, RETRY_DEFINITION_MS, {
+        token: token,
+        word: word,
+        attemptsRemaining: attemptsRemaining - 1,
+      });
+    } else {
+      window.cachedDefinitions.set(def.id, def);
+      // TODO: understand the reason that for some incomprehensible reason passing uCardWords and glossing
+      // as params means they are somehow undefined...
+      getUserCardWords().then((uCardWords) => {
+        getNormalGloss(token, utils.glossing, uCardWords).then((gloss) => {
+          word.dataset.tcrobeGloss = gloss;
+        });
+      });
+    }
+  });
+}
+
+async function getNormalGloss(
+  token: TokenType,
+  glossing: utils.USER_STATS_MODE_KEY_VALUES,
+  uCardWords: DayCardWords,
+): Promise<string> {
+  // Default L1, context-aware, "best guess" gloss
+  let gloss = token.bg ? token.bg.split(",")[0].split(";")[0] : "";
+
+  if (glossing == USER_STATS_MODE.L1 && !gloss) {
+    gloss = await getL1(token);
+  } else if (glossing == USER_STATS_MODE.L2_SIMPLIFIED) {
+    gloss = await getL2Simplified(token, gloss, uCardWords);
+  } else if (glossing == USER_STATS_MODE.TRANSLITERATION) {
+    gloss = await getSound(token);
+  } else if (glossing == USER_STATS_MODE.TRANSLITERATION_L1) {
+    gloss = `${await getSound(token)}: ${await getL1(token)}`;
+  } else {
+    console.error(
+      "Attempted to getNormalGloss for an invalid glossing option",
+      glossing,
+      token,
+      uCardWords,
+    );
+  }
+  return gloss;
 }
 
 async function updateWordForEntry(
@@ -927,18 +999,15 @@ async function updateWordForEntry(
     (token.pos !== "NT" || glossNumberNouns);
 
   if (needsGloss) {
-    // Default L1, context-aware, "best guess" gloss
-    let gloss = token.bg ? token.bg.split(",")[0].split(";")[0] : "";
-
-    if (glossing == USER_STATS_MODE.L1 && !gloss) {
-      gloss = await getL1(token);
-    } else if (glossing == USER_STATS_MODE.L2_SIMPLIFIED) {
-      gloss = await getL2Simplified(token, gloss, uCardWords);
-    } else if (glossing == USER_STATS_MODE.TRANSLITERATION) {
-      gloss = await getSound(token);
-    } else if (glossing == USER_STATS_MODE.TRANSLITERATION_L1) {
-      gloss = `${await getSound(token)}: ${await getL1(token)}`;
+    const gloss = await getNormalGloss(token, glossing, uCardWords);
+    if (gloss.startsWith(DEFINITION_LOADING)) {
+      window.setTimeout(awaitDefinitionReady, RETRY_DEFINITION_MS, {
+        token: token,
+        word: word,
+        attemptsRemaining: RETRY_DEFINITION_MAX_TRIES,
+      });
     }
+
     word.dataset.tcrobeGloss = gloss;
     word.classList.add("tcrobe-gloss");
   } else {
@@ -1108,18 +1177,20 @@ class TokenDetails extends HTMLParsedElement {
     // create the html block
 
     // If the word definition is cached. It won't be (yet) for the "loading..." case
-    let promise: Promise<DefinitionType> | null = null;
+    let promise: Promise<DefinitionType>;
     if (token.id && window.cachedDefinitions.has(token.id.toString())) {
       promise = Promise.resolve(window.cachedDefinitions.get(token.id.toString())!);
     } else {
       console.warn("Token is not in the cache", token, [...window.cachedDefinitions.values()]);
-      promise = platformHelper.sendMessagePromise<DefinitionType>({
-        source: DATA_SOURCE,
-        type: "getWordFromDBs",
-        value: token.l,
-      });
+      promise = getWord(token.l);
     }
     promise.then((wordInfo) => {
+      if (!wordInfo || !wordInfo.id) {
+        popup.innerHTML = "Word data still loading, please try again in a moment";
+        popup.classList.remove("loader");
+        return;
+      }
+
       popup.innerHTML = "";
       popup.classList.remove("loader");
 
