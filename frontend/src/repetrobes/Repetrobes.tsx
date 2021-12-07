@@ -133,7 +133,7 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
     showSynonyms: DEFAULT_QUESTION_SHOW_SYNONYMS,
     showL2LengthHint: DEFAULT_QUESTION_SHOW_L2_LENGTH_HINT,
     activeCardTypes: [],
-    todayStarts: DEFAULT_DAY_STARTS_HOUR,
+    todayStarts: 0,
   };
   const [stateActivityConfig, setStateActivityConfig] =
     useState<RepetrobesActivityConfigType>(EMPTY_ACTIVITY);
@@ -144,7 +144,6 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
       let conf: RepetrobesActivityConfigType;
       if (savedConf) {
         conf = JSON.parse(savedConf);
-
         // wordlists may have been added or removed since, therefore we get the current wordlists
         // and replace with the existing ones where they still exist (because they might have been selected)
         const wordListMap = new Map<string, SelectableListElementType>();
@@ -164,12 +163,6 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
             .map(([label, value]) => {
               return { label: label, value: value.toString(), selected: true };
             }),
-          todayStarts: (new Date().getHours() < EMPTY_ACTIVITY.dayStartsHour
-            ? dayjs().startOf("day").subtract(1, "day")
-            : dayjs().startOf("day")
-          )
-            .add(EMPTY_ACTIVITY.dayStartsHour, "hour")
-            .unix(),
           wordLists: await proxy.sendMessagePromise<SelectableListElementType[]>({
             source: DATA_SOURCE,
             type: "getDefaultWordLists",
@@ -177,6 +170,14 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
           }),
         };
       }
+      conf.todayStarts = (
+        new Date().getHours() < EMPTY_ACTIVITY.dayStartsHour
+          ? dayjs().startOf("day").subtract(1, "day")
+          : dayjs().startOf("day")
+      )
+        .add(EMPTY_ACTIVITY.dayStartsHour, "hour")
+        .unix();
+
       setSettingsValue("repetrobes", "config", JSON.stringify(conf));
 
       const activityConfigNew = {
