@@ -662,11 +662,13 @@ function destroyPopup(event: MouseEvent, doc: Document, popupParent: Document): 
     currentTarget.classList.remove("tcrobe-popup-target");
     event.stopPropagation(); // we don't want other events, but we DO want the default, for clicking on links
     popupParent.querySelectorAll("token-details").forEach((el) => el.remove());
+    popupParent.querySelectorAll("tc-mouseover-popup").forEach((el) => el.remove());
     return true;
   }
 
   // clear any existing popups
   popupParent.querySelectorAll("token-details").forEach((el) => el.remove());
+  popupParent.querySelectorAll("tc-mouseover-popup").forEach((el) => el.remove());
   return false;
 }
 
@@ -677,6 +679,7 @@ function populateMouseover(
   token: TokenType,
 ) {
   const target = event.target! as HTMLElement;
+  target.dataset.isMouseOn = "1";
   if (target && target.dataset.tcrobeEntry) {
     if (!timeoutId) {
       timeoutId = window.setTimeout(() => {
@@ -703,11 +706,17 @@ function populateMouseover(
     }
   }
   getPopoverText(token, uCardWords).then((popoverText) => {
-    const popup = doCreateElement(doc, "div", "tc-mouseover-popup", popoverText, null);
-    const pstyle =
-      "min-width: 120px; margin-left: -60px; bottom: 100%; left: 50%; background-color: black; color: #fff; text-align: center; padding: 5px 0; border-radius: 6px; position: absolute; z-index: 1;";
-    popup.setAttribute("style", pstyle);
-    target.append(popup);
+    if (target.dataset.isMouseOn) {
+      // the mouse is still on me, do the popup
+      const popup = doCreateElement(doc, "div", "tc-mouseover-popup", popoverText, null);
+      // The background-color is set in the Readium css to 'transparent !important' so in order
+      // to override we need to declare directly in the style, or do some other css magic that
+      // is too advanced for my stupid brain.
+      const pstyle =
+        "background-color: black !important; z-index: 99999; opacity: 1 !important; min-width: 120px; margin-left: -60px; bottom: 100%; left: 50%; color: #fff; text-align: center; padding: 5px 0; border-radius: 6px; position: absolute;";
+      popup.setAttribute("style", pstyle);
+      target.append(popup);
+    }
   });
 }
 
@@ -733,6 +742,7 @@ function populatePopup(event: MouseEvent, doc: Document) {
     currentTarget.classList.remove("tcrobe-popup-target");
     // clear any existing popups
     popupParent.ownerDocument.querySelectorAll("token-details").forEach((el) => el.remove());
+    popupParent.ownerDocument.querySelectorAll(".tc-mouseover-popup").forEach((el) => el.remove());
     if (currentTarget === event.target) {
       event.stopPropagation(); // we don't want other events, but we DO want the default, for clicking on links
       return null;
@@ -883,7 +893,7 @@ async function updateWordForEntry(
   if (addClick) {
     entry.addEventListener("click", (event: MouseEvent) => {
       // remove any mouseovers - this is mainly useful for the click on mobile, which doesn't have a mouseleave
-      entry.querySelectorAll(".tc-mouseover-popup").forEach((el) => {
+      doc.querySelectorAll(".tc-mouseover-popup").forEach((el) => {
         el.remove();
       });
       populatePopup(event, doc);
@@ -898,7 +908,7 @@ async function updateWordForEntry(
         window.clearTimeout(timeoutId);
         timeoutId = 0;
       }
-      // TODO: understand why the F document.querySelectorAll DOESN'T work, while entry.querySelectorAll does...
+      entry.dataset.isMouseOn = "";
       entry.querySelectorAll(".tc-mouseover-popup").forEach((el) => {
         el.remove();
       });
