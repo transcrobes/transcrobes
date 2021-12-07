@@ -1,3 +1,4 @@
+import { Typography } from "@material-ui/core";
 import { FC } from "react";
 import {
   Create,
@@ -20,6 +21,12 @@ const ImportCreate: FC<FieldProps<Import>> = (props) => (
     {...props}
   >
     <SimpleForm redirect="list">
+      <Typography>
+        Please check the{" "}
+        <a href="https://transcrob.es/page/software/configure/imports/">Online Help</a> for
+        information about supported import formats!
+      </Typography>
+
       <TextInput label="Import name" source="title" validate={[required()]} />
       <TextInput label="Import description" multiline source="description" />
       <BooleanInput label="Shared with others" source="shared" defaultValue={false} />
