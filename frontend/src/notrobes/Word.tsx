@@ -15,7 +15,6 @@ import {
   DefinitionType,
   PosSentences,
   PosTranslationsType,
-  SentenceType,
   SIMPLE_POS_TYPES,
   SortableListElementType,
   TREEBANK_POS_TYPES,
@@ -42,22 +41,28 @@ const ThinHR = styled.hr`
   margin: 0.3rem;
 `;
 
-const useStyles = makeStyles({
-  recent: { paddingLeft: ".3em" },
-});
+const InfoBox = styled.div`
+  margin: 0.7em;
+`;
 
 interface WordInfoProps {
   definition: DefinitionType;
   characters: (CharacterType | null)[];
 }
 
+function Header({ text }: { text: string }): ReactElement {
+  return (
+    <div>
+      <h4 style={{ marginBlockStart: ".5em", marginBlockEnd: ".5em" }}>{text}</h4>
+    </div>
+  );
+}
+
 function WordInfo({ definition, characters }: WordInfoProps): ReactElement {
   return (
     <>
       <div>
-        <div>
-          <h4>Word info</h4>
-        </div>
+        <Header text="Word info" />
         <div style={{ fontSize: "2em" }}>
           <DefinitionGraph
             charWidth={100}
@@ -91,9 +96,7 @@ function Practicer({ wordId, onPractice }: PracticerProps): ReactElement {
     <>
       <ThinHR />
       <div>
-        <div>
-          <h4>Card Actions</h4>
-        </div>
+        <Header text="Card Actions" />
         <div>
           <PracticerInput wordId={wordId} onPractice={onPractice} />
         </div>
@@ -128,9 +131,7 @@ function ExistingCards({ cards }: { cards: CardType[] }): ReactElement {
     <>
       <ThinHR />
       <div>
-        <div>
-          <h4>Existing Cards</h4>
-        </div>
+        <Header text="Existing Cards" />
         <div>
           {cardsArray.length > 0 ? ( // cards is a map
             <table style={{ width: "400px", textAlign: "center" }}>
@@ -155,16 +156,14 @@ function WordLists({ lists }: { lists: SortableListElementType[] }): ReactElemen
   return (
     <>
       <ThinHR />
-      <div style={{ paddingTop: ".5em" }}>
-        <div>
-          <h4>Lists (name: freq. position in list)</h4>
-        </div>
+      <div>
+        <Header text="Lists (name: freq. position in list)" />
         {lists.length > 0 ? ( // cards is a map
-          <div>
+          <InfoBox>
             {lists
               .map((wl) => `${wl.name}: ${wl.position}`)
               .reduce((prev, curr) => prev + ", " + curr)}
-          </div>
+          </InfoBox>
         ) : (
           <span>No lists for this item</span>
         )}
@@ -178,9 +177,7 @@ function Synonyms({ definition }: { definition: DefinitionType }): ReactElement 
     <>
       <ThinHR />
       <div>
-        <div>
-          <h4>Related Words</h4>
-        </div>
+        <Header text="Related Words" />
         {(definition.synonyms.length > 0 && (
           <div>
             {definition.synonyms.map((result, ind) => {
@@ -190,7 +187,7 @@ function Synonyms({ definition }: { definition: DefinitionType }): ReactElement 
               );
             })}
           </div>
-        )) || <span>No synonyms found</span>}
+        )) || <InfoBox>No synonyms found</InfoBox>}
       </div>
     </>
   );
@@ -215,11 +212,7 @@ function RecentSentencesElement({
   return (
     <>
       <ThinHR />
-      <div style={{ paddingTop: ".5em" }}>
-        <div>
-          <h4>Recently seen phrases</h4>
-        </div>
-      </div>
+      <Header text="Recently Seen Phrases" />
       <div>
         {recentPosSentences &&
           Object.entries(recentPosSentences).length > 0 &&
@@ -227,13 +220,13 @@ function RecentSentencesElement({
             const typedPos = pos as TREEBANK_POS_TYPES;
             const simpleName = ZH_TB_POS_LABELS[typedPos];
             return (
-              <div key={pos}>
+              <InfoBox key={pos}>
                 {simpleName}:{" "}
                 {entry &&
                   entry.map((s, index) => {
                     return <RecentSentenceExample key={index} modelId={s.modelId || 0} />;
                   })}
-              </div>
+              </InfoBox>
             );
           })}
         {!recentPosSentences && <div>No recent sentences found</div>}
@@ -247,16 +240,14 @@ function WordModelStats({ wordModelStats }: { wordModelStats: WordModelStatsType
     <>
       <ThinHR />
       <div>
-        <div>
-          <h4>Personal Word Stats</h4>
-        </div>
+        <Header text="Personal Word Stats" />
         {(wordModelStats && (
           <div>
-            <div>
+            <InfoBox>
               <span style={{ fontWeight: "bold" }}>Nb. seen: </span>
               <span>{wordModelStats.nbSeen} </span>
-            </div>
-            <div>
+            </InfoBox>
+            <InfoBox>
               <span style={{ fontWeight: "bold" }}>Last seen: </span>
               {/* FIXME: nasty hardcoded locale!!! */}
               <span>
@@ -265,16 +256,16 @@ function WordModelStats({ wordModelStats }: { wordModelStats: WordModelStatsType
                   .toDate()
                   .toLocaleString("en-UK")}{" "}
               </span>
-            </div>
-            <div>
+            </InfoBox>
+            <InfoBox>
               <span style={{ fontWeight: "bold" }}>Nb. seen since last check: </span>
               <span>{wordModelStats.nbSeenSinceLastCheck} </span>
-            </div>
-            <div>
+            </InfoBox>
+            <InfoBox>
               <span style={{ fontWeight: "bold" }}>Nb. Checked: </span>
               <span>{wordModelStats.nbChecked} </span>
-            </div>
-            <div>
+            </InfoBox>
+            <InfoBox>
               <span style={{ fontWeight: "bold" }}>Last Checked: </span>
               <span>
                 {dayjs
@@ -282,9 +273,9 @@ function WordModelStats({ wordModelStats }: { wordModelStats: WordModelStatsType
                   .toDate()
                   .toLocaleString("en-UK")}{" "}
               </span>
-            </div>
+            </InfoBox>
           </div>
-        )) || <span>No word stats found</span>}
+        )) || <InfoBox>No word stats found</InfoBox>}
       </div>
     </>
   );
@@ -293,7 +284,7 @@ function WordModelStats({ wordModelStats }: { wordModelStats: WordModelStatsType
 function PosItem({ item }: { item: PosTranslationsType }): ReactElement {
   const posLabel = toSimplePosLabels(item.posTag as SIMPLE_POS_TYPES);
   return (
-    <div>
+    <InfoBox>
       {item.values.length > 0 ? (
         <>
           <span style={{ fontWeight: "bold" }}>{posLabel}: </span>
@@ -302,7 +293,7 @@ function PosItem({ item }: { item: PosTranslationsType }): ReactElement {
       ) : (
         <span>No {posLabel} found</span>
       )}
-    </div>
+    </InfoBox>
   );
 }
 
@@ -310,18 +301,14 @@ function ProviderTranslations({ definition }: { definition: DefinitionType }): R
   return (
     <>
       <ThinHR />
-      <div>
-        <div>
-          <h4>Entry Definitions</h4>
-        </div>
-      </div>
+      <Header text="Entry Definitions" />
       {definition.providerTranslations.length &&
         definition.providerTranslations.map((providerEntry) => {
           return (
             providerEntry.posTranslations.length > 0 && (
               <React.Fragment key={providerEntry.provider}>
                 <ThinHR />
-                <div>
+                <InfoBox>
                   <div>
                     <span>{providerEntry.provider}</span>
                   </div>
@@ -330,7 +317,7 @@ function ProviderTranslations({ definition }: { definition: DefinitionType }): R
                       return <PosItem key={posItem.posTag} item={posItem} />;
                     })}
                   </div>
-                </div>
+                </InfoBox>
               </React.Fragment>
             )
           );
@@ -348,25 +335,23 @@ function WordMetadata({ definition }: { definition: DefinitionType }): ReactElem
     <>
       <ThinHR />
       <div>
-        <div>
-          <h4>Metadata</h4>
-        </div>
-        <div>
+        <Header text="Metadata" />
+        <InfoBox>
           <span style={{ fontWeight: "bold" }}>HSK: </span>
           <span>
             {definition.hsk && definition.hsk.levels.length > 0
               ? definition.hsk.levels.join(", ")
               : "Not in the HSK"}
           </span>
-        </div>
-        <div>
+        </InfoBox>
+        <InfoBox>
           <span style={{ fontWeight: "bold" }}>Freq: </span>
           <span>
             {definition.frequency && definition.frequency.wcpm
               ? definition.frequency.wcpm
               : "No frequency data"}
           </span>
-        </div>
+        </InfoBox>
       </div>
     </>
   );
@@ -439,21 +424,19 @@ function Word({
   return (
     definition && (
       <div>
-        <div>
-          <WordInfo definition={definition} characters={characters} />
-          <Practicer wordId={definition.id} onPractice={onPractice} />
-          <ExistingCards cards={cards} />
-          <WordLists lists={lists} />
-          <RecentSentencesElement
-            loaded={loaded}
-            word={definition.graph}
-            recentPosSentences={recentPosSentences}
-          />
-          <WordMetadata definition={definition} />
-          <ProviderTranslations definition={definition} />
-          <Synonyms definition={definition} />
-          <WordModelStats wordModelStats={wordModelStats} />
-        </div>
+        <WordInfo definition={definition} characters={characters} />
+        <Practicer wordId={definition.id} onPractice={onPractice} />
+        <ExistingCards cards={cards} />
+        <WordLists lists={lists} />
+        <RecentSentencesElement
+          loaded={loaded}
+          word={definition.graph}
+          recentPosSentences={recentPosSentences}
+        />
+        <WordMetadata definition={definition} />
+        <ProviderTranslations definition={definition} />
+        <Synonyms definition={definition} />
+        <WordModelStats wordModelStats={wordModelStats} />
       </div>
     )
   );
