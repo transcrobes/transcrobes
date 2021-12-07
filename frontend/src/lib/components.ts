@@ -713,8 +713,13 @@ function populateMouseover(
       // to override we need to declare directly in the style, or do some other css magic that
       // is too advanced for my stupid brain.
       const pstyle =
-        "background-color: black !important; z-index: 99999; opacity: 1 !important; min-width: 120px; margin-left: -60px; bottom: 100%; left: 50%; color: #fff; text-align: center; padding: 5px 0; border-radius: 6px; position: absolute;";
+        "padding: .3em; border-color: #fff; border-width: medium; border-style: solid; background-color: black !important; z-index: 99999; opacity: 1 !important; min-width: 120px; margin-left: -60px; bottom: 100%; left: 50%; color: #fff; text-align: center; padding: 5px 0; border-radius: 6px; position: absolute;";
       popup.setAttribute("style", pstyle);
+      popup.addEventListener("mouseenter", (event: MouseEvent) => {
+        (event.target as HTMLElement)?.parentElement
+          ?.querySelectorAll(".tc-mouseover-popup")
+          .forEach((el) => el.remove());
+      });
       target.append(popup);
     }
   });
