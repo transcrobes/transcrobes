@@ -57,9 +57,7 @@ function App(): ReactElement {
       if (!lusername) {
         throw new Error("Unable to find a username");
       }
-      console.log("doing the app", lusername, await isInitialisedAsync(lusername));
       if (lusername && (await isInitialisedAsync(lusername))) {
-        console.log("now doing the init");
         window.componentsConfig.proxy.init(
           { username: lusername },
           () => {

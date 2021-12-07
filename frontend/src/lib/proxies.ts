@@ -149,7 +149,6 @@ class ServiceWorkerProxy extends AbstractWorkerProxy {
     progressCallback: (x: ProgressCallbackMessage) => string,
     allowInstall = false,
   ): void {
-    console.debug("Setting up ServiceWorkerProxy.init with config", config);
     this.#config = config;
 
     if (!this.#config.username) {
@@ -165,11 +164,6 @@ class ServiceWorkerProxy extends AbstractWorkerProxy {
       this.sendMessage(
         message,
         (response) => {
-          console.debug(
-            `Got a response for message in ServiceWorkerProxy init returning to caller`,
-            message,
-            response,
-          );
           this.#loaded = true;
           while (this.#messageQueue.length > 0) {
             const mess = this.#messageQueue.shift();
