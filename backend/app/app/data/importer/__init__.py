@@ -69,14 +69,14 @@ def flatten(fields):
 
 
 # FOR WEBPUB
-def get_metadata_item(book, name):
+def get_metadata_item(book, name, manager: EnrichmentManager):
     item = book.meta.get(name)
     if item:
         if isinstance(item, list):
             if len(item) > 0:
-                return str(item[0])
+                return manager.enricher().clean_text(str(item[0]))
         else:
-            return str(item)
+            return manager.enricher().clean_text(str(item))
     return None
 
 
@@ -86,26 +86,26 @@ def adjust_href(epub, href):
     return posixpath.join(opfdir, href)
 
 
-def make_contributor(val):
+def make_contributor(val, manager: EnrichmentManager):
     result = []
     for v in val:
-        item = {"name": str(v.value)}
+        item = {"name": manager.enricher().clean_text(str(v.value))}
         if v.data.get("role"):
-            item["role"] = v.data.get("role")
+            item["role"] = manager.enricher().clean_text(v.data.get("role"))
         if v.data.get("file=as"):
             item["sortAs"] = v.data.get("file-as")
         result.append(item)
     return result
 
 
-def make_toc_item(epub, it):
-    res = {"href": adjust_href(epub, it.href), "title": it.title}
+def make_toc_item(epub, it, manager: EnrichmentManager):
+    res = {"href": adjust_href(epub, it.href), "title": manager.enricher().clean_text(it.title)}
     if it.children:
         res["children"] = [make_toc_item(epub, c) for c in it.children]
     return res
 
 
-def make_manifest(epub: Epub):  # noqa:C901  # pylint: disable=R0912
+def make_manifest(epub: Epub, manager: EnrichmentManager):  # noqa:C901  # pylint: disable=R0912
     data = {
         "@context": "https://readium.org/webpub-manifest/context.jsonld",
         "metadata": {
@@ -121,22 +121,22 @@ def make_manifest(epub: Epub):  # noqa:C901  # pylint: disable=R0912
         if v:
             metadata = data["metadata"]
             if k == "dates":
-                metadata["modified"] = str(epub.meta.get("dates").get("modification"))
+                metadata["modified"] = manager.enricher().clean_text(str(epub.meta.get("dates").get("modification")))
             elif k == "titles":
-                metadata["title"] = str(v[0].value)
+                metadata["title"] = manager.enricher().clean_text(str(v[0].value))
                 if v[0].data.get("file-as"):
                     metadata["sortAs"] = v[0].data.get("file-as")
             elif k == "contributors":
-                metadata["contributor"] = make_contributor(v)
+                metadata["contributor"] = make_contributor(v, manager)
             elif k == "creators":
-                metadata["author"] = make_contributor(v)
+                metadata["author"] = make_contributor(v, manager)
             elif k.endswith("s"):
                 if len(v) > 1:
-                    metadata[k[:-1]] = [str(x) for x in v]
+                    metadata[k[:-1]] = [manager.enricher().clean_text(str(x)) for x in v]
                 else:
-                    metadata[k[:-1]] = str(v[0])
+                    metadata[k[:-1]] = manager.enricher().clean_text(str(v[0]))
             else:
-                metadata[k] = str(v)
+                metadata[k] = manager.enricher().clean_text(str(v))
 
     # READING ORDER
     ro = data["readingOrder"]
@@ -168,15 +168,15 @@ def get_or_create_content(the_import: Import) -> Content:
     return the_import.content or Content()
 
 
-async def unpack_epub_file(db: AsyncSession, the_import: Import):  # pylint: disable=R0914
+async def unpack_epub_file(db: AsyncSession, the_import: Import, manager: EnrichmentManager):  # pylint: disable=R0914
 
     import_path = absolute_imports_path(the_import.created_by.id, the_import.import_file)
     with open(import_path, "rb") as f, dawn.open(f) as upload:
         manifest = make_manifest(upload)
-        title = get_metadata_item(upload, "titles") or ""
-        author = get_metadata_item(upload, "creators") or ""
-        description = get_metadata_item(upload, "description") or ""
-        language = get_metadata_item(upload, "language") or ""
+        title = get_metadata_item(upload, "titles", manager) or ""
+        author = get_metadata_item(upload, "creators", manager) or ""
+        description = get_metadata_item(upload, "description", manager) or ""
+        language = get_metadata_item(upload, "language", manager) or ""
         mod_date = upload.meta.get("dates").get("modification") or None
 
         # Date, if provided should be UTC according to spec.
@@ -244,15 +244,11 @@ def chunked(size, source):
 
 
 # FIXME: this is currently useless, probably better to delete
-def text_from_text_file(contents):
-    return contents
+def text_from_text_file(contents: str, manager: EnrichmentManager):
+    return manager.enricher().clean_text(contents)
 
 
-async def enrich_html_to_html(chapter_id, xhtml, lang_pair):
-    manager = managers.get(lang_pair)
-    if not manager:
-        raise NotImplementedError(f"Server does not support language pair {lang_pair}")
-
+async def enrich_html_to_html(chapter_id, xhtml, manager: EnrichmentManager):
     soup = BeautifulSoup(xhtml, "html.parser")  # it appears only html.parser doesn't fail when there are BOM :-(
     if not soup.head.title:  # html MUST have a head->title
         soup.head.append(soup.new_tag("title"))
@@ -291,11 +287,7 @@ async def enrich_html_to_html(chapter_id, xhtml, lang_pair):
     return chapter_id, str(soup), slim_models
 
 
-async def enrich_plain_to_html(unique_key, start_text, lang_pair):
-    manager = managers.get(lang_pair)
-    if not manager:
-        raise NotImplementedError(f"Server does not support language pair {lang_pair}")
-
+async def enrich_plain_to_html(unique_key, start_text, manager: EnrichmentManager):
     lines = ""
     slim_models = {}
     text_node = manager.enricher().clean_text(str(start_text))
@@ -324,7 +316,7 @@ async def enrich_plain_to_html(unique_key, start_text, lang_pair):
     return unique_key, lines, slim_models
 
 
-async def process_subs(db: AsyncSession, the_import: Import):
+async def process_subs(db: AsyncSession, the_import: Import, manager: EnrichmentManager):
 
     content = get_or_create_content(the_import)
     content.the_import = the_import
@@ -352,7 +344,7 @@ async def process_subs(db: AsyncSession, the_import: Import):
         enrich_plain_to_html(
             f"{caption.start}*{caption.end}",
             caption.text,
-            the_import.created_by.lang_pair,
+            manager,
         )
         for caption in parsed
     ]
@@ -375,8 +367,8 @@ async def process_subs(db: AsyncSession, the_import: Import):
     return [cue_models]
 
 
-async def process_epub_to_webpub(db: AsyncSession, the_import: Import):
-    content = await unpack_epub_file(db, the_import)
+async def process_epub_to_webpub(db: AsyncSession, the_import: Import, manager: EnrichmentManager):
+    content = await unpack_epub_file(db, the_import, manager)
     with open(os.path.join(content.processed_path(), MANIFEST_JSON), encoding="utf8") as epubfile:
         manifest = json.load(epubfile)
     chapters = {}
@@ -385,10 +377,7 @@ async def process_epub_to_webpub(db: AsyncSession, the_import: Import):
             with open(os.path.join(content.processed_path(), resource_file["href"]), encoding="utf8") as file_contents:
                 chapters[resource_file["href"]] = file_contents.read()
 
-    xhtml_futures = [
-        enrich_html_to_html(chapter_id, chapter, the_import.created_by.lang_pair)
-        for chapter_id, chapter in chapters.items()
-    ]
+    xhtml_futures = [enrich_html_to_html(chapter_id, chapter, manager) for chapter_id, chapter in chapters.items()]
 
     processed_chapters = await gather_with_concurrency(
         settings.IMPORT_MAX_CONCURRENT_PARSER_QUERIES,
@@ -408,7 +397,7 @@ async def process_epub_to_webpub(db: AsyncSession, the_import: Import):
     return chapter_models
 
 
-def text_from_import(an_import):
+def text_from_import(an_import: Import, manager: EnrichmentManager):
     # We should only have valid files here, but should probably add more checking anyway
 
     with open(an_import.imported_path(), encoding="utf8") as fh:
@@ -422,7 +411,7 @@ def text_from_import(an_import):
         # also check for only simplifieds?
 
         if file_type in ["text/plain", "application/csv"]:
-            return text_from_text_file(contents)
+            return text_from_text_file(contents, manager)
         # elif file_type in ['application/pdf', ...]:
         #     return text_from_other...
         raise Exception(f"Attempt to import from unsupported file_type {file_type}")
@@ -558,24 +547,21 @@ async def enrich_parse(content: Content, manager: EnrichmentManager):
             json.dump(processed_files_dict, file_contents, separators=(",", ":"))
 
 
-async def models_from_import(db: AsyncSession, an_import: Import, lang_pair: str):
-    manager = managers.get(lang_pair)
-    if not manager:
-        raise NotImplementedError(f"Server does not support language pair {lang_pair}")
+async def models_from_import(db: AsyncSession, an_import: Import, manager: EnrichmentManager):
     output_dir = os.path.dirname(an_import.processed_path())
     if an_import.import_file.endswith(".epub"):
         Path(output_dir).mkdir(parents=True, exist_ok=True)
-        models = await process_epub_to_webpub(db, an_import)
+        models = await process_epub_to_webpub(db, an_import, manager)
         logger.debug("%s models found for epub import %s", len(models), an_import.id)
     elif an_import.import_file[-4:] in [VTT_EXTENTION, SRT_EXTENTION]:
         Path(output_dir).mkdir(parents=True, exist_ok=True)
-        models = await process_subs(db, an_import)
+        models = await process_subs(db, an_import, manager)
         logger.debug("%s models found for subs import %s", len(models), an_import.id)
     # elif an_import.import_file.path[-4:] in [CSV_EXTENTION]:
     #     raw = text_from_import(an_import)
     else:
         # synchronous get text from file into memory in chunks for later async parallel processing
-        contents = list(chunked(settings.IMPORT_PARSE_CHUNK_SIZE_BYTES, text_from_import(an_import)))
+        contents = list(chunked(settings.IMPORT_PARSE_CHUNK_SIZE_BYTES, text_from_import(an_import, manager)))
 
         logger.debug("Found %s chunks to parse for import %s", len(contents), an_import)
 
@@ -586,7 +572,7 @@ async def models_from_import(db: AsyncSession, an_import: Import, lang_pair: str
     return models
 
 
-async def get_analysis_from_csv(an_import: Import):
+async def get_analysis_from_csv(an_import: Import, manager: EnrichmentManager):
     """
     Extract unique set of words from the first column (currently only supports comma-separated and first column)
     """
@@ -596,7 +582,7 @@ async def get_analysis_from_csv(an_import: Import):
         line_count = 0
         for row in csv_reader:
             if len(row) > 0:
-                all_words.add(row[0])
+                all_words.add(manager.enricher().clean_text(row[0]))
             line_count += 1
         logger.info(f"Processed {line_count=} lines with {len(all_words)} unique items")
 
@@ -622,14 +608,16 @@ async def process_import(file_event: ProcessData):
 
         await ensure_cache_preloaded(db, an_import.created_by.from_lang, an_import.created_by.to_lang)
 
-        lang_pair = an_import.created_by.lang_pair
+        manager = managers.get(an_import.created_by.lang_pair)
+        if not manager:
+            raise NotImplementedError(f"Server does not support language pair {an_import.created_by.lang_pair}")
 
         try:
             if an_import.import_file.endswith(".csv"):
-                analysis = await get_analysis_from_csv(an_import)
+                analysis = await get_analysis_from_csv(an_import, manager)
                 an_import.analysis = json.dumps(analysis, ensure_ascii=False, separators=(",", ":"))
             else:
-                models = flatten(await models_from_import(db, an_import, lang_pair))
+                models = flatten(await models_from_import(db, an_import, manager))
                 an_import.analysis = json.dumps(
                     await process(models, an_import.process_type),
                     ensure_ascii=False,
