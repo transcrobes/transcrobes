@@ -32,6 +32,8 @@ export function UserListProgress(props: any): ReactElement {
           type: "getFirstSuccessStatsForList",
           value: listId,
         });
+      if (!locStats) return;
+
       setStats(locStats);
       const end = dayjs();
       const thresholds: number[] = dateRange(
@@ -70,7 +72,7 @@ export function UserListProgress(props: any): ReactElement {
 
   const blue = "#8884d8";
   const green = "#2cfc03";
-  return (
+  return stats ? (
     <Grid container alignItems="center" spacing={3}>
       <Grid item>
         <LineChart width={500} height={300} data={data}>
@@ -98,5 +100,7 @@ export function UserListProgress(props: any): ReactElement {
         </table>
       </Grid>
     </Grid>
+  ) : (
+    <div>Stats are still being generated</div>
   );
 }

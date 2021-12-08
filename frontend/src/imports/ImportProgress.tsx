@@ -1,12 +1,12 @@
 import dayjs from "dayjs";
 import { ReactElement, useEffect, useState } from "react";
-import { bin, HistogramGeneratorNumber } from "d3-array";
+import { bin } from "d3-array";
 import { useRecordContext } from "react-admin";
 import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
 import { Grid } from "@material-ui/core";
 
 import { dateRange } from "../lib/lib";
-import { FirstSuccess, ImportFirstSuccessStats } from "../lib/types";
+import { ImportFirstSuccessStats } from "../lib/types";
 import { binnedData } from "../lib/funclib";
 
 const DATA_SOURCE = "GoalProgress.tsx";
@@ -38,6 +38,8 @@ export function ImportProgress(props: any): ReactElement {
           type: "getFirstSuccessStatsForImport",
           value: importId,
         });
+      if (!locStats) return;
+
       setStats(locStats);
       const end = dayjs();
       const thresholds: number[] = dateRange(
@@ -94,7 +96,7 @@ export function ImportProgress(props: any): ReactElement {
   const green = "#2cfc03";
   const pink = "#f803fc";
 
-  return (
+  return stats ? (
     <Grid container alignItems="center" spacing={3}>
       <Grid item>
         <LineChart width={500} height={300} data={data}>
@@ -115,30 +117,32 @@ export function ImportProgress(props: any): ReactElement {
             <td>
               <span style={{ color: blue }}>Unique words (types)</span>
             </td>
-            <td>{stats?.nbUniqueWords}</td>
+            <td>{stats.nbUniqueWords}</td>
           </tr>
-          {stats && stats.nbTotalWords !== stats.nbUniqueWords && (
+          {stats.nbTotalWords !== stats.nbUniqueWords && (
             <tr>
               <td>
                 <span style={{ color: yellow }}>Total words (tokens)</span>
               </td>
-              <td>{stats?.nbTotalWords}</td>
+              <td>{stats.nbTotalWords}</td>
             </tr>
           )}
           <tr>
             <td>
               <span style={{ color: green }}>Unique chars (types)</span>
             </td>
-            <td>{stats?.nbUniqueCharacters}</td>
+            <td>{stats.nbUniqueCharacters}</td>
           </tr>
           <tr>
             <td>
               <span style={{ color: pink }}>Total chars (tokens)</span>
             </td>
-            <td>{stats?.nbTotalCharacters}</td>
+            <td>{stats.nbTotalCharacters}</td>
           </tr>
         </table>
       </Grid>
     </Grid>
+  ) : (
+    <div>Stats are still being generated</div>
   );
 }

@@ -201,9 +201,10 @@ function getKnownChars(
 async function getFirstSuccessStatsForImport(
   db: TranscrobesDatabase,
   importId: string,
-): Promise<ImportFirstSuccessStats> {
+): Promise<ImportFirstSuccessStats | null> {
   const theImport = (await db.imports.findByIds([importId])).get(importId);
   if (!theImport) throw new Error("Invalid, import not found");
+  if (!theImport.analysis || theImport.analysis.length === 0) return null;
 
   const knownCards = await getKnownCards(db);
   const knownGraphs = await getGraphs(db, [...knownCards.keys()]);
@@ -273,11 +274,12 @@ function getSuccessWords(
 async function getFirstSuccessStatsForList(
   db: TranscrobesDatabase,
   listId: string,
-): Promise<ListFirstSuccessStats> {
+): Promise<ListFirstSuccessStats | null> {
   const knownCards = await getKnownCards(db);
   const goalWordList = (await db.wordlists.findByIds([listId])).get(listId);
 
   if (!goalWordList) throw new Error("Invalid goal, no userList found");
+  if (!goalWordList.wordIds || goalWordList.wordIds.length === 0) return null;
 
   const allListGraphs = await getGraphs(db, goalWordList.wordIds);
   let allChars = "";
