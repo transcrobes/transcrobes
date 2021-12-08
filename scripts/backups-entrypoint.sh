@@ -12,6 +12,7 @@ export DATA_ROOT=${DATA_ROOT:-/opt/backups}
 export MEDIA_ROOT=${MEDIA_ROOT:-/opt/transcrobes/media}
 export DAYS_TO_KEEP_HOURLY=${DAYS_TO_KEEP_HOURLY:-1}
 export DAYS_TO_KEEP_DAILY=${DAYS_TO_KEEP_DAILY:-90}
+export DAYS_TO_KEEP_DAILY=${DAYS_TO_KEEP_DAILY:-90}
 
 : ${PGPASSWORD:?"--password to a PostgreSQL container or server is not set"}
 
@@ -68,7 +69,7 @@ find $BACKUPS_MEDIA_PATH -name $OBSOLETE_FILES -type f -mtime "+$DAYS_TO_KEEP_DA
 echo "Set backup file name to: $ARCHIVE with xz compression level $XZ_COMPRESSION_LEVEL"
 echo "Starting media files backup..."
 tar cf "$ARCHIVE" $MEDIA_ROOT/user_*
-echo "Database backup dumped, compressing with 'xz -T4 -${XZ_COMPRESSION_LEVEL} -zf $ARCHIVE'"
+echo "Media files tarred, compressing with 'xz -T4 -${XZ_COMPRESSION_LEVEL} -zf $ARCHIVE'"
 xz -T4 -${XZ_COMPRESSION_LEVEL} -zf $ARCHIVE
 echo "Archive $ARCHIVE compressed, moving to ${BACKUPS_MEDIA_PATH}/$ARCHIVE.xz"
 mv "$ARCHIVE.xz" "${BACKUPS_MEDIA_PATH}/$ARCHIVE.xz"
@@ -76,9 +77,9 @@ echo "Finished backing up $ARCHIVE"
 
 if [ ! -z $BACKUPS_SSH_KEY_PATH ]; then
   echo "Syncing media to $BACKUPS_SSH_USER@$BACKUPS_SSH_HOST:$BACKUPS_SSH_REMOTE_PATH"
-  rsync -ahe "ssh -o 'StrictHostKeyChecking no' -i ${BACKUPS_SSH_KEY_PATH} -p ${BACKUPS_SSH_PORT}" ${BACKUPS_MEDIA_PATH} "$BACKUPS_SSH_USER@$BACKUPS_SSH_HOST:$BACKUPS_SSH_REMOTE_PATH"
+  rsync -ahe "ssh -o 'StrictHostKeyChecking no' -i ${BACKUPS_SSH_KEY_PATH} -p ${BACKUPS_SSH_PORT}" ${BACKUPS_MEDIA_PATH} "$BACKUPS_SSH_USER@$BACKUPS_SSH_HOST:$BACKUPS_SSH_REMOTE_PATH" $BACKUPS_SSH_RSYNC_OPTIONS
   echo "Syncing database to $BACKUPS_SSH_USER@$BACKUPS_SSH_HOST:$BACKUPS_SSH_REMOTE_PATH"
-  rsync -ahe "ssh -o 'StrictHostKeyChecking no' -i ${BACKUPS_SSH_KEY_PATH} -p ${BACKUPS_SSH_PORT}" ${BACKUPS_DATABASE_PATH} "$BACKUPS_SSH_USER@$BACKUPS_SSH_HOST:$BACKUPS_SSH_REMOTE_PATH"
+  rsync -ahe "ssh -o 'StrictHostKeyChecking no' -i ${BACKUPS_SSH_KEY_PATH} -p ${BACKUPS_SSH_PORT}" ${BACKUPS_DATABASE_PATH} "$BACKUPS_SSH_USER@$BACKUPS_SSH_HOST:$BACKUPS_SSH_REMOTE_PATH" $BACKUPS_SSH_RSYNC_OPTIONS
 fi
 
 echo "Backup finished!"
