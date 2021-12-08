@@ -315,6 +315,7 @@ class UserList(DetailedMixin, Base):
     processing = Column(Integer, nullable=False, default=REQUESTED)
     the_import_id = Column(ForeignKey("import.id", deferrable=True, initially="DEFERRED"), index=True)
     shared = Column(Boolean, nullable=False, default=False)
+    is_default = Column(Boolean, nullable=False, default=False, server_default="false")
     minimum_doc_frequency = Column(Integer, nullable=False, default=-1)
     order_by = Column(Integer, nullable=False, default=ABSOLUTE_FREQUENCY)
     words_are_known = Column(Boolean, nullable=False, default=False)

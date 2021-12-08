@@ -426,7 +426,7 @@ class WordList:
             return WordList(
                 id=dj_model.id,
                 name=dj_model.title,
-                default=(dj_model.created_by_id == 1 and dj_model.shared == True),  # created by admin  # noqa: E712
+                default=dj_model.is_default,
                 updated_at=dj_model.updated_at.timestamp(),
                 word_ids=[str(w) for w in ulws],
             )
