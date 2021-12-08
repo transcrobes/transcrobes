@@ -527,11 +527,7 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
     <IconContext.Provider value={{ color: "blue", size: "3em" }}>
       <div style={{ padding: "1em" }}>
         <LauncherStyle>
-          <RepetrobesConfigLauncher
-            loading={loading}
-            activityConfig={ac}
-            onConfigChange={handleConfigChange}
-          />
+          <RepetrobesConfigLauncher activityConfig={ac} onConfigChange={handleConfigChange} />
           {ac.showProgress && (
             <Progress
               activityConfig={ac}
@@ -541,7 +537,6 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
             />
           )}
         </LauncherStyle>
-
         <div>
           <VocabRevisor
             showAnswer={showAnswer}
