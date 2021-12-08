@@ -277,6 +277,8 @@ class WordModelStats:
             nb_checked=dj_model.nb_checked,
             nb_translated=dj_model.nb_translated,
             updated_at=dj_model.updated_at.timestamp(),
+            # FIXME: do I need this?
+            # deleted=False
         )
         if dj_model.last_seen:
             ws.last_seen = dj_model.last_seen.timestamp()
@@ -428,6 +430,8 @@ class WordList:
                 name=dj_model.title,
                 default=dj_model.is_default,
                 updated_at=dj_model.updated_at.timestamp(),
+                # FIXME: do I need this?
+                deleted=dj_model.deleted,
                 word_ids=[str(w) for w in ulws],
             )
 
