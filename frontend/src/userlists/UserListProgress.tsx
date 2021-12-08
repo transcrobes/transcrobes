@@ -85,18 +85,20 @@ export function UserListProgress(props: any): ReactElement {
       </Grid>
       <Grid item>
         <table style={{ borderSpacing: "0 1em" }}>
-          <tr>
-            <td>
-              <span style={{ color: blue }}>Unique words (types)</span>
-            </td>
-            <td>{stats?.nbUniqueWords}</td>
-          </tr>
-          <tr>
-            <td>
-              <span style={{ color: green }}>Unique chars (types)</span>
-            </td>
-            <td>{stats?.nbUniqueCharacters}</td>
-          </tr>
+          <tbody>
+            <tr>
+              <td>
+                <span style={{ color: blue }}>Unique words (types)</span>
+              </td>
+              <td>{stats.nbUniqueWords}</td>
+            </tr>
+            <tr>
+              <td>
+                <span style={{ color: green }}>Unique chars (types)</span>
+              </td>
+              <td>{stats.nbUniqueCharacters}</td>
+            </tr>
+          </tbody>
         </table>
       </Grid>
     </Grid>

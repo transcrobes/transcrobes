@@ -113,32 +113,34 @@ export function ImportProgress(props: any): ReactElement {
       </Grid>
       <Grid item>
         <table style={{ borderSpacing: "0 1em" }}>
-          <tr>
-            <td>
-              <span style={{ color: blue }}>Unique words (types)</span>
-            </td>
-            <td>{stats.nbUniqueWords}</td>
-          </tr>
-          {stats.nbTotalWords !== stats.nbUniqueWords && (
+          <tbody>
             <tr>
               <td>
-                <span style={{ color: yellow }}>Total words (tokens)</span>
+                <span style={{ color: blue }}>Unique words (types)</span>
               </td>
-              <td>{stats.nbTotalWords}</td>
+              <td>{stats.nbUniqueWords}</td>
             </tr>
-          )}
-          <tr>
-            <td>
-              <span style={{ color: green }}>Unique chars (types)</span>
-            </td>
-            <td>{stats.nbUniqueCharacters}</td>
-          </tr>
-          <tr>
-            <td>
-              <span style={{ color: pink }}>Total chars (tokens)</span>
-            </td>
-            <td>{stats.nbTotalCharacters}</td>
-          </tr>
+            {stats.nbTotalWords !== stats.nbUniqueWords && (
+              <tr>
+                <td>
+                  <span style={{ color: yellow }}>Total words (tokens)</span>
+                </td>
+                <td>{stats.nbTotalWords}</td>
+              </tr>
+            )}
+            <tr>
+              <td>
+                <span style={{ color: green }}>Unique chars (types)</span>
+              </td>
+              <td>{stats.nbUniqueCharacters}</td>
+            </tr>
+            <tr>
+              <td>
+                <span style={{ color: pink }}>Total chars (tokens)</span>
+              </td>
+              <td>{stats.nbTotalCharacters}</td>
+            </tr>
+          </tbody>
         </table>
       </Grid>
     </Grid>

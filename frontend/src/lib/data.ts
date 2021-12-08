@@ -6,7 +6,7 @@ import { v4 as uuidv4 } from "uuid";
 import { RxStorageBulkWriteError } from "rxdb/dist/types/types";
 import LZString from "lz-string";
 
-import { sortByWcpm, shortMeaning, simpOnly } from "./lib";
+import { sortByWcpm, shortMeaning, simpOnly, toEnrich } from "./lib";
 import {
   CardType,
   ContentConfigType,
@@ -27,6 +27,7 @@ import {
   WordListNamesType,
   RecentSentencesType,
   PosSentences,
+  InputLanguage,
 } from "./types";
 
 import {
@@ -198,6 +199,20 @@ function getKnownChars(
   return knownChars;
 }
 
+function cleanAnalysis(
+  analysis: ImportAnalysis,
+  keepLang: InputLanguage = "zh-Hans",
+): { [key: string]: string[] } {
+  const buckets: { [key: string]: string[] } = {};
+  for (const [key, value] of Object.entries(analysis.vocabulary.buckets)) {
+    const vocab = value.filter((v) => toEnrich(v, keepLang));
+    if (vocab.length > 0) {
+      buckets[key] = vocab;
+    }
+  }
+  return buckets;
+}
+
 async function getFirstSuccessStatsForImport(
   db: TranscrobesDatabase,
   importId: string,
@@ -210,13 +225,13 @@ async function getFirstSuccessStatsForImport(
   const knownGraphs = await getGraphs(db, [...knownCards.keys()]);
   const knownChars = getKnownChars(knownCards, knownGraphs);
 
-  const analysis: ImportAnalysis = JSON.parse(theImport.analysis);
+  const buckets = cleanAnalysis(JSON.parse(theImport.analysis), "zh-Hans");
   const allWords: [string, number][] = [];
   let nbUniqueWords = 0;
   let nbTotalWords = 0;
   let allChars = "";
 
-  for (const [nbOccurances, wordList] of Object.entries(analysis.vocabulary.buckets)) {
+  for (const [nbOccurances, wordList] of Object.entries(buckets)) {
     allWords.push(
       ...wordList.map((word: string) => [word, parseInt(nbOccurances)] as [string, number]),
     );

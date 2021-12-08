@@ -8,6 +8,15 @@ import {
 } from "react-admin";
 import HelpButton from "./HelpButton";
 
+const sanitizeRestProps = ({
+  basePath = null,
+  hasCreate = null,
+  hasEdit = null,
+  hasShow = null,
+  hasList = null,
+  ...rest
+}) => rest;
+
 export const HelpEditActions = ({
   className,
   helpUrl,
@@ -18,7 +27,7 @@ export const HelpEditActions = ({
   const { hasShow } = useResourceDefinition(rest);
 
   return (
-    <TopToolbar className={className} {...rest}>
+    <TopToolbar className={className} {...sanitizeRestProps(rest as any)}>
       {hasShow && <ShowButton basePath={basePath} record={record} />}
       <HelpButton url={helpUrl} text={helpLabel} />
     </TopToolbar>

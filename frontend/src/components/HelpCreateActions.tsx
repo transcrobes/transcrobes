@@ -18,9 +18,18 @@ export const HelpCreateActions = ({
   const { hasList } = useResourceDefinition(rest);
 
   return (
-    <TopToolbar className={className} {...rest}>
+    // FIXME: the copy/paste from react-admin to create this didn't need an "as any" for the following - why?
+    <TopToolbar className={className} {...sanitizeRestProps(rest as any)}>
       {hasList && <ListButton basePath={basePath} />}
       <HelpButton url={helpUrl} text={helpLabel} />
     </TopToolbar>
   );
 };
+
+const sanitizeRestProps = ({
+  basePath = null,
+  className = null,
+  hasList = null,
+  resource = null,
+  ...rest
+}) => rest;

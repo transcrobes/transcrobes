@@ -7,6 +7,9 @@ import {
   WordModelStatsDocument,
 } from "../database/Schema";
 
+export type KnownLanguage = "en" | "zh-Hans";
+export type InputLanguage = "zh-Hans";
+
 export type SIMPLE_POS_TYPES =
   | "ADV"
   | "OTHER"

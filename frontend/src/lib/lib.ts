@@ -10,6 +10,7 @@ import {
   ZH_TB_POS_LABELS,
   SIMPLE_POS_ENGLISH_NAMES,
   SIMPLE_POS_TYPES,
+  InputLanguage,
 } from "./types";
 import { getAccess, refreshAccessToken } from "./JWTAuthProvider";
 
@@ -189,14 +190,14 @@ function filterKnown(
   return wholeKnownWords.concat(known);
 }
 
-function toEnrich(charstr: string, fromLanguage: "en" | "zh-Hans" = "zh-Hans"): boolean {
+function toEnrich(charstr: string, fromLanguage: InputLanguage = "zh-Hans"): boolean {
   // TODO: find out why the results are different if these consts are global...
   // unicode cjk radicals, supplement and characters, see src/enrichers/zhhans/__init__.py for details
   const zhReg = /[\u2e80-\u2ef3\u2f00-\u2fd5\u4e00-\u9fff]+/gi;
-  const enReg = /[[A-z]+/gi;
+  // const enReg = /[[A-z]+/gi;
   switch (fromLanguage || fromLang()) {
-    case "en":
-      return enReg.test(charstr);
+    // case "en":
+    //   return enReg.test(charstr);
     case "zh-Hans":
       return zhReg.test(charstr);
   }
