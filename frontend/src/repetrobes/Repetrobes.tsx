@@ -18,6 +18,8 @@ import {
   RepetrobesActivityConfigType,
   SafeDailyReviewsType,
   SelectableListElementType,
+  UserListWordType,
+  WordListNamesType,
 } from "../lib/types";
 import { ServiceWorkerProxy } from "../lib/proxies";
 import styled from "styled-components";
@@ -26,6 +28,7 @@ import { getSettingsValue, setSettingsValue } from "../lib/appSettings";
 const DATA_SOURCE = "Repetrobes.tsx";
 
 const DEFAULT_FORCE_WCPM = false; // repeated from listrobes, show this be the same?
+const DEFAULT_ONLY_SELECTED_WORDLIST_REVISIONS = false;
 const DEFAULT_QUESTION_SHOW_SYNONYMS = false;
 const DEFAULT_QUESTION_SHOW_PROGRESS = false;
 const DEFAULT_QUESTION_SHOW_L2_LENGTH_HINT = false;
@@ -107,6 +110,7 @@ type ReviewInfosType = {
 function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
   const [showAnswer, setShowAnswer] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
+  const [userListWords, setUserListWords] = useState<UserListWordType>({});
   const [daState, setDaState] = useState<ReviewInfosType>({
     newToday: 0,
     revisionsToday: 0,
@@ -127,6 +131,7 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
     maxNew: DEFAULT_MAX_NEW,
     maxRevisions: DEFAULT_MAX_REVISIONS,
     forceWcpm: DEFAULT_FORCE_WCPM,
+    onlySelectedWordListRevisions: DEFAULT_ONLY_SELECTED_WORDLIST_REVISIONS,
     dayStartsHour: DEFAULT_DAY_STARTS_HOUR,
     wordLists: [],
     showProgress: DEFAULT_QUESTION_SHOW_PROGRESS,
@@ -179,6 +184,16 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
         .unix();
 
       setSettingsValue("repetrobes", "config", JSON.stringify(conf));
+
+      const ulws = await proxy.sendMessagePromise<{
+        userListWords: UserListWordType;
+        wordListNames: WordListNamesType;
+      }>({
+        source: DATA_SOURCE,
+        type: "getUserListWords",
+        value: {},
+      });
+      setUserListWords(ulws.userListWords);
 
       const activityConfigNew = {
         ...stateActivityConfig,
@@ -274,7 +289,20 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
     const revisionsToday = new Set<string>();
     const possibleRevisionsToday = new Set<string>();
     const todayStarts = activityConfig.todayStarts;
-    for (const [_k, v] of state.existingCards) {
+    let validExisting: Map<string, CardType>;
+
+    if (activityConfig.onlySelectedWordListRevisions) {
+      validExisting = new Map<string, CardType>();
+      for (const [k, v] of state.existingCards) {
+        if (!isListFiltered(v, activityConfig)) {
+          validExisting.set(k, v);
+        }
+      }
+    } else {
+      validExisting = state.existingCards;
+    }
+
+    for (const [_k, v] of validExisting) {
       const wordIdStr = wordId(v);
       if (v.lastRevisionDate > todayStarts && v.firstRevisionDate >= todayStarts) {
         newToday.add(wordIdStr);
@@ -357,7 +385,8 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
             x.dueDate < dayjs().unix() && // or maybe? dayjs.unix(state.activityConfig.todayStarts).add(1, 'day').unix()
             !todaysReviewedWords.has(wordId(x)) &&
             potentialTypes.includes(cardType(x)) &&
-            !x.known
+            !x.known &&
+            !isListFiltered(x, activityConfig)
           );
         })
         .sort((a, b) => a.dueDate! - b.dueDate!);
@@ -365,6 +394,19 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
 
     const candidate = getRandomNext(candidates);
     return candidate ? [candidate, cardType(candidate)] : [null, ""];
+  }
+
+  function isListFiltered(card: CardType, activityConfig: RepetrobesActivityConfigType): boolean {
+    if (!activityConfig.onlySelectedWordListRevisions) return false;
+    const wId = wordId(card);
+    if (!userListWords[wId]) return true;
+    const lists = new Set<string>(userListWords[wId].map((l) => l.listId));
+    for (const dalist of activityConfig.wordLists.filter((wl) => wl.selected)) {
+      if (lists.has(dalist.value)) {
+        return false;
+      }
+    }
+    return true;
   }
 
   function getCharacters(

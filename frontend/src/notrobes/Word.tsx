@@ -3,7 +3,6 @@ import dayjs from "dayjs";
 import styled from "styled-components";
 import { $enum } from "ts-enum-util";
 import { Button } from "@material-ui/core";
-import makeStyles from "@material-ui/core/styles/makeStyles";
 
 import { say, wordIdsFromModels } from "../lib/funclib";
 import { CARD_TYPES, cardType } from "../database/Schema";

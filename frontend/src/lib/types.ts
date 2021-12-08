@@ -376,6 +376,7 @@ export type RepetrobesActivityConfigType = {
   dayStartsHour: number;
   wordLists: SelectableListElementType[];
   todayStarts: number;
+  onlySelectedWordListRevisions: boolean;
   showProgress: boolean;
   showSynonyms: boolean;
   showL2LengthHint: boolean;

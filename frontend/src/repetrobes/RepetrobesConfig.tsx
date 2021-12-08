@@ -6,12 +6,22 @@ import dayjs from "dayjs";
 
 import TCCheckbox from "../components/TCCheckbox";
 import { RepetrobesActivityConfigType } from "../lib/types";
+import { makeStyles } from "@material-ui/core";
 
 interface Props {
   activityConfig: RepetrobesActivityConfigType;
   onConfigChange: (activityConfig: RepetrobesActivityConfigType) => void;
 }
+
+const useStyles = makeStyles({
+  checkbox: { padding: "0.2em" },
+  select: { padding: "0.2em" },
+  textbox: { display: "flex", justifyContent: "space-between", padding: "0.2em" },
+});
+
 export default function RepetrobesConfig({ activityConfig, onConfigChange }: Props): ReactElement {
+  const classes = useStyles();
+
   function handleWordListsChange(sls: any) {
     // FIXME: this is SUPER nasty but see
     // https://github.com/DefinitelyTyped/DefinitelyTyped/issues/32553
@@ -74,7 +84,7 @@ export default function RepetrobesConfig({ activityConfig, onConfigChange }: Pro
 
   return (
     <div>
-      <div>
+      <div className={classes.select}>
         Source word lists
         <Select
           onChange={handleWordListsChange}
@@ -86,7 +96,7 @@ export default function RepetrobesConfig({ activityConfig, onConfigChange }: Pro
           classNamePrefix="select"
         />
       </div>
-      <div>
+      <div className={classes.select}>
         Active card types
         <Select
           onChange={handleCardTypesChange}
@@ -98,39 +108,43 @@ export default function RepetrobesConfig({ activityConfig, onConfigChange }: Pro
           classNamePrefix="select"
         />
       </div>
-      <div>
-        <TCCheckbox
-          name="showSynonyms"
-          label="Show meaning question L2 synonyms"
-          isSelected={activityConfig.showSynonyms}
-          onCheckboxChange={handleSimpleChange}
-        />
-      </div>
-      <div>
-        <TCCheckbox
-          name="forceWcpm"
-          label="Force word count per million ordering"
-          isSelected={activityConfig.forceWcpm}
-          onCheckboxChange={handleSimpleChange}
-        />
-      </div>
-      <div>
-        <TCCheckbox
-          name="showL2LengthHint"
-          label="Show L2 length hint"
-          isSelected={activityConfig.showL2LengthHint}
-          onCheckboxChange={handleSimpleChange}
-        />
-      </div>
-      <div>
-        <TCCheckbox
-          name="showProgress"
-          label="Show daily progress information"
-          isSelected={activityConfig.showProgress}
-          onCheckboxChange={handleSimpleChange}
-        />
-      </div>
-      <div style={{ display: "flex", justifyContent: "space-between" }}>
+      <TCCheckbox
+        name="showSynonyms"
+        className={classes.checkbox}
+        label="Show meaning question L2 synonyms"
+        isSelected={activityConfig.showSynonyms}
+        onCheckboxChange={handleSimpleChange}
+      />
+      <TCCheckbox
+        name="forceWcpm"
+        className={classes.checkbox}
+        label="Force word count per million ordering"
+        isSelected={activityConfig.forceWcpm}
+        onCheckboxChange={handleSimpleChange}
+      />
+      <TCCheckbox
+        name="showL2LengthHint"
+        className={classes.checkbox}
+        label="Show L2 length hint"
+        isSelected={activityConfig.showL2LengthHint}
+        onCheckboxChange={handleSimpleChange}
+      />
+      <TCCheckbox
+        name="showProgress"
+        className={classes.checkbox}
+        label="Show daily progress information"
+        isSelected={activityConfig.showProgress}
+        onCheckboxChange={handleSimpleChange}
+      />
+      <TCCheckbox
+        name="onlySelectedWordListRevisions"
+        className={classes.checkbox}
+        label="Filter Revisions by list"
+        isSelected={activityConfig.onlySelectedWordListRevisions}
+        onCheckboxChange={handleSimpleChange}
+      />
+      {/* <div style={{ display: "flex", justifyContent: "space-between" }}> */}
+      <div className={classes.textbox}>
         <label htmlFor="dayStartsHour">Day start hour (0 to 23)</label>
         <input
           style={{ width: "30%", maxHeight: "2em" }}
@@ -142,7 +156,7 @@ export default function RepetrobesConfig({ activityConfig, onConfigChange }: Pro
           onChange={handleDayStartsHourChange}
         />
       </div>
-      <div style={{ display: "flex", justifyContent: "space-between" }}>
+      <div className={classes.textbox}>
         <label htmlFor="badReviewWaitMinutes">Bad review wait mins (1 to 300)</label>
         <input
           style={{ width: "30%", maxHeight: "2em", minWidth: "3em" }}
@@ -154,7 +168,7 @@ export default function RepetrobesConfig({ activityConfig, onConfigChange }: Pro
           onChange={handleBadReviewWaitMinutesChange}
         />
       </div>
-      <div style={{ display: "flex", justifyContent: "space-between" }}>
+      <div className={classes.textbox}>
         <label htmlFor="maxNew">Max new p/d (1 to 10000)</label>
         <input
           style={{ width: "40%", maxHeight: "2em", minWidth: "3em" }}
@@ -166,7 +180,7 @@ export default function RepetrobesConfig({ activityConfig, onConfigChange }: Pro
           onChange={handleSimpleChange}
         />
       </div>
-      <div style={{ display: "flex", justifyContent: "space-between" }}>
+      <div className={classes.textbox}>
         <label htmlFor="maxRevisions">Max revisions p/d (1 to 10000)</label>
         <input
           style={{ width: "40%", maxHeight: "2em", minWidth: "3em" }}
