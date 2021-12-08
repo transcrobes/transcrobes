@@ -19,6 +19,7 @@ const ImportShow: FC<FieldProps<Import>> = (props) => (
     <SimpleShowLayout>
       <TextField source="id" />
       <TextField source="title" />
+      <TextField source="description" />
       <TextField source="importFile" />
       <FunctionField
         source="processType"
