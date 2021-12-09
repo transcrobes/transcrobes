@@ -147,7 +147,7 @@ async function getKnownWordIds(db: TranscrobesDatabase): Promise<Set<string>> {
     (
       await db.cards
         .find({
-          selector: { $or: [{ known: { $eq: true } }, { interval: { $gt: 0 } }] },
+          selector: { $or: [{ known: { $eq: true } }, { firstSuccessDate: { $gt: 0 } }] },
         })
         .exec()
     ).flatMap((x) => x.wordId()),
@@ -339,13 +339,13 @@ async function getCardWords(db: TranscrobesDatabase): Promise<DayCardWords> {
     new Set((await db.cards.find().exec()).flatMap((x) => x.wordId())),
   );
 
-  // If we have at least one card with an interval greater than zero,
+  // If we have at least one card with an firstSuccessDate greater than zero,
   // it is considered "known" (here meaning simply "we don't want it translated in content we're consuming")
   const knownWordIds = new Set<string>(
     (
       await db.cards
         .find({
-          selector: { $or: [{ known: { $eq: true } }, { interval: { $gt: 0 } }] },
+          selector: { $or: [{ known: { $eq: true } }, { firstSuccessDate: { $gt: 0 } }] },
         })
         .exec()
     ).flatMap((x) => x.wordId()),

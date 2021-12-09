@@ -58,31 +58,45 @@ const ProgressStyle = styled.div<{ colour: string }>`
 interface ProgressProps {
   activityConfig: RepetrobesActivityConfigType;
   newToday: number;
+  completedNewToday: number;
   revisionsToday: number;
+  completedRevisionsToday: number;
   possibleRevisionsToday: number;
+}
+
+function progressColour(
+  started: number,
+  completed: number,
+  maxTodo: number,
+): "green" | "yellow" | "inherit" {
+  if (completed >= maxTodo) return "green";
+  if (started >= maxTodo) return "yellow";
+  return "inherit";
 }
 
 function Progress({
   activityConfig,
   newToday,
+  completedNewToday,
   revisionsToday,
+  completedRevisionsToday,
   possibleRevisionsToday,
 }: ProgressProps) {
   const allRevisionsToday = revisionsToday + possibleRevisionsToday;
   return (
     <div>
-      <ProgressStyle colour={newToday >= activityConfig.maxNew ? "green" : "inherit"}>
-        New: {newToday} / {activityConfig.maxNew}
+      <ProgressStyle colour={progressColour(newToday, completedNewToday, activityConfig.maxNew)}>
+        New: ({completedNewToday}) {newToday} / {activityConfig.maxNew}
       </ProgressStyle>
       <ProgressStyle
-        colour={
-          revisionsToday >= Math.min(allRevisionsToday, activityConfig.maxRevisions)
-            ? "green"
-            : "inherit"
-        }
+        colour={progressColour(
+          revisionsToday,
+          completedRevisionsToday,
+          Math.min(allRevisionsToday, activityConfig.maxRevisions),
+        )}
       >
-        Revisions: {revisionsToday} / {Math.min(allRevisionsToday, activityConfig.maxRevisions)} (
-        {allRevisionsToday} due)
+        Revisions: ({completedRevisionsToday}) {revisionsToday} /{" "}
+        {Math.min(allRevisionsToday, activityConfig.maxRevisions)} ({allRevisionsToday} due)
       </ProgressStyle>
     </div>
   );
@@ -96,10 +110,12 @@ type ReviewInfosType = {
   definition: DefinitionType | null;
   currentCard: CardType | null;
   characters: CharacterType[] | null;
+  newToday: number;
+  completedNewToday: number;
   revisionsToday: number;
+  completedRevisionsToday: number;
   possibleRevisionsToday: number;
   curNewWordIndex: number;
-  newToday: number;
   todaysWordIds: Set<string>;
   existingWords: Map<string, DefinitionType>;
   existingCards: Map<string, CardType>;
@@ -114,7 +130,9 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
   const [userListWords, setUserListWords] = useState<UserListWordType>({});
   const [daState, setDaState] = useState<ReviewInfosType>({
     newToday: 0,
+    completedNewToday: 0,
     revisionsToday: 0,
+    completedRevisionsToday: 0,
     possibleRevisionsToday: 0,
     curNewWordIndex: 0,
     characters: null,
@@ -286,7 +304,9 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
   function getTodaysCounters(state: ReviewInfosType, activityConfig: RepetrobesActivityConfigType) {
     // FIXME: make functional? store counters in the state? if so, we need to not recount!
     const newToday = new Set<string>();
+    const completedNewToday = new Set<string>();
     const revisionsToday = new Set<string>();
+    const completedRevisionsToday = new Set<string>();
     const possibleRevisionsToday = new Set<string>();
     const todayStarts = activityConfig.todayStarts;
     let validExisting: Map<string, CardType>;
@@ -294,7 +314,7 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
     if (activityConfig.onlySelectedWordListRevisions) {
       validExisting = new Map<string, CardType>();
       for (const [k, v] of state.existingCards) {
-        if (!isListFiltered(v, activityConfig)) {
+        if (!isListFiltered(v, activityConfig) && !v.known) {
           validExisting.set(k, v);
         }
       }
@@ -306,8 +326,14 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
       const wordIdStr = wordId(v);
       if (v.lastRevisionDate > todayStarts && v.firstRevisionDate >= todayStarts) {
         newToday.add(wordIdStr);
+        if (v.dueDate > dayjs.unix(todayStarts).add(1, "day").unix()) {
+          completedNewToday.add(wordIdStr);
+        }
       } else if (v.lastRevisionDate > todayStarts && v.firstRevisionDate < todayStarts) {
         revisionsToday.add(wordIdStr);
+        if (v.dueDate > dayjs.unix(todayStarts).add(1, "day").unix()) {
+          completedRevisionsToday.add(wordIdStr);
+        }
       } else if (v.lastRevisionDate <= todayStarts && v.firstRevisionDate < todayStarts) {
         possibleRevisionsToday.add(wordIdStr);
       }
@@ -320,11 +346,19 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
       state.existingCards,
       todayStarts,
       newToday,
+      completedNewToday,
       revisionsToday,
+      completedRevisionsToday,
       possibleRevisionsToday,
       uPossibleRevisionsToday,
     );
-    return [newToday.size, revisionsToday.size, uPossibleRevisionsToday.length];
+    return [
+      newToday.size,
+      completedNewToday.size,
+      revisionsToday.size,
+      completedRevisionsToday.size,
+      uPossibleRevisionsToday.length,
+    ];
   }
 
   async function newCard(
@@ -430,10 +464,13 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
     let cardType: string;
     let definition: DefinitionType | null = null;
 
-    const [newToday, revisionsToday, possibleRevisionsToday] = getTodaysCounters(
-      state,
-      activityConfig,
-    );
+    const [
+      newToday,
+      completedNewToday,
+      revisionsToday,
+      completedRevisionsToday,
+      possibleRevisionsToday,
+    ] = getTodaysCounters(state, activityConfig);
     let getNew = newToday < activityConfig.maxNew;
     if (newToday / revisionsToday > activityConfig.maxNew / activityConfig.maxRevisions) {
       getNew = false;
@@ -467,7 +504,9 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
       characters,
       curNewWordIndex: curNewWordIndex || state.curNewWordIndex,
       newToday,
+      completedNewToday,
       revisionsToday,
+      completedRevisionsToday,
       possibleRevisionsToday,
     };
   }
@@ -534,7 +573,9 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
             <Progress
               activityConfig={ac}
               newToday={daState.newToday}
+              completedNewToday={daState.completedNewToday}
               revisionsToday={daState.revisionsToday}
+              completedRevisionsToday={daState.completedRevisionsToday}
               possibleRevisionsToday={daState.possibleRevisionsToday}
             />
           )}

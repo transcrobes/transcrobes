@@ -25,8 +25,12 @@ const INITIALISATION_CACHE_NAME = `${CACHE_NAME}.initialisation`;
 const LIVE_INTERVAL = 60;
 const BATCH_SIZE = 10000;
 
-function wordId(card: CardType): string {
-  return card.id.split(CARD_ID_SEPARATOR)[0];
+function wordId(card: CardType | string): string {
+  if (typeof card === "string") {
+    return card.split(CARD_ID_SEPARATOR)[0];
+  } else {
+    return card.id.split(CARD_ID_SEPARATOR)[0];
+  }
 }
 function cardType(card: CardType): string {
   return card.id.split(CARD_ID_SEPARATOR)[1];
