@@ -435,7 +435,7 @@ export function manageEvent(sw: ServiceWorkerGlobalScope, event: ExtendableMessa
   } else if (message.type === "enrich") {
     const { contentId } = message.value;
     loadDb(message, sw).then(([ldb, msg]) => {
-      data.enrich(ldb, contentId).then((result) => {
+      data.submitContentEnrichRequest(ldb, contentId).then((result) => {
         postIt(event, {
           source: msg.source,
           type: msg.type,

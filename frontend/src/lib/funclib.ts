@@ -1,9 +1,30 @@
 import { HistogramGeneratorNumber } from "d3-array";
 import dayjs from "dayjs";
-import { FirstSuccess, HistoData, KeyedModels, PythonCounter } from "./types";
+import {
+  FirstSuccess,
+  HistoData,
+  KeyedModels,
+  PythonCounter,
+  RepetrobesActivityConfigType,
+} from "./types";
 
 export function UUID(): string {
   return Date.now().toString(36) + Math.random().toString(36).substring(2);
+}
+
+export function configIsUsable(activityConfig: RepetrobesActivityConfigType): boolean {
+  return (
+    activityConfig.wordLists.length > 0 &&
+    activityConfig.activeCardTypes.filter((ct) => ct.selected).length > 0 &&
+    !isNaN(activityConfig.dayStartsHour) &&
+    !isNaN(activityConfig.badReviewWaitSecs) &&
+    !isNaN(activityConfig.maxNew) &&
+    !isNaN(activityConfig.maxRevisions) &&
+    typeof activityConfig.dayStartsHour === "number" &&
+    typeof activityConfig.badReviewWaitSecs === "number" &&
+    typeof activityConfig.maxNew === "number" &&
+    typeof activityConfig.maxRevisions === "number"
+  );
 }
 
 export function wordIdsFromModels(models: KeyedModels): Set<string> {

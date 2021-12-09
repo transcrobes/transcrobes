@@ -24,6 +24,7 @@ import {
 import { ServiceWorkerProxy } from "../lib/proxies";
 import styled from "styled-components";
 import { getSettingsValue, setSettingsValue } from "../lib/appSettings";
+import { configIsUsable } from "../lib/funclib";
 
 const DATA_SOURCE = "Repetrobes.tsx";
 
@@ -159,6 +160,17 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
         });
         conf.wordLists.map((wl) => wordListMap.set(wl.label, wl));
         conf.wordLists = wordLists.map((wl) => wordListMap.get(wl.label) || wl);
+        conf.activeCardTypes = Array.from($enum(CARD_TYPES).entries())
+          .filter(([_l, v]) => !((v as any) instanceof Function))
+          .map(([label, value]) => {
+            return {
+              label: label,
+              value: value.toString(),
+              selected:
+                conf.activeCardTypes.filter((ct) => ct.value === value.toString() && ct.selected)
+                  .length > 0,
+            };
+          });
       } else {
         // eslint-disable-next-line prefer-const
         conf = {
@@ -182,7 +194,6 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
       )
         .add(EMPTY_ACTIVITY.dayStartsHour, "hour")
         .unix();
-
       setSettingsValue("repetrobes", "config", JSON.stringify(conf));
 
       const ulws = await proxy.sendMessagePromise<{
@@ -199,11 +210,6 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
         ...stateActivityConfig,
         ...conf,
       };
-      if (conf.wordLists.length === 0 || conf.activeCardTypes.length === 0) {
-        setLoading(true);
-        return;
-      }
-
       const reviewLists = await proxy.sendMessagePromise<SafeDailyReviewsType>({
         source: DATA_SOURCE,
         type: "getSRSReviews",
@@ -213,7 +219,7 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
         ...daState,
         ...reviewLists,
       };
-
+      console.debug("Config set up, about to get the next practice item", tempState);
       nextPractice(tempState, activityConfigNew).then((practiceOut) => {
         const partial = { ...tempState, ...practiceOut };
         setLoading(!(!!partial.currentCard && !!partial.definition));
@@ -228,10 +234,7 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
 
   useEffect(() => {
     (async () => {
-      if (
-        stateActivityConfig.wordLists.length === 0 ||
-        stateActivityConfig.activeCardTypes.length === 0
-      ) {
+      if (!configIsUsable(stateActivityConfig)) {
         setLoading(true);
         return;
       }
@@ -241,10 +244,7 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
 
   useEffect(() => {
     (async () => {
-      if (
-        stateActivityConfig.wordLists.length === 0 ||
-        stateActivityConfig.activeCardTypes.length === 0
-      ) {
+      if (!configIsUsable(stateActivityConfig)) {
         setLoading(true);
         return;
       }
@@ -315,7 +315,7 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
     const uPossibleRevisionsToday = [...possibleRevisionsToday].filter(
       (x) => !newToday.has(x) && !revisionsToday.has(x),
     );
-    console.log(
+    console.debug(
       "getTodaysCounters",
       state.existingCards,
       todayStarts,
@@ -373,7 +373,9 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
       .map((x) => x.value.toString());
 
     let candidates = [...todaysReviewedCards.values()] // re-revise today's failed reviews
-      .filter((x) => x.dueDate && x.dueDate < dayjs().unix())
+      .filter(
+        (x) => x.dueDate && x.dueDate < dayjs().unix() && potentialTypes.includes(cardType(x)),
+      )
       .sort((a, b) => a.dueDate! - b.dueDate!);
 
     // or if nothing is ready, get a new review that is due

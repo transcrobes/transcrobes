@@ -42,7 +42,7 @@ import {
 } from "../database/Schema";
 import { practice } from "./review";
 
-import { pythonCounter, UUID } from "./funclib";
+import { configIsUsable, pythonCounter, UUID } from "./funclib";
 import { fetchPlus } from "./lib";
 import { getFileStorage, IDBFileStorage } from "./IDBFileStorage";
 import { getUsername } from "./JWTAuthProvider";
@@ -368,7 +368,13 @@ async function getCardWords(db: TranscrobesDatabase): Promise<DayCardWords> {
   };
 }
 
-async function enrich(db: TranscrobesDatabase, contentId: string): Promise<string> {
+async function submitContentEnrichRequest(
+  db: TranscrobesDatabase,
+  contentId: string,
+): Promise<string> {
+  // This is done via a bit of a hack - in the graphql endpoint we look to see if the state
+  // changes to PROCESSING.REQUESTED, and if so we launch an enrich operation. There is likely
+  // a much cleaner way...
   const content = await db.contents.findOne().where("id").eq(contentId).exec();
   if (!content) {
     console.error("Unable to find content for updating", contentId);
@@ -714,8 +720,8 @@ async function getSRSReviews(
   activityConfig: RepetrobesActivityConfigType,
 ): Promise<DailyReviewsType> {
   const selectedLists = activityConfig.wordLists.filter((x) => x.selected).map((x) => x.value);
-  if (selectedLists.length === 0) {
-    console.log("No wordLists, not trying to find stuff");
+  if (selectedLists.length === 0 || !configIsUsable(activityConfig)) {
+    console.log("No wordLists or config not usable, not trying to find stuff");
     return {
       todaysWordIds: new Set<string>(), // Set of words reviewed today already: string ids
       allNonReviewedWordsMap: new Map<string, DefinitionDocument>(), // Map of words in selected lists not already reviewed today
@@ -725,18 +731,19 @@ async function getSRSReviews(
       allPotentialCharacters: new Map<string, CharacterDocument>(), // Map of all individual characters that are in either possible new words or revisions for today
     };
   }
-
   // words already seen/reviewed "today"
   const todaysWordIds = new Set<string>(
-    (
-      await db.cards
-        .find()
-        .where("lastRevisionDate")
-        .gt(dayjs().startOf("hour").hour(activityConfig.dayStartsHour).unix())
-        .where("firstRevisionDate")
-        .gt(0)
-        .exec()
-    ).flatMap((x) => x.wordId()),
+    (typeof activityConfig.dayStartsHour === "number" &&
+      (
+        await db.cards
+          .find()
+          .where("lastRevisionDate")
+          .gt(dayjs().startOf("hour").hour(activityConfig.dayStartsHour).unix())
+          .where("firstRevisionDate")
+          .gt(0)
+          .exec()
+      ).flatMap((x) => x.wordId())) ||
+      "",
   );
 
   const potentialWordIds = new Set<string>(
@@ -800,7 +807,7 @@ export {
   getNamedFileStorage,
   pushFiles,
   saveSurvey,
-  enrich,
+  submitContentEnrichRequest,
   getKnownWordIds,
   getAllFromDB,
   getDefaultWordLists,

@@ -59,7 +59,11 @@ export default function RepetrobesConfig({ activityConfig, onConfigChange }: Pro
       .add(dayStartsHour, "hour")
       .unix();
 
-    const update = { ...activityConfig, dayStartsHour, todayStarts };
+    const update = {
+      ...activityConfig,
+      dayStartsHour,
+      todayStarts,
+    };
 
     onConfigChange(update);
   }
@@ -70,7 +74,7 @@ export default function RepetrobesConfig({ activityConfig, onConfigChange }: Pro
       ...activityConfig,
       [e.target.name]: Object.prototype.hasOwnProperty.call(e.target, "checked")
         ? e.target.checked
-        : e.target.value,
+        : parseInt(e.target.value),
     };
     onConfigChange(update);
   }
@@ -79,6 +83,14 @@ export default function RepetrobesConfig({ activityConfig, onConfigChange }: Pro
     onConfigChange(
       // the user inputs in minutes, we store in seconds
       { ...activityConfig, badReviewWaitSecs: parseInt(e.target.value) * 60 },
+    );
+  }
+  function validInt(value: any, minValue?: number, maxValue?: number): boolean {
+    return (
+      !isNaN(value) &&
+      typeof value === "number" &&
+      !(typeof minValue !== "undefined" && value < minValue) &&
+      !(typeof maxValue !== "undefined" && value > maxValue)
     );
   }
 
@@ -147,7 +159,11 @@ export default function RepetrobesConfig({ activityConfig, onConfigChange }: Pro
       <div className={classes.textbox}>
         <label htmlFor="dayStartsHour">Day start hour (0 to 23)</label>
         <input
-          style={{ width: "30%", maxHeight: "2em" }}
+          style={{
+            width: "30%",
+            maxHeight: "2em",
+            backgroundColor: validInt(activityConfig.dayStartsHour, 0, 23) ? "inherit" : "red",
+          }}
           name="dayStartsHour"
           min="0"
           max="23"
@@ -159,7 +175,14 @@ export default function RepetrobesConfig({ activityConfig, onConfigChange }: Pro
       <div className={classes.textbox}>
         <label htmlFor="badReviewWaitMinutes">Bad review wait mins (1 to 300)</label>
         <input
-          style={{ width: "30%", maxHeight: "2em", minWidth: "3em" }}
+          style={{
+            width: "30%",
+            maxHeight: "2em",
+            minWidth: "3em",
+            backgroundColor: validInt(Math.round(activityConfig.badReviewWaitSecs / 60), 1, 300)
+              ? "inherit"
+              : "red",
+          }}
           name="badReviewWaitMinutes"
           min="1"
           max="300"
@@ -169,11 +192,16 @@ export default function RepetrobesConfig({ activityConfig, onConfigChange }: Pro
         />
       </div>
       <div className={classes.textbox}>
-        <label htmlFor="maxNew">Max new p/d (1 to 10000)</label>
+        <label htmlFor="maxNew">Max new p/d (0 to 10000)</label>
         <input
-          style={{ width: "40%", maxHeight: "2em", minWidth: "3em" }}
+          style={{
+            width: "40%",
+            maxHeight: "2em",
+            minWidth: "3em",
+            backgroundColor: validInt(activityConfig.maxNew, 0, 10000) ? "inherit" : "red",
+          }}
           name="maxNew"
-          min="1"
+          min="0"
           max="10000"
           type="number"
           value={activityConfig.maxNew}
@@ -181,11 +209,16 @@ export default function RepetrobesConfig({ activityConfig, onConfigChange }: Pro
         />
       </div>
       <div className={classes.textbox}>
-        <label htmlFor="maxRevisions">Max revisions p/d (1 to 10000)</label>
+        <label htmlFor="maxRevisions">Max revisions p/d (0 to 10000)</label>
         <input
-          style={{ width: "40%", maxHeight: "2em", minWidth: "3em" }}
+          style={{
+            width: "40%",
+            maxHeight: "2em",
+            minWidth: "3em",
+            backgroundColor: validInt(activityConfig.maxRevisions, 0, 10000) ? "inherit" : "red",
+          }}
           name="maxRevisions"
-          min="1"
+          min="0"
           max="10000"
           type="number"
           value={activityConfig.maxRevisions}
