@@ -103,7 +103,7 @@ export default function RepetrobesConfig({ activityConfig, onConfigChange }: Pro
           defaultValue={activityConfig.wordLists.filter((x) => x.selected)}
           isMulti
           name="wordLists"
-          options={activityConfig.wordLists}
+          options={activityConfig.wordLists.sort((a, b) => a.label.localeCompare(b.label))}
           className="basic-multi-select"
           classNamePrefix="select"
         />

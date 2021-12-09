@@ -23,6 +23,7 @@ const GoalCreate: FC<FieldProps<Goal>> = (props) => (
       <TextInput label="Goal description" multiline source="description" />
       <NumberInput max={10} min={1} source="priority" step={1} />
       <ReferenceInput
+        sort={{ field: "title", order: "ASC" }}
         label="User list"
         source="userList"
         validate={[required()]}

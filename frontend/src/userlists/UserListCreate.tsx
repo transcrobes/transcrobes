@@ -26,6 +26,7 @@ const UserListCreate: FC<FieldProps<UserList>> = (props) => (
       <TextInput label="List description" multiline source="description" />
       <NumberInput min={-1} source="nbToTake" step={1} defaultValue={-1} />
       <ReferenceInput
+        sort={{ field: "title", order: "ASC" }}
         label="Source Import"
         source="theImport"
         reference="imports"

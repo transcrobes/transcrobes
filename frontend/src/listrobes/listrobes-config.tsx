@@ -106,7 +106,7 @@ export function ListrobesConfig({ graderConfig, onConfigChange }: Props): ReactE
           defaultValue={graderConfig.wordLists.filter((x) => x.selected)}
           isMulti
           name="wordLists"
-          options={graderConfig.wordLists}
+          options={graderConfig.wordLists.sort((a, b) => a.label.localeCompare(b.label))}
           className="basic-multi-select"
           classNamePrefix="select"
         />
