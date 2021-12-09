@@ -412,6 +412,7 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
       )
       .sort((a, b) => a.dueDate! - b.dueDate!);
 
+    console.debug("Todays overdue candidates", candidates);
     // or if nothing is ready, get a new review that is due
     if (candidates.length < 1) {
       candidates = [...state.existingCards.values()]
@@ -427,8 +428,9 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
         })
         .sort((a, b) => a.dueDate! - b.dueDate!);
     }
-
+    console.debug("The final candidates list", candidates);
     const candidate = getRandomNext(candidates);
+    console.debug("The candidates before returning", candidate);
     return candidate ? [candidate, cardType(candidate)] : [null, ""];
   }
 
@@ -488,9 +490,10 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
       };
       definition = state.potentialWords[curNewWordIndex];
     }
-
+    console.debug("Next practice new card", getNew, currentCard);
     if (!(getNew && currentCard)) {
       const [reviewCard, _reviewCardType] = await newRevisionFromState(state, activityConfig);
+      console.debug("Next practice review card", reviewCard, _reviewCardType);
       if (!getNew && reviewCard) {
         currentCard = reviewCard;
         definition = state.existingWords.get(wordId(reviewCard)) || null;

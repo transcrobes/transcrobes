@@ -678,7 +678,7 @@ async function getVocabReviews(
 ): Promise<VocabReview[] | null> {
   const selectedLists = graderConfig.wordLists.filter((x) => x.selected).map((x) => x.value);
   if (selectedLists.length === 0) {
-    console.log("no wordLists, not trying to find stuff");
+    console.debug("No wordLists, not trying to find reviews");
     return null;
   }
   const wordListObjects = (await db.wordlists.findByIds(selectedLists)).values();
@@ -721,7 +721,7 @@ async function getSRSReviews(
 ): Promise<DailyReviewsType> {
   const selectedLists = activityConfig.wordLists.filter((x) => x.selected).map((x) => x.value);
   if (selectedLists.length === 0 || !configIsUsable(activityConfig)) {
-    console.log("No wordLists or config not usable, not trying to find stuff");
+    console.debug("No wordLists or config not usable, not trying to find reviews");
     return {
       todaysWordIds: new Set<string>(), // Set of words reviewed today already: string ids
       allNonReviewedWordsMap: new Map<string, DefinitionDocument>(), // Map of words in selected lists not already reviewed today
