@@ -34,7 +34,8 @@ COPY ./backend/app/pyproject.toml ./backend/app/poetry.lock* /app/
 ARG INSTALL_DEV=false
 RUN bash -c "if [ $INSTALL_DEV == 'true' ] ; then poetry install --no-root ; else poetry install --no-root --no-dev ; fi"
 
-RUN apt-get remove -y --purge git libgflags-dev libsnappy-dev zlib1g-dev libbz2-dev liblz4-dev libzstd-dev
+RUN apt-get remove -y --purge git libgflags-dev libsnappy-dev zlib1g-dev libbz2-dev liblz4-dev libzstd-dev \
+  && apt-get -y autoremove
 
 COPY ./backend/app /app
 COPY --from=build-stage /app/dist /fapp
