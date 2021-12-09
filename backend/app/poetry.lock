@@ -369,14 +369,6 @@ optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
 
 [[package]]
-name = "colorclass"
-version = "2.2.0"
-description = "Colorful worry-free console applications for Linux, Mac OS X, and Windows."
-category = "main"
-optional = false
-python-versions = "*"
-
-[[package]]
 name = "colorlog"
 version = "6.6.0"
 description = "Add colours to the output of Python's logging module."
@@ -403,7 +395,7 @@ toml = ["tomli"]
 
 [[package]]
 name = "croniter"
-version = "1.0.15"
+version = "1.1.0"
 description = "croniter provides iteration for datetime object with cron like format"
 category = "main"
 optional = false
@@ -537,19 +529,17 @@ test = ["pytest (>=6.2.4,<7.0.0)", "pytest-cov (>=2.12.0,<4.0.0)", "mypy (==0.91
 
 [[package]]
 name = "faust-streaming"
-version = "0.6.10"
+version = "0.7.0"
 description = "Python Stream processing."
 category = "main"
 optional = false
 python-versions = ">=3.6.0"
-develop = false
 
 [package.dependencies]
 aiohttp = ">=3.5.2,<4.0"
 aiohttp-cors = ">=0.7,<2.0"
 aiokafka = ">=0.7.1,<0.8.0"
 click = ">=6.7,<8.0"
-colorclass = ">=2.2,<3.0"
 croniter = ">=0.3.16"
 faust-streaming-rocksdb = {version = ">=0.8.0", optional = true, markers = "extra == \"rocksdb\""}
 mode-streaming = "0.1.0"
@@ -578,12 +568,6 @@ setproctitle = ["setproctitle (>=1.1)"]
 statsd = ["statsd (>=3.3.0,<3.4.0)"]
 uvloop = ["uvloop (>=0.8.1)"]
 yaml = ["pyyaml (>=5.1)"]
-
-[package.source]
-type = "git"
-url = "https://github.com/AntonOfTheWoods/faust.git"
-reference = "debogue"
-resolved_reference = "19fcc682ef5c27442b0ebaf0f66b0c1490dd016d"
 
 [[package]]
 name = "faust-streaming-rocksdb"
@@ -1441,11 +1425,11 @@ doc = ["reno", "sphinx", "tornado (>=4.5)"]
 
 [[package]]
 name = "terminaltables"
-version = "3.1.0"
+version = "3.1.10"
 description = "Generate simple tables in terminals from a nested list of strings."
 category = "main"
 optional = false
-python-versions = "*"
+python-versions = ">=2.6"
 
 [[package]]
 name = "toml"
@@ -1609,7 +1593,7 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "1161f563eb173a7320bedc2c16a4a28b309d52104717356c0d25310cad57b927"
+content-hash = "a7744ad2bfb5e6e278a1a4c81ecbca2cdecc5621d1e434751551fcba7906b938"
 
 [metadata.files]
 aiofiles = [
@@ -1893,9 +1877,6 @@ colorama = [
     {file = "colorama-0.4.4-py2.py3-none-any.whl", hash = "sha256:9f47eda37229f68eee03b24b9748937c7dc3868f906e8ba69fbcbdd3bc5dc3e2"},
     {file = "colorama-0.4.4.tar.gz", hash = "sha256:5941b2b48a20143d2267e95b1c2a7603ce057ee39fd88e7329b0c292aa16869b"},
 ]
-colorclass = [
-    {file = "colorclass-2.2.0.tar.gz", hash = "sha256:b05c2a348dfc1aff2d502527d78a5b7b7e2f85da94a96c5081210d8e9ee8e18b"},
-]
 colorlog = [
     {file = "colorlog-6.6.0-py2.py3-none-any.whl", hash = "sha256:351c51e866c86c3217f08e4b067a7974a678be78f07f85fc2d55b8babde6d94e"},
     {file = "colorlog-6.6.0.tar.gz", hash = "sha256:344f73204009e4c83c5b6beb00b3c45dc70fcdae3c80db919e0a4171d006fde8"},
@@ -1950,8 +1931,8 @@ coverage = [
     {file = "coverage-6.1.2.tar.gz", hash = "sha256:d9a635114b88c0ab462e0355472d00a180a5fbfd8511e7f18e4ac32652e7d972"},
 ]
 croniter = [
-    {file = "croniter-1.0.15-py2.py3-none-any.whl", hash = "sha256:0f97b361fe343301a8f66f852e7d84e4fb7f21379948f71e1bbfe10f5d015fbd"},
-    {file = "croniter-1.0.15.tar.gz", hash = "sha256:a70dfc9d52de9fc1a886128b9148c89dd9e76b67d55f46516ca94d2d73d58219"},
+    {file = "croniter-1.1.0-py2.py3-none-any.whl", hash = "sha256:d30dd147d1daec39d015a15b8cceb3069b9780291b9c141e869c32574a8eeacb"},
+    {file = "croniter-1.1.0.tar.gz", hash = "sha256:4023e4d18ced979332369964351e8f4f608c1f7c763e146b1d740002c4245247"},
 ]
 cssselect = [
     {file = "cssselect-1.1.0-py2.py3-none-any.whl", hash = "sha256:f612ee47b749c877ebae5bb77035d8f4202c6ad0f0fc1271b3c18ad6c4468ecf"},
@@ -1991,7 +1972,10 @@ fastapi = [
     {file = "fastapi-0.70.0-py3-none-any.whl", hash = "sha256:a36d5f2fad931aa3575c07a3472c784e81f3e664e3bb5c8b9c88d0ec1104f59c"},
     {file = "fastapi-0.70.0.tar.gz", hash = "sha256:66da43cfe5185ea1df99552acffd201f1832c6b364e0f4136c0a99f933466ced"},
 ]
-faust-streaming = []
+faust-streaming = [
+    {file = "faust-streaming-0.7.0.tar.gz", hash = "sha256:daa362f073467e797664f9acc79a39a4fe0c581fc6a4fdee8260cffaf8d81f48"},
+    {file = "faust_streaming-0.7.0-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:bf3b8ce01f9e849faeffe35e85f4940472a3faadc6ecb0bce1a64ea94de35f13"},
+]
 faust-streaming-rocksdb = [
     {file = "faust-streaming-rocksdb-0.8.0.tar.gz", hash = "sha256:0aea5372359ae0797fdab5391bf33c48760991ac7f3c13ccc97c054e47218370"},
 ]
@@ -2812,7 +2796,8 @@ tenacity = [
     {file = "tenacity-8.0.1.tar.gz", hash = "sha256:43242a20e3e73291a28bcbcacfd6e000b02d3857a9a9fff56b297a27afdc932f"},
 ]
 terminaltables = [
-    {file = "terminaltables-3.1.0.tar.gz", hash = "sha256:f3eb0eb92e3833972ac36796293ca0906e998dc3be91fbe1f8615b331b853b81"},
+    {file = "terminaltables-3.1.10-py2.py3-none-any.whl", hash = "sha256:e4fdc4179c9e4aab5f674d80f09d76fa436b96fdc698a8505e0a36bf0804a874"},
+    {file = "terminaltables-3.1.10.tar.gz", hash = "sha256:ba6eca5cb5ba02bba4c9f4f985af80c54ec3dccf94cfcd190154386255e47543"},
 ]
 toml = [
     {file = "toml-0.10.2-py2.py3-none-any.whl", hash = "sha256:806143ae5bfb6a3c6e736a764057db0e6a0e05e338b5630894a5f779cabb4f9b"},
