@@ -1,4 +1,4 @@
-import React, { ReactElement, useState } from "react";
+import { ReactElement, useState } from "react";
 import dayjs from "dayjs";
 import styled from "styled-components";
 import { $enum } from "ts-enum-util";
@@ -13,8 +13,6 @@ import {
   CharacterType,
   DefinitionType,
   PosSentences,
-  PosTranslationsType,
-  SIMPLE_POS_TYPES,
   SortableListElementType,
   TREEBANK_POS_TYPES,
   WordModelStatsType,
@@ -28,17 +26,15 @@ import {
   setLangPair,
   setPlatformHelper,
   setSegmentation,
-  toSimplePosLabels,
   USER_STATS_MODE,
 } from "../lib/components";
+import { ThinHR } from "../components/Common";
+import PosItem from "../components/PosItem";
+import DefinitionTranslations from "../components/DefinitionTranslations";
 
 const DATA_SOURCE = "Word.tsx";
 
 defineElements();
-
-const ThinHR = styled.hr`
-  margin: 0.3rem;
-`;
 
 const InfoBox = styled.div`
   margin: 0.7em;
@@ -280,47 +276,12 @@ function WordModelStats({ wordModelStats }: { wordModelStats: WordModelStatsType
   );
 }
 
-function PosItem({ item }: { item: PosTranslationsType }): ReactElement {
-  const posLabel = toSimplePosLabels(item.posTag as SIMPLE_POS_TYPES);
-  return (
-    <InfoBox>
-      {item.values.length > 0 ? (
-        <>
-          <span style={{ fontWeight: "bold" }}>{posLabel}: </span>
-          <span>{item.values.join(", ")}</span>
-        </>
-      ) : (
-        <span>No {posLabel} found</span>
-      )}
-    </InfoBox>
-  );
-}
-
 function ProviderTranslations({ definition }: { definition: DefinitionType }): ReactElement {
   return (
     <>
       <ThinHR />
       <Header text="Entry Definitions" />
-      {definition.providerTranslations.length &&
-        definition.providerTranslations.map((providerEntry) => {
-          return (
-            providerEntry.posTranslations.length > 0 && (
-              <React.Fragment key={providerEntry.provider}>
-                <ThinHR />
-                <InfoBox>
-                  <div>
-                    <span>{providerEntry.provider}</span>
-                  </div>
-                  <div>
-                    {providerEntry.posTranslations.map((posItem) => {
-                      return <PosItem key={posItem.posTag} item={posItem} />;
-                    })}
-                  </div>
-                </InfoBox>
-              </React.Fragment>
-            )
-          );
-        })}
+      <DefinitionTranslations definition={definition} />
     </>
   );
 }

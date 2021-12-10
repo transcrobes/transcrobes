@@ -1,4 +1,6 @@
 import styled from "styled-components";
+import { ReactElement } from "react";
+import { Button } from "@material-ui/core";
 
 import SearchLoading from "../components/SearchLoading";
 import { CARD_ID_SEPARATOR, CARD_TYPES, wordId } from "../database/Schema";
@@ -12,8 +14,7 @@ import {
   RepetrobesActivityConfigType,
 } from "../lib/types";
 import Loader from "../img/loader.gif";
-import { ReactElement } from "react";
-import { Button } from "@material-ui/core";
+import Meaning from "./Meaning";
 
 const CentredFlex = styled.div`
   display: flex;
@@ -53,46 +54,12 @@ const MeaningWrapper = styled.div`
   display: block;
 `;
 
-interface MeaningProps {
-  definition: DefinitionType;
-  showSynonyms: boolean;
-}
-
-function Meaning({ definition, showSynonyms }: MeaningProps) {
-  const posTrans = [];
-  for (const provider of definition.providerTranslations) {
-    if (provider.posTranslations.length > 0) {
-      for (const posTranslation of provider.posTranslations) {
-        posTrans.push(
-          <div key={"mean" + posTranslation.posTag}>
-            {posTranslation.posTag}: {posTranslation.values.join(", ")}
-          </div>,
-        );
-      }
-      break;
-    }
-  }
-  const synonyms = [];
-  if (showSynonyms) {
-    for (const posSynonym of definition.synonyms) {
-      if (posSynonym.values.length > 0) {
-        synonyms.push(
-          <div key={"syn" + posSynonym.posTag}>
-            {posSynonym.posTag}: {posSynonym.values.join(", ")}
-          </div>,
-        );
-      }
-    }
-  }
-  return <>{posTrans.concat(synonyms)}</>;
-}
-
 interface GraphQuestionProps {
   card: CardType;
   characters: CharacterType[];
 }
 
-function GraphQuestion({ card, characters }: GraphQuestionProps) {
+function GraphQuestion({ card, characters }: GraphQuestionProps): ReactElement {
   return (
     <GraphSoundQuestionStyle>
       {" "}

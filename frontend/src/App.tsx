@@ -15,13 +15,17 @@ import { Layout } from "./layout";
 import Login from "./system/Login";
 import Logout from "./system/Logout";
 import englishMessages from "./i18n/en";
-import jwtTokenAuthProvider, { getUsername, isInitialisedAsync } from "./lib/JWTAuthProvider";
+import jwtTokenAuthProvider, {
+  getUsername,
+  getValue,
+  isInitialisedAsync,
+} from "./lib/JWTAuthProvider";
 import SWDataProvider from "./ra-data-sw";
 import Dashboard from "./Dashboard";
 import { ComponentsAppConfig, ThemeName } from "./lib/types";
 import { ServiceWorkerProxy } from "./lib/proxies";
 import { ComponentsConfig } from "./lib/complexTypes";
-import { defineElements } from "./lib/components";
+import { defineElements, setLangPair } from "./lib/components";
 
 declare global {
   interface Window {
@@ -42,11 +46,12 @@ const i18nProvider = polyglotI18nProvider((_locale) => {
   return englishMessages;
 }, "en");
 
+const DEFAULT_LANGUAGE_PAIR = "zh-Hans:en";
 window.componentsConfig = {
   dataProvider: dataProvider,
   proxy: new ServiceWorkerProxy(wb),
   url: new URL(window.location.href),
-  langPair: "zh-Hans:en", // FIXME: where to put this?
+  langPair: DEFAULT_LANGUAGE_PAIR,
 };
 
 function App(): ReactElement {
@@ -54,9 +59,14 @@ function App(): ReactElement {
   useEffect(() => {
     (async () => {
       const lusername = await getUsername();
-      if (!lusername) {
-        throw new Error("Unable to find a username");
+      const langPair = await getValue("lang_pair");
+      if (!lusername || !langPair) {
+        throw new Error(
+          "Unable to find a username or the language pair, can't do much without those",
+        );
       }
+      window.componentsConfig.langPair = langPair;
+      setLangPair(langPair);
       if (lusername && (await isInitialisedAsync(lusername))) {
         window.componentsConfig.proxy.init(
           { username: lusername },
