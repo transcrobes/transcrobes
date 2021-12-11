@@ -3,7 +3,7 @@ import { ReactElement } from "react";
 import { Button } from "@material-ui/core";
 
 import SearchLoading from "../components/SearchLoading";
-import { CARD_ID_SEPARATOR, CARD_TYPES, wordId } from "../database/Schema";
+import { CARD_ID_SEPARATOR, CARD_TYPES, getWordId } from "../database/Schema";
 import { say } from "../lib/funclib";
 import PracticerInput from "../components/PracticerInput";
 import DefinitionGraph from "../components/DefinitionGraph";
@@ -14,14 +14,13 @@ import {
   RepetrobesActivityConfigType,
 } from "../lib/types";
 import Loader from "../img/loader.gif";
-import Meaning from "./Meaning";
+import Meaning from "../components/Meaning";
 
 const CentredFlex = styled.div`
   display: flex;
   justify-content: center;
   padding: 0.2em;
 `;
-
 const QuestionWrapper = styled.div`
   display: flex;
   justify-content: center;
@@ -32,24 +31,20 @@ const AnswerWrapper = styled.div`
   justify-content: center;
   padding: 1em;
 `;
-
 const GraphSoundQuestionStyle = styled.div`
   font-size: 4em;
   padding: 0.5em;
 `;
-
 const StyledAnswer = styled.div`
   display: flex;
   justify-content: center;
   font-size: 2em;
   padding: 0.5em;
 `;
-
 const StyledQuestion = styled.div`
   font-size: 2em;
   padding: 1em;
 `;
-
 const MeaningWrapper = styled.div`
   display: block;
 `;
@@ -100,6 +95,7 @@ interface MeaningQuestionProps {
   showL2LengthHint: boolean;
   characters: CharacterType[];
   showAnswer: boolean;
+  onCardFrontUpdate: (card: CardType) => void;
 }
 
 function MeaningQuestion({
@@ -109,19 +105,20 @@ function MeaningQuestion({
   showL2LengthHint,
   characters,
   showAnswer,
+  onCardFrontUpdate,
 }: MeaningQuestionProps) {
   return (
     <div>
       <StyledQuestion>
-        {" "}
-        {card && card.front ? (
-          card.front
-        ) : (
-          <MeaningWrapper>
-            <Meaning showSynonyms={showSynonyms} definition={definition} />
-            {showL2LengthHint && <div key="lenHint">(L2 length: {definition.graph.length})</div>}
-          </MeaningWrapper>
-        )}
+        <MeaningWrapper>
+          <Meaning
+            showSynonyms={showSynonyms}
+            definition={definition}
+            card={card}
+            onCardFrontUpdate={onCardFrontUpdate}
+          />
+          {showL2LengthHint && <div key="lenHint">(L2 length: {definition.graph.length})</div>}
+        </MeaningWrapper>
       </StyledQuestion>
       <DefinitionGraph characters={characters} showAnswer={showAnswer}></DefinitionGraph>
     </div>
@@ -132,9 +129,10 @@ interface SoundGraphAnswerProps {
   card: CardType;
   definition: DefinitionType;
   showSynonyms: boolean;
+  onCardFrontUpdate: (card: CardType) => void;
 }
 
-function GraphAnswer({ card, definition, showSynonyms }: SoundGraphAnswerProps) {
+function GraphAnswer({ card, definition, showSynonyms, onCardFrontUpdate }: SoundGraphAnswerProps) {
   return (
     <div>
       {card && card.back ? (
@@ -148,7 +146,12 @@ function GraphAnswer({ card, definition, showSynonyms }: SoundGraphAnswerProps) 
             </Button>
           </CentredFlex>
           <MeaningWrapper>
-            <Meaning showSynonyms={showSynonyms} definition={definition} />
+            <Meaning
+              showSynonyms={showSynonyms}
+              definition={definition}
+              card={card}
+              onCardFrontUpdate={onCardFrontUpdate}
+            />
           </MeaningWrapper>
         </>
       )}
@@ -156,14 +159,19 @@ function GraphAnswer({ card, definition, showSynonyms }: SoundGraphAnswerProps) 
   );
 }
 
-function SoundAnswer({ card, definition, showSynonyms }: SoundGraphAnswerProps) {
+function SoundAnswer({ card, definition, showSynonyms, onCardFrontUpdate }: SoundGraphAnswerProps) {
   return (
     <div>
       {card && card.back ? (
         card.back
       ) : (
         <MeaningWrapper>
-          <Meaning showSynonyms={showSynonyms} definition={definition} />
+          <Meaning
+            showSynonyms={showSynonyms}
+            definition={definition}
+            card={card}
+            onCardFrontUpdate={onCardFrontUpdate}
+          />
         </MeaningWrapper>
       )}
     </div>
@@ -192,13 +200,32 @@ function MeaningAnswer({ card, definition }: MeaningAnswerProps) {
   );
 }
 
-function getAnswer(card: CardType, definition: DefinitionType, showSynonyms: boolean) {
+function getAnswer(
+  card: CardType,
+  definition: DefinitionType,
+  showSynonyms: boolean,
+  onCardFrontUpdate: (card: CardType) => void,
+) {
   const cardType = card.id.split(CARD_ID_SEPARATOR)[1];
   switch (cardType) {
     case CARD_TYPES.GRAPH.toString():
-      return <GraphAnswer card={card} definition={definition} showSynonyms={showSynonyms} />;
+      return (
+        <GraphAnswer
+          card={card}
+          definition={definition}
+          showSynonyms={showSynonyms}
+          onCardFrontUpdate={onCardFrontUpdate}
+        />
+      );
     case CARD_TYPES.SOUND.toString():
-      return <SoundAnswer card={card} definition={definition} showSynonyms={showSynonyms} />;
+      return (
+        <SoundAnswer
+          card={card}
+          definition={definition}
+          showSynonyms={showSynonyms}
+          onCardFrontUpdate={onCardFrontUpdate}
+        />
+      );
     case CARD_TYPES.MEANING.toString():
       return <MeaningAnswer card={card} definition={definition} />;
   }
@@ -211,6 +238,7 @@ function getQuestion(
   showSynonyms: boolean,
   showL2LengthHint: boolean,
   showAnswer: boolean,
+  onCardFrontUpdate: (card: CardType) => void,
 ) {
   console.debug(`Card to show for a question`, card);
   const cardType = card.id.split(CARD_ID_SEPARATOR)[1];
@@ -235,19 +263,21 @@ function getQuestion(
           showSynonyms={showSynonyms}
           showL2LengthHint={showL2LengthHint}
           showAnswer={showAnswer}
+          onCardFrontUpdate={onCardFrontUpdate}
         />
       );
   }
 }
 
 interface Props {
-  onPractice: (wordId: string, grade: number) => void;
   showAnswer: boolean;
   currentCard: CardType | null;
   definition: DefinitionType | null;
   characters: CharacterType[] | null;
   loading: boolean;
   activityConfig: RepetrobesActivityConfigType;
+  onCardFrontUpdate: (card: CardType) => void;
+  onPractice: (wordId: string, grade: number) => void;
   onShowAnswer: () => void;
 }
 
@@ -258,6 +288,7 @@ export function VocabRevisor({
   characters,
   loading,
   activityConfig,
+  onCardFrontUpdate,
   onPractice,
   onShowAnswer,
 }: Props): ReactElement {
@@ -280,6 +311,7 @@ export function VocabRevisor({
               showSynonyms,
               showL2LengthHint,
               showAnswer,
+              onCardFrontUpdate,
             )}
           </QuestionWrapper>
           {!showAnswer && (
@@ -291,8 +323,10 @@ export function VocabRevisor({
           )}
           {showAnswer && (
             <>
-              <AnswerWrapper>{getAnswer(currentCard, definition, showSynonyms)}</AnswerWrapper>
-              <PracticerInput wordId={wordId(currentCard)} onPractice={handlePractice} />
+              <AnswerWrapper>
+                {getAnswer(currentCard, definition, showSynonyms, onCardFrontUpdate)}
+              </AnswerWrapper>
+              <PracticerInput wordId={getWordId(currentCard)} onPractice={handlePractice} />
             </>
           )}
         </>

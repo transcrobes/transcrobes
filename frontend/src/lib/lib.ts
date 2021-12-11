@@ -24,7 +24,7 @@ import dayjs, { OpUnitType, QUnitType } from "dayjs";
 const EVENT_QUEUE_PROCESS_FREQ = 5000; //milliseconds
 const PUSH_FILES_PROCESS_FREQ = 5000; //milliseconds
 const ONSCREEN_DELAY_IS_CONSIDERED_READ = 5000; // milliseconds
-
+const IDEAL_GLOSS_STRING_LENGTH = 5; // pretty random but https://arxiv.org/pdf/1208.6109.pdf
 const DEFAULT_RETRIES = 3;
 
 let accessToken = "";
@@ -90,6 +90,7 @@ function setEventSource(value: string): void {
 }
 
 function fromLang() {
+  if (!langPair) throw new Error("System improperly initialised, langPair is unset");
   return langPair.split(":")[0];
 }
 
@@ -190,6 +191,10 @@ function filterKnown(
   return wholeKnownWords.concat(known);
 }
 
+function getInputLang(): InputLanguage {
+  return fromLang() as InputLanguage;
+}
+
 function toEnrich(charstr: string, fromLanguage: InputLanguage = "zh-Hans"): boolean {
   // TODO: find out why the results are different if these consts are global...
   // unicode cjk radicals, supplement and characters, see src/enrichers/zhhans/__init__.py for details
@@ -257,11 +262,13 @@ async function getRequestOptions(
   return options;
 }
 
-function filterFakeBestGuess(entries: string[], phone: string[]): string[] {
+function filterFakeL1Definitions(entries: string[], phone: string[]): string[] {
   const filtered: string[] = [];
   for (const entry of entries) {
     const local_phone = unidecode(phone.join("").split(/(\s+)/).join("")).toLowerCase();
-    if (local_phone != entry.split(/(\s+)/).join("").toLowerCase()) {
+    // we DON'T do a entry.toLowerCase() because we DO want proper names, but proper names should always
+    // be capitalised, so Xi Jingping, Huawei, etc. should be Ok.
+    if (local_phone != entry.split(/(\s+)/).join("")) {
       filtered.push(entry);
     }
   }
@@ -277,14 +284,26 @@ export function bestGuess(token: TokenType, definition: DefinitionType): string 
   const dictEntries = definition.providerTranslations;
   for (const providerEntry of dictEntries) {
     if (!providerEntry.posTranslations) continue;
+
     for (const posEntry of providerEntry.posTranslations) {
       if (posEntry.values.length === 0) continue;
       allDefs.push(posEntry);
       if (token.pos && toSimplePos(token.pos) === posEntry.posTag) {
         // sorted_defs = sorted(defs, key=lambda i: i["cf"], reverse=True)  # original python
         // const sortedDefs = defs.sort((a: any, b: any) => a.cf - b.cf);  // possible js, if we had cf
-        const filteredDefs = filterFakeBestGuess(posEntry.values, definition.sound);
+        const filteredDefs = filterFakeL1Definitions(posEntry.values, definition.sound);
         if (filteredDefs) {
+          // prefer one that is closer to our ideal length, particularly useful when there very long entries
+          // but also shorter Ok ones
+          if (providerEntry.provider !== "mst") {
+            // FIXME: harcoded hack :-< - mst always *has* a cf (confidence score) and pos, and the order we
+            // get them in is ordered by cf, so only order by ideal length if we aren't already ordered
+            filteredDefs.sort(
+              (a, b) =>
+                Math.abs(IDEAL_GLOSS_STRING_LENGTH - a.length) -
+                Math.abs(IDEAL_GLOSS_STRING_LENGTH - b.length),
+            );
+          }
           best = filteredDefs[0];
           break;
         }
@@ -297,13 +316,26 @@ export function bestGuess(token: TokenType, definition: DefinitionType): string 
     }
   }
   if (!best && others.length > 0) {
-    const filteredDefs = filterFakeBestGuess(others, definition.sound);
+    const filteredDefs = filterFakeL1Definitions(others, definition.sound);
     if (filteredDefs) {
+      // prefer one that is closer to our ideal length, particularly useful when there very long entries
+      // but also shorter Ok ones
+      filteredDefs.sort(
+        (a, b) =>
+          Math.abs(IDEAL_GLOSS_STRING_LENGTH - a.length) -
+          Math.abs(IDEAL_GLOSS_STRING_LENGTH - b.length),
+      );
       best = filteredDefs[0];
     }
   }
   if (!best && allDefs.length > 0) {
-    best = allDefs[0].values[0];
+    best = allDefs
+      .flatMap((p) => p.values)
+      .sort(
+        (a, b) =>
+          Math.abs(IDEAL_GLOSS_STRING_LENGTH - a.length) -
+          Math.abs(IDEAL_GLOSS_STRING_LENGTH - b.length),
+      )[0];
   }
   return best;
 }
@@ -423,6 +455,8 @@ export {
   setThemeName,
   setEventSource,
   // functions
+  filterFakeL1Definitions,
+  getInputLang,
   toEnrich,
   simpOnly,
   filterKnown,

@@ -4,7 +4,11 @@ import { toSimplePosLabels } from "../lib/lib";
 import { PosTranslationsType, SIMPLE_POS_TYPES } from "../lib/types";
 import { InfoBox } from "./Common";
 
-export default function PosItem({ item }: { item: PosTranslationsType }): ReactElement {
+interface Props {
+  item: PosTranslationsType;
+}
+
+export default function PosItem({ item }: Props): ReactElement {
   const posLabel = toSimplePosLabels(item.posTag as SIMPLE_POS_TYPES);
   return (
     <InfoBox>

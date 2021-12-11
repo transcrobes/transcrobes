@@ -20,7 +20,11 @@ import {
   WordListNamesType,
   WordModelStatsType,
 } from "../lib/types";
-import { CardDocument } from "../database/Schema";
+import { CardDocument, CARD_TYPES, getCardId, getWordId } from "../database/Schema";
+import { $enum } from "ts-enum-util";
+import { TopToolbar } from "react-admin";
+import HelpButton from "../components/HelpButton";
+import { Container, makeStyles, TextField, Typography } from "@material-ui/core";
 
 const DATA_SOURCE = "Notrobes.jsx";
 
@@ -32,6 +36,13 @@ interface Props {
   proxy: ServiceWorkerProxy;
   url: URL;
 }
+
+const useStyles = makeStyles((theme) => ({
+  root: {
+    margin: theme.spacing(1),
+    maxWidth: "800px",
+  },
+}));
 
 function Notrobes({ proxy, url }: Props): ReactElement {
   const converter = useRef<ConvertText>(Converter({ from: "t", to: "cn" }));
@@ -47,6 +58,8 @@ function Notrobes({ proxy, url }: Props): ReactElement {
   const [wordModelStats, setWordModelStats] = useState<WordModelStatsType | null>(null);
   const [recentPosSentences, setRecentPosSentences] = useState<PosSentences | null>(null);
   const [lists, setLists] = useState<SortableListElementType[] | null>(null);
+
+  const classes = useStyles();
 
   let cancel: CancelTokenSource;
 
@@ -173,14 +186,34 @@ function Notrobes({ proxy, url }: Props): ReactElement {
     }
   }
 
+  async function handleCardFrontUpdate(card: CardType) {
+    await proxy.sendMessagePromise({
+      source: DATA_SOURCE,
+      type: "updateCard",
+      value: card,
+    });
+    const updatedCards = await proxy.sendMessagePromise<CardType[]>({
+      source: DATA_SOURCE,
+      type: "getByIds",
+      value: {
+        collection: "cards",
+        ids: Array.from($enum(CARD_TYPES).getValues()).map((ctype) =>
+          getCardId(getWordId(card), ctype),
+        ),
+      },
+    });
+
+    setCards(updatedCards);
+  }
+
   async function addOrUpdateCards(wordId: string, grade: number): Promise<void> {
     // FIXME: grade should be an enum
-    const cards = await proxy.sendMessagePromise<CardDocument[]>({
+    const updatedCards = await proxy.sendMessagePromise<CardDocument[]>({
       source: DATA_SOURCE,
       type: "addOrUpdateCards",
       value: { wordId: wordId, grade },
     });
-    setCards(cards);
+    setCards(updatedCards);
     setLoading(false);
     setMessage("Cards recorded");
   }
@@ -232,48 +265,49 @@ function Notrobes({ proxy, url }: Props): ReactElement {
             recentPosSentences={recentPosSentences}
             lists={lists}
             onPractice={addOrUpdateCards}
+            onCardFrontUpdate={handleCardFrontUpdate}
           />
         </div>
       );
     }
   }
-
+  const className = "";
+  const helpUrl = "https://transcrob.es/page/software/learn/notrobes/";
   return (
-    <div className="container">
-      {/* Heading */}
-      <h2 className="heading">Notrobes: Vocabulary search, discover words</h2>
-      {/* Search Input */}
-      <div>
-        <label className="search-label" htmlFor="search-input">
-          <input
-            type="text"
-            name="query"
-            value={query}
-            id="search-input"
-            placeholder="Search..."
-            disabled={!initialised}
-            onChange={handleOnInputChange}
-          />
-          <i className="fa fa-search search-icon" aria-hidden="true" />
-        </label>
-      </div>
-      {/* Loader */}
-      <img
-        src={Loader}
-        className={`search-loading ${loading || !initialised ? "show" : "hide"}`}
-        alt="loader"
-      />
-
-      {/* Message */}
-      {message && (
-        <div style={{ color: "red", fontWeight: "bold", fontSize: "2em" }}>{message}</div>
-      )}
-
-      {/* Result */}
-      <IconContext.Provider value={{ color: "blue", size: "3em" }}>
-        {renderSearchResults()}
-      </IconContext.Provider>
-    </div>
+    <>
+      <TopToolbar className={className}>
+        <HelpButton url={helpUrl} />
+      </TopToolbar>
+      <Container maxWidth="md">
+        <Typography variant="h4">Notrobes: Vocabulary search, discover words</Typography>
+        <div>
+          <form className={classes.root} noValidate>
+            <TextField
+              value={query}
+              disabled={!initialised}
+              id="outlined-basic"
+              label="Search..."
+              variant="outlined"
+              onChange={handleOnInputChange}
+              fullWidth
+            />
+          </form>
+        </div>
+        <img
+          src={Loader}
+          className={`search-loading ${loading || !initialised ? "show" : "hide"}`}
+          alt="loader"
+        />
+        {message && (
+          <Typography style={{ color: "red", fontWeight: "bold", fontSize: "2em" }}>
+            {message}
+          </Typography>
+        )}
+        <IconContext.Provider value={{ color: "blue", size: "3em" }}>
+          {renderSearchResults()}
+        </IconContext.Provider>
+      </Container>
+    </>
   );
 }
 

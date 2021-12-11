@@ -5,13 +5,14 @@ import { $enum } from "ts-enum-util";
 import { Button } from "@material-ui/core";
 
 import { say, wordIdsFromModels } from "../lib/funclib";
-import { CARD_TYPES, cardType } from "../database/Schema";
+import { CARD_TYPES, getCardType, getCardId } from "../database/Schema";
 import DefinitionGraph from "../components/DefinitionGraph";
 import PracticerInput from "../components/PracticerInput";
 import {
   CardType,
   CharacterType,
   DefinitionType,
+  EMPTY_CARD,
   PosSentences,
   SortableListElementType,
   TREEBANK_POS_TYPES,
@@ -31,6 +32,7 @@ import {
 import { ThinHR } from "../components/Common";
 import PosItem from "../components/PosItem";
 import DefinitionTranslations from "../components/DefinitionTranslations";
+import Meaning from "../components/Meaning";
 
 const DATA_SOURCE = "Word.tsx";
 
@@ -40,11 +42,6 @@ const InfoBox = styled.div`
   margin: 0.7em;
 `;
 
-interface WordInfoProps {
-  definition: DefinitionType;
-  characters: (CharacterType | null)[];
-}
-
 function Header({ text }: { text: string }): ReactElement {
   return (
     <div>
@@ -53,11 +50,23 @@ function Header({ text }: { text: string }): ReactElement {
   );
 }
 
-function WordInfo({ definition, characters }: WordInfoProps): ReactElement {
+interface WordInfoProps {
+  definition: DefinitionType;
+  characters: (CharacterType | null)[];
+  meaningCard: CardType;
+  onCardFrontUpdate: (card: CardType) => void;
+}
+
+function WordInfo({
+  definition,
+  characters,
+  meaningCard,
+  onCardFrontUpdate,
+}: WordInfoProps): ReactElement {
   return (
     <>
       <div>
-        <Header text="Word info" />
+        <Header text="Card Revision Details" />
         <div style={{ fontSize: "2em" }}>
           <DefinitionGraph
             charWidth={100}
@@ -75,6 +84,16 @@ function WordInfo({ definition, characters }: WordInfoProps): ReactElement {
               </Button>
             </div>
           </div>
+        </div>
+        <div
+          style={{ margin: ".5em", fontSize: "1.5em", display: "flex", justifyContent: "center" }}
+        >
+          <Meaning
+            showSynonyms={false}
+            definition={definition}
+            card={meaningCard}
+            onCardFrontUpdate={onCardFrontUpdate}
+          />
         </div>
       </div>
     </>
@@ -107,7 +126,7 @@ function ExistingCards({ cards }: { cards: CardType[] }): ReactElement {
       card && (
         <tr key={card.id}>
           <td style={{ textTransform: "capitalize" }}>
-            {$enum(CARD_TYPES).getKeyOrThrow(parseInt(cardType(card)))}
+            {$enum(CARD_TYPES).getKeyOrThrow(parseInt(getCardType(card)))}
           </td>
           <td>
             {/* FIXME: don't hardcode the localeString!!! */}
@@ -325,6 +344,7 @@ interface WordProps {
   lists: SortableListElementType[];
   characters: (CharacterType | null)[];
   onPractice: (wordId: string, grade: number) => void;
+  onCardFrontUpdate: (card: CardType) => void;
 }
 
 function Word({
@@ -335,6 +355,7 @@ function Word({
   lists,
   characters,
   onPractice,
+  onCardFrontUpdate,
 }: WordProps): ReactElement {
   const [loaded, setLoaded] = useState(false);
   setGlossing(USER_STATS_MODE.NO_GLOSS);
@@ -384,7 +405,17 @@ function Word({
   return (
     definition && (
       <div>
-        <WordInfo definition={definition} characters={characters} />
+        <WordInfo
+          definition={definition}
+          characters={characters}
+          meaningCard={
+            (cards && cards.filter((c) => getCardType(c) === CARD_TYPES.MEANING.toString())[0]) || {
+              ...EMPTY_CARD,
+              id: getCardId(definition.id, CARD_TYPES.MEANING.toString()),
+            }
+          }
+          onCardFrontUpdate={onCardFrontUpdate}
+        />
         <Practicer wordId={definition.id} onPractice={onPractice} />
         <ExistingCards cards={cards} />
         <WordLists lists={lists} />

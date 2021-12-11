@@ -139,12 +139,16 @@ ZH_TB_POS_TO_SIMPLE_POS = {
 CORENLP_IGNORABLE_POS = ["PU", "OD", "CD", "NT", "URL", "FW"]
 CORENLP_IGNORABLE_POS_SHORT = ["PU", "URL"]
 
+IDEAL_GLOSS_STRING_LENGTH = 5  # pretty random but https://arxiv.org/pdf/1208.6109.pdf
+
 
 def filter_fake_best_guess(entries, phone):
     filtered = []
+    # we DON'T do a entry.lower() because we DO want proper names, but proper names should always
+    # be capitalised, so Xi Jingping, Huawei, etc. should be Ok (ie, not filtered).
     for entry in entries:
         local_phone = unidecode.unidecode("".join((entry.get("p") or phone).split())).lower()
-        if local_phone != "".join(entry["nt"].split()).lower():
+        if local_phone != "".join(entry["nt"].split()):
             filtered.append(entry)
     return filtered
 
@@ -371,6 +375,9 @@ class CoreNLP_ZHHANS_Enricher(Enricher):
                     ZH_TB_POS_TO_ABC_POS[token["pos"]],
                 ):
                     # get the most confident for the right POS
+                    # TODO: think about integrating the length also, eg
+                    # lambda i: abs(IDEAL_GLOSS_STRING_LENGTH-len(i["nt"]))
+                    # see the other, fallback methods for more comment on why
                     sorted_defs = filter_fake_best_guess(sorted(defs, key=lambda i: i["cf"], reverse=True), phone)
                     if len(sorted_defs) > 0:
                         best_guess = sorted_defs[0]
@@ -387,13 +394,21 @@ class CoreNLP_ZHHANS_Enricher(Enricher):
                 lemma(token),
                 others,
             )
-            sorted_defs = filter_fake_best_guess(sorted(others, key=lambda i: i["cf"], reverse=True), phone)
+            # sorted_defs = filter_fake_best_guess(sorted(others, key=lambda i: i["cf"], reverse=True), phone)
+            # the "cf" won't really be meaningful anymore, so prefer the ideal gloss string length strings
+            # as the cf is not in the rxdb, this is the only method used for calculating the bg in the frontend
+            sorted_defs = filter_fake_best_guess(
+                sorted(others, key=lambda i: abs(IDEAL_GLOSS_STRING_LENGTH - len(i["nt"]))), phone
+            )
             if len(sorted_defs) > 0:
                 best_guess = sorted_defs[0]
 
         if not best_guess and len(all_defs) > 0:
             # it's really bad
-            best_guess = sorted(all_defs, key=lambda i: i["cf"], reverse=True)[0]
+            # best_guess = sorted(all_defs, key=lambda i: i["cf"], reverse=True)[0]
+            # the "cf" won't really be meaningful anymore, so prefer the ideal gloss string length strings
+            # as the cf is not in the rxdb, this is the only method used for calculating the bg in the frontend
+            best_guess = sorted(all_defs, key=lambda i: abs(IDEAL_GLOSS_STRING_LENGTH - len(i["nt"])))[0]
             logger.debug(
                 """No best_guess found with the correct POS or OTHER for '%s',
                 using the highest confidence with the wrong POS all_defs %s""",

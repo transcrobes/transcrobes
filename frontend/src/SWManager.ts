@@ -483,6 +483,17 @@ export function manageEvent(sw: ServiceWorkerGlobalScope, event: ExtendableMessa
         });
       });
     });
+  } else if (message.type === "updateCard") {
+    loadDb(message, sw).then(([ldb, msg]) => {
+      dayCardWords = null; // simpler to set to null rather than try and merge lots
+      data["updateCard"](ldb, message.value).then((result) => {
+        postIt(event, {
+          source: msg.source,
+          type: msg.type,
+          value: result,
+        });
+      });
+    });
   } else if (message.type === "getFirstSuccessStatsForList") {
     loadDb(message, sw).then(([ldb, msg]) => {
       data.getFirstSuccessStatsForList(ldb, message.value).then((result) => {

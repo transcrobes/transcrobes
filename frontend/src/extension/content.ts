@@ -3,6 +3,7 @@ import { BackgroundWorkerProxy } from "../lib/proxies";
 import TranscrobesCSS from "../css/tccss";
 import { DefinitionType, ModelType } from "../lib/types";
 import { textNodes } from "../lib/funclib";
+import { getInputLang } from "../lib/components";
 
 const DATA_SOURCE = "content.ts";
 
@@ -35,7 +36,7 @@ function onEntryId(entries: IntersectionObserverEntry[]) {
       if (
         item.nodeType === 3 &&
         item.nodeValue?.trim() &&
-        components.toEnrich(item.nodeValue, "zh-Hans")
+        components.toEnrich(item.nodeValue, getInputLang())
       ) {
         console.debug("Trying to transcrobe", item.nodeValue);
         platformHelper.sendMessage(
@@ -84,7 +85,7 @@ function enrichDocument() {
   textNodes(document.body).forEach((textNode) => {
     if (textNode.nodeValue && textNode.parentElement) {
       // FIXME: get this properly from the user!!!???
-      if (!components.toEnrich(textNode.nodeValue, "zh-Hans")) {
+      if (!components.toEnrich(textNode.nodeValue, getInputLang())) {
         console.log("Not enriching: " + textNode.nodeValue);
         return;
       }

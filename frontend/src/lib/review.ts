@@ -9,8 +9,6 @@ import dayjs from "dayjs";
 import { GRADE, EFACTOR_DEFAULT } from "../database/Schema";
 import { CardType, GradesType } from "./types";
 
-export { CARD_ID_SEPARATOR } from "../database/Schema";
-
 const GRADES: GradesType[] = [
   {
     id: GRADE.UNKNOWN.toString(),

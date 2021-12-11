@@ -25,15 +25,22 @@ const INITIALISATION_CACHE_NAME = `${CACHE_NAME}.initialisation`;
 const LIVE_INTERVAL = 60;
 const BATCH_SIZE = 10000;
 
-function wordId(card: CardType | string): string {
+function getWordId(card: CardType | string): string {
   if (typeof card === "string") {
     return card.split(CARD_ID_SEPARATOR)[0];
   } else {
     return card.id.split(CARD_ID_SEPARATOR)[0];
   }
 }
-function cardType(card: CardType): string {
+
+// FIXME: make a proper type not string
+function getCardType(card: CardType): string {
   return card.id.split(CARD_ID_SEPARATOR)[1];
+}
+
+// FIXME: make revisionType a proper type not string
+function getCardId(wordId: string | number, cardType: string | number): string {
+  return `${wordId}${CARD_ID_SEPARATOR}${cardType}`;
 }
 
 const pullDefsQueryBuilder = (doc: { id: any; updatedAt: any }) => {
@@ -363,10 +370,10 @@ type CardDocumentMethodsType = {
 
 const CardDocumentMethods: CardDocumentMethodsType = {
   wordId: function (): string {
-    return wordId(this as any);
-  }, // FIXME: why any here?
+    return getWordId(this as unknown as CardType);
+  },
   cardType: function (): string {
-    return cardType(this as any);
+    return getCardType(this as unknown as CardType);
   },
 };
 
@@ -803,8 +810,9 @@ export {
   INITIALISATION_CACHE_NAME,
   LIVE_INTERVAL,
   BATCH_SIZE,
-  cardType,
-  wordId,
+  getCardType,
+  getWordId,
+  getCardId,
 };
 export type {
   DBCollectionKeys,

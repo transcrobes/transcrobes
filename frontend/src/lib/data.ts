@@ -32,10 +32,10 @@ import {
 
 import {
   CardDocument,
-  CARD_ID_SEPARATOR,
   CARD_TYPES,
   CharacterDocument,
   DefinitionDocument,
+  getCardId,
   TranscrobesCollectionsKeys,
   TranscrobesDatabase,
   TranscrobesDocumentTypes,
@@ -605,7 +605,7 @@ async function addOrUpdateCardsForWord(
 ): Promise<CardDocument[]> {
   const cards = [];
   for (const cardType of $enum(CARD_TYPES).getValues()) {
-    const cardId = `${wordId}${CARD_ID_SEPARATOR}${cardType}`;
+    const cardId = getCardId(wordId, cardType);
     const existing = await db.cards.findOne(cardId).exec();
     cards.push(await practiceCard(db, existing || { id: cardId }, grade, 0)); // Promise.all?
   }
@@ -652,6 +652,10 @@ async function practiceCard(
   return cardObject;
 }
 
+async function updateCard(db: TranscrobesDatabase, card: CardType): Promise<void> {
+  await db.cards.upsert(card);
+}
+
 async function practiceCardsForWord(
   db: TranscrobesDatabase,
   practiceDetails: PracticeDetailsType,
@@ -662,12 +666,12 @@ async function practiceCardsForWord(
   const existing = await db.cards.findByIds(
     $enum(CARD_TYPES)
       .getValues()
-      .map((cardType) => `${wordInfo.id}${CARD_ID_SEPARATOR}${cardType}`),
+      .map((cardType) => getCardId(wordInfo.id, cardType)),
   );
 
   for (const cardType of $enum(CARD_TYPES).getValues()) {
-    const cardId = `${wordInfo.id}${CARD_ID_SEPARATOR}${cardType}`;
-    const card = existing.has(cardId) ? existing.get(cardId) : { id: cardId };
+    const cardId = getCardId(wordInfo.id, cardType);
+    const card = existing.get(cardId) || { id: cardId };
     await practiceCard(db, card, grade, 0); // here failureSeconds doesn't really have meaning
   }
 }
@@ -827,4 +831,5 @@ export {
   practiceCardsForWord,
   getVocabReviews,
   getSRSReviews,
+  updateCard,
 };

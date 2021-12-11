@@ -1,25 +1,53 @@
 import { Fragment, ReactElement } from "react";
 import { InfoBox, ThinHR } from "./Common";
 import PosItem from "./PosItem";
-import { DefinitionType } from "../lib/types";
-import { Typography } from "@material-ui/core";
+import { DefinitionType, PosTranslationsType, ProviderTranslationType } from "../lib/types";
+import { makeStyles, Typography } from "@material-ui/core";
+import { filterFakeL1Definitions } from "../lib/lib";
 
-export default function DefinitionTranslations({
-  definition,
-}: {
+const useStyles = makeStyles({
+  translations: { maxWidth: "500px" },
+});
+
+interface Props {
   definition: DefinitionType;
-}): ReactElement {
+  cleanMeanings?: boolean;
+}
+
+export default function DefinitionTranslations({ definition, cleanMeanings }: Props): ReactElement {
+  const styles = useStyles();
+
+  const phones = definition.sound;
+  let providerTranslations: ProviderTranslationType[] = definition.providerTranslations;
+  if (cleanMeanings) {
+    providerTranslations = [];
+    for (const providerTranslation of definition.providerTranslations) {
+      const posTranslations: PosTranslationsType[] = [];
+      for (const posTrans of providerTranslation.posTranslations) {
+        // Remove "meanings" that are just pinyin without tone markings as well as meanings that
+        // have the initial word in them
+        const values = filterFakeL1Definitions(
+          posTrans.values.filter((v) => !v.match(definition.graph)),
+          phones,
+        );
+        if (values.length > 0) posTranslations.push({ posTag: posTrans.posTag, values });
+      }
+      if (posTranslations.length > 0)
+        providerTranslations.push({ provider: providerTranslation.provider, posTranslations });
+    }
+    if (providerTranslations.length === 0) definition.providerTranslations;
+  }
   return (
     <>
-      {definition.providerTranslations.length &&
-        definition.providerTranslations.map((providerEntry) => {
+      {providerTranslations.length &&
+        providerTranslations.map((providerEntry, index) => {
           return (
             providerEntry.posTranslations.length > 0 && (
               <Fragment key={providerEntry.provider}>
-                <ThinHR />
+                {index > 0 && <ThinHR />}
                 <InfoBox>
                   <Typography>{providerEntry.provider}</Typography>
-                  <div>
+                  <div className={styles.translations}>
                     {providerEntry.posTranslations.map((posItem) => {
                       return <PosItem key={posItem.posTag} item={posItem} />;
                     })}

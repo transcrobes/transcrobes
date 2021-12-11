@@ -7,6 +7,9 @@ import {
   WordModelStatsDocument,
 } from "../database/Schema";
 
+// eslint-disable-next-line @typescript-eslint/no-empty-function
+export function noop(): void {}
+
 export type KnownLanguage = "en" | "zh-Hans";
 export type InputLanguage = "zh-Hans";
 
@@ -303,12 +306,17 @@ export type ProviderTranslationType = {
   posTranslations: PosTranslationsType[];
 };
 
+export type SynonymType = {
+  posTag: string;
+  values: string[];
+};
+
 export type DefinitionType = {
   id: string;
   graph: string;
   updatedAt: number;
   sound: string[];
-  synonyms: { posTag: string; values: string[] }[];
+  synonyms: SynonymType[];
   providerTranslations: ProviderTranslationType[];
   //{"pinyin": "de/dí/dì", "wcpm": "50155.13", "wcdp": "100", "pos": ".u.n.", "pos_freq": ".1682369.161."}
   frequency: { wcpm: string; wcdp: string; pos: string; pos_freq: string };

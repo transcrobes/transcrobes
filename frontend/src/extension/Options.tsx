@@ -17,8 +17,6 @@ import {
   FormLabel,
   InputLabel,
   makeStyles,
-  MenuItem,
-  Select,
   Switch,
   TextField,
   Typography,

@@ -3,7 +3,7 @@ import _ from "lodash";
 import styled from "styled-components";
 import { $enum } from "ts-enum-util";
 
-import { CARD_ID_SEPARATOR, CARD_TYPES } from "../database/Schema";
+import { CARD_TYPES, getCardId } from "../database/Schema";
 import { practice, GRADES } from "../lib/review";
 import { ListrobesConfigLauncher } from "./listrobes-config-launcher";
 import { VocabList } from "./vocab-list";
@@ -159,7 +159,7 @@ export function Listrobes({ proxy }: Props): ReactElement {
       const cards = $enum(CARD_TYPES)
         .getValues()
         .map((i) => {
-          return practice({ ...EMPTY_CARD, id: `${word.id}${CARD_ID_SEPARATOR}${i}` }, grade, 0);
+          return practice({ ...EMPTY_CARD, id: getCardId(word.id, i) }, grade, 0);
         });
       newCards.push(...cards);
     }
