@@ -4,17 +4,23 @@ import { Button } from "@material-ui/core";
 
 import SearchLoading from "../components/SearchLoading";
 import { CARD_ID_SEPARATOR, CARD_TYPES, getWordId } from "../database/Schema";
-import { say } from "../lib/funclib";
+import { say, wordIdsFromModels } from "../lib/funclib";
 import PracticerInput from "../components/PracticerInput";
 import DefinitionGraph from "../components/DefinitionGraph";
 import {
   CardType,
   CharacterType,
   DefinitionType,
+  PosSentences,
   RepetrobesActivityConfigType,
 } from "../lib/types";
 import Loader from "../img/loader.gif";
 import Meaning from "../components/Meaning";
+import { setGlossing, setLangPair, setSegmentation, USER_STATS_MODE } from "../lib/lib";
+import { getUserCardWords, setPlatformHelper } from "../lib/components";
+import RecentSentencesElement from "../components/RecentSentencesElement";
+
+const DATA_SOURCE = "VocabRevisor.tsx";
 
 const CentredFlex = styled.div`
   display: flex;
@@ -74,7 +80,12 @@ interface SoundQuestionProps {
   showAnswer: boolean;
 }
 
-function SoundQuestion({ card, definition, characters, showAnswer }: SoundQuestionProps) {
+function SoundQuestion({
+  card,
+  definition,
+  characters,
+  showAnswer,
+}: SoundQuestionProps): ReactElement {
   return (
     <GraphSoundQuestionStyle>
       <CentredFlex>{card && card.front ? card.front : definition.sound}</CentredFlex>
@@ -106,7 +117,7 @@ function MeaningQuestion({
   characters,
   showAnswer,
   onCardFrontUpdate,
-}: MeaningQuestionProps) {
+}: MeaningQuestionProps): ReactElement {
   return (
     <div>
       <StyledQuestion>
@@ -128,11 +139,20 @@ function MeaningQuestion({
 interface SoundGraphAnswerProps {
   card: CardType;
   definition: DefinitionType;
+  recentSentences: PosSentences | null;
   showSynonyms: boolean;
+  showRecents: boolean;
   onCardFrontUpdate: (card: CardType) => void;
 }
 
-function GraphAnswer({ card, definition, showSynonyms, onCardFrontUpdate }: SoundGraphAnswerProps) {
+function GraphAnswer({
+  card,
+  definition,
+  recentSentences,
+  showSynonyms,
+  showRecents,
+  onCardFrontUpdate,
+}: SoundGraphAnswerProps): ReactElement {
   return (
     <div>
       {card && card.back ? (
@@ -153,26 +173,37 @@ function GraphAnswer({ card, definition, showSynonyms, onCardFrontUpdate }: Soun
               onCardFrontUpdate={onCardFrontUpdate}
             />
           </MeaningWrapper>
+          {showRecents && <RecentSentencesElement recentPosSentences={recentSentences} />}
         </>
       )}
     </div>
   );
 }
 
-function SoundAnswer({ card, definition, showSynonyms, onCardFrontUpdate }: SoundGraphAnswerProps) {
+function SoundAnswer({
+  card,
+  definition,
+  recentSentences,
+  showSynonyms,
+  showRecents,
+  onCardFrontUpdate,
+}: SoundGraphAnswerProps): ReactElement {
   return (
     <div>
       {card && card.back ? (
         card.back
       ) : (
-        <MeaningWrapper>
-          <Meaning
-            showSynonyms={showSynonyms}
-            definition={definition}
-            card={card}
-            onCardFrontUpdate={onCardFrontUpdate}
-          />
-        </MeaningWrapper>
+        <>
+          <MeaningWrapper>
+            <Meaning
+              showSynonyms={showSynonyms}
+              definition={definition}
+              card={card}
+              onCardFrontUpdate={onCardFrontUpdate}
+            />
+          </MeaningWrapper>
+          {showRecents && <RecentSentencesElement recentPosSentences={recentSentences} />}
+        </>
       )}
     </div>
   );
@@ -181,20 +212,32 @@ function SoundAnswer({ card, definition, showSynonyms, onCardFrontUpdate }: Soun
 interface MeaningAnswerProps {
   card: CardType;
   definition: DefinitionType;
+  recentSentences: PosSentences | null;
+  showRecents: boolean;
 }
 
-function MeaningAnswer({ card, definition }: MeaningAnswerProps) {
+function MeaningAnswer({
+  card,
+  definition,
+  recentSentences,
+  showRecents,
+}: MeaningAnswerProps): ReactElement {
   return (
     <div>
       {card && card.back ? (
         card.back
       ) : (
-        <CentredFlex>
-          <StyledAnswer> {definition.sound} </StyledAnswer>
-          <Button onClick={() => say(definition.graph)} variant="contained" color="primary">
-            Say it!
-          </Button>
-        </CentredFlex>
+        <>
+          <CentredFlex>
+            <StyledAnswer> {definition.sound} </StyledAnswer>
+            <Button onClick={() => say(definition.graph)} variant="contained" color="primary">
+              Say it!
+            </Button>
+          </CentredFlex>
+          <CentredFlex>
+            {showRecents && <RecentSentencesElement recentPosSentences={recentSentences} />}
+          </CentredFlex>
+        </>
       )}
     </div>
   );
@@ -203,9 +246,11 @@ function MeaningAnswer({ card, definition }: MeaningAnswerProps) {
 function getAnswer(
   card: CardType,
   definition: DefinitionType,
+  recentSentences: PosSentences | null,
   showSynonyms: boolean,
+  showRecents: boolean,
   onCardFrontUpdate: (card: CardType) => void,
-) {
+): ReactElement {
   const cardType = card.id.split(CARD_ID_SEPARATOR)[1];
   switch (cardType) {
     case CARD_TYPES.GRAPH.toString():
@@ -213,7 +258,9 @@ function getAnswer(
         <GraphAnswer
           card={card}
           definition={definition}
+          recentSentences={recentSentences}
           showSynonyms={showSynonyms}
+          showRecents={showRecents}
           onCardFrontUpdate={onCardFrontUpdate}
         />
       );
@@ -222,12 +269,23 @@ function getAnswer(
         <SoundAnswer
           card={card}
           definition={definition}
+          recentSentences={recentSentences}
           showSynonyms={showSynonyms}
+          showRecents={showRecents}
           onCardFrontUpdate={onCardFrontUpdate}
         />
       );
     case CARD_TYPES.MEANING.toString():
-      return <MeaningAnswer card={card} definition={definition} />;
+      return (
+        <MeaningAnswer
+          recentSentences={recentSentences}
+          showRecents={showRecents}
+          card={card}
+          definition={definition}
+        />
+      );
+    default:
+      return <></>;
   }
 }
 
@@ -274,6 +332,7 @@ interface Props {
   currentCard: CardType | null;
   definition: DefinitionType | null;
   characters: CharacterType[] | null;
+  recentPosSentences: PosSentences | null;
   loading: boolean;
   activityConfig: RepetrobesActivityConfigType;
   onCardFrontUpdate: (card: CardType) => void;
@@ -288,6 +347,7 @@ export function VocabRevisor({
   characters,
   loading,
   activityConfig,
+  recentPosSentences,
   onCardFrontUpdate,
   onPractice,
   onShowAnswer,
@@ -295,8 +355,52 @@ export function VocabRevisor({
   function handlePractice(wordId: string, grade: number) {
     onPractice(wordId, grade);
   }
+  const { showSynonyms, showL2LengthHint, showRecents } = activityConfig;
 
-  const { showSynonyms, showL2LengthHint } = activityConfig;
+  setGlossing(USER_STATS_MODE.NO_GLOSS);
+  setSegmentation(true);
+  setLangPair(window.componentsConfig.langPair);
+  setPlatformHelper(window.componentsConfig.proxy);
+
+  if (recentPosSentences && definition) {
+    window.transcrobesModel = window.transcrobesModel || {};
+    Object.entries(recentPosSentences).forEach(([pos, s]) => {
+      const lemma = definition.graph;
+      if (s) {
+        s.forEach((sent) => {
+          const now = Date.now() + Math.random();
+          sent.sentence.t.forEach((t) => {
+            if (t.l == lemma && t.pos === pos) {
+              t.style = { color: "green", "font-weight": "bold" };
+            }
+          });
+          window.transcrobesModel[now] = { id: now, s: [sent.sentence] };
+          sent.modelId = now;
+        });
+      }
+    });
+    const uniqueIds = wordIdsFromModels(window.transcrobesModel);
+
+    getUserCardWords().then(() => {
+      window.componentsConfig.proxy
+        .sendMessagePromise<DefinitionType[]>({
+          source: DATA_SOURCE,
+          type: "getByIds",
+          value: { collection: "definitions", ids: [...uniqueIds] },
+        })
+        .then((definitions) => {
+          window.cachedDefinitions = window.cachedDefinitions || new Map<string, DefinitionType>();
+          definitions.map((definition) => {
+            window.cachedDefinitions.set(definition.id, definition);
+          });
+          // setLoaded(true);
+        });
+      document.addEventListener("click", () => {
+        document.querySelectorAll("token-details").forEach((el) => el.remove());
+      });
+    });
+  }
+
   return (
     <>
       {loading && <SearchLoading src={Loader} />}
@@ -324,7 +428,14 @@ export function VocabRevisor({
           {showAnswer && (
             <>
               <AnswerWrapper>
-                {getAnswer(currentCard, definition, showSynonyms, onCardFrontUpdate)}
+                {getAnswer(
+                  currentCard,
+                  definition,
+                  recentPosSentences,
+                  showSynonyms,
+                  showRecents,
+                  onCardFrontUpdate,
+                )}
               </AnswerWrapper>
               <PracticerInput wordId={getWordId(currentCard)} onPractice={handlePractice} />
             </>

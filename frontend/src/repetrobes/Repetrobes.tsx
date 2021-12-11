@@ -15,6 +15,8 @@ import {
   CharacterType,
   DefinitionType,
   EMPTY_CARD,
+  PosSentences,
+  RecentSentencesStoredType,
   RepetrobesActivityConfigType,
   SafeDailyReviewsType,
   SelectableListElementType,
@@ -25,6 +27,7 @@ import { ServiceWorkerProxy } from "../lib/proxies";
 import styled from "styled-components";
 import { getSettingsValue, setSettingsValue } from "../lib/appSettings";
 import { configIsUsable } from "../lib/funclib";
+import { recentSentencesFromLZ } from "../lib/data";
 
 const DATA_SOURCE = "Repetrobes.tsx";
 
@@ -33,6 +36,7 @@ const DEFAULT_ONLY_SELECTED_WORDLIST_REVISIONS = false;
 const DEFAULT_QUESTION_SHOW_SYNONYMS = false;
 const DEFAULT_QUESTION_SHOW_PROGRESS = false;
 const DEFAULT_QUESTION_SHOW_L2_LENGTH_HINT = false;
+const DEFAULT_ANSWER_SHOW_RECENTS = false;
 const DEFAULT_DAY_STARTS_HOUR = 0;
 const DEFAULT_BAD_REVIEW_WAIT_SECS = 600;
 const DEFAULT_MAX_NEW = 20;
@@ -118,6 +122,7 @@ type ReviewInfosType = {
   curNewWordIndex: number;
   todaysWordIds: Set<string>;
   existingWords: Map<string, DefinitionType>;
+  recentSentences: Map<string, RecentSentencesStoredType>;
   existingCards: Map<string, CardType>;
   allNonReviewedWordsMap: Map<string, DefinitionType>;
   potentialWords: DefinitionType[];
@@ -140,6 +145,7 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
     currentCard: null,
     todaysWordIds: new Set<string>(),
     existingWords: new Map<string, DefinitionType>(),
+    recentSentences: new Map<string, RecentSentencesStoredType>(),
     existingCards: new Map<string, CardType>(),
     allNonReviewedWordsMap: new Map<string, DefinitionType>(),
     potentialWords: [],
@@ -155,6 +161,7 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
     wordLists: [],
     showProgress: DEFAULT_QUESTION_SHOW_PROGRESS,
     showSynonyms: DEFAULT_QUESTION_SHOW_SYNONYMS,
+    showRecents: DEFAULT_ANSWER_SHOW_RECENTS,
     showL2LengthHint: DEFAULT_QUESTION_SHOW_L2_LENGTH_HINT,
     activeCardTypes: [],
     todayStarts: 0,
@@ -596,6 +603,18 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
       },
     );
   }
+  function posSentencesFromRecent(
+    definitionId: string | undefined,
+    theState: ReviewInfosType,
+  ): PosSentences | null {
+    if (definitionId) {
+      const rs = theState.recentSentences.get(definitionId);
+      if (rs && rs.lzContent) {
+        return recentSentencesFromLZ(definitionId, rs.lzContent)?.posSentences || null;
+      }
+    }
+    return null;
+  }
 
   const ac = stateActivityConfig;
   return (
@@ -621,6 +640,7 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
             currentCard={daState.currentCard}
             characters={daState.characters}
             definition={daState.definition}
+            recentPosSentences={posSentencesFromRecent(daState.definition?.id, daState)}
             loading={loading}
             onCardFrontUpdate={handleCardFrontUpdate}
             onPractice={handlePractice}

@@ -4,6 +4,7 @@ import {
   CardDocument,
   CharacterDocument,
   DefinitionDocument,
+  RecentSentencesDocument,
   WordModelStatsDocument,
 } from "../database/Schema";
 
@@ -386,6 +387,7 @@ export type RepetrobesActivityConfigType = {
   todayStarts: number;
   onlySelectedWordListRevisions: boolean;
   showProgress: boolean;
+  showRecents: boolean;
   showSynonyms: boolean;
   showL2LengthHint: boolean;
   activeCardTypes: SelectableListElementType[];
@@ -558,6 +560,7 @@ export type DailyReviewsType = {
   allNonReviewedWordsMap: Map<string, DefinitionDocument>; // Map of words in selected lists not already reviewed today
   existingCards: Map<string, CardDocument>; // Map of all cards reviewed at least once
   existingWords: Map<string, DefinitionDocument>; // Map of all words which have had at least one card reviewed at least once
+  recentSentences: Map<string, RecentSentencesDocument>; // Map of all recent sentences
   potentialWords: DefinitionDocument[]; // Array of words that can be "new" words today
   allPotentialCharacters: Map<string, CharacterDocument>; // Map of all individual characters that are in either possible new words or revisions for today
 };
@@ -567,6 +570,7 @@ export type SafeDailyReviewsType = {
   allNonReviewedWordsMap: Map<string, DefinitionType>; // Map of words in selected lists not already reviewed today
   existingCards: Map<string, CardType>; // Map of all cards reviewed at least once
   existingWords: Map<string, DefinitionType>; // Map of all words which have had at least one card reviewed at least once
+  recentSentences: Map<string, RecentSentencesStoredType>; // Map of all recent sentences
   potentialWords: DefinitionType[]; // Array of words that can be "new" words today
   allPotentialCharacters: Map<string, CharacterType>; // Map of all individual characters that are in either possible new words or revisions for today
 };

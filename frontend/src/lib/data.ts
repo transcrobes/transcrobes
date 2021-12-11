@@ -28,6 +28,7 @@ import {
   RecentSentencesType,
   PosSentences,
   InputLanguage,
+  RecentSentencesStoredType,
 } from "./types";
 
 import {
@@ -36,6 +37,7 @@ import {
   CharacterDocument,
   DefinitionDocument,
   getCardId,
+  RecentSentencesDocument,
   TranscrobesCollectionsKeys,
   TranscrobesDatabase,
   TranscrobesDocumentTypes,
@@ -731,6 +733,7 @@ async function getSRSReviews(
       allNonReviewedWordsMap: new Map<string, DefinitionDocument>(), // Map of words in selected lists not already reviewed today
       existingCards: new Map<string, CardDocument>(), // Map of all cards reviewed at least once
       existingWords: new Map<string, DefinitionDocument>(), // Map of all words which have had at least one card reviewed at least once
+      recentSentences: new Map<string, RecentSentencesDocument>(), // Map of all words which have had at least one card reviewed at least once
       potentialWords: [] as DefinitionDocument[], // Array of words that can be "new" words today
       allPotentialCharacters: new Map<string, CharacterDocument>(), // Map of all individual characters that are in either possible new words or revisions for today
     };
@@ -789,11 +792,16 @@ async function getSRSReviews(
     ),
   ]);
 
+  const recentSentences: Map<string, RecentSentencesDocument> = await db.recentsentences.findByIds(
+    [...allNonReviewedWordsMap.keys()].concat([...existingWords.keys()]),
+  );
+
   return {
     todaysWordIds, // Set of words reviewed today already
     allNonReviewedWordsMap, // Map of words in selected lists not already reviewed today
     existingCards, // Map of all cards reviewed at least once
     existingWords, // Map of all words which have had at least one card reviewed at least once
+    recentSentences, // Map of all recent sentences that could possibly be looked at today
     potentialWords, // Array of words that can be "new" words today
     allPotentialCharacters, // Map of all individual characters that are in either possible new words or revisions for today
   };
@@ -832,4 +840,5 @@ export {
   getVocabReviews,
   getSRSReviews,
   updateCard,
+  recentSentencesFromLZ,
 };

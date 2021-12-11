@@ -829,6 +829,8 @@ export type {
   ContentConfigsDocument,
   // DefinitionCollection,
   DefinitionDocument,
+  // RecentSentencesCollection
+  RecentSentencesDocument,
   // CharacterCollection,
   CharacterDocument,
   // WordlistCollection,

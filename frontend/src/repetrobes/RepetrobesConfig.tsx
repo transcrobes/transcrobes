@@ -149,13 +149,19 @@ export default function RepetrobesConfig({ activityConfig, onConfigChange }: Pro
         onCheckboxChange={handleSimpleChange}
       />
       <TCCheckbox
+        name="showRecents"
+        className={classes.checkbox}
+        label="Show recent sentences"
+        isSelected={activityConfig.showRecents}
+        onCheckboxChange={handleSimpleChange}
+      />
+      <TCCheckbox
         name="onlySelectedWordListRevisions"
         className={classes.checkbox}
         label="Filter Revisions by list"
         isSelected={activityConfig.onlySelectedWordListRevisions}
         onCheckboxChange={handleSimpleChange}
       />
-      {/* <div style={{ display: "flex", justifyContent: "space-between" }}> */}
       <div className={classes.textbox}>
         <label htmlFor="dayStartsHour">Day start hour (0 to 23)</label>
         <input

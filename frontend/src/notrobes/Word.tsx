@@ -33,6 +33,8 @@ import { ThinHR } from "../components/Common";
 import PosItem from "../components/PosItem";
 import DefinitionTranslations from "../components/DefinitionTranslations";
 import Meaning from "../components/Meaning";
+import Header from "../components/Header";
+import RecentSentencesElement from "../components/RecentSentencesElement";
 
 const DATA_SOURCE = "Word.tsx";
 
@@ -41,14 +43,6 @@ defineElements();
 const InfoBox = styled.div`
   margin: 0.7em;
 `;
-
-function Header({ text }: { text: string }): ReactElement {
-  return (
-    <div>
-      <h4 style={{ marginBlockStart: ".5em", marginBlockEnd: ".5em" }}>{text}</h4>
-    </div>
-  );
-}
 
 interface WordInfoProps {
   definition: DefinitionType;
@@ -202,48 +196,6 @@ function Synonyms({ definition }: { definition: DefinitionType }): ReactElement 
             })}
           </div>
         )) || <InfoBox>No synonyms found</InfoBox>}
-      </div>
-    </>
-  );
-}
-
-function RecentSentenceExample({ modelId }: { modelId: BigInt | number }): ReactElement {
-  return (
-    <div>
-      - <enriched-text-fragment id={modelId}>loading...</enriched-text-fragment>
-    </div>
-  );
-}
-
-function RecentSentencesElement({
-  recentPosSentences,
-  loaded,
-}: {
-  recentPosSentences: PosSentences | null;
-  word: string;
-  loaded: boolean;
-}): ReactElement {
-  return (
-    <>
-      <ThinHR />
-      <Header text="Recently Seen Phrases" />
-      <div>
-        {recentPosSentences &&
-          Object.entries(recentPosSentences).length > 0 &&
-          Object.entries(recentPosSentences).map(([pos, entry]) => {
-            const typedPos = pos as TREEBANK_POS_TYPES;
-            const simpleName = ZH_TB_POS_LABELS[typedPos];
-            return (
-              <InfoBox key={pos}>
-                {simpleName}:{" "}
-                {entry &&
-                  entry.map((s, index) => {
-                    return <RecentSentenceExample key={index} modelId={s.modelId || 0} />;
-                  })}
-              </InfoBox>
-            );
-          })}
-        {!recentPosSentences && <div>No recent sentences found</div>}
       </div>
     </>
   );
@@ -419,11 +371,7 @@ function Word({
         <Practicer wordId={definition.id} onPractice={onPractice} />
         <ExistingCards cards={cards} />
         <WordLists lists={lists} />
-        <RecentSentencesElement
-          loaded={loaded}
-          word={definition.graph}
-          recentPosSentences={recentPosSentences}
-        />
+        <RecentSentencesElement loaded={loaded} recentPosSentences={recentPosSentences} />
         <WordMetadata definition={definition} />
         <ProviderTranslations definition={definition} />
         <Synonyms definition={definition} />

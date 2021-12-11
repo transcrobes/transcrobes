@@ -18,6 +18,7 @@ import {
   DayCardWords,
   DefinitionType,
   EventData,
+  RecentSentencesStoredType,
   WordDetailsType,
 } from "./lib/types";
 import { getAccess, getRefresh, getUsername } from "./lib/JWTAuthProvider";
@@ -335,6 +336,10 @@ export function manageEvent(sw: ServiceWorkerGlobalScope, event: ExtendableMessa
         for (const [k, v] of values.existingWords) {
           existingWords.set(k, clone(v.toJSON()));
         }
+        const recentSentences = new Map<string, RecentSentencesStoredType>();
+        for (const [k, v] of values.recentSentences) {
+          recentSentences.set(k, clone(v.toJSON()));
+        }
         const potentialWords: DefinitionType[] = [];
         for (const pw of values.potentialWords) {
           potentialWords.push(clone(pw.toJSON()));
@@ -348,6 +353,7 @@ export function manageEvent(sw: ServiceWorkerGlobalScope, event: ExtendableMessa
           allNonReviewedWordsMap,
           existingCards,
           existingWords,
+          recentSentences,
           potentialWords,
           allPotentialCharacters,
         };
