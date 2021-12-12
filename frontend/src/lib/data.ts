@@ -1,5 +1,6 @@
 import { MangoQuery } from "rxdb/dist/types/core";
 import { isRxDocument } from "rxdb/plugins/core";
+import { clone } from "rxdb";
 import dayjs from "dayjs";
 import { $enum } from "ts-enum-util";
 import { v4 as uuidv4 } from "uuid";
@@ -10,7 +11,6 @@ import { sortByWcpm, shortMeaning, simpOnly, toEnrich } from "./lib";
 import {
   CardType,
   ContentConfigType,
-  DailyReviewsType,
   DayCardWords,
   FirstSuccess,
   ImportFirstSuccessStats,
@@ -29,6 +29,9 @@ import {
   PosSentences,
   InputLanguage,
   RecentSentencesStoredType,
+  DailyReviewables,
+  CharacterType,
+  DefinitionType,
 } from "./types";
 
 import {
@@ -37,6 +40,7 @@ import {
   CharacterDocument,
   DefinitionDocument,
   getCardId,
+  getWordId,
   RecentSentencesDocument,
   TranscrobesCollectionsKeys,
   TranscrobesDatabase,
@@ -44,7 +48,7 @@ import {
 } from "../database/Schema";
 import { practice } from "./review";
 
-import { configIsUsable, pythonCounter, UUID } from "./funclib";
+import { cleanSentence, configIsUsable, pythonCounter, UUID } from "./funclib";
 import { fetchPlus } from "./lib";
 import { getFileStorage, IDBFileStorage } from "./IDBFileStorage";
 import { getUsername } from "./JWTAuthProvider";
@@ -494,7 +498,7 @@ async function updateRecentSentences(
   db: TranscrobesDatabase,
   sentences: RecentSentencesType[],
 ): Promise<void> {
-  for (const s of sentences) {
+  for (const s of cleanSentences(sentences)) {
     // Don't wait. Is this Ok?
     db.recentsentences.atomicUpsert({
       id: s.id.toString(),
@@ -503,12 +507,25 @@ async function updateRecentSentences(
   }
 }
 
+function cleanSentences(sentences: RecentSentencesType[]): RecentSentencesType[] {
+  for (const recentSentence of sentences) {
+    for (const posSentences of Object.values(recentSentence.posSentences)) {
+      if (posSentences) {
+        for (const posSentence of posSentences) {
+          posSentence.sentence = cleanSentence(posSentence.sentence);
+        }
+      }
+    }
+  }
+  return sentences;
+}
+
 async function addRecentSentences(
   db: TranscrobesDatabase,
   sentences: RecentSentencesType[],
 ): Promise<void> {
   await db.recentsentences.bulkInsert(
-    sentences.map((s) => {
+    cleanSentences(sentences).map((s) => {
       return {
         id: s.id.toString(),
         lzContent: LZString.compressToUTF16(JSON.stringify(s.posSentences)),
@@ -721,89 +738,148 @@ async function getVocabReviews(
     });
 }
 
+function getEmptyDailyReviewables(): DailyReviewables {
+  return {
+    allReviewableDefinitions: new Map<string, DefinitionType>(),
+    potentialCardsMap: new Map<string, Set<string>>(),
+    existingCards: new Map<string, CardType>(),
+    allPotentialCharacters: new Map<string, CharacterType>(),
+    recentSentences: new Map<string, RecentSentencesStoredType>(),
+  };
+}
+
+function orderedPotentialCardsMap(
+  inPotentialCardsMap: Map<string, Set<string>>,
+  potentialWordsMap: Map<string, DefinitionDocument>,
+): Map<string, Set<string>> {
+  const potentialWords: DefinitionDocument[] = [];
+  for (const wordId of inPotentialCardsMap.keys()) {
+    const def = potentialWordsMap.get(wordId);
+    if (def) potentialWords.push(def);
+  }
+  potentialWords.sort(sortByWcpm);
+  const potentialCardsMap = new Map<string, Set<string>>();
+  for (const def of potentialWords) {
+    const goodDef = inPotentialCardsMap.get(def.id);
+    if (goodDef) potentialCardsMap.set(def.id, goodDef);
+  }
+  return potentialCardsMap;
+}
+
 async function getSRSReviews(
   db: TranscrobesDatabase,
   activityConfig: RepetrobesActivityConfigType,
-): Promise<DailyReviewsType> {
-  const selectedLists = activityConfig.wordLists.filter((x) => x.selected).map((x) => x.value);
-  if (selectedLists.length === 0 || !configIsUsable(activityConfig)) {
+): Promise<DailyReviewables> {
+  if (!configIsUsable(activityConfig)) {
     console.debug("No wordLists or config not usable, not trying to find reviews");
-    return {
-      todaysWordIds: new Set<string>(), // Set of words reviewed today already: string ids
-      allNonReviewedWordsMap: new Map<string, DefinitionDocument>(), // Map of words in selected lists not already reviewed today
-      existingCards: new Map<string, CardDocument>(), // Map of all cards reviewed at least once
-      existingWords: new Map<string, DefinitionDocument>(), // Map of all words which have had at least one card reviewed at least once
-      recentSentences: new Map<string, RecentSentencesDocument>(), // Map of all words which have had at least one card reviewed at least once
-      potentialWords: [] as DefinitionDocument[], // Array of words that can be "new" words today
-      allPotentialCharacters: new Map<string, CharacterDocument>(), // Map of all individual characters that are in either possible new words or revisions for today
-    };
+    return getEmptyDailyReviewables();
   }
-  // words already seen/reviewed "today"
-  const todaysWordIds = new Set<string>(
-    (typeof activityConfig.dayStartsHour === "number" &&
-      (
-        await db.cards
-          .find()
-          .where("lastRevisionDate")
-          .gt(dayjs().startOf("hour").hour(activityConfig.dayStartsHour).unix())
-          .where("firstRevisionDate")
-          .gt(0)
-          .exec()
-      ).flatMap((x) => x.wordId())) ||
-      "",
-  );
-
+  const selectedLists = activityConfig.wordLists.filter((x) => x.selected).map((x) => x.value);
+  // wordIds that *haven't* already been reviewed today and are in the right lists
+  // so this is BOTH the possible new words *and* reviews
+  const selectedListsWordIds = await db.wordlists.findByIds(selectedLists);
+  // the ids of the potential words, ordered by list order (first by list, then by ordering within
+  // the list)
   const potentialWordIds = new Set<string>(
-    [...(await db.wordlists.findByIds(selectedLists)).values()]
-      .flatMap((x) => x.wordIds)
-      .filter((x) => !todaysWordIds.has(x)),
+    [...selectedLists.map((sl) => selectedListsWordIds.get(sl))].flatMap((x) => x!.wordIds),
   );
-  const allNonReviewedWordsMap: Map<string, DefinitionDocument> = await db.definitions.findByIds([
-    ...potentialWordIds,
-  ]);
   const allKnownWordIds = new Set<string>(
     [...(await db.cards.find().where("known").eq(true).exec())].map((x) => x.wordId()),
   );
-  //
   const existingCards = new Map<string, CardDocument>(
-    (await db.cards.find().where("firstRevisionDate").gt(0).exec())
-      // .filter((c) => potentialWordIds.has(c.wordId()))
-      .map((c) => [c.id, c]),
+    (await db.cards.find().where("firstRevisionDate").gt(0).exec()).map((c) => [c.id, c]),
   );
-  console.debug(`existingCards at start`, existingCards);
-  const existingWords: Map<string, DefinitionDocument> = await db.definitions.findByIds(
-    [...existingCards.values()].map((x) => x.wordId()),
-  );
-
-  // TODO: this ordering is a bit arbitrary. If there is more than one list that has duplicates then
-  // I don't know which version gets ignored, though it's likely the second. Is this what is wanted?
-  const potentialWords: DefinitionDocument[] = [...allNonReviewedWordsMap.values()].filter(
-    (x) => !existingWords.has(x.id) && !allKnownWordIds.has(x.id) && simpOnly(x.graph),
-  );
-  if (activityConfig.forceWcpm) {
-    potentialWords.sort(sortByWcpm);
+  // Clean the potential wordIds of those we that are already known
+  for (const potentialWordId of potentialWordIds) {
+    if (allKnownWordIds.has(potentialWordId)) potentialWordIds.delete(potentialWordId);
   }
-  const allPotentialCharacters: Map<string, CharacterDocument> = await db.characters.findByIds([
-    ...new Set(
-      potentialWords
-        .concat([...existingWords.values()])
-        .map((x) => x.graph)
-        .join(""),
-    ),
-  ]);
+  const selectedTypes = activityConfig.activeCardTypes
+    .filter((ac) => ac.selected)
+    .map((act) => `${act.value}`);
 
+  // Map of all the possible wordIds, with a set of all possible types
+  let potentialCardsMap = new Map<string, Set<string>>();
+  for (const wordId of potentialWordIds) {
+    for (const cardType of selectedTypes) {
+      const cardId = getCardId(wordId, cardType);
+      if (!existingCards.has(cardId)) {
+        if (!potentialCardsMap.has(wordId)) {
+          potentialCardsMap.set(wordId, new Set<string>());
+        }
+        potentialCardsMap.get(wordId)!.add(cardType);
+      }
+    }
+  }
+  // Now we have all the possible new cards and all the existing cards
+
+  // Get all the wordIds for the existing cards
+  const allWordIdsForExistingCards = new Set<string>(
+    [...existingCards.keys()].map((ec) => getWordId(ec)),
+  );
+  // get all of the recentSentences
   const recentSentences: Map<string, RecentSentencesDocument> = await db.recentsentences.findByIds(
-    [...allNonReviewedWordsMap.keys()].concat([...existingWords.keys()]),
+    [...allWordIdsForExistingCards].concat([...potentialCardsMap.keys()]),
+  );
+  // Remove all of the existing cards of type PHRASE that no longer have any recentSentences
+  for (const ec of existingCards.values()) {
+    if (ec.cardType() === CARD_TYPES.PHRASE.toString() && !recentSentences.has(ec.wordId())) {
+      existingCards.delete(ec.id);
+      allWordIdsForExistingCards.delete(ec.wordId());
+    }
+  }
+  // Remove all of the potential cards of type PHRASE that don't have any recentSentences
+  if (selectedTypes.find((st) => st === CARD_TYPES.PHRASE.toString())) {
+    for (const [wordId, cardTypes] of potentialCardsMap.entries()) {
+      if (cardTypes.has(CARD_TYPES.PHRASE.toString()) && !recentSentences.has(wordId)) {
+        cardTypes.delete(CARD_TYPES.PHRASE.toString());
+      }
+      if (cardTypes.size === 0) {
+        potentialCardsMap.delete(wordId);
+      }
+    }
+  }
+  // get all the definitions for both the existing and potential news
+  const allReviewableDefinitions: Map<string, DefinitionDocument> = await db.definitions.findByIds(
+    [...potentialCardsMap.keys()].concat([...allWordIdsForExistingCards]),
   );
 
+  // now clean the potential news and definitions that might have invalid graphs (for reviewing anyway!)
+  const cleanReviewableDefinitions = new Map<string, DefinitionType>();
+  for (const def of allReviewableDefinitions.values()) {
+    if (
+      (potentialCardsMap.has(def.id) && simpOnly(def.graph)) ||
+      allWordIdsForExistingCards.has(def.id)
+    ) {
+      cleanReviewableDefinitions.set(def.id, clone(def.toJSON()));
+    } else if (potentialCardsMap.has(def.id)) {
+      // it doesn't only have simplified chars, so we can't/won't review
+      potentialCardsMap.delete(def.id);
+      allReviewableDefinitions.delete(def.id);
+    }
+  }
+
+  // By default (see above) order according to the order of the lists or by wcpm from the Ghent lads
+  // we have the final set of potential cards, now we just need to set the final ordering
+  if (activityConfig.forceWcpm) {
+    potentialCardsMap = orderedPotentialCardsMap(potentialCardsMap, allReviewableDefinitions);
+  }
+
+  // Get all the chars that we have for all the definitions graphs
+  const allPotentialCharacters: Map<string, CharacterDocument> = await db.characters.findByIds([
+    ...new Set<string>([...allReviewableDefinitions.values()].map((x) => x.graph).join("")),
+  ]);
   return {
-    todaysWordIds, // Set of words reviewed today already
-    allNonReviewedWordsMap, // Map of words in selected lists not already reviewed today
-    existingCards, // Map of all cards reviewed at least once
-    existingWords, // Map of all words which have had at least one card reviewed at least once
-    recentSentences, // Map of all recent sentences that could possibly be looked at today
-    potentialWords, // Array of words that can be "new" words today
-    allPotentialCharacters, // Map of all individual characters that are in either possible new words or revisions for today
+    allReviewableDefinitions: cleanReviewableDefinitions,
+    potentialCardsMap,
+    existingCards: new Map<string, CardType>(
+      [...existingCards.values()].map((v) => [v.id, clone(v.toJSON())]),
+    ),
+    allPotentialCharacters: new Map<string, CharacterType>(
+      [...allPotentialCharacters.values()].map((v) => [v.id, clone(v.toJSON())]),
+    ),
+    recentSentences: new Map<string, RecentSentencesStoredType>(
+      [...recentSentences.values()].map((v) => [v.id, clone(v.toJSON())]),
+    ),
   };
 }
 

@@ -35,6 +35,12 @@ export const MeaningWrapper = styled.div`
   padding: 1em;
 `;
 
+export const LauncherStyle = styled.div`
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5em;
+`;
+
 export interface CommonAnswerProps {
   card: CardType;
   definition: DefinitionType;
@@ -42,4 +48,14 @@ export interface CommonAnswerProps {
   showSynonyms: boolean;
   showRecents: boolean;
   onCardFrontUpdate: (card: CardType) => void;
+}
+
+const RANDOM_NEXT_WINDOW = 10;
+
+export function getRandomNext(
+  candidates: CardType[],
+  nextWindowSize: number = RANDOM_NEXT_WINDOW,
+): CardType {
+  const shortList = candidates.slice(0, nextWindowSize);
+  return shortList[Math.floor(Math.random() * Math.floor(shortList.length))];
 }

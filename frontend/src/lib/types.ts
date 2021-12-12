@@ -4,7 +4,6 @@ import {
   CardDocument,
   CharacterDocument,
   DefinitionDocument,
-  RecentSentencesDocument,
   WordModelStatsDocument,
 } from "../database/Schema";
 
@@ -564,22 +563,42 @@ export type VocabReview = {
   lookedUp: boolean;
 };
 
-export type DailyReviewsType = {
-  todaysWordIds: Set<string>; // Set of words reviewed today already
-  allNonReviewedWordsMap: Map<string, DefinitionDocument>; // Map of words in selected lists not already reviewed today
-  existingCards: Map<string, CardDocument>; // Map of all cards reviewed at least once
-  existingWords: Map<string, DefinitionDocument>; // Map of all words which have had at least one card reviewed at least once
-  recentSentences: Map<string, RecentSentencesDocument>; // Map of all recent sentences
-  potentialWords: DefinitionDocument[]; // Array of words that can be "new" words today
-  allPotentialCharacters: Map<string, CharacterDocument>; // Map of all individual characters that are in either possible new words or revisions for today
+export type DailyReviewables = {
+  allReviewableDefinitions: Map<string, DefinitionType>;
+  potentialCardsMap: Map<string, Set<string>>;
+  existingCards: Map<string, CardType>;
+  allPotentialCharacters: Map<string, CharacterType>;
+  recentSentences: Map<string, RecentSentencesStoredType>;
 };
 
-export type SafeDailyReviewsType = {
-  todaysWordIds: Set<string>; // Set of words reviewed today already
-  allNonReviewedWordsMap: Map<string, DefinitionType>; // Map of words in selected lists not already reviewed today
-  existingCards: Map<string, CardType>; // Map of all cards reviewed at least once
-  existingWords: Map<string, DefinitionType>; // Map of all words which have had at least one card reviewed at least once
-  recentSentences: Map<string, RecentSentencesStoredType>; // Map of all recent sentences
-  potentialWords: DefinitionType[]; // Array of words that can be "new" words today
-  allPotentialCharacters: Map<string, CharacterType>; // Map of all individual characters that are in either possible new words or revisions for today
+export type ReviewablesInfoType = DailyReviewables & {
+  definition: DefinitionType | null;
+  currentCard: CardType | null;
+  characters: CharacterType[] | null;
+  newToday: number;
+  completedNewToday: number;
+  availableNewToday: number;
+  revisionsToday: number;
+  completedRevisionsToday: number;
+  possibleRevisionsToday: number;
+};
+
+export type ReviewInfosType = {
+  definition: DefinitionType | null;
+  currentCard: CardType | null;
+  characters: CharacterType[] | null;
+  newToday: number;
+  completedNewToday: number;
+  availableNewToday: number;
+  revisionsToday: number;
+  completedRevisionsToday: number;
+  possibleRevisionsToday: number;
+  curNewWordIndex: number;
+  todaysWordIds: Set<string>;
+  existingWords: Map<string, DefinitionType>;
+  recentSentences: Map<string, RecentSentencesStoredType>;
+  existingCards: Map<string, CardType>;
+  allNonReviewedWordsMap: Map<string, DefinitionType>;
+  potentialWords: DefinitionType[];
+  allPotentialCharacters: Map<string, CharacterType>;
 };

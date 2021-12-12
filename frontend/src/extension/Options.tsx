@@ -102,6 +102,7 @@ export default function Options(): JSX.Element {
   const [baseUrl, setBaseUrl] = useState("");
   const [glossing, setGlossing] = useState(USER_STATS_MODE.L1);
   const [segmentation, setSegmentation] = useState(true);
+  const [collectRecents, setCollectRecents] = useState(true);
   const [mouseover, setMouseover] = useState(true);
 
   useEffect(() => {
@@ -123,6 +124,8 @@ export default function Options(): JSX.Element {
       if (seg) setSegmentation(parseInt(seg) > 0);
       const mo = await ap.getValue("mouseover");
       if (mo) setMouseover(parseInt(mo) > 0);
+      const cr = await ap.getValue("collectRecents");
+      if (cr) setCollectRecents(parseInt(cr) > 0);
     })();
   }, []);
 
@@ -132,6 +135,7 @@ export default function Options(): JSX.Element {
     utils.setBaseUrl(baseUrl.endsWith("/") ? baseUrl : baseUrl + "/");
     utils.setGlossing(glossing);
     utils.setMouseover(mouseover);
+    utils.setCollectRecents(collectRecents);
     utils.setSegmentation(segmentation);
 
     await Promise.all([
@@ -141,6 +145,7 @@ export default function Options(): JSX.Element {
       ap.setValue("glossing", utils.glossing.toString()),
       ap.setValue("mouseover", utils.mouseover ? "1" : "0"),
       ap.setValue("segmentation", utils.segmentation ? "1" : "0"),
+      ap.setValue("collectRecents", utils.collectRecents ? "1" : "0"),
     ]);
     setMessage("Options saved.");
     await ap.refreshAccessToken(new URL(utils.baseUrl));
@@ -248,6 +253,16 @@ export default function Options(): JSX.Element {
           className={classes.controls}
           control={<Switch checked={mouseover} onChange={(_e, checked) => setMouseover(checked)} />}
           label="Mouseover mini-definition"
+        />
+        <FormControlLabel
+          className={classes.controls}
+          control={
+            <Switch
+              checked={collectRecents}
+              onChange={(_e, checked) => setCollectRecents(checked)}
+            />
+          }
+          label="Collect recent phrases"
         />
       </FormGroup>
       <FormGroup className={classes.groups}>

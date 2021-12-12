@@ -6,6 +6,7 @@ import {
   KeyedModels,
   PythonCounter,
   RepetrobesActivityConfigType,
+  SentenceType,
 } from "./types";
 
 export function UUID(): string {
@@ -183,4 +184,12 @@ export function binnedData(
     });
   }
   return data;
+}
+
+export function cleanSentence(sentence: SentenceType): SentenceType {
+  for (let i = 0; i < sentence.t.length; i++) {
+    delete sentence.t[i].de;
+    delete sentence.t[i].style;
+  }
+  return sentence;
 }

@@ -240,16 +240,16 @@ async function addToRecentSentences(
   // sort the list of sentences, with the closest in length to the ideal first
   if (usableSentences.length < 1) return;
 
+  const wordIds = usableSentences
+    .flatMap((s) => s.t.map((t) => t.id?.toString()))
+    .filter((x) => x) as string[];
+  if (wordIds.length < 1) return;
+
   usableSentences.sort(
     (a, b) =>
       Math.abs(IDEAL_RECENT_SENTS_LENGTH - a.t.length) -
       Math.abs(IDEAL_RECENT_SENTS_LENGTH - b.t.length),
   );
-
-  const wordIds = usableSentences
-    .flatMap((s) => s.t.map((t) => t.id?.toString()))
-    .filter((x) => x) as string[];
-  if (wordIds.length < 1) return;
 
   const bestNewSentsForWord = new Map<string, { pos: TREEBANK_POS_TYPES; sent: SentenceType }[]>(); // string =bbi
   const newWordCombos = new Set<string>(); // wordId + # + pos
@@ -381,8 +381,11 @@ function onScreen(entries: IntersectionObserverEntry[], observer: IntersectionOb
             });
           }
           // We are NOT waiting here, as this is a nice-to-have really, and we don't want it to
-          // hold up other, immediately user-visible tasks
-          addToRecentSentences(tcModel[entry.target.id]);
+          // hold up other, immediately user-visible tasks. Only collect if we are doing that now,
+          // which we do by default
+          if (utils.collectRecents) {
+            addToRecentSentences(tcModel[entry.target.id]);
+          }
         });
       }, utils.onScreenDelayIsConsideredRead);
     } else {

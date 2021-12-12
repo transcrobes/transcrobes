@@ -10,6 +10,7 @@ import {
   CharacterType,
   DefinitionType,
   PosSentences,
+  RecentSentencesType,
   RepetrobesActivityConfigType,
 } from "../lib/types";
 import Loader from "../img/loader.gif";
@@ -24,6 +25,9 @@ import GraphAnswer from "./GraphAnswer";
 import SoundAnswer from "./SoundAnswer";
 import PhraseAnswer from "./PhraseAnswer";
 import PhraseQuestion from "./PhraseQuestion";
+import dayjs from "dayjs";
+import localizedFormat from "dayjs/plugin/localizedFormat";
+dayjs.extend(localizedFormat);
 
 const DATA_SOURCE = "VocabRevisor.tsx";
 
@@ -79,6 +83,7 @@ function getAnswer(
         />
       );
     default:
+      console.error("Unsupported cardType error", card, getCardType(card));
       throw new Error("Unsupported cardType");
   }
 }
@@ -127,6 +132,7 @@ function getQuestion(
         />
       );
     default:
+      console.error("Unsupported cardType error", card, getCardType(card));
       throw new Error("Unsupported cardType");
   }
 }
@@ -136,7 +142,7 @@ interface Props {
   currentCard: CardType | null;
   definition: DefinitionType | null;
   characters: CharacterType[] | null;
-  recentPosSentences: PosSentences | null;
+  recentPosSentences: RecentSentencesType | null;
   loading: boolean;
   activityConfig: RepetrobesActivityConfigType;
   onCardFrontUpdate: (card: CardType) => void;
@@ -168,13 +174,13 @@ export function VocabRevisor({
 
   if (recentPosSentences && definition) {
     window.transcrobesModel = window.transcrobesModel || {};
-    Object.entries(recentPosSentences).forEach(([pos, s]) => {
+    Object.entries(recentPosSentences.posSentences).forEach(([pos, s]) => {
       const lemma = definition.graph;
       if (s) {
         s.forEach((sent) => {
           const now = Date.now() + Math.random();
           sent.sentence.t.forEach((t) => {
-            if (t.l == lemma && t.pos === pos) {
+            if (t.l === lemma && t.pos === pos) {
               t.style = { color: "green", "font-weight": "bold" };
               t.de = true;
             }
@@ -204,19 +210,28 @@ export function VocabRevisor({
       });
     });
   }
-
+  const premature = currentCard && currentCard?.dueDate > dayjs().unix();
+  console.log(
+    "prematurity",
+    premature,
+    currentCard,
+    currentCard?.dueDate,
+    dayjs().unix(),
+    dayjs(currentCard?.dueDate).format("LTS"),
+  );
   return (
     <>
       {loading && <SearchLoading src={Loader} />}
       {!loading && !definition && <span>No review items loaded</span>}
       {!loading && !!definition && !!currentCard && !!characters && (
         <>
-          <QuestionWrapper>
+          <QuestionWrapper style={{ backgroundColor: premature ? "orange" : "inherit" }}>
+            {premature && <div>Card not due until {dayjs(currentCard.dueDate).format("LTS")}</div>}
             {getQuestion(
               currentCard,
               definition,
               characters,
-              recentPosSentences,
+              recentPosSentences?.posSentences || null,
               showSynonyms,
               showL2LengthHint,
               showAnswer,
@@ -236,7 +251,7 @@ export function VocabRevisor({
                 {getAnswer(
                   currentCard,
                   definition,
-                  recentPosSentences,
+                  recentPosSentences?.posSentences || null,
                   showSynonyms,
                   showRecents,
                   onCardFrontUpdate,

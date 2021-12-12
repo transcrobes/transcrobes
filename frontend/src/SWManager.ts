@@ -317,47 +317,9 @@ export function manageEvent(sw: ServiceWorkerGlobalScope, event: ExtendableMessa
     });
   } else if (message.type === "getSRSReviews") {
     loadDb(message, sw).then(([ldb, msg]) => {
-      data.getSRSReviews(ldb, msg.value).then((values) => {
-        // console.debug("getSRSReviews results in sw.js", msg, values);
-        // todaysWordIds,  // Set of words reviewed today already: string ids
-        // allNonReviewedWordsMap,  // Map of words in selected lists not already reviewed today: RxDocument
-        // existingCards,  // Map of all cards reviewed at least once: RxDocument
-        // existingWords,  // Map of all words which have had at least one card reviewed at least once: RxDocument
-        // potentialWords,  // Array of words that can be "new" words today: RxDocument
-        const allNonReviewedWordsMap = new Map<string, DefinitionType>();
-        for (const [k, v] of values.allNonReviewedWordsMap) {
-          allNonReviewedWordsMap.set(k, clone(v.toJSON()));
-        }
-        const existingCards = new Map<string, CardType>();
-        for (const [k, v] of values.existingCards) {
-          existingCards.set(k, v.toJSON());
-        }
-        const existingWords = new Map<string, DefinitionType>();
-        for (const [k, v] of values.existingWords) {
-          existingWords.set(k, clone(v.toJSON()));
-        }
-        const recentSentences = new Map<string, RecentSentencesStoredType>();
-        for (const [k, v] of values.recentSentences) {
-          recentSentences.set(k, clone(v.toJSON()));
-        }
-        const potentialWords: DefinitionType[] = [];
-        for (const pw of values.potentialWords) {
-          potentialWords.push(clone(pw.toJSON()));
-        }
-        const allPotentialCharacters = new Map<string, CharacterType>();
-        for (const [k, v] of values.allPotentialCharacters) {
-          allPotentialCharacters.set(k, v.toJSON());
-        }
-        const sanitised = {
-          todaysWordIds: values.todaysWordIds,
-          allNonReviewedWordsMap,
-          existingCards,
-          existingWords,
-          recentSentences,
-          potentialWords,
-          allPotentialCharacters,
-        };
-        postIt(event, { source: msg.source, type: msg.type, value: sanitised });
+      data.getSRSReviews(ldb, msg.value).then((value) => {
+        console.debug("the return from getSRSReviewsBetter", value);
+        postIt(event, { source: msg.source, type: msg.type, value: value });
       });
     });
   } else if (message.type === "submitUserEvents") {

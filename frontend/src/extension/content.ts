@@ -128,6 +128,7 @@ async function ensureAllLoaded() {
   components.setLangPair(await ensureLoaded("langPair"));
   components.setGlossing(parseInt(await getFromSettingsDB("glossing")));
   components.setMouseover(parseInt(await getFromSettingsDB("mouseover")) > 0);
+  components.setCollectRecents(parseInt(await getFromSettingsDB("collectRecents")) > 0);
   components.setSegmentation(parseInt(await getFromSettingsDB("segmentation")) > 0);
   await ensureLoaded("getCardWords");
 }

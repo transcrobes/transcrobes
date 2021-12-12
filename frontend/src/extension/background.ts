@@ -37,8 +37,9 @@ async function loadDb(callback: any, message: any) {
     getValue("lang_pair"),
     getValue("segmentation"),
     getValue("mouseover"),
+    getValue("collectRecents"),
   ]);
-  console.debug("DB NOT loaded, (re)loading", db);
+  console.debug("DB NOT loaded, (re)loading with items", db, items);
   utils.setUsername(
     items[0] ||
       (() => {
@@ -83,6 +84,25 @@ async function loadDb(callback: any, message: any) {
         })(),
     ) > 0,
   );
+  utils.setCollectRecents(
+    parseInt(
+      items[7] ||
+        (() => {
+          throw new Error("Unable to get collectRecents");
+        })(),
+    ) > 0,
+  );
+  console.debug(
+    "Set up with values",
+    utils.username,
+    utils.password,
+    utils.baseUrl,
+    utils.langPair,
+    utils.glossing,
+    utils.segmentation,
+    utils.mouseover,
+    utils.collectRecents,
+  );
 
   const progressCallback = (progressMessage: string, isFinished: boolean) => {
     const progress = { message: progressMessage, isFinished };
@@ -94,7 +114,7 @@ async function loadDb(callback: any, message: any) {
   const dbConfig = { url: new URL(utils.baseUrl) };
   const dbHandle = await getDb(dbConfig, progressCallback);
   db = dbHandle;
-  console.debug("db object after getDb is", dbHandle);
+  self.tcb = db;
   if (!eventQueueTimer) {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
@@ -285,11 +305,8 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
       });
     });
   } else if (message.type === "getRecentSentences") {
-    console.log("My getRecentSentences before is", message);
     loadDb(console.debug, message).then((ldb) => {
-      console.log("My getRecentSentences after loadDb is", message);
       data.getRecentSentences(ldb, message.value).then((result) => {
-        console.log("My getRecentSentences results are", result);
         sendResponse({ source: message.source, type: message.type, value: result });
       });
     });

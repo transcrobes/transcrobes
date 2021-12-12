@@ -21,7 +21,6 @@ export default function PhraseQuestion({
 }: Props): ReactElement {
   const classes = useStyles();
   const sentences: [string, PosSentence][] = [];
-  console.log("recentSentences", recentSentences, showAnswer);
   if (recentSentences) {
     for (const [k, v] of [...Object.entries(recentSentences)]) {
       if (v) {
@@ -29,8 +28,18 @@ export default function PhraseQuestion({
       }
     }
   }
-
-  const [current, setCurrent] = useState(Math.floor(Math.random() * sentences.length));
+  const randie = Math.floor(Math.random() * sentences.length);
+  const [current, setCurrent] = useState(randie);
+  console.debug(
+    "recentSentences",
+    recentSentences,
+    showAnswer,
+    sentences,
+    current,
+    sentences[current],
+    randie,
+    sentences[randie],
+  );
   return (
     <div>
       {(sentences && sentences[current] && sentences[current][1].modelId && (
