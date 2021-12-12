@@ -1,12 +1,10 @@
-import styled from "styled-components";
 import { ReactElement } from "react";
 import { Button } from "@material-ui/core";
 
 import SearchLoading from "../components/SearchLoading";
-import { CARD_ID_SEPARATOR, CARD_TYPES, getWordId } from "../database/Schema";
-import { say, wordIdsFromModels } from "../lib/funclib";
+import { CARD_TYPES, getCardType, getWordId } from "../database/Schema";
+import { wordIdsFromModels } from "../lib/funclib";
 import PracticerInput from "../components/PracticerInput";
-import DefinitionGraph from "../components/DefinitionGraph";
 import {
   CardType,
   CharacterType,
@@ -15,233 +13,19 @@ import {
   RepetrobesActivityConfigType,
 } from "../lib/types";
 import Loader from "../img/loader.gif";
-import Meaning from "../components/Meaning";
 import { setGlossing, setLangPair, setSegmentation, USER_STATS_MODE } from "../lib/lib";
 import { getUserCardWords, setPlatformHelper } from "../lib/components";
-import RecentSentencesElement from "../components/RecentSentencesElement";
+import { AnswerWrapper, CentredFlex, QuestionWrapper } from "./Common";
+import SoundQuestion from "./SoundQuestion";
+import GraphQuestion from "./GraphQuestion";
+import MeaningQuestion from "./MeaningQuestion";
+import MeaningAnswer from "./MeaningAnswer";
+import GraphAnswer from "./GraphAnswer";
+import SoundAnswer from "./SoundAnswer";
+import PhraseAnswer from "./PhraseAnswer";
+import PhraseQuestion from "./PhraseQuestion";
 
 const DATA_SOURCE = "VocabRevisor.tsx";
-
-const CentredFlex = styled.div`
-  display: flex;
-  justify-content: center;
-  padding: 0.2em;
-`;
-const QuestionWrapper = styled.div`
-  display: flex;
-  justify-content: center;
-  padding: 1em;
-`;
-const AnswerWrapper = styled.div`
-  display: flex;
-  justify-content: center;
-  padding: 1em;
-`;
-const GraphSoundQuestionStyle = styled.div`
-  font-size: 4em;
-  padding: 0.5em;
-`;
-const StyledAnswer = styled.div`
-  display: flex;
-  justify-content: center;
-  font-size: 2em;
-  padding: 0.5em;
-`;
-const StyledQuestion = styled.div`
-  font-size: 2em;
-  padding: 1em;
-`;
-const MeaningWrapper = styled.div`
-  display: block;
-`;
-
-interface GraphQuestionProps {
-  card: CardType;
-  characters: CharacterType[];
-}
-
-function GraphQuestion({ card, characters }: GraphQuestionProps): ReactElement {
-  return (
-    <GraphSoundQuestionStyle>
-      {" "}
-      {card && card.front ? (
-        card.front
-      ) : (
-        <DefinitionGraph characters={characters} showAnswer={true}></DefinitionGraph>
-      )}{" "}
-    </GraphSoundQuestionStyle>
-  );
-}
-
-interface SoundQuestionProps {
-  card: CardType;
-  definition: DefinitionType;
-  characters: CharacterType[];
-  showAnswer: boolean;
-}
-
-function SoundQuestion({
-  card,
-  definition,
-  characters,
-  showAnswer,
-}: SoundQuestionProps): ReactElement {
-  return (
-    <GraphSoundQuestionStyle>
-      <CentredFlex>{card && card.front ? card.front : definition.sound}</CentredFlex>
-      <CentredFlex>
-        <Button onClick={() => say(definition.graph)} variant="contained" color="primary">
-          Say it!
-        </Button>
-      </CentredFlex>
-      <DefinitionGraph characters={characters} showAnswer={showAnswer}></DefinitionGraph>
-    </GraphSoundQuestionStyle>
-  );
-}
-
-interface MeaningQuestionProps {
-  card: CardType;
-  definition: DefinitionType;
-  showSynonyms: boolean;
-  showL2LengthHint: boolean;
-  characters: CharacterType[];
-  showAnswer: boolean;
-  onCardFrontUpdate: (card: CardType) => void;
-}
-
-function MeaningQuestion({
-  card,
-  definition,
-  showSynonyms,
-  showL2LengthHint,
-  characters,
-  showAnswer,
-  onCardFrontUpdate,
-}: MeaningQuestionProps): ReactElement {
-  return (
-    <div>
-      <StyledQuestion>
-        <MeaningWrapper>
-          <Meaning
-            showSynonyms={showSynonyms}
-            definition={definition}
-            card={card}
-            onCardFrontUpdate={onCardFrontUpdate}
-          />
-          {showL2LengthHint && <div key="lenHint">(L2 length: {definition.graph.length})</div>}
-        </MeaningWrapper>
-      </StyledQuestion>
-      <DefinitionGraph characters={characters} showAnswer={showAnswer}></DefinitionGraph>
-    </div>
-  );
-}
-
-interface SoundGraphAnswerProps {
-  card: CardType;
-  definition: DefinitionType;
-  recentSentences: PosSentences | null;
-  showSynonyms: boolean;
-  showRecents: boolean;
-  onCardFrontUpdate: (card: CardType) => void;
-}
-
-function GraphAnswer({
-  card,
-  definition,
-  recentSentences,
-  showSynonyms,
-  showRecents,
-  onCardFrontUpdate,
-}: SoundGraphAnswerProps): ReactElement {
-  return (
-    <div>
-      {card && card.back ? (
-        card.back
-      ) : (
-        <>
-          <CentredFlex>
-            <StyledAnswer> {definition.sound} </StyledAnswer>
-            <Button onClick={() => say(definition.graph)} variant="contained" color="primary">
-              Say it!
-            </Button>
-          </CentredFlex>
-          <MeaningWrapper>
-            <Meaning
-              showSynonyms={showSynonyms}
-              definition={definition}
-              card={card}
-              onCardFrontUpdate={onCardFrontUpdate}
-            />
-          </MeaningWrapper>
-          {showRecents && <RecentSentencesElement recentPosSentences={recentSentences} />}
-        </>
-      )}
-    </div>
-  );
-}
-
-function SoundAnswer({
-  card,
-  definition,
-  recentSentences,
-  showSynonyms,
-  showRecents,
-  onCardFrontUpdate,
-}: SoundGraphAnswerProps): ReactElement {
-  return (
-    <div>
-      {card && card.back ? (
-        card.back
-      ) : (
-        <>
-          <MeaningWrapper>
-            <Meaning
-              showSynonyms={showSynonyms}
-              definition={definition}
-              card={card}
-              onCardFrontUpdate={onCardFrontUpdate}
-            />
-          </MeaningWrapper>
-          {showRecents && <RecentSentencesElement recentPosSentences={recentSentences} />}
-        </>
-      )}
-    </div>
-  );
-}
-
-interface MeaningAnswerProps {
-  card: CardType;
-  definition: DefinitionType;
-  recentSentences: PosSentences | null;
-  showRecents: boolean;
-}
-
-function MeaningAnswer({
-  card,
-  definition,
-  recentSentences,
-  showRecents,
-}: MeaningAnswerProps): ReactElement {
-  return (
-    <div>
-      {card && card.back ? (
-        card.back
-      ) : (
-        <>
-          <CentredFlex>
-            <StyledAnswer> {definition.sound} </StyledAnswer>
-            <Button onClick={() => say(definition.graph)} variant="contained" color="primary">
-              Say it!
-            </Button>
-          </CentredFlex>
-          <CentredFlex>
-            {showRecents && <RecentSentencesElement recentPosSentences={recentSentences} />}
-          </CentredFlex>
-        </>
-      )}
-    </div>
-  );
-}
 
 function getAnswer(
   card: CardType,
@@ -251,8 +35,7 @@ function getAnswer(
   showRecents: boolean,
   onCardFrontUpdate: (card: CardType) => void,
 ): ReactElement {
-  const cardType = card.id.split(CARD_ID_SEPARATOR)[1];
-  switch (cardType) {
+  switch (getCardType(card)) {
     case CARD_TYPES.GRAPH.toString():
       return (
         <GraphAnswer
@@ -284,8 +67,19 @@ function getAnswer(
           definition={definition}
         />
       );
+    case CARD_TYPES.PHRASE.toString():
+      return (
+        <PhraseAnswer
+          card={card}
+          definition={definition}
+          recentSentences={recentSentences}
+          showSynonyms={showSynonyms}
+          showRecents={showRecents}
+          onCardFrontUpdate={onCardFrontUpdate}
+        />
+      );
     default:
-      return <></>;
+      throw new Error("Unsupported cardType");
   }
 }
 
@@ -293,14 +87,14 @@ function getQuestion(
   card: CardType,
   definition: DefinitionType,
   characters: CharacterType[],
+  recentSentences: PosSentences | null,
   showSynonyms: boolean,
   showL2LengthHint: boolean,
   showAnswer: boolean,
   onCardFrontUpdate: (card: CardType) => void,
 ) {
   console.debug(`Card to show for a question`, card);
-  const cardType = card.id.split(CARD_ID_SEPARATOR)[1];
-  switch (cardType) {
+  switch (getCardType(card)) {
     case CARD_TYPES.GRAPH.toString():
       return <GraphQuestion card={card} characters={characters} />;
     case CARD_TYPES.SOUND.toString():
@@ -324,6 +118,16 @@ function getQuestion(
           onCardFrontUpdate={onCardFrontUpdate}
         />
       );
+    case CARD_TYPES.PHRASE.toString():
+      return (
+        <PhraseQuestion
+          recentSentences={recentSentences}
+          showAnswer={showAnswer}
+          characters={characters}
+        />
+      );
+    default:
+      throw new Error("Unsupported cardType");
   }
 }
 
@@ -372,6 +176,7 @@ export function VocabRevisor({
           sent.sentence.t.forEach((t) => {
             if (t.l == lemma && t.pos === pos) {
               t.style = { color: "green", "font-weight": "bold" };
+              t.de = true;
             }
           });
           window.transcrobesModel[now] = { id: now, s: [sent.sentence] };
@@ -393,7 +198,6 @@ export function VocabRevisor({
           definitions.map((definition) => {
             window.cachedDefinitions.set(definition.id, definition);
           });
-          // setLoaded(true);
         });
       document.addEventListener("click", () => {
         document.querySelectorAll("token-details").forEach((el) => el.remove());
@@ -412,6 +216,7 @@ export function VocabRevisor({
               currentCard,
               definition,
               characters,
+              recentPosSentences,
               showSynonyms,
               showL2LengthHint,
               showAnswer,
@@ -426,7 +231,7 @@ export function VocabRevisor({
             </CentredFlex>
           )}
           {showAnswer && (
-            <>
+            <div>
               <AnswerWrapper>
                 {getAnswer(
                   currentCard,
@@ -437,8 +242,12 @@ export function VocabRevisor({
                   onCardFrontUpdate,
                 )}
               </AnswerWrapper>
-              <PracticerInput wordId={getWordId(currentCard)} onPractice={handlePractice} />
-            </>
+              <div style={{ display: "flex", justifyContent: "center" }}>
+                <div style={{ width: "100%", maxWidth: "800px" }}>
+                  <PracticerInput wordId={getWordId(currentCard)} onPractice={handlePractice} />
+                </div>
+              </div>
+            </div>
           )}
         </>
       )}

@@ -389,13 +389,21 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
     curNewWordIndex: number,
     potentialWords: DefinitionType[],
     cardTypes: SelectableListElementType[],
+    recentSentences: Map<string, RecentSentencesStoredType>,
   ) {
     while (curNewWordIndex < potentialWords.length) {
       // get a random possible new card for the word
       for (const cardType of shuffleArray(Object.values(cardTypes)).filter((x) => x.selected)) {
         const nextReview = potentialWords[curNewWordIndex];
-        if (!existingCards.has(getCardId(nextReview.id, cardType.value))) {
-          console.debug(`${getCardId(nextReview.id, cardType.value)} doesn't have card, choosing`);
+        if (
+          !existingCards.has(getCardId(nextReview.id, cardType.value)) &&
+          (`${cardType.value}` !== CARD_TYPES.PHRASE.toString() ||
+            recentSentences.has(nextReview.id))
+        ) {
+          console.debug(
+            `${getCardId(nextReview.id, cardType.value)} doesn't have card, choosing`,
+            recentSentences.get(nextReview.id),
+          );
           return [curNewWordIndex, cardType.value];
         }
       }
@@ -521,6 +529,7 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
         state.curNewWordIndex,
         state.potentialWords,
         activityConfig.activeCardTypes,
+        state.recentSentences,
       );
       currentCard = await unrevisedCard(
         getCardId(state.potentialWords[curNewWordIndex].id, cardType),

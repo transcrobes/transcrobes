@@ -361,6 +361,7 @@ enum CARD_TYPES {
   GRAPH = 1,
   SOUND = 2,
   MEANING = 3,
+  PHRASE = 4,
 }
 
 type CardDocumentMethodsType = {
@@ -801,7 +802,6 @@ export {
   DBPullCollections,
   // DBTwoWayCollectionKeys
 
-  CARD_ID_SEPARATOR,
   GRADE,
   CARD_TYPES,
   EFACTOR_DEFAULT,

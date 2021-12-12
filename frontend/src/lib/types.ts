@@ -453,9 +453,16 @@ export type TokenType = {
    */
   us?: string[];
   /**
-   * TODO: is this horrible???, allow adding style kvs in the data...
+   * CSS style, TODO: is this horrible???, allow adding style kvs in the data...
    */
   style?: { [key: string]: string };
+  /**
+   * "Don't Enrich", TODO: is this horrible???, allowing business logic in the data...
+   * this is meant so that the data can be marked as not allowing for enrichment - this means
+   * that learners *won't* have aids for this token... Which is useful in tests and exercises.
+   * Is this a nasty way of doing it? Should this be done somewhere else?
+   */
+  de?: boolean;
 };
 
 export type SentenceType = {
@@ -496,14 +503,16 @@ export type RecentSentencesStoredType = {
   updatedAt: number;
 };
 
+export type PosSentence = {
+  dateViewed: number;
+  sentence: SentenceType;
+  manual: boolean;
+  source?: string; //URL
+  modelId?: number; //the nanosecond timestamp from the API
+};
+
 export type PosSentences = {
-  [key in TREEBANK_POS_TYPES]?: {
-    dateViewed: number;
-    sentence: SentenceType;
-    manual: boolean;
-    source?: string; //URL
-    modelId?: number; //the nanosecond timestamp from the API
-  }[];
+  [key in TREEBANK_POS_TYPES]?: PosSentence[];
 };
 
 export type RecentSentencesType = {

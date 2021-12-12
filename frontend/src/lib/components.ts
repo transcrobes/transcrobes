@@ -930,13 +930,6 @@ async function getNormalGloss(
     gloss = await getSound(token);
   } else if (glossing == USER_STATS_MODE.TRANSLITERATION_L1) {
     gloss = `${await getSound(token)}: ${await getL1(token)}`;
-  } else {
-    console.error(
-      "Attempted to getNormalGloss for an invalid glossing option",
-      glossing,
-      token,
-      uCardWords,
-    );
   }
   return gloss;
 }
@@ -967,7 +960,7 @@ async function updateWordForEntry(
   const lemma = token.l;
   const word = doCreateElement(doc, "span", "tcrobe-word", lemma, null);
   entry.appendChild(word);
-  if (addClick) {
+  if (addClick && !token.de) {
     entry.addEventListener("click", (event: MouseEvent) => {
       // remove any mouseovers - this is mainly useful for the click on mobile, which doesn't have a mouseleave
       doc.querySelectorAll(".tc-mouseover-popup").forEach((el) => {
@@ -976,7 +969,7 @@ async function updateWordForEntry(
       populatePopup(event, doc);
     });
   }
-  if (addMouseInOut) {
+  if (addMouseInOut && !token.de) {
     entry.addEventListener("mouseenter", (event: MouseEvent) => {
       populateMouseover(event, doc, uCardWords, token);
     });
@@ -1347,7 +1340,7 @@ class EnrichedTextFragment extends HTMLParsedElement {
     }
   }
 
-  async attributeChangedCallback(name: string, _oldValue: string, newValue: string): Promise<void> {
+  async attributeChangedCallback(name: string, oldValue: string, newValue: string): Promise<void> {
     this.ensureStyle();
     let sentences: SentenceType[] = [];
     if (name === "data-model") {
@@ -1362,7 +1355,8 @@ class EnrichedTextFragment extends HTMLParsedElement {
       if (uCardWords == null) {
         throw new Error("uCardWords is null in attributeChangedCallback");
       }
-      if (!this.querySelector(".tcrobe-sent")) {
+      if (!this.querySelector(".tcrobe-sent") || oldValue) {
+        // nothing there, or it's an update
         const textBlock = await generateSentences(this.doc, sentences, uCardWords, true);
         this.innerHTML = "";
         this.appendChild(textBlock);

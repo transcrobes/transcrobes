@@ -49,7 +49,6 @@ export default function RepetrobesConfig({ activityConfig, onConfigChange }: Pro
   }
 
   function handleDayStartsHourChange(e: React.ChangeEvent<HTMLInputElement>) {
-    console.debug(`handleDayStartsChange`, e.target);
     const dayStartsHour = parseInt(e.target.value);
     const todayStarts = (
       new Date().getHours() < dayStartsHour
@@ -69,7 +68,6 @@ export default function RepetrobesConfig({ activityConfig, onConfigChange }: Pro
   }
 
   function handleSimpleChange(e: React.ChangeEvent<HTMLInputElement>) {
-    console.debug(`e handleSimpleChange`, e.target);
     const update = {
       ...activityConfig,
       [e.target.name]: Object.prototype.hasOwnProperty.call(e.target, "checked")
@@ -134,13 +132,14 @@ export default function RepetrobesConfig({ activityConfig, onConfigChange }: Pro
         isSelected={activityConfig.forceWcpm}
         onCheckboxChange={handleSimpleChange}
       />
-      <TCCheckbox
+      {/* This is really no longer useful with the character component */}
+      {/* <TCCheckbox
         name="showL2LengthHint"
         className={classes.checkbox}
         label="Show L2 length hint"
         isSelected={activityConfig.showL2LengthHint}
         onCheckboxChange={handleSimpleChange}
-      />
+      /> */}
       <TCCheckbox
         name="showProgress"
         className={classes.checkbox}

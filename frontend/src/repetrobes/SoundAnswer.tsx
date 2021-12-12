@@ -1,0 +1,33 @@
+import { ReactElement } from "react";
+import Meaning from "../components/Meaning";
+import RecentSentencesElement from "../components/RecentSentencesElement";
+import { MeaningWrapper, CommonAnswerProps } from "./Common";
+
+export default function SoundAnswer({
+  card,
+  definition,
+  recentSentences,
+  showSynonyms,
+  showRecents,
+  onCardFrontUpdate,
+}: CommonAnswerProps): ReactElement {
+  return (
+    <div>
+      {card && card.back ? (
+        card.back
+      ) : (
+        <>
+          <MeaningWrapper>
+            <Meaning
+              showSynonyms={showSynonyms}
+              definition={definition}
+              card={card}
+              onCardFrontUpdate={onCardFrontUpdate}
+            />
+          </MeaningWrapper>
+          {showRecents && <RecentSentencesElement recentPosSentences={recentSentences} />}
+        </>
+      )}
+    </div>
+  );
+}

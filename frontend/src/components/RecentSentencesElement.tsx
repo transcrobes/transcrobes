@@ -25,11 +25,13 @@ export default function RecentSentencesElement({
             const simpleName = ZH_TB_POS_LABELS[typedPos];
             return (
               <InfoBox key={pos}>
-                {simpleName}:{" "}
-                {entry &&
-                  entry.map((s, index) => {
-                    return <RecentSentenceExample key={index} modelId={s.modelId || 0} />;
-                  })}
+                <div>{simpleName}:</div>
+                <ul>
+                  {entry &&
+                    entry.map((s, index) => {
+                      return <RecentSentenceExample key={index} modelId={s.modelId || 0} />;
+                    })}
+                </ul>
               </InfoBox>
             );
           })}
