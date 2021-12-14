@@ -6,11 +6,13 @@ import RecentSentenceExample from "./RecentSentenceExample";
 
 interface Props {
   recentPosSentences: PosSentences | null;
+  onDelete?: (modelId: number | BigInt) => void;
   loaded?: boolean; // FIXME: it is almost certain this is useless
 }
 
 export default function RecentSentencesElement({
   recentPosSentences,
+  onDelete,
   loaded,
 }: Props): ReactElement {
   return (
@@ -29,7 +31,13 @@ export default function RecentSentencesElement({
                 <ul>
                   {entry &&
                     entry.map((s, index) => {
-                      return <RecentSentenceExample key={index} modelId={s.modelId || 0} />;
+                      return (
+                        <RecentSentenceExample
+                          key={index}
+                          modelId={s.modelId || 0}
+                          onDelete={onDelete}
+                        />
+                      );
                     })}
                 </ul>
               </InfoBox>

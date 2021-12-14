@@ -296,6 +296,7 @@ interface WordProps {
   lists: SortableListElementType[];
   characters: (CharacterType | null)[];
   onPractice: (wordId: string, grade: number) => void;
+  onDeleteRecent: (modelId: number | BigInt) => void;
   onCardFrontUpdate: (card: CardType) => void;
 }
 
@@ -306,6 +307,7 @@ function Word({
   recentPosSentences,
   lists,
   characters,
+  onDeleteRecent,
   onPractice,
   onCardFrontUpdate,
 }: WordProps): ReactElement {
@@ -353,7 +355,6 @@ function Word({
       });
     });
   }
-
   return (
     definition && (
       <div>
@@ -371,7 +372,11 @@ function Word({
         <Practicer wordId={definition.id} onPractice={onPractice} />
         <ExistingCards cards={cards} />
         <WordLists lists={lists} />
-        <RecentSentencesElement loaded={loaded} recentPosSentences={recentPosSentences} />
+        <RecentSentencesElement
+          loaded={loaded}
+          recentPosSentences={recentPosSentences}
+          onDelete={onDeleteRecent}
+        />
         <WordMetadata definition={definition} />
         <ProviderTranslations definition={definition} />
         <Synonyms definition={definition} />

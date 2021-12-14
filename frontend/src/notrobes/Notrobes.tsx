@@ -14,6 +14,7 @@ import {
   CharacterType,
   DefinitionType,
   PosSentences,
+  RecentSentencesType,
   SortableListElementType,
   UserListWordType,
   WordDetailsType,
@@ -253,6 +254,35 @@ function Notrobes({ proxy, url }: Props): ReactElement {
     }
   }
 
+  async function handleDeleteRecent(modelId: number | BigInt) {
+    if (word && recentPosSentences) {
+      console.debug("Word and record in handleDeleteRecent", word, recentPosSentences);
+      const newRecents: RecentSentencesType = { id: word.id, posSentences: {} };
+      for (const [k, posSentence] of Object.entries(recentPosSentences)) {
+        if (posSentence) {
+          for (const sent of posSentence) {
+            console.debug("Looking for modelId", sent, sent.modelId, modelId);
+            if (sent.modelId != modelId) {
+              console.debug("Found the modelId", modelId, sent.modelId);
+              if (!newRecents.posSentences[k]) {
+                newRecents.posSentences[k] = [];
+              }
+              newRecents.posSentences[k]!.push(sent);
+            }
+          }
+        }
+      }
+      console.debug("Submitting new recents", newRecents);
+      await proxy.sendMessagePromise({
+        source: DATA_SOURCE,
+        type: "updateRecentSentences",
+        value: [newRecents],
+      });
+      console.debug("Updating state with new PosSentences", newRecents.posSentences);
+      setRecentPosSentences(newRecents.posSentences);
+    }
+  }
+
   function renderSearchResults() {
     if (word && Object.entries(word).length > 0 && characters && cards && wordModelStats && lists) {
       return (
@@ -264,6 +294,7 @@ function Notrobes({ proxy, url }: Props): ReactElement {
             wordModelStats={wordModelStats}
             recentPosSentences={recentPosSentences}
             lists={lists}
+            onDeleteRecent={handleDeleteRecent}
             onPractice={addOrUpdateCards}
             onCardFrontUpdate={handleCardFrontUpdate}
           />
