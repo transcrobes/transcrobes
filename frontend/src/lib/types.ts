@@ -22,7 +22,8 @@ export type SIMPLE_POS_TYPES =
   | "VERB"
   | "PREP"
   | "PRON"
-  | "ADJ";
+  | "ADJ"
+  | "MODAL";
 
 export const ZH_TB_POS_TO_SIMPLE_POS: { [key: string]: SIMPLE_POS_TYPES } = {
   // see src/app/zhhans/__init__.py for more details, if that is updated, then this should be too
@@ -75,6 +76,7 @@ export const SIMPLE_POS_ENGLISH_NAMES: { [key in SIMPLE_POS_TYPES]: string } = {
   PRON: "Pronoun",
   CONJ: "Conjunction",
   DET: "Determiner",
+  MODAL: "Modal",
   OTHER: "Other",
 };
 

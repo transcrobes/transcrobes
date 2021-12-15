@@ -789,9 +789,16 @@ async function getSRSReviews(
   const existingCards = new Map<string, CardDocument>(
     (await db.cards.find().where("firstRevisionDate").gt(0).exec()).map((c) => [c.id, c]),
   );
-  // Clean the potential wordIds of those we that are already known
-  for (const potentialWordId of potentialWordIds) {
-    if (allKnownWordIds.has(potentialWordId)) potentialWordIds.delete(potentialWordId);
+  const todaysStudiedWords = new Set<string>(
+    [
+      ...(await db.cards.find().where("lastRevisionDate").gt(activityConfig.todayStarts).exec()),
+    ].map((c) => getWordId(c)),
+  );
+
+  // Clean the potential wordIds of those we that are already known or we have already seen today
+  for (const wordId of potentialWordIds) {
+    if (allKnownWordIds.has(wordId) || todaysStudiedWords.has(wordId))
+      potentialWordIds.delete(wordId);
   }
   const selectedTypes = activityConfig.activeCardTypes
     .filter((ac) => ac.selected)
@@ -820,6 +827,9 @@ async function getSRSReviews(
   const recentSentences: Map<string, RecentSentencesDocument> = await db.recentsentences.findByIds(
     [...allWordIdsForExistingCards].concat([...potentialCardsMap.keys()]),
   );
+  // FIXME: to decide
+  // we actually need to know all the words that have been reviewed today, so
+  // even though we can use these for revisions, we still need them...
   // Remove all of the existing cards of type PHRASE that no longer have any recentSentences
   for (const ec of existingCards.values()) {
     if (ec.cardType() === CARD_TYPES.PHRASE.toString() && !recentSentences.has(ec.wordId())) {
@@ -827,6 +837,7 @@ async function getSRSReviews(
       allWordIdsForExistingCards.delete(ec.wordId());
     }
   }
+
   // Remove all of the potential cards of type PHRASE that don't have any recentSentences
   if (selectedTypes.find((st) => st === CARD_TYPES.PHRASE.toString())) {
     for (const [wordId, cardTypes] of potentialCardsMap.entries()) {

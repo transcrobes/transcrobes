@@ -6,7 +6,7 @@ import dayjs from "dayjs";
 
 import TCCheckbox from "../components/TCCheckbox";
 import { RepetrobesActivityConfigType } from "../lib/types";
-import { makeStyles } from "@material-ui/core";
+import { makeStyles, Typography } from "@material-ui/core";
 
 interface Props {
   activityConfig: RepetrobesActivityConfigType;
@@ -14,9 +14,9 @@ interface Props {
 }
 
 const useStyles = makeStyles({
-  checkbox: { padding: "0.2em" },
-  select: { padding: "0.2em" },
-  textbox: { display: "flex", justifyContent: "space-between", padding: "0.2em" },
+  checkbox: { padding: "0.4em" },
+  select: { padding: "0.4em" },
+  textbox: { display: "flex", justifyContent: "space-between", padding: "0.4em" },
 });
 
 export default function RepetrobesConfig({ activityConfig, onConfigChange }: Props): ReactElement {
@@ -95,7 +95,7 @@ export default function RepetrobesConfig({ activityConfig, onConfigChange }: Pro
   return (
     <div>
       <div className={classes.select}>
-        Source word lists
+        <Typography>Source word lists</Typography>
         <Select
           onChange={handleWordListsChange}
           defaultValue={activityConfig.wordLists.filter((x) => x.selected)}
@@ -107,7 +107,7 @@ export default function RepetrobesConfig({ activityConfig, onConfigChange }: Pro
         />
       </div>
       <div className={classes.select}>
-        Active card types
+        <Typography>Active card types</Typography>
         <Select
           onChange={handleCardTypesChange}
           defaultValue={activityConfig.activeCardTypes.filter((x) => x.selected)}

@@ -4,15 +4,20 @@ import CardContent from "@material-ui/core/CardContent";
 import Button from "@material-ui/core/Button";
 import { makeStyles } from "@material-ui/core/styles";
 import { CardHeader, Typography } from "@material-ui/core";
-import { useTranslate, Title } from "react-admin";
+import { useTranslate, Title, TopToolbar } from "react-admin";
 
 import { getUsername, setInitialisedAsync } from "../lib/JWTAuthProvider";
 import { getDatabaseName, deleteDatabase } from "../database/Database";
 import { AbstractWorkerProxy } from "../lib/proxies";
+import HelpButton from "../components/HelpButton";
 
 const useStyles = makeStyles({
   label: { width: "10em", display: "inline-block" },
   button: { margin: "1em" },
+  toolbar: {
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
 });
 
 interface RefreshCacheButtonProps {
@@ -126,11 +131,17 @@ interface Props {
 function System({ proxy }: Props): ReactElement {
   const translate = useTranslate();
   const [message, setMessage] = useState("");
+  const classes = useStyles();
+  const helpUrl = "https://transcrob.es/page/software/system/actions/";
+
   return (
     <div>
+      <TopToolbar className={classes.toolbar}>
+        <CardHeader title="Quick-fix actions" />
+        <HelpButton url={helpUrl} />
+      </TopToolbar>
       <Card>
         <Title title={translate("pos.system")} />
-        <CardHeader title="Quick-fix actions" />
         <CardContent>
           <div>
             <RefreshCacheButton onCacheEmptied={(message) => setMessage(message)} />

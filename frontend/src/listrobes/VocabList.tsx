@@ -1,7 +1,8 @@
 import { ReactElement } from "react";
-import { VocabItem } from "./vocab-item";
+import { VocabItem } from "./VocabItem";
 import SearchLoading from "../components/SearchLoading";
 import { GraderConfig, VocabReview } from "../lib/types";
+import { Button } from "@material-ui/core";
 
 interface Props {
   vocab: VocabReview[];
@@ -43,14 +44,9 @@ export function VocabList({
         })}
       {!unloaded && vocab.length > 0 && (
         <div style={{ width: "100%", paddingTop: "1em" }}>
-          <button
-            className="btn btn-primary btn-user btn-block"
-            onClick={onValidate}
-            style={{ width: "80%" }}
-            type="button"
-          >
+          <Button variant="outlined" onClick={onValidate} style={{ width: "80%" }}>
             Validate
-          </button>
+          </Button>
         </div>
       )}
     </>

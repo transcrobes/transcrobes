@@ -216,8 +216,11 @@ export function VocabRevisor({
     premature,
     currentCard,
     currentCard?.dueDate,
+    currentCard?.updatedAt,
     dayjs().unix(),
-    dayjs(currentCard?.dueDate).format("LTS"),
+    dayjs(currentCard?.dueDate),
+    dayjs(currentCard?.updatedAt),
+    loading,
   );
   return (
     <>
@@ -225,8 +228,12 @@ export function VocabRevisor({
       {!loading && !definition && <span>No review items loaded</span>}
       {!loading && !!definition && !!currentCard && !!characters && (
         <>
+          {premature && (
+            <div style={{ backgroundColor: premature ? "orange" : "inherit" }}>
+              Card not due until {dayjs(currentCard.dueDate).format("LTS")}
+            </div>
+          )}
           <QuestionWrapper style={{ backgroundColor: premature ? "orange" : "inherit" }}>
-            {premature && <div>Card not due until {dayjs(currentCard.dueDate).format("LTS")}</div>}
             {getQuestion(
               currentCard,
               definition,

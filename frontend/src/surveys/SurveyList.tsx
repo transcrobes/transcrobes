@@ -1,14 +1,26 @@
+import { makeStyles } from "@material-ui/core";
 import { FC } from "react";
 import { Datagrid, Button, List, ListProps, SortButton, TextField, TopToolbar } from "react-admin";
+import HelpButton from "../components/HelpButton";
 
 import { STATUS } from "../lib/types";
 
-const ListActions: FC<any> = (props) => (
-  <TopToolbar>
-    {/* {cloneElement(props.filters, { context: 'button' })} */}
-    <SortButton fields={["title"]} />
-  </TopToolbar>
-);
+const useStyles = makeStyles({
+  toolbar: {
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+});
+const ListActions: FC<any> = (props) => {
+  const classes = useStyles();
+  const helpUrl = "https://transcrob.es/page/contribute/surveys/";
+  return (
+    <TopToolbar className={classes.toolbar}>
+      <SortButton fields={["title"]} />
+      <HelpButton url={helpUrl} />
+    </TopToolbar>
+  );
+};
 
 export const SurveyList: FC<ListProps> = (props) => {
   return (

@@ -61,6 +61,13 @@ export async function getUserConfig(
               .length > 0,
         };
       });
+    conf.todayStarts = (
+      new Date().getHours() < conf.dayStartsHour
+        ? dayjs().startOf("day").subtract(1, "day")
+        : dayjs().startOf("day")
+    )
+      .add(conf.dayStartsHour, "hour")
+      .unix();
   } else {
     // eslint-disable-next-line prefer-const
     conf = {
@@ -75,15 +82,14 @@ export async function getUserConfig(
         type: "getDefaultWordLists",
         value: {},
       }),
+      todayStarts: (new Date().getHours() < EMPTY_ACTIVITY.dayStartsHour
+        ? dayjs().startOf("day").subtract(1, "day")
+        : dayjs().startOf("day")
+      )
+        .add(EMPTY_ACTIVITY.dayStartsHour, "hour")
+        .unix(),
     };
   }
-  conf.todayStarts = (
-    new Date().getHours() < EMPTY_ACTIVITY.dayStartsHour
-      ? dayjs().startOf("day").subtract(1, "day")
-      : dayjs().startOf("day")
-  )
-    .add(EMPTY_ACTIVITY.dayStartsHour, "hour")
-    .unix();
   setSettingsValue("repetrobes", "config", JSON.stringify(conf));
   return conf;
 }

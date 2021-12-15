@@ -6,6 +6,19 @@ import Select from "react-select";
 import TCCheckbox from "../components/TCCheckbox";
 import _ from "lodash";
 import { GraderConfig } from "../lib/types";
+import { makeStyles, Theme } from "@material-ui/core";
+
+const useStyles = makeStyles((theme: Theme) => ({
+  typography: {
+    padding: theme.spacing(2),
+  },
+  rowItem: { paddingRight: "8px" },
+  itemsPerPage: { display: "flex", justifyContent: "space-between", padding: "0.4em" },
+  itemsPerPageInput: { width: "30%" },
+  checkbox: { padding: "0.4em" },
+  select: { padding: "0.4em" },
+  // textbox: { display: "flex", justifyContent: "space-between", padding: "0.4em" },
+}));
 
 // a little function to help us with reordering the result
 const reorder = (list: any[], startIndex: number, endIndex: number) => {
@@ -68,12 +81,12 @@ export function ListrobesConfig({ graderConfig, onConfigChange }: Props): ReactE
       itemsPerPage: parseInt(e.target.value, 10),
     });
   }
-
+  const classes = useStyles();
   const gradeOrder = graderConfig.gradeOrder;
   return (
     <div>
       <div>Taps for state</div>
-      <div>
+      <div className={classes.select}>
         <DragDropContext onDragEnd={handleDragEnd}>
           <Droppable droppableId="droppable">
             {(provided, _snapshot) => (
@@ -86,7 +99,7 @@ export function ListrobesConfig({ graderConfig, onConfigChange }: Props): ReactE
                         {...provided.draggableProps}
                         {...provided.dragHandleProps}
                       >
-                        <div style={{ paddingRight: "8px" }}>{index}</div>
+                        <div className={classes.rowItem}>{index}</div>
                         <div>{item.content}</div>
                         {item.icon}
                       </Row>
@@ -99,7 +112,7 @@ export function ListrobesConfig({ graderConfig, onConfigChange }: Props): ReactE
           </Droppable>
         </DragDropContext>
       </div>
-      <div>
+      <div className={classes.select}>
         Source word lists
         <Select
           onChange={handleWordListsChange}
@@ -113,16 +126,17 @@ export function ListrobesConfig({ graderConfig, onConfigChange }: Props): ReactE
       </div>
       <div>
         <TCCheckbox
+          className={classes.checkbox}
           name="forceWcpm"
           label="Force word count per million ordering"
           isSelected={graderConfig.forceWcpm}
           onCheckboxChange={handleForceWcpmChange}
         />
       </div>
-      <div style={{ display: "flex", justifyContent: "space-between" }}>
+      <div className={classes.itemsPerPage}>
         <label htmlFor="itemsPerPage">Items per page (1 to 250)</label>
         <input
-          style={{ width: "30%" }}
+          className={classes.itemsPerPageInput}
           name="itemsPerPage"
           min="1"
           max="250"

@@ -5,7 +5,7 @@ import Configuration from "./configuration/Configuration";
 import System from "./system/System";
 import Help from "./help/Help";
 import Init from "./system/Init";
-import Listrobes from "./listrobes/listrobes";
+import Listrobes from "./listrobes/Listrobes";
 import Repetrobes from "./repetrobes/Repetrobes";
 import Notrobes from "./notrobes/Notrobes";
 import Brocrobes from "./Brocrobes";

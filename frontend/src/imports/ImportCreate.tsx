@@ -15,6 +15,8 @@ import { HelpCreateActions } from "../components/HelpCreateActions";
 
 import { Import, PROCESS_TYPE } from "../lib/types";
 
+const MAX_IMPORT_SIZE_BYTES = 5000000;
+
 const ImportCreate: FC<FieldProps<Import>> = (props) => (
   <Create
     actions={<HelpCreateActions helpUrl="https://transcrob.es/page/software/configure/imports/" />}
@@ -32,7 +34,7 @@ const ImportCreate: FC<FieldProps<Import>> = (props) => (
       <BooleanInput label="Shared with others" source="shared" defaultValue={false} />
       <FileInput
         source="importFile"
-        maxSize={5000000}
+        maxSize={MAX_IMPORT_SIZE_BYTES}
         accept=".txt,.csv,.epub,.vtt,.srt"
         validate={[required()]}
       >

@@ -1,5 +1,4 @@
 import { ReactElement, useEffect, useState } from "react";
-import { IconContext } from "react-icons";
 import dayjs from "dayjs";
 import _ from "lodash";
 
@@ -25,8 +24,12 @@ import { setSettingsValue } from "../lib/appSettings";
 import { configIsUsable } from "../lib/funclib";
 import { recentSentencesFromLZ } from "../lib/data";
 import Progress from "./Progress";
-import { getRandomNext, LauncherStyle } from "./Common";
+import { getRandomNext } from "./Common";
 import { EMPTY_ACTIVITY, getUserConfig } from "./funclib";
+import { TopToolbar } from "react-admin";
+import HelpButton from "../components/HelpButton";
+import { makeStyles, Theme } from "@material-ui/core";
+import { IconContext } from "react-icons";
 
 const DATA_SOURCE = "Repetrobes.tsx";
 
@@ -46,6 +49,19 @@ const EMPTY_STATE = {
   completedRevisionsToday: 0,
   possibleRevisionsToday: 0,
 };
+
+const useStyles = makeStyles((theme: Theme) => ({
+  toolbar: {
+    justifyContent: "space-between",
+  },
+  revisor: {
+    padding: "1em",
+  },
+  progress: {
+    display: "flex",
+    alignItems: "center",
+  },
+}));
 
 interface RepetrobesProps {
   proxy: ServiceWorkerProxy;
@@ -88,6 +104,7 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
       console.debug("Config set up, about to get the next practice item", tempState);
       nextPractice(tempState, activityConfigNew).then((practiceOut) => {
         const partial = { ...tempState, ...practiceOut };
+        console.debug("the partial is", partial);
         setLoading(!(!!partial.currentCard && !!partial.definition));
         setDaState({
           ...daState,
@@ -157,68 +174,6 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
     setShowAnswer(false);
   }
 
-  async function newRevisionFromState(
-    state: ReviewablesInfoType,
-    activityConfig: RepetrobesActivityConfigType,
-  ): Promise<[CardType | null, string]> {
-    const todaysReviewedCards = new Map(
-      [...state.existingCards.values()]
-        .filter((x) => {
-          return (
-            x.lastRevisionDate &&
-            x.lastRevisionDate > activityConfig.todayStarts &&
-            x.firstRevisionDate &&
-            x.firstRevisionDate > 0
-          );
-        })
-        .map((c) => [c.id, c]),
-    );
-    const todaysReviewedWords = new Map(
-      [...todaysReviewedCards.values()].map((x) => [
-        getWordId(x),
-        state.allReviewableDefinitions.get(getWordId(x)),
-      ]),
-    );
-    const potentialTypes = activityConfig.activeCardTypes
-      .filter((x) => x.selected)
-      .map((x) => x.value.toString());
-
-    let candidates = [...todaysReviewedCards.values()] // re-revise today's failed reviews
-      .filter(
-        (x) => x.dueDate && x.dueDate < dayjs().unix() && potentialTypes.includes(getCardType(x)),
-      )
-      .sort((a, b) => a.dueDate! - b.dueDate!);
-
-    console.debug("Todays overdue candidates", candidates);
-    // or if nothing is ready, get a new review that is due
-    const now = dayjs().unix();
-    if (candidates.length < 1) {
-      candidates = [...state.existingCards.values()]
-        .filter((x) => {
-          return (
-            x.dueDate &&
-            // x.dueDate < dayjs().unix() &&
-            x.dueDate < dayjs.unix(activityConfig.todayStarts).add(1, "day").unix() &&
-            !todaysReviewedWords.has(getWordId(x)) &&
-            potentialTypes.includes(getCardType(x)) &&
-            !x.known &&
-            !isListFiltered(x, activityConfig)
-          );
-        })
-        .sort((a, b) => a.dueDate! - b.dueDate!);
-    }
-    console.debug("The final candidates list", candidates);
-    let candidate: CardType;
-    const readyCandidates = candidates.filter((x) => x.dueDate <= now);
-    if (readyCandidates.length > 0) {
-      candidate = getRandomNext(readyCandidates);
-    } else {
-      candidate = candidates[0];
-    }
-    console.debug("The candidate before returning", candidate);
-    return candidate ? [candidate, getCardType(candidate)] : [null, ""];
-  }
-
   function isListFiltered(card: CardType, activityConfig: RepetrobesActivityConfigType): boolean {
     if (!activityConfig.onlySelectedWordListRevisions) return false;
     const wId = getWordId(card);
@@ -264,20 +219,15 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
       .filter((x) => x.selected)
       .map((x) => x.value.toString());
 
-    let validExisting: Map<string, CardType>;
-    if (activityConfig.onlySelectedWordListRevisions) {
-      validExisting = new Map<string, CardType>();
-      for (const [k, v] of existingCards) {
-        if (
-          !isListFiltered(v, activityConfig) &&
-          !v.known &&
-          potentialTypes.includes(getCardType(v))
-        ) {
-          validExisting.set(k, v);
-        }
+    const validExisting: Map<string, CardType> = new Map<string, CardType>();
+    for (const [k, v] of existingCards) {
+      if (
+        !v.known &&
+        (!activityConfig.onlySelectedWordListRevisions || !isListFiltered(v, activityConfig)) &&
+        potentialTypes.includes(getCardType(v))
+      ) {
+        validExisting.set(k, v);
       }
-    } else {
-      validExisting = existingCards;
     }
     return validExisting;
   }
@@ -296,24 +246,59 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
     const possibleRevisionsToday = new Set<string>();
     const todayStarts = activityConfig.todayStarts;
 
+    // all wordIds reviewed, regardless of whether their corresponding cards are currently filtered
+    // this is so we don't do repeats
+    const wordIdsReviewedToday = new Set<string>(
+      [...state.existingCards.values()]
+        .filter((c) => c.lastRevisionDate > todayStarts)
+        .map((c) => getWordId(c)),
+    );
+    const toRereviewQueue = new Map<string, CardType>();
+
     for (const [cardId, card] of getValidExisting(state.existingCards, activityConfig)) {
       if (card.lastRevisionDate > todayStarts && card.firstRevisionDate >= todayStarts) {
         newToday.add(cardId);
         if (card.dueDate > dayjs.unix(todayStarts).add(1, "day").unix()) {
           completedNewToday.add(cardId);
+        } else {
+          toRereviewQueue.set(cardId, card);
         }
       } else if (card.lastRevisionDate > todayStarts && card.firstRevisionDate < todayStarts) {
         revisionsToday.add(cardId);
         if (card.dueDate > dayjs.unix(todayStarts).add(1, "day").unix()) {
           completedRevisionsToday.add(cardId);
+        } else {
+          toRereviewQueue.set(cardId, card);
         }
-      } else if (card.lastRevisionDate <= todayStarts && card.firstRevisionDate < todayStarts) {
+      } else if (
+        card.lastRevisionDate <= todayStarts &&
+        card.firstRevisionDate < todayStarts &&
+        !wordIdsReviewedToday.has(getWordId(cardId))
+      ) {
         possibleRevisionsToday.add(cardId);
+        toRereviewQueue.set(cardId, card);
       }
     }
-
     let getNew = newToday.size < activityConfig.maxNew;
-    if (newToday.size / revisionsToday.size > activityConfig.maxNew / activityConfig.maxRevisions) {
+    console.log(
+      "getNew false at the start",
+      getNew,
+      possibleRevisionsToday,
+      new Set([...possibleRevisionsToday].map((c) => getWordId(c))),
+    );
+
+    const filteredPossibleRevisionsToday = new Set(
+      [...possibleRevisionsToday].map((c) => getWordId(c)),
+    ).size;
+    const allRevisionsToday = revisionsToday.size + filteredPossibleRevisionsToday;
+    const availableNewToday = state.potentialCardsMap.size;
+    const allNewToday = newToday.size + availableNewToday;
+
+    if (
+      newToday.size / revisionsToday.size >
+      Math.min(allNewToday, activityConfig.maxNew) /
+        Math.min(allRevisionsToday, activityConfig.maxRevisions)
+    ) {
       getNew = false;
     }
 
@@ -326,15 +311,25 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
         };
       });
       currentCard = await unrevisedCard(getRandomNext(cards).id);
+      definition = state.allReviewableDefinitions.get(wordId) || null;
+    } else {
+      getNew = false; // strictly only useful for logging...
     }
 
     console.debug("Next practice new card", getNew, currentCard, state.potentialCardsMap);
-    let availableNewToday = 0;
     if (!(getNew && currentCard)) {
-      const [reviewCard, _reviewCardType] = await newRevisionFromState(state, activityConfig);
-      console.debug("Next practice review card", reviewCard, _reviewCardType);
+      const candidates = [...toRereviewQueue.values()].sort((a, b) => a.dueDate - b.dueDate);
+      const readyCandidates = candidates.filter((x) => x.dueDate <= dayjs().unix());
+      console.log("sorted candidates and readies", candidates, readyCandidates);
+      let reviewCard: CardType;
+      if (readyCandidates.length > 0) {
+        reviewCard = getRandomNext(readyCandidates);
+      } else {
+        reviewCard = candidates[0];
+      }
+      // const [reviewCard, _reviewCardType] = await newRevisionFromState(state, activityConfig);
+      // console.debug("Next practice review card", reviewCard, _reviewCardType);
 
-      availableNewToday = state.potentialCardsMap.size;
       const allNewToday = newToday.size + availableNewToday;
       const todaysNewLimit = Math.min(allNewToday, activityConfig.maxNew);
       if (reviewCard && (reviewCard.dueDate < dayjs().unix() || newToday.size >= todaysNewLimit)) {
@@ -372,7 +367,7 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
       availableNewToday,
       revisionsToday: revisionsToday.size,
       completedRevisionsToday: completedRevisionsToday.size,
-      possibleRevisionsToday: possibleRevisionsToday.size,
+      possibleRevisionsToday: filteredPossibleRevisionsToday,
     };
   }
 
@@ -410,6 +405,7 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
         };
 
         nextPractice(newState, stateActivityConfig).then((nextState) => {
+          console.log("Got nextPractice, should be setting loading to false");
           setShowAnswer(false);
           setLoading(false);
           setDaState({ ...nextState });
@@ -427,13 +423,14 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
     }
     return null;
   }
-
+  const classes = useStyles();
+  const helpUrl = "https://transcrob.es/page/software/learn/repetrobes/";
   const ac = stateActivityConfig;
   return (
-    <IconContext.Provider value={{ color: "blue", size: "3em" }}>
-      <div style={{ padding: "1em" }}>
-        <LauncherStyle>
-          <RepetrobesConfigLauncher activityConfig={ac} onConfigChange={handleConfigChange} />
+    <div>
+      <TopToolbar className={classes.toolbar}>
+        <RepetrobesConfigLauncher activityConfig={ac} onConfigChange={handleConfigChange} />
+        <div className={classes.progress}>
           {ac.showProgress && (
             <Progress
               activityConfig={ac}
@@ -445,8 +442,11 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
               possibleRevisionsToday={daState.possibleRevisionsToday}
             />
           )}
-        </LauncherStyle>
-        <div>
+          <HelpButton url={helpUrl} />
+        </div>
+      </TopToolbar>
+      <div>
+        <IconContext.Provider value={{ color: "blue", size: "3em" }}>
           <VocabRevisor
             showAnswer={showAnswer}
             activityConfig={stateActivityConfig}
@@ -459,9 +459,9 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
             onPractice={handlePractice}
             onShowAnswer={handleShowAnswer}
           />
-        </div>
+        </IconContext.Provider>
       </div>
-    </IconContext.Provider>
+    </div>
   );
 }
 

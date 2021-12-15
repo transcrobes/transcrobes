@@ -39,10 +39,9 @@ interface Props {
 }
 
 const useStyles = makeStyles((theme) => ({
-  root: {
-    margin: theme.spacing(1),
-    maxWidth: "800px",
-  },
+  root: { margin: theme.spacing(1), maxWidth: "800px" },
+  toolbar: { alignItems: "center" },
+  message: { color: "red", fontWeight: "bold", fontSize: "2em" },
 }));
 
 function Notrobes({ proxy, url }: Props): ReactElement {
@@ -302,11 +301,10 @@ function Notrobes({ proxy, url }: Props): ReactElement {
       );
     }
   }
-  const className = "";
   const helpUrl = "https://transcrob.es/page/software/learn/notrobes/";
   return (
     <>
-      <TopToolbar className={className}>
+      <TopToolbar className={classes.toolbar}>
         <HelpButton url={helpUrl} />
       </TopToolbar>
       <Container maxWidth="md">
@@ -329,11 +327,7 @@ function Notrobes({ proxy, url }: Props): ReactElement {
           className={`search-loading ${loading || !initialised ? "show" : "hide"}`}
           alt="loader"
         />
-        {message && (
-          <Typography style={{ color: "red", fontWeight: "bold", fontSize: "2em" }}>
-            {message}
-          </Typography>
-        )}
+        {message && <Typography className={classes.message}>{message}</Typography>}
         <IconContext.Provider value={{ color: "blue", size: "3em" }}>
           {renderSearchResults()}
         </IconContext.Provider>

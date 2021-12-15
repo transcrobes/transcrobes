@@ -33,7 +33,7 @@ const ContentActions: FC<any> = () => (
 export const ContentList: FC<ListProps> = (props) => {
   return (
     <List {...props} actions={<ContentActions />}>
-      <Datagrid>
+      <Datagrid rowClick="show">
         <TextField source="title" />
         <ReferenceField label="Source import" source="theImport" reference="imports" link="show">
           <TextField source="title" />
@@ -46,10 +46,7 @@ export const ContentList: FC<ListProps> = (props) => {
           source="contentType"
           render={(record: any) => reverseEnum(CONTENT_TYPE, record.contentType)}
         />
-        <BooleanField source="shared" />
         <ActionButton label="Action" props={props} />
-        <EditButton />
-        <ShowButton />
       </Datagrid>
     </List>
   );

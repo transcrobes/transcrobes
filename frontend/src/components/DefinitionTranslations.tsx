@@ -30,12 +30,18 @@ export default function DefinitionTranslations({ definition, cleanMeanings }: Pr
           posTrans.values.filter((v) => !v.match(definition.graph)),
           phones,
         );
-        if (values.length > 0) posTranslations.push({ posTag: posTrans.posTag, values });
+        if (values.length > 0) {
+          posTranslations.push({ posTag: posTrans.posTag, values });
+        }
       }
-      if (posTranslations.length > 0)
+      if (posTranslations.length > 0) {
         providerTranslations.push({ provider: providerTranslation.provider, posTranslations });
+      }
     }
-    if (providerTranslations.length === 0) definition.providerTranslations;
+    if (providerTranslations.length === 0) {
+      // if there was nothing clean, just have the dirty stuff.
+      providerTranslations = definition.providerTranslations;
+    }
   }
   return (
     <>

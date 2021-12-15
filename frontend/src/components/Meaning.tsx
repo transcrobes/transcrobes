@@ -6,7 +6,7 @@ import DefinitionTranslations from "./DefinitionTranslations";
 import EditableDefinitionTranslations from "./EditableDefinitionTranslations";
 import MeaningText from "../repetrobes/MeaningText";
 import SynonymsText from "../repetrobes/SynonymsText";
-import { toSimplePosLabels } from "../lib/lib";
+import { filterFakeL1Definitions, toSimplePosLabels } from "../lib/lib";
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     popover: {
@@ -59,16 +59,32 @@ export default function Meaning({
   if (!card.front) {
     for (const provider of definition.providerTranslations) {
       if (provider.posTranslations.length > 0) {
+        let hasValidDefinitions = false;
         for (const posTranslation of provider.posTranslations) {
-          posTrans.push(
-            <div key={"mean" + posTranslation.posTag}>
-              {toSimplePosLabels(posTranslation.posTag as SIMPLE_POS_TYPES)}:{" "}
-              {posTranslation.values.join(", ")}
-            </div>,
+          const finalList = filterFakeL1Definitions(
+            posTranslation.values.filter((v) => !v.match(definition.graph)),
+            definition.sound,
           );
+          console.log(
+            "badness for stuffs",
+            definition,
+            posTranslation.values,
+            posTranslation.values.filter((v) => !v.match(definition.graph)),
+          );
+          if (finalList.length > 0) {
+            hasValidDefinitions = true;
+            posTrans.push(
+              <div key={"mean" + posTranslation.posTag}>
+                {toSimplePosLabels(posTranslation.posTag as SIMPLE_POS_TYPES)}:{" "}
+                {finalList.join(", ")}
+              </div>,
+            );
+          }
         }
-        defaultProvider = provider.provider;
-        break;
+        if (hasValidDefinitions) {
+          defaultProvider = provider.provider;
+          break;
+        }
       }
     }
   }

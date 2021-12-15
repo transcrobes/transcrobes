@@ -13,13 +13,18 @@ interface Props {
 const useStyles = makeStyles((theme) => ({
   recents: { padding: "1em" },
 }));
-
+// let current = 0;
 export default function PhraseQuestion({
   recentSentences,
   showAnswer,
   characters,
 }: Props): ReactElement {
+  // FIXME: I really, really tried to have it so that the current would initially get set
+  // to a random number up to the max of the available recent sentences but it just didn't work
+  // For some reason the state was not updating correctly and state from previous renders was being
+  // shown...
   const classes = useStyles();
+  const [current, setCurrent] = useState(0);
   const sentences: [string, PosSentence][] = [];
   if (recentSentences) {
     for (const [k, v] of [...Object.entries(recentSentences)]) {
@@ -28,18 +33,7 @@ export default function PhraseQuestion({
       }
     }
   }
-  const randie = Math.floor(Math.random() * sentences.length);
-  const [current, setCurrent] = useState(randie);
-  console.debug(
-    "recentSentences",
-    recentSentences,
-    showAnswer,
-    sentences,
-    current,
-    sentences[current],
-    randie,
-    sentences[randie],
-  );
+  console.debug("recentSentences", recentSentences, showAnswer, current);
   return (
     <div>
       {(sentences && sentences[current] && sentences[current][1].modelId && (

@@ -5,8 +5,9 @@ import { $enum } from "ts-enum-util";
 
 import { CARD_TYPES, getCardId } from "../database/Schema";
 import { practice, GRADES } from "../lib/review";
-import { ListrobesConfigLauncher } from "./listrobes-config-launcher";
-import { VocabList } from "./vocab-list";
+// import { ListrobesConfigLauncher } from "./listrobes-config-launcher";
+import ListrobesConfigLauncher from "./ListrobesConfigLauncher";
+import { VocabList } from "./VocabList";
 import { USER_STATS_MODE } from "../lib/lib";
 import {
   EMPTY_CARD,
@@ -16,12 +17,22 @@ import {
   VocabReview,
 } from "../lib/types";
 import { AbstractWorkerProxy } from "../lib/proxies";
+import { TopToolbar } from "react-admin";
+import { Container, makeStyles } from "@material-ui/core";
+import HelpButton from "../components/HelpButton";
 
 const DATA_SOURCE = "listrobes.jsx";
 const DEFAULT_ITEMS_PER_PAGE = 100;
 const DEFAULT_FORCE_WCPM = false;
 const MIN_LOOKED_AT_EVENT_DURATION = 1300; // milliseconds
 let timeoutId: number;
+
+const useStyles = makeStyles(() => ({
+  toolbar: {
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+}));
 
 const GRADE_ICONS: Record<string, JSX.Element> = GRADES.reduce<Record<string, JSX.Element>>(
   (acc, curr) => ((acc[curr["id"]] = curr["icon"]), acc),
@@ -197,25 +208,33 @@ export function Listrobes({ proxy }: Props): ReactElement {
 
     submitLookupEvents(consultedDefinitions, USER_STATS_MODE.L1);
   }
+  const classes = useStyles();
+  const helpUrl = "https://transcrob.es/page/software/configure/listrobes/";
+
   return (
-    <div className="container wide">
-      <ColumnList>
+    <>
+      <TopToolbar className={classes.toolbar}>
         <ListrobesConfigLauncher
           loading={loading}
           graderConfig={graderConfig}
           onConfigChange={handleConfigChange}
         />
-        <VocabList
-          graderConfig={graderConfig}
-          vocab={vocab}
-          loading={loading}
-          onGradeChange={handleGradeChange}
-          onValidate={handleValidate}
-          onMouseOver={handleMouseOver}
-          onMouseOut={handleMouseOut}
-        />
-      </ColumnList>
-    </div>
+        <HelpButton url={helpUrl} />
+      </TopToolbar>
+      <Container maxWidth="lg">
+        <ColumnList>
+          <VocabList
+            graderConfig={graderConfig}
+            vocab={vocab}
+            loading={loading}
+            onGradeChange={handleGradeChange}
+            onValidate={handleValidate}
+            onMouseOver={handleMouseOver}
+            onMouseOut={handleMouseOut}
+          />
+        </ColumnList>
+      </Container>
+    </>
   );
 }
 
