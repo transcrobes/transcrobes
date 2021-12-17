@@ -8,9 +8,9 @@ interface Props {
   text?: string;
 }
 
-const useStyles = makeStyles({
+const useStyles = makeStyles((theme) => ({
   button: { marginLeft: ".2em" },
-});
+}));
 
 export default function HelpButton({ url, text }: Props): ReactElement {
   const classes = useStyles();

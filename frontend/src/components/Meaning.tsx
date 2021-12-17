@@ -65,12 +65,6 @@ export default function Meaning({
             posTranslation.values.filter((v) => !v.match(definition.graph)),
             definition.sound,
           );
-          console.log(
-            "badness for stuffs",
-            definition,
-            posTranslation.values,
-            posTranslation.values.filter((v) => !v.match(definition.graph)),
-          );
           if (finalList.length > 0) {
             hasValidDefinitions = true;
             posTrans.push(

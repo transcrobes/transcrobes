@@ -1,10 +1,34 @@
-import styled from "styled-components";
+import { makeStyles } from "@material-ui/core";
+import { ReactElement } from "react";
 import { GradesType, VocabReview } from "../lib/types";
 
+const useStyles = makeStyles(() => ({
+  tipText: {
+    border: "1px #333 solid",
+    padding: "3px",
+    width: "80%",
+    fontSize: "150%",
+    pageBreakInside: "avoid",
+  },
+  descriptionText: {
+    transform: "translateY(35px)",
+    display: "none",
+    position: "absolute",
+    border: "1px solid #000",
+    padding: "5px",
+    backgroundColor: "white",
+    opacity: "1",
+    "$tipText:hover &": {
+      display: "block",
+    },
+  },
+  rowItem: { display: "flex", justifyContent: "space-between" },
+}));
+
 function RowItem({ item, gradeOrder }: { item: VocabReview; gradeOrder: GradesType[] }) {
-  // FIXME: migrate the style to a styled-component
+  const classes = useStyles();
   return (
-    <div style={{ display: "flex", justifyContent: "space-between" }}>
+    <div className={classes.rowItem}>
       <div>{item.graph}</div>
       <div>{gradeOrder[item.clicks].icon}</div>
     </div>
@@ -12,36 +36,14 @@ function RowItem({ item, gradeOrder }: { item: VocabReview; gradeOrder: GradesTy
 }
 
 function MeaningTooltip({ item }: { item: VocabReview }) {
+  const classes = useStyles();
   return (
-    <DescriptionText>
-      <div>
-        <div>Pinyin: {item.sound.join(" ")}</div>
-        <div>Meaning: {item.meaning}</div>
-      </div>
-    </DescriptionText>
+    <div className={classes.descriptionText}>
+      <div>Pinyin: {item.sound.join(" ")}</div>
+      <div>Meaning: {item.meaning}</div>
+    </div>
   );
 }
-
-const TipText = styled.div`
-  border: 1px #333 solid;
-  padding: 3px;
-  width: 80%;
-  font-size: 150%;
-  page-break-inside: avoid;
-`;
-
-const DescriptionText = styled.div`
-  transform: translateY(35px);
-  display: none;
-  position: absolute;
-  border: 1px solid #000;
-  padding: 5px;
-  background-color: white;
-  opacity: 1;
-  ${TipText}:hover & {
-    display: block;
-  }
-`;
 
 interface Props {
   index: number;
@@ -59,7 +61,7 @@ export function VocabItem({
   onMouseOut,
   onMouseOver,
   onGradeUpdate,
-}: Props) {
+}: Props): ReactElement {
   function handleMouseOver(e: React.MouseEvent<HTMLDivElement>) {
     e.preventDefault();
     onMouseOver(index);
@@ -69,12 +71,13 @@ export function VocabItem({
     e.preventDefault();
     onGradeUpdate(index);
   }
+  const classes = useStyles();
   return (
-    <TipText>
+    <div className={classes.tipText}>
       <div onClick={handleClick} onMouseEnter={handleMouseOver} onMouseLeave={onMouseOut}>
         <MeaningTooltip item={item} />
         <RowItem item={item} gradeOrder={gradeOrder} />
       </div>
-    </TipText>
+    </div>
   );
 }

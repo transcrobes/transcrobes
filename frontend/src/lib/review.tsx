@@ -1,9 +1,8 @@
-import {
-  MdSentimentNeutral,
-  MdSentimentVeryDissatisfied,
-  MdSentimentVerySatisfied,
-  MdDone,
-} from "react-icons/md";
+import SentimentVerySatisfiedIcon from "@material-ui/icons/SentimentVerySatisfied";
+import SentimentVeryDissatisfiedIcon from "@material-ui/icons/SentimentVeryDissatisfied";
+import SentimentSatisfiedIcon from "@material-ui/icons/SentimentSatisfied";
+import CheckIcon from "@material-ui/icons/Check";
+
 import dayjs from "dayjs";
 
 import { GRADE, EFACTOR_DEFAULT } from "../database/Schema";
@@ -13,15 +12,15 @@ const GRADES: GradesType[] = [
   {
     id: GRADE.UNKNOWN.toString(),
     content: "Add as unknown",
-    icon: MdSentimentVeryDissatisfied({}),
+    icon: <SentimentVeryDissatisfiedIcon />,
   },
-  { id: GRADE.HARD.toString(), content: "Add as known (poorly)", icon: MdSentimentNeutral({}) },
+  { id: GRADE.HARD.toString(), content: "Add as known (poorly)", icon: <SentimentSatisfiedIcon /> },
   {
     id: GRADE.GOOD.toString(),
     content: "Add as known (to revise)",
-    icon: MdSentimentVerySatisfied({}),
+    icon: <SentimentVerySatisfiedIcon />,
   },
-  { id: GRADE.KNOWN.toString(), content: "Add as known (no revision)", icon: MdDone({}) },
+  { id: GRADE.KNOWN.toString(), content: "Add as known (no revision)", icon: <CheckIcon /> },
 ];
 
 function shuffleArray(array: any[]): any[] {

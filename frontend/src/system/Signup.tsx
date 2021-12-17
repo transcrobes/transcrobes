@@ -1,5 +1,5 @@
 import { ReactElement, useState } from "react";
-import { Notification, useTranslate, useNotify } from "react-admin";
+import { Notification, useTranslate, useNotify, TopToolbar } from "react-admin";
 import { Field, withTypes } from "react-final-form";
 import AddIcon from "@material-ui/icons/Add";
 import { makeStyles } from "@material-ui/core/styles";
@@ -13,11 +13,13 @@ import CircularProgress from "@material-ui/core/CircularProgress";
 import TextField from "@material-ui/core/TextField";
 import { OnChange } from "react-final-form-listeners";
 import PasswordStrengthBar from "react-password-strength-bar";
+import HelpButton from "../components/HelpButton";
 
 const emailRegex =
   /[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?/;
 
 const useStyles = makeStyles((theme) => ({
+  help: {},
   main: {
     display: "flex",
     flexDirection: "column",
@@ -171,7 +173,7 @@ export default function Signup(): ReactElement {
     }
     return errors;
   }
-
+  const helpUrl = "https://transcrob.es";
   return (
     <Form
       onSubmit={handleSubmit}
@@ -294,6 +296,13 @@ export default function Signup(): ReactElement {
                 <div className={classes.userManagement}>
                   <Typography>
                     <Link to="/recover-password">{translate("user.reset_password.label")}</Link>
+                  </Typography>
+                </div>
+                <div className={classes.userManagement}>
+                  <Typography>
+                    <a target={"_blank"} href={helpUrl}>
+                      {translate("user.help.site")}
+                    </a>
                   </Typography>
                 </div>
               </div>

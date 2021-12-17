@@ -1,3 +1,4 @@
+import { FormControlLabel, Switch } from "@material-ui/core";
 import React, { ReactElement } from "react";
 
 interface Props {
@@ -11,16 +12,14 @@ interface Props {
 function TCCheckbox({ name, label, isSelected, className, onCheckboxChange }: Props): ReactElement {
   return (
     <div className={className}>
-      <label htmlFor={name}>
-        <input
-          type="checkbox"
-          name={name}
-          checked={isSelected}
-          onChange={onCheckboxChange}
-          // className="form-check-input"
-        />
-        {label}
-      </label>
+      <FormControlLabel
+        control={
+          <Switch name={name} size="small" checked={isSelected} onChange={onCheckboxChange} />
+        }
+        label={label}
+        labelPlacement="end"
+        className={className}
+      />
     </div>
   );
 }

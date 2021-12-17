@@ -1,17 +1,17 @@
-import styled from "styled-components";
-import Loader from "../img/loader.gif";
+import { CircularProgress, styled } from "@material-ui/core";
+import { Property } from "csstype";
 
-interface Props {
-  Img: string;
-}
+const SearchLoading = styled(
+  ({ size, disableShrink }: { size?: Property.FontSize; disableShrink?: boolean }) => {
+    return (
+      <div>
+        <CircularProgress size={size || 200} disableShrink={disableShrink} />
+      </div>
+    );
+  },
+)({
+  textAlign: "center",
+  display: "block",
+});
 
-const SearchLoading = styled.img.attrs<Props>((props) => ({
-  src: props.Img || Loader,
-}))`
-  position: fixed;
-  left: 0;
-  right: 0;
-  margin: auto;
-  display: block;
-`;
 export default SearchLoading;

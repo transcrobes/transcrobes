@@ -11,6 +11,9 @@ const useStyles = makeStyles((theme: Theme) =>
     typography: {
       padding: theme.spacing(2),
     },
+    settings: {
+      paddingTop: 0,
+    },
   }),
 );
 
@@ -41,7 +44,12 @@ export default function ListrobesConfigLauncher({
 
   return (
     <div>
-      <IconButton onClick={toggleDrawer(true)} color="primary" aria-label="settings">
+      <IconButton
+        className={classes.settings}
+        onClick={toggleDrawer(true)}
+        color="primary"
+        aria-label="settings"
+      >
         <SettingsIcon />
       </IconButton>
       <Drawer anchor="left" open={isOpen} onClose={toggleDrawer(false)}>

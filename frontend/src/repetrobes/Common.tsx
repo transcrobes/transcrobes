@@ -1,45 +1,51 @@
-import styled from "styled-components";
+import { styled } from "@material-ui/core";
 import { CardType, DefinitionType, PosSentences } from "../lib/types";
 
-export const CentredFlex = styled.div`
-  display: flex;
-  justify-content: center;
-  padding: 0.2em;
-`;
-export const QuestionWrapper = styled.div`
-  display: flex;
-  justify-content: center;
-  padding: 1em;
-`;
-export const AnswerWrapper = styled.div`
-  display: flex;
-  justify-content: center;
-  padding: 1em;
-`;
-export const GraphSoundQuestionStyle = styled.div`
-  font-size: 4em;
-  padding: 0.5em;
-`;
-export const StyledAnswer = styled.div`
-  display: flex;
-  justify-content: center;
-  font-size: 2em;
-  padding: 1em;
-`;
-export const StyledQuestion = styled.div`
-  font-size: 2em;
-  padding: 1em;
-`;
-export const MeaningWrapper = styled.div`
-  display: block;
-  padding: 1em;
-`;
+export const CentredFlex = styled("div")(() => ({
+  display: "flex",
+  justifyContent: "center",
+  padding: "0.2em",
+}));
 
-export const LauncherStyle = styled.div`
-  display: flex;
-  justify-content: space-between;
-  padding: 0.5em;
-`;
+export const QuestionWrapper = styled("div")(() => ({
+  display: "flex",
+  justifyContent: "center",
+  padding: "1em",
+}));
+
+export const AnswerWrapper = styled("div")(() => ({
+  display: "flex",
+  justifyContent: "center",
+  padding: "1em",
+}));
+
+export const GraphSoundQuestionStyle = styled("div")(() => ({
+  fontSize: "4em",
+  padding: "0.5em",
+}));
+
+export const StyledAnswer = styled("div")(() => ({
+  display: "flex",
+  justifyContent: "center",
+  fontSize: "2em",
+  padding: "1em",
+}));
+
+export const StyledQuestion = styled("div")(() => ({
+  fontSize: "2em",
+  padding: "1em",
+}));
+
+export const MeaningWrapper = styled("div")(() => ({
+  display: "block",
+  padding: "1em",
+}));
+
+export const LauncherStyle = styled("div")(() => ({
+  display: "flex",
+  justifyContent: "space-between",
+  padding: "0.5em",
+}));
 
 export interface CommonAnswerProps {
   card: CardType;

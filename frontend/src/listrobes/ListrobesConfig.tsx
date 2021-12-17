@@ -1,12 +1,12 @@
 import { ReactElement } from "react";
 import { DragDropContext, Droppable, Draggable, DropResult } from "react-beautiful-dnd";
-import styled from "styled-components";
-import "reactjs-popup/dist/index.css";
 import Select from "react-select";
-import TCCheckbox from "../components/TCCheckbox";
 import _ from "lodash";
+import { makeStyles, TextField, Theme } from "@material-ui/core";
+
+import TCCheckbox from "../components/TCCheckbox";
 import { GraderConfig } from "../lib/types";
-import { makeStyles, Theme } from "@material-ui/core";
+import { validInt } from "../lib/funclib";
 
 const useStyles = makeStyles((theme: Theme) => ({
   typography: {
@@ -17,7 +17,13 @@ const useStyles = makeStyles((theme: Theme) => ({
   itemsPerPageInput: { width: "30%" },
   checkbox: { padding: "0.4em" },
   select: { padding: "0.4em" },
-  // textbox: { display: "flex", justifyContent: "space-between", padding: "0.4em" },
+  row: {
+    border: "solid",
+    display: "flex",
+    justifyContent: "space-between",
+    padding: "4px",
+    margin: "4px",
+  },
 }));
 
 // a little function to help us with reordering the result
@@ -28,14 +34,6 @@ const reorder = (list: any[], startIndex: number, endIndex: number) => {
 
   return result;
 };
-
-const Row = styled.div`
-  border: solid;
-  display: flex;
-  justify-content: space-between;
-  padding: 4px;
-  margin: 4px;
-`;
 
 interface Props {
   graderConfig: GraderConfig;
@@ -94,7 +92,8 @@ export function ListrobesConfig({ graderConfig, onConfigChange }: Props): ReactE
                 {gradeOrder.map((item, index) => (
                   <Draggable key={item.id} draggableId={item.id} index={index}>
                     {(provided, snapshot) => (
-                      <Row
+                      <div
+                        className={classes.row}
                         ref={provided.innerRef}
                         {...provided.draggableProps}
                         {...provided.dragHandleProps}
@@ -102,7 +101,7 @@ export function ListrobesConfig({ graderConfig, onConfigChange }: Props): ReactE
                         <div className={classes.rowItem}>{index}</div>
                         <div>{item.content}</div>
                         {item.icon}
-                      </Row>
+                      </div>
                     )}
                   </Draggable>
                 ))}
@@ -134,15 +133,16 @@ export function ListrobesConfig({ graderConfig, onConfigChange }: Props): ReactE
         />
       </div>
       <div className={classes.itemsPerPage}>
-        <label htmlFor="itemsPerPage">Items per page (1 to 250)</label>
-        <input
-          className={classes.itemsPerPageInput}
-          name="itemsPerPage"
-          min="1"
-          max="250"
+        <TextField
+          label="Items per page (1 to 250)"
+          title="Items per page (1 to 250)"
           type="number"
-          value={graderConfig.itemsPerPage}
+          error={!validInt(graderConfig.itemsPerPage, 0, 10000)}
+          helperText={!validInt(graderConfig.itemsPerPage, 1, 250) ? "Invalid number" : undefined}
+          defaultValue={graderConfig.itemsPerPage}
           onChange={handleItemsPerPageChange}
+          name="itemsPerPage"
+          variant="outlined"
         />
       </div>
     </div>

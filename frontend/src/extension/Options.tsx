@@ -4,7 +4,6 @@ import * as utils from "../lib/lib";
 import * as ap from "../lib/JWTAuthProvider";
 import { getDb } from "../database/Database";
 import { RxDBDataProviderParams } from "../ra-data-rxdb";
-import Loader from "../img/loader.gif";
 import { USER_STATS_MODE } from "../lib/lib";
 import { TranscrobesDatabase } from "../database/Schema";
 import { onError } from "../lib/funclib";
@@ -22,6 +21,7 @@ import {
   Typography,
 } from "@material-ui/core";
 import GlossingSelector from "../components/GlossingSelector";
+import SearchLoading from "../components/SearchLoading";
 
 declare global {
   interface Window {
@@ -44,6 +44,9 @@ const useStyles = makeStyles((theme) => ({
   message: {
     margin: theme.spacing(1),
     fontSize: "2em",
+  },
+  loading: {
+    textAlign: "center",
   },
 }));
 
@@ -295,7 +298,10 @@ export default function Options(): JSX.Element {
       <Intro inited={!!inited} />
       {running && (
         <>
-          <img alt="Running" src={Loader} /> <Initialisation />
+          <div className={classes.loading}>
+            <SearchLoading disableShrink />
+          </div>
+          <Initialisation />
         </>
       )}
     </Container>

@@ -132,7 +132,7 @@ function System({ proxy }: Props): ReactElement {
   const translate = useTranslate();
   const [message, setMessage] = useState("");
   const classes = useStyles();
-  const helpUrl = "https://transcrob.es/page/software/system/actions/";
+  const helpUrl = "https://transcrob.es/page/software/configure/system/";
 
   return (
     <div>

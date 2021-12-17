@@ -1,9 +1,9 @@
-import styled from "styled-components";
+import { styled } from "@material-ui/core";
 
-export const InfoBox = styled.div`
-  margin: 0.7em;
-`;
+export const InfoBox = styled("div")(() => ({
+  margin: "0.7em",
+}));
 
-export const ThinHR = styled.hr`
-  margin: 0.3rem;
-`;
+export const ThinHR = styled("hr")(() => ({
+  margin: "0.7em",
+}));

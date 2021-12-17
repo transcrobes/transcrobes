@@ -1,9 +1,6 @@
 import { useState, useEffect, useRef, ReactElement } from "react";
 import axios, { CancelTokenSource } from "axios";
-import { IconContext } from "react-icons";
 import { Converter, ConvertText } from "opencc-js";
-
-import Loader from "../img/loader.gif";
 import { simpOnly } from "../lib/lib";
 import { USER_STATS_MODE } from "../lib/lib";
 import Word from "./Word";
@@ -26,6 +23,7 @@ import { $enum } from "ts-enum-util";
 import { TopToolbar } from "react-admin";
 import HelpButton from "../components/HelpButton";
 import { Container, makeStyles, TextField, Typography } from "@material-ui/core";
+import SearchLoading from "../components/SearchLoading";
 
 const DATA_SOURCE = "Notrobes.jsx";
 
@@ -42,6 +40,9 @@ const useStyles = makeStyles((theme) => ({
   root: { margin: theme.spacing(1), maxWidth: "800px" },
   toolbar: { alignItems: "center" },
   message: { color: "red", fontWeight: "bold", fontSize: "2em" },
+  loading: {
+    textAlign: "center",
+  },
 }));
 
 function Notrobes({ proxy, url }: Props): ReactElement {
@@ -322,15 +323,13 @@ function Notrobes({ proxy, url }: Props): ReactElement {
             />
           </form>
         </div>
-        <img
-          src={Loader}
-          className={`search-loading ${loading || !initialised ? "show" : "hide"}`}
-          alt="loader"
-        />
+        {loading && (
+          <div className={classes.loading}>
+            <SearchLoading />
+          </div>
+        )}
         {message && <Typography className={classes.message}>{message}</Typography>}
-        <IconContext.Provider value={{ color: "blue", size: "3em" }}>
-          {renderSearchResults()}
-        </IconContext.Provider>
+        {renderSearchResults()}
       </Container>
     </>
   );

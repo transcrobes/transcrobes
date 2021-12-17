@@ -2,12 +2,15 @@ import React, { ReactElement } from "react";
 import RepetrobesConfig from "./RepetrobesConfig";
 import { RepetrobesActivityConfigType } from "../lib/types";
 import SettingsIcon from "@material-ui/icons/Settings";
-import { Box, Drawer, IconButton } from "@material-ui/core";
+import { Box, createStyles, Drawer, IconButton, makeStyles, Theme } from "@material-ui/core";
 
-interface Props {
-  activityConfig: RepetrobesActivityConfigType;
-  onConfigChange: (activityConfig: RepetrobesActivityConfigType) => void;
-}
+const useStyles = makeStyles((theme: Theme) =>
+  createStyles({
+    settings: {
+      paddingTop: 0,
+    },
+  }),
+);
 
 interface Props {
   activityConfig: RepetrobesActivityConfigType;
@@ -19,7 +22,7 @@ export default function RepetrobesConfigLauncher({
   onConfigChange,
 }: Props): ReactElement {
   const [isOpen, setIsOpen] = React.useState(false);
-
+  const classes = useStyles();
   // TODO: work out how to do this as proper functions!
   const toggleDrawer = (open: boolean) => (event: React.KeyboardEvent | React.MouseEvent) => {
     if (
@@ -34,7 +37,12 @@ export default function RepetrobesConfigLauncher({
 
   return (
     <div>
-      <IconButton onClick={toggleDrawer(true)} color="primary" aria-label="settings">
+      <IconButton
+        className={classes.settings}
+        onClick={toggleDrawer(true)}
+        color="primary"
+        aria-label="settings"
+      >
         <SettingsIcon />
       </IconButton>
       <Drawer anchor="left" open={isOpen} onClose={toggleDrawer(false)}>

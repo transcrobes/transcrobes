@@ -2,7 +2,7 @@ import { ReactElement } from "react";
 import { VocabItem } from "./VocabItem";
 import SearchLoading from "../components/SearchLoading";
 import { GraderConfig, VocabReview } from "../lib/types";
-import { Button } from "@material-ui/core";
+import { Button, CircularProgress } from "@material-ui/core";
 
 interface Props {
   vocab: VocabReview[];
@@ -26,7 +26,6 @@ export function VocabList({
   const unloaded = loading || !vocab;
   return (
     <>
-      {unloaded && <SearchLoading />}
       {!unloaded && vocab.length === 0 && <span>No remaining vocabulary items</span>}
       {!unloaded &&
         vocab.map((vocabItem, index) => {

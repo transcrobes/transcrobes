@@ -2,10 +2,12 @@ import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { useAuthenticated } from "react-admin";
 import D2Reader from "@d-i-t-a/reader";
-import { ChakraProvider, Link, Text, Icon } from "@chakra-ui/react";
+import { ChakraProvider, Link, Text } from "@chakra-ui/react";
 import "@nypl/design-system-react-components/dist/styles.css";
 import WebReader, { getTheme } from "@nypl/web-reader";
-import { MdHome } from "react-icons/md";
+import { IconButton } from "@material-ui/core";
+import HomeIcon from "@material-ui/icons/Home";
+
 import injectables from "./injectables";
 import SettingsCard from "./SettingsCard";
 import { USER_STATS_MODE } from "../../lib/lib";
@@ -76,7 +78,10 @@ function HeaderLeft({ doUpdate }: HeaderLeftProps): React.ReactElement {
           textDecoration: "none",
         }}
       >
-        <Icon as={MdHome} w={6} h={6} />
+        <IconButton title="Return to Content">
+          <HomeIcon />
+        </IconButton>
+
         <Text paddingLeft={2} variant="headerNav">
           Back to Content
         </Text>

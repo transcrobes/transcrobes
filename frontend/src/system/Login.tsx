@@ -129,6 +129,7 @@ function Login(): ReactElement {
     return errors;
   }
 
+  const helpUrl = "https://transcrob.es";
   return (
     <Form
       onSubmit={handleSubmit}
@@ -219,6 +220,13 @@ function Login(): ReactElement {
                 <div className={classes.userManagement}>
                   <Typography>
                     <Link to="/signup">{translate("user.signup.label")}</Link>
+                  </Typography>
+                </div>
+                <div className={classes.userManagement}>
+                  <Typography>
+                    <a target={"_blank"} href={helpUrl}>
+                      {translate("user.help.site")}
+                    </a>
                   </Typography>
                 </div>
               </div>

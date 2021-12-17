@@ -1,11 +1,24 @@
+import { styled } from "@material-ui/core";
 import { ReactElement } from "react";
-import styled from "styled-components";
 import { RepetrobesActivityConfigType } from "../lib/types";
 
-const ProgressStyle = styled.div<{ colour: string }>`
-  background-color: ${(props) => props.colour || "inherit"};
-  padding: 0.2em;
-`;
+type ProgressColour = "green" | "yellow" | "inherit";
+
+interface StyleProps {
+  colour: ProgressColour;
+  children?: React.ReactNode;
+}
+
+// TODO: consider the following style:
+// const MyThemeComponent = styled('div', {...
+// but need to work out what the obligatory params mean like shouldForwardProp, name, slot...
+const ProgressStyle = styled(({ colour, children, ...other }: StyleProps) => {
+  return <div {...other}>{children}</div>;
+})({
+  backgroundColor: ({ colour }: StyleProps) => colour || "inherit",
+  padding: "0.2em",
+});
+
 interface ProgressProps {
   activityConfig: RepetrobesActivityConfigType;
   newToday: number;
@@ -16,11 +29,7 @@ interface ProgressProps {
   possibleRevisionsToday: number;
 }
 
-function progressColour(
-  started: number,
-  completed: number,
-  maxTodo: number,
-): "green" | "yellow" | "inherit" {
+function progressColour(started: number, completed: number, maxTodo: number): ProgressColour {
   if (completed >= maxTodo) return "green";
   if (started >= maxTodo) return "yellow";
   return "inherit";

@@ -1,11 +1,9 @@
 import { useState, useEffect, ReactElement } from "react";
 import _ from "lodash";
-import styled from "styled-components";
 import { $enum } from "ts-enum-util";
 
 import { CARD_TYPES, getCardId } from "../database/Schema";
 import { practice, GRADES } from "../lib/review";
-// import { ListrobesConfigLauncher } from "./listrobes-config-launcher";
 import ListrobesConfigLauncher from "./ListrobesConfigLauncher";
 import { VocabList } from "./VocabList";
 import { USER_STATS_MODE } from "../lib/lib";
@@ -20,47 +18,34 @@ import { AbstractWorkerProxy } from "../lib/proxies";
 import { TopToolbar } from "react-admin";
 import { Container, makeStyles } from "@material-ui/core";
 import HelpButton from "../components/HelpButton";
+import SearchLoading from "../components/SearchLoading";
 
 const DATA_SOURCE = "listrobes.jsx";
-const DEFAULT_ITEMS_PER_PAGE = 100;
+const DEFAULT_ITEMS_PER_PAGE = 50;
 const DEFAULT_FORCE_WCPM = false;
 const MIN_LOOKED_AT_EVENT_DURATION = 1300; // milliseconds
 let timeoutId: number;
 
 const useStyles = makeStyles(() => ({
+  loading: {
+    textAlign: "center",
+  },
   toolbar: {
     justifyContent: "space-between",
     alignItems: "center",
   },
+  columnList: {
+    columnWidth: "150px",
+    paddingLeft: "1em",
+    paddingTop: "1em",
+  },
 }));
-
-const GRADE_ICONS: Record<string, JSX.Element> = GRADES.reduce<Record<string, JSX.Element>>(
-  (acc, curr) => ((acc[curr["id"]] = curr["icon"]), acc),
-  {},
-);
 
 function gradesWithoutIcons(grades: GradesType[]) {
   return grades.map((x) => {
     return { id: x.id, content: x.content };
   });
 }
-function gradesWithIcons(grades: GradesType[]) {
-  return grades.map((x) => {
-    return { id: x.id, content: x.content, icon: GRADE_ICONS[x.id] };
-  });
-}
-
-// FIXME: should this be here? Where then???
-function getGradeOrder() {
-  return GRADES;
-}
-
-const ColumnList = styled.div`
-  column-width: 150px;
-  padding-left: 1em;
-  padding-top: 1em;
-`;
-
 interface Props {
   proxy: AbstractWorkerProxy;
 }
@@ -69,7 +54,7 @@ export function Listrobes({ proxy }: Props): ReactElement {
   const [vocab, setVocab] = useState<VocabReview[]>([]);
 
   const [graderConfig, setGraderConfig] = useState<GraderConfig>({
-    gradeOrder: getGradeOrder(),
+    gradeOrder: GRADES,
     forceWcpm: DEFAULT_FORCE_WCPM,
     itemsPerPage: DEFAULT_ITEMS_PER_PAGE,
     wordLists: [],
@@ -221,8 +206,14 @@ export function Listrobes({ proxy }: Props): ReactElement {
         />
         <HelpButton url={helpUrl} />
       </TopToolbar>
+
       <Container maxWidth="lg">
-        <ColumnList>
+        {loading && (
+          <div className={classes.loading}>
+            <SearchLoading />
+          </div>
+        )}
+        <div className={classes.columnList}>
           <VocabList
             graderConfig={graderConfig}
             vocab={vocab}
@@ -232,7 +223,7 @@ export function Listrobes({ proxy }: Props): ReactElement {
             onMouseOver={handleMouseOver}
             onMouseOut={handleMouseOut}
           />
-        </ColumnList>
+        </div>
       </Container>
     </>
   );

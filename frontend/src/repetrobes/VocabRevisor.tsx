@@ -1,7 +1,6 @@
 import { ReactElement } from "react";
 import { Button } from "@material-ui/core";
 
-import SearchLoading from "../components/SearchLoading";
 import { CARD_TYPES, getCardType, getWordId } from "../database/Schema";
 import { wordIdsFromModels } from "../lib/funclib";
 import PracticerInput from "../components/PracticerInput";
@@ -13,7 +12,6 @@ import {
   RecentSentencesType,
   RepetrobesActivityConfigType,
 } from "../lib/types";
-import Loader from "../img/loader.gif";
 import { setGlossing, setLangPair, setSegmentation, USER_STATS_MODE } from "../lib/lib";
 import { getUserCardWords, setPlatformHelper } from "../lib/components";
 import { AnswerWrapper, CentredFlex, QuestionWrapper } from "./Common";
@@ -27,6 +25,8 @@ import PhraseAnswer from "./PhraseAnswer";
 import PhraseQuestion from "./PhraseQuestion";
 import dayjs from "dayjs";
 import localizedFormat from "dayjs/plugin/localizedFormat";
+import SearchLoading from "../components/SearchLoading";
+
 dayjs.extend(localizedFormat);
 
 const DATA_SOURCE = "VocabRevisor.tsx";
@@ -224,7 +224,6 @@ export function VocabRevisor({
   );
   return (
     <>
-      {loading && <SearchLoading src={Loader} />}
       {!loading && !definition && <span>No review items loaded</span>}
       {!loading && !!definition && !!currentCard && !!characters && (
         <>

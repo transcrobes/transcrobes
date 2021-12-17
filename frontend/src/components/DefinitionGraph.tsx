@@ -1,8 +1,14 @@
-import { Button } from "@material-ui/core";
+import { Button, makeStyles } from "@material-ui/core";
 import { ReactElement, useState } from "react";
-import styled from "styled-components";
 import { CharacterType } from "../lib/types";
 import CharacterGraph from "./CharacterGraph";
+
+const useStyles = makeStyles({
+  centred: {
+    display: "flex",
+    justifyContent: "center",
+  },
+});
 
 interface Props {
   characters: (CharacterType | null)[];
@@ -11,11 +17,6 @@ interface Props {
   charHeight?: number;
 }
 
-const CentredFlex = styled.div`
-  display: flex;
-  justify-content: center;
-`;
-
 export default function DefinitionGraph({
   characters,
   showAnswer,
@@ -23,7 +24,7 @@ export default function DefinitionGraph({
   charWidth,
 }: Props): ReactElement {
   const [toAnimate, setToAnimate] = useState(characters.map(() => 0));
-
+  const classes = useStyles();
   function draw() {
     console.debug("Starting the animation from the start");
     const toAnimateUpdate = characters.map(() => 0);
@@ -42,7 +43,7 @@ export default function DefinitionGraph({
   console.debug("Rendering DefinitionGraph with chars", characters);
   return (
     <div>
-      <CentredFlex>
+      <div className={classes.centred}>
         {characters
           .filter((x) => !!x)
           .map((character, index) => {
@@ -59,13 +60,13 @@ export default function DefinitionGraph({
               />
             );
           })}
-      </CentredFlex>
+      </div>
       {showAnswer && (
-        <CentredFlex>
+        <div className={classes.centred}>
           <Button onClick={() => draw()} variant="contained" color="primary">
             Draw it!
           </Button>
-        </CentredFlex>
+        </div>
       )}
     </div>
   );

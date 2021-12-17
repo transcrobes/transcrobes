@@ -28,6 +28,9 @@ const customEnglishMessages: TranslationMessages = {
     },
   },
   user: {
+    help: {
+      site: "Website information",
+    },
     signup: {
       label: "Create an account",
       error: "Error creating account, please try again later",

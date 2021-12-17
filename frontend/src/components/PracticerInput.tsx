@@ -1,59 +1,66 @@
-import { FaFrown, FaMeh, FaSmile, FaCheck } from "react-icons/fa";
 import { GRADE } from "../database/Schema";
-import styled from "styled-components";
 import { ReactElement } from "react";
+import { IconButton, makeStyles, Theme } from "@material-ui/core";
+import SentimentVerySatisfiedIcon from "@material-ui/icons/SentimentVerySatisfied";
+import SentimentVeryDissatisfiedIcon from "@material-ui/icons/SentimentVeryDissatisfied";
+import SentimentSatisfiedIcon from "@material-ui/icons/SentimentSatisfied";
+import CheckIcon from "@material-ui/icons/Check";
+import { Property } from "csstype";
 
-const PracticerStyle = styled.div`
-  display: flex;
-  justify-content: space-between;
-  padding: 0.5em;
-`;
+interface IconProps {
+  iconSize?: Property.FontSize;
+  iconColour?: Property.Color;
+}
 
-const SVGButton = styled.button`
-  border: none;
-  background: none;
-  cursor: pointer;
-  &:focus {
-    outline: 2px dashed #17171d;
-  }
-  &:hover {
-    svg {
-      transform: scale(1.1);
-    }
-  }
-  &::-moz-focus-inner {
-    border: 0;
-  }
-  svg {
-    outline: none;
-    transition: transform 0.15s linear;
-  }
-`;
+const useStyles = makeStyles<Theme, IconProps>(() => ({
+  practicerStyle: {
+    display: "flex",
+    justifyContent: "space-between",
+    padding: "0.5em",
+  },
+  iconStyle: {
+    "& svg": {
+      fontSize: ({ iconSize }: IconProps) => iconSize || 100,
+      color: ({ iconColour }: IconProps) => iconColour || "blue",
+    },
+  },
+}));
 
 interface PracticerInputProps {
+  iconSize?: Property.FontSize;
+  iconColour?: Property.Color;
   onPractice: (wordId: string, grade: number) => void;
   wordId: string;
 }
 
-function PracticerInput({ wordId, onPractice }: PracticerInputProps): ReactElement {
+function PracticerInput({
+  wordId,
+  onPractice,
+  iconSize,
+  iconColour,
+}: PracticerInputProps): ReactElement {
   function addOrUpdateCards(grade: number) {
     onPractice(wordId, grade);
   }
+  const classes = useStyles({ iconColour: iconColour, iconSize: iconSize });
   return (
-    <PracticerStyle>
-      <SVGButton title="I don't know this word yet">
-        <FaFrown onClick={() => addOrUpdateCards(GRADE.UNKNOWN)} />
-      </SVGButton>
-      <SVGButton title="I am not confident with this word">
-        <FaMeh onClick={() => addOrUpdateCards(GRADE.HARD)} />
-      </SVGButton>
-      <SVGButton title="I am comfortable with this word">
-        <FaSmile onClick={() => addOrUpdateCards(GRADE.GOOD)} />
-      </SVGButton>
-      <SVGButton title="I know this word, I don't need to revise it again">
-        <FaCheck onClick={() => addOrUpdateCards(GRADE.KNOWN)} />
-      </SVGButton>
-    </PracticerStyle>
+    <div className={classes.practicerStyle}>
+      <IconButton className={classes.iconStyle} title="I don't know this word yet">
+        <SentimentVeryDissatisfiedIcon onClick={() => addOrUpdateCards(GRADE.UNKNOWN)} />
+      </IconButton>
+      <IconButton className={classes.iconStyle} title="I am not confident with this word">
+        <SentimentSatisfiedIcon onClick={() => addOrUpdateCards(GRADE.HARD)} />
+      </IconButton>
+      <IconButton className={classes.iconStyle} title="I am comfortable with this word">
+        <SentimentVerySatisfiedIcon onClick={() => addOrUpdateCards(GRADE.GOOD)} />
+      </IconButton>
+      <IconButton
+        className={classes.iconStyle}
+        title="I know this word, I don't need to revise it again"
+      >
+        <CheckIcon onClick={() => addOrUpdateCards(GRADE.KNOWN)} />
+      </IconButton>
+    </div>
   );
 }
 

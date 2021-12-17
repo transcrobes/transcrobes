@@ -3,7 +3,7 @@ import { Admin, Resource } from "react-admin";
 import polyglotI18nProvider from "ra-i18n-polyglot";
 import { Workbox } from "workbox-window";
 
-import "./css/components.css";
+// import "./css/components.css";
 import customRoutes from "./routes";
 import imports from "./imports";
 import contents from "./contents";

@@ -9,6 +9,7 @@ import NoSleep from "nosleep.js";
 import { getUsername, isInitialisedAsync, setInitialisedAsync } from "../lib/JWTAuthProvider";
 import Loading from "../icons/spinning-circles";
 import { ProgressCallbackMessage } from "../lib/proxies";
+import { Typography } from "@material-ui/core";
 
 const noSleep = new NoSleep();
 
@@ -17,11 +18,21 @@ const useStyles = makeStyles({
   button: { margin: "1em" },
 });
 
+const helpUrl = "https://transcrob.es";
 function Intro() {
+  const translate = useTranslate();
   return (
     <>
       <h1>Welcome to Transcrobes!</h1>
       <h2>It's initialisation time (10-20 minutes)!</h2>
+      <div>
+        <Typography>
+          <a target={"_blank"} href={helpUrl}>
+            {translate("user.help.site")}
+          </a>
+        </Typography>
+      </div>
+
       <p>
         Transcrobes has been tested and works best on either Google Chrome, Microsoft Edge or Yandex
         Browser (Chromium-based browsers) on either the desktop (Windows, Linux, Mac) or on Android.

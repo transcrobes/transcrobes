@@ -29,7 +29,7 @@ import { EMPTY_ACTIVITY, getUserConfig } from "./funclib";
 import { TopToolbar } from "react-admin";
 import HelpButton from "../components/HelpButton";
 import { makeStyles, Theme } from "@material-ui/core";
-import { IconContext } from "react-icons";
+import SearchLoading from "../components/SearchLoading";
 
 const DATA_SOURCE = "Repetrobes.tsx";
 
@@ -60,6 +60,9 @@ const useStyles = makeStyles((theme: Theme) => ({
   progress: {
     display: "flex",
     alignItems: "center",
+  },
+  loading: {
+    textAlign: "center",
   },
 }));
 
@@ -445,21 +448,24 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
           <HelpButton url={helpUrl} />
         </div>
       </TopToolbar>
+      {loading && (
+        <div className={classes.loading}>
+          <SearchLoading />
+        </div>
+      )}
       <div>
-        <IconContext.Provider value={{ color: "blue", size: "3em" }}>
-          <VocabRevisor
-            showAnswer={showAnswer}
-            activityConfig={stateActivityConfig}
-            currentCard={daState.currentCard}
-            characters={daState.characters}
-            definition={daState.definition}
-            recentPosSentences={posSentencesFromRecent(daState)}
-            loading={loading}
-            onCardFrontUpdate={handleCardFrontUpdate}
-            onPractice={handlePractice}
-            onShowAnswer={handleShowAnswer}
-          />
-        </IconContext.Provider>
+        <VocabRevisor
+          showAnswer={showAnswer}
+          activityConfig={stateActivityConfig}
+          currentCard={daState.currentCard}
+          characters={daState.characters}
+          definition={daState.definition}
+          recentPosSentences={posSentencesFromRecent(daState)}
+          loading={loading}
+          onCardFrontUpdate={handleCardFrontUpdate}
+          onPractice={handlePractice}
+          onShowAnswer={handleShowAnswer}
+        />
       </div>
     </div>
   );

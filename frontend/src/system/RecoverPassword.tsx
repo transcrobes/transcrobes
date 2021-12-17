@@ -116,6 +116,7 @@ export default function RecoverPassword(): ReactElement {
     return errors;
   }
 
+  const helpUrl = "https://transcrob.es";
   return (
     <Form
       onSubmit={handleSubmit}
@@ -161,7 +162,14 @@ export default function RecoverPassword(): ReactElement {
                 </div>
                 <div className={classes.userManagement}>
                   <Typography>
-                    <Link to="/signup">{translate("user.signup")}</Link>
+                    <Link to="/signup">{translate("user.signup.label")}</Link>
+                  </Typography>
+                </div>
+                <div className={classes.userManagement}>
+                  <Typography>
+                    <a target={"_blank"} href={helpUrl}>
+                      {translate("user.help.site")}
+                    </a>
                   </Typography>
                 </div>
               </div>

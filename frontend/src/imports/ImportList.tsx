@@ -3,7 +3,6 @@ import {
   BooleanField,
   CreateButton,
   Datagrid,
-  Filter,
   FunctionField,
   List,
   ListProps,
@@ -16,7 +15,6 @@ import { PROCESSING, PROCESS_TYPE, reverseEnum } from "../lib/types";
 
 const ListActions: FC<any> = () => (
   <TopToolbar>
-    {/* {cloneElement(props.filters, { context: 'button' })} */}
     <CreateButton />
     <SortButton fields={["id", "processing"]} />
     <HelpButton url="https://transcrob.es/page/software/configure/imports/" />

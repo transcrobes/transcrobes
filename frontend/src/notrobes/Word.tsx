@@ -1,8 +1,7 @@
 import { ReactElement, useState } from "react";
 import dayjs from "dayjs";
-import styled from "styled-components";
 import { $enum } from "ts-enum-util";
-import { Button } from "@material-ui/core";
+import { Button, makeStyles } from "@material-ui/core";
 
 import { say, wordIdsFromModels } from "../lib/funclib";
 import { CARD_TYPES, getCardType, getCardId } from "../database/Schema";
@@ -15,9 +14,7 @@ import {
   EMPTY_CARD,
   PosSentences,
   SortableListElementType,
-  TREEBANK_POS_TYPES,
   WordModelStatsType,
-  ZH_TB_POS_LABELS,
 } from "../lib/types";
 
 import {
@@ -29,20 +26,51 @@ import {
   setSegmentation,
   USER_STATS_MODE,
 } from "../lib/components";
-import { ThinHR } from "../components/Common";
 import PosItem from "../components/PosItem";
 import DefinitionTranslations from "../components/DefinitionTranslations";
 import Meaning from "../components/Meaning";
 import Header from "../components/Header";
 import RecentSentencesElement from "../components/RecentSentencesElement";
+import { ThinHR } from "../components/Common";
+
+const useStyles = makeStyles(() => ({
+  soundBoxInner: {
+    marginLeft: ".5em",
+    display: "flex",
+    alignItems: "center",
+  },
+  definitionGraph: { fontSize: "2em" },
+  soundBoxOuter: {
+    margin: ".5em",
+    fontSize: "2em",
+    display: "flex",
+    justifyContent: "center",
+  },
+  soundButton: { marginLeft: ".5em" },
+  infoBox: {
+    margin: "0.7em",
+  },
+  meaningBox: {
+    margin: ".5em",
+    fontSize: "1.5em",
+    display: "flex",
+    justifyContent: "center",
+  },
+  caps: {
+    textTransform: "capitalize",
+  },
+  cardsTable: {
+    width: "400px",
+    textAlign: "center",
+  },
+  fieldName: {
+    fontWeight: "bold",
+  },
+}));
 
 const DATA_SOURCE = "Word.tsx";
 
 defineElements();
-
-const InfoBox = styled.div`
-  margin: 0.7em;
-`;
 
 interface WordInfoProps {
   definition: DefinitionType;
@@ -57,11 +85,12 @@ function WordInfo({
   meaningCard,
   onCardFrontUpdate,
 }: WordInfoProps): ReactElement {
+  const classes = useStyles();
   return (
     <>
       <div>
         <Header text="Card Revision Details" />
-        <div style={{ fontSize: "2em" }}>
+        <div className={classes.definitionGraph}>
           <DefinitionGraph
             charWidth={100}
             charHeight={100}
@@ -69,19 +98,17 @@ function WordInfo({
             showAnswer={true}
           />
         </div>
-        <div style={{ margin: ".5em", fontSize: "2em", display: "flex", justifyContent: "center" }}>
-          <div style={{ marginLeft: ".5em", display: "flex", alignItems: "center" }}>
+        <div className={classes.soundBoxOuter}>
+          <div className={classes.soundBoxInner}>
             <Sound definition={definition} />
-            <div style={{ marginLeft: ".5em" }}>
+            <div className={classes.soundButton}>
               <Button onClick={() => say(definition.graph)} variant="contained" color="primary">
                 Say it!
               </Button>
             </div>
           </div>
         </div>
-        <div
-          style={{ margin: ".5em", fontSize: "1.5em", display: "flex", justifyContent: "center" }}
-        >
+        <div className={classes.meaningBox}>
           <Meaning
             showSynonyms={false}
             definition={definition}
@@ -114,12 +141,13 @@ function Practicer({ wordId, onPractice }: PracticerProps): ReactElement {
 }
 
 function ExistingCards({ cards }: { cards: CardType[] }): ReactElement {
+  const classes = useStyles();
   const cardsArray = [...cards.values()];
   const cardsRows = cardsArray.map((card) => {
     return (
       card && (
         <tr key={card.id}>
-          <td style={{ textTransform: "capitalize" }}>
+          <td className={classes.caps}>
             {$enum(CARD_TYPES).getKeyOrThrow(parseInt(getCardType(card)))}
           </td>
           <td>
@@ -142,7 +170,7 @@ function ExistingCards({ cards }: { cards: CardType[] }): ReactElement {
         <Header text="Existing Cards" />
         <div>
           {cardsArray.length > 0 ? ( // cards is a map
-            <table style={{ width: "400px", textAlign: "center" }}>
+            <table className={classes.cardsTable}>
               <thead>
                 <tr>
                   <th>Type</th>
@@ -161,17 +189,18 @@ function ExistingCards({ cards }: { cards: CardType[] }): ReactElement {
   );
 }
 function WordLists({ lists }: { lists: SortableListElementType[] }): ReactElement {
+  const classes = useStyles();
   return (
     <>
       <ThinHR />
       <div>
         <Header text="Lists (name: freq. position in list)" />
         {lists.length > 0 ? ( // cards is a map
-          <InfoBox>
+          <div className={classes.infoBox}>
             {lists
               .map((wl) => `${wl.name}: ${wl.position}`)
               .reduce((prev, curr) => prev + ", " + curr)}
-          </InfoBox>
+          </div>
         ) : (
           <span>No lists for this item</span>
         )}
@@ -181,6 +210,7 @@ function WordLists({ lists }: { lists: SortableListElementType[] }): ReactElemen
 }
 
 function Synonyms({ definition }: { definition: DefinitionType }): ReactElement {
+  const classes = useStyles();
   return (
     <>
       <ThinHR />
@@ -195,13 +225,14 @@ function Synonyms({ definition }: { definition: DefinitionType }): ReactElement 
               );
             })}
           </div>
-        )) || <InfoBox>No synonyms found</InfoBox>}
+        )) || <div className={classes.infoBox}>No synonyms found</div>}
       </div>
     </>
   );
 }
 
 function WordModelStats({ wordModelStats }: { wordModelStats: WordModelStatsType }): ReactElement {
+  const classes = useStyles();
   return (
     <>
       <ThinHR />
@@ -209,11 +240,11 @@ function WordModelStats({ wordModelStats }: { wordModelStats: WordModelStatsType
         <Header text="Personal Word Stats" />
         {(wordModelStats && (
           <div>
-            <InfoBox>
+            <div className={classes.infoBox}>
               <span style={{ fontWeight: "bold" }}>Nb. seen: </span>
               <span>{wordModelStats.nbSeen} </span>
-            </InfoBox>
-            <InfoBox>
+            </div>
+            <div className={classes.infoBox}>
               <span style={{ fontWeight: "bold" }}>Last seen: </span>
               {/* FIXME: nasty hardcoded locale!!! */}
               <span>
@@ -222,16 +253,16 @@ function WordModelStats({ wordModelStats }: { wordModelStats: WordModelStatsType
                   .toDate()
                   .toLocaleString("en-UK")}{" "}
               </span>
-            </InfoBox>
-            <InfoBox>
+            </div>
+            <div className={classes.infoBox}>
               <span style={{ fontWeight: "bold" }}>Nb. seen since last check: </span>
               <span>{wordModelStats.nbSeenSinceLastCheck} </span>
-            </InfoBox>
-            <InfoBox>
+            </div>
+            <div className={classes.infoBox}>
               <span style={{ fontWeight: "bold" }}>Nb. Checked: </span>
               <span>{wordModelStats.nbChecked} </span>
-            </InfoBox>
-            <InfoBox>
+            </div>
+            <div className={classes.infoBox}>
               <span style={{ fontWeight: "bold" }}>Last Checked: </span>
               <span>
                 {dayjs
@@ -239,9 +270,9 @@ function WordModelStats({ wordModelStats }: { wordModelStats: WordModelStatsType
                   .toDate()
                   .toLocaleString("en-UK")}{" "}
               </span>
-            </InfoBox>
+            </div>
           </div>
-        )) || <InfoBox>No word stats found</InfoBox>}
+        )) || <div className={classes.infoBox}>No word stats found</div>}
       </div>
     </>
   );
@@ -262,27 +293,28 @@ function Sound({ definition }: { definition: DefinitionType }): ReactElement {
 }
 
 function WordMetadata({ definition }: { definition: DefinitionType }): ReactElement {
+  const classes = useStyles();
   return (
     <>
       <ThinHR />
       <div>
         <Header text="Metadata" />
-        <InfoBox>
-          <span style={{ fontWeight: "bold" }}>HSK: </span>
+        <div className={classes.infoBox}>
+          <span className={classes.fieldName}>HSK: </span>
           <span>
             {definition.hsk && definition.hsk.levels.length > 0
               ? definition.hsk.levels.join(", ")
               : "Not in the HSK"}
           </span>
-        </InfoBox>
-        <InfoBox>
-          <span style={{ fontWeight: "bold" }}>Freq: </span>
+        </div>
+        <div className={classes.infoBox}>
+          <span className={classes.fieldName}>Freq: </span>
           <span>
             {definition.frequency && definition.frequency.wcpm
               ? definition.frequency.wcpm
               : "No frequency data"}
           </span>
-        </InfoBox>
+        </div>
       </div>
     </>
   );

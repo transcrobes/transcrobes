@@ -13,6 +13,15 @@ export function UUID(): string {
   return Date.now().toString(36) + Math.random().toString(36).substring(2);
 }
 
+export function validInt(value: any, minValue?: number, maxValue?: number): boolean {
+  return (
+    !isNaN(value) &&
+    typeof value === "number" &&
+    !(typeof minValue !== "undefined" && value < minValue) &&
+    !(typeof maxValue !== "undefined" && value > maxValue)
+  );
+}
+
 export function configIsUsable(activityConfig: RepetrobesActivityConfigType): boolean {
   return (
     activityConfig.wordLists.length > 0 &&

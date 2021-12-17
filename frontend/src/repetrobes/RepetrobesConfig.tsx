@@ -6,7 +6,8 @@ import dayjs from "dayjs";
 
 import TCCheckbox from "../components/TCCheckbox";
 import { RepetrobesActivityConfigType } from "../lib/types";
-import { makeStyles, Typography } from "@material-ui/core";
+import { makeStyles, TextField, Typography } from "@material-ui/core";
+import { validInt } from "../lib/funclib";
 
 interface Props {
   activityConfig: RepetrobesActivityConfigType;
@@ -14,7 +15,7 @@ interface Props {
 }
 
 const useStyles = makeStyles({
-  checkbox: { padding: "0.4em" },
+  checkbox: { padding: "0.2em 0.5em" },
   select: { padding: "0.4em" },
   textbox: { display: "flex", justifyContent: "space-between", padding: "0.4em" },
 });
@@ -83,15 +84,6 @@ export default function RepetrobesConfig({ activityConfig, onConfigChange }: Pro
       { ...activityConfig, badReviewWaitSecs: parseInt(e.target.value) * 60 },
     );
   }
-  function validInt(value: any, minValue?: number, maxValue?: number): boolean {
-    return (
-      !isNaN(value) &&
-      typeof value === "number" &&
-      !(typeof minValue !== "undefined" && value < minValue) &&
-      !(typeof maxValue !== "undefined" && value > maxValue)
-    );
-  }
-
   return (
     <div>
       <div className={classes.select}>
@@ -162,72 +154,61 @@ export default function RepetrobesConfig({ activityConfig, onConfigChange }: Pro
         onCheckboxChange={handleSimpleChange}
       />
       <div className={classes.textbox}>
-        <label htmlFor="dayStartsHour">Day start hour (0 to 23)</label>
-        <input
-          style={{
-            width: "30%",
-            maxHeight: "2em",
-            backgroundColor: validInt(activityConfig.dayStartsHour, 0, 23) ? "inherit" : "red",
-          }}
-          name="dayStartsHour"
-          min="0"
-          max="23"
+        <TextField
+          label="Day start hour (0 to 23)"
+          title="Day start hour (0 to 23)"
           type="number"
-          value={activityConfig.dayStartsHour}
+          error={!validInt(activityConfig.dayStartsHour, 0, 23)}
+          helperText={!validInt(activityConfig.dayStartsHour, 0, 23) ? "Invalid number" : undefined}
+          defaultValue={activityConfig.dayStartsHour}
           onChange={handleDayStartsHourChange}
+          name="dayStartsHour"
+          variant="outlined"
         />
       </div>
       <div className={classes.textbox}>
-        <label htmlFor="badReviewWaitMinutes">Bad review wait mins (1 to 300)</label>
-        <input
-          style={{
-            width: "30%",
-            maxHeight: "2em",
-            minWidth: "3em",
-            backgroundColor: validInt(Math.round(activityConfig.badReviewWaitSecs / 60), 1, 300)
-              ? "inherit"
-              : "red",
-          }}
-          name="badReviewWaitMinutes"
-          min="1"
-          max="300"
+        <TextField
+          label="Bad review wait mins (1 to 300)"
+          title="Bad review wait mins (1 to 300)"
           type="number"
-          value={Math.round(activityConfig.badReviewWaitSecs / 60)}
+          error={!validInt(Math.round(activityConfig.badReviewWaitSecs / 60), 1, 300)}
+          helperText={
+            !validInt(Math.round(activityConfig.badReviewWaitSecs / 60), 1, 300)
+              ? "Invalid number"
+              : undefined
+          }
+          defaultValue={Math.round(activityConfig.badReviewWaitSecs / 60)}
           onChange={handleBadReviewWaitMinutesChange}
+          name="badReviewWaitMinutes"
+          variant="outlined"
         />
       </div>
       <div className={classes.textbox}>
-        <label htmlFor="maxNew">Max new p/d (0 to 10000)</label>
-        <input
-          style={{
-            width: "40%",
-            maxHeight: "2em",
-            minWidth: "3em",
-            backgroundColor: validInt(activityConfig.maxNew, 0, 10000) ? "inherit" : "red",
-          }}
+        <TextField
+          label="Max new p/d (0 to 10000)"
+          title="Max new p/d (0 to 10000)"
+          type="number"
+          error={!validInt(activityConfig.maxNew, 0, 10000)}
+          helperText={!validInt(activityConfig.maxNew, 0, 10000) ? "Invalid number" : undefined}
+          defaultValue={activityConfig.maxNew}
+          onChange={handleSimpleChange}
           name="maxNew"
-          min="0"
-          max="10000"
-          type="number"
-          value={activityConfig.maxNew}
-          onChange={handleSimpleChange}
+          variant="outlined"
         />
       </div>
       <div className={classes.textbox}>
-        <label htmlFor="maxRevisions">Max revisions p/d (0 to 10000)</label>
-        <input
-          style={{
-            width: "40%",
-            maxHeight: "2em",
-            minWidth: "3em",
-            backgroundColor: validInt(activityConfig.maxRevisions, 0, 10000) ? "inherit" : "red",
-          }}
-          name="maxRevisions"
-          min="0"
-          max="10000"
+        <TextField
+          label="Max revisions p/d (0 to 10000)"
+          title="Max revisions p/d (0 to 10000)"
           type="number"
-          value={activityConfig.maxRevisions}
+          error={!validInt(activityConfig.maxRevisions, 0, 10000)}
+          helperText={
+            !validInt(activityConfig.maxRevisions, 0, 10000) ? "Invalid number" : undefined
+          }
+          defaultValue={activityConfig.maxRevisions}
           onChange={handleSimpleChange}
+          name="maxRevisions"
+          variant="outlined"
         />
       </div>
     </div>
