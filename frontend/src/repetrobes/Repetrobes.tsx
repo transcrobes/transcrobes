@@ -21,8 +21,7 @@ import {
 } from "../lib/types";
 import { ServiceWorkerProxy } from "../lib/proxies";
 import { setSettingsValue } from "../lib/appSettings";
-import { configIsUsable } from "../lib/funclib";
-import { recentSentencesFromLZ } from "../lib/data";
+import { configIsUsable, recentSentencesFromLZ } from "../lib/funclib";
 import Progress from "./Progress";
 import { getRandomNext } from "./Common";
 import { EMPTY_ACTIVITY, getUserConfig } from "./funclib";
@@ -156,7 +155,7 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
     await proxy.sendMessagePromise({
       source: DATA_SOURCE,
       type: "submitLookupEvents",
-      value: { lookupEvents, userStatsMode },
+      value: { lemmaAndContexts: lookupEvents, userStatsMode, source: DATA_SOURCE },
     });
   }
 

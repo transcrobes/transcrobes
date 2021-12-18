@@ -32,6 +32,7 @@ import {
   DailyReviewables,
   CharacterType,
   DefinitionType,
+  WordDetailsType,
 } from "./types";
 
 import {
@@ -48,7 +49,13 @@ import {
 } from "../database/Schema";
 import { practice } from "./review";
 
-import { cleanSentence, configIsUsable, pythonCounter, UUID } from "./funclib";
+import {
+  cleanSentence,
+  configIsUsable,
+  pythonCounter,
+  recentSentencesFromLZ,
+  UUID,
+} from "./funclib";
 import { fetchPlus } from "./lib";
 import { getFileStorage, IDBFileStorage } from "./IDBFileStorage";
 import { getUsername } from "./JWTAuthProvider";
@@ -134,18 +141,23 @@ async function sendUserEvents(
 
 async function getAllFromDB(
   db: TranscrobesDatabase,
-  collection: TranscrobesCollectionsKeys,
-  queryObj?: MangoQuery<TranscrobesDocumentTypes>,
-) {
-  return await db[collection].find(queryObj).exec();
+  {
+    collection,
+    queryObj,
+  }: { collection: TranscrobesCollectionsKeys; queryObj?: MangoQuery<TranscrobesDocumentTypes> },
+): // TODO: see whether this could be properly typed
+Promise<any[]> {
+  const values = await db[collection].find(queryObj).exec();
+  return values.map((x) => x.toJSON());
 }
 
 async function getByIds(
   db: TranscrobesDatabase,
-  collection: TranscrobesCollectionsKeys,
-  ids: string[],
-) {
-  return await db[collection].findByIds(ids);
+  { collection, ids }: { collection: TranscrobesCollectionsKeys; ids: string[] },
+): // TODO: see whether this could be properly typed
+Promise<any[]> {
+  const values = await db[collection].findByIds(ids);
+  return [...values.values()].map((def) => def.toJSON());
 }
 
 async function getKnownWordIds(db: TranscrobesDatabase): Promise<Set<string>> {
@@ -376,7 +388,7 @@ async function getCardWords(db: TranscrobesDatabase): Promise<DayCardWords> {
 
 async function submitContentEnrichRequest(
   db: TranscrobesDatabase,
-  contentId: string,
+  { contentId }: { contentId: string },
 ): Promise<string> {
   // This is done via a bit of a hack - in the graphql endpoint we look to see if the state
   // changes to PROCESSING.REQUESTED, and if so we launch an enrich operation. There is likely
@@ -393,8 +405,7 @@ async function submitContentEnrichRequest(
 
 async function saveSurvey(
   db: TranscrobesDatabase,
-  surveyId: string,
-  dataValue: string,
+  { surveyId, dataValue }: { surveyId: string; dataValue: string },
 ): Promise<string> {
   const userSurvey = await db.usersurveys.findOne().where("surveyId").eq(surveyId).exec();
   if (userSurvey && isRxDocument(userSurvey)) {
@@ -452,7 +463,30 @@ async function getUserListWords(db: TranscrobesDatabase): Promise<{
   return { userListWords, wordListNames };
 }
 
-async function getWordDetails(db: TranscrobesDatabase, graph: string): Promise<WordDetailsRxType> {
+async function getWordDetails(db: TranscrobesDatabase, graph: string): Promise<WordDetailsType> {
+  const details = await getWordDetailsUnsafe(db, graph);
+  let chars: (CharacterType | null)[] = [];
+  if (details.word) {
+    chars = details.word.graph.split("").map((w) => {
+      const word = details.characters.get(w);
+      if (word) return clone(word.toJSON());
+      else return null;
+    });
+  }
+  const safe: WordDetailsType = {
+    word: details.word ? clone(details.word.toJSON()) : null,
+    cards: [...details.cards.values()].map((x) => clone(x.toJSON())),
+    characters: chars,
+    recentPosSentences: details.recentPosSentences,
+    wordModelStats: details.wordModelStats ? clone(details.wordModelStats.toJSON()) : null,
+  };
+  return safe;
+}
+
+async function getWordDetailsUnsafe(
+  db: TranscrobesDatabase,
+  graph: string,
+): Promise<WordDetailsRxType> {
   const localDefinition = await db.definitions.find().where("graph").eq(graph).exec();
   if (localDefinition.length > 0) {
     const word = localDefinition.values().next().value as DefinitionDocument;
@@ -464,7 +498,7 @@ async function getWordDetails(db: TranscrobesDatabase, graph: string): Promise<W
     ).rows.map((x: CardType) => x.id);
     const cards = await db.cards.findByIds(cardIds);
     const wordModelStats = [...(await db.word_model_stats.findByIds([word.id])).values()][0];
-    const characters = await getCharacterDetails(db, graph.split(""));
+    const characters = await getCharacterDetailsUnsafe(db, graph.split(""));
 
     const sents = await getRecentSentences(db, [word.id]);
     const recentPosSentences = (sents.length > 0 && sents[0][1].posSentences) || null;
@@ -483,6 +517,22 @@ async function getWordDetails(db: TranscrobesDatabase, graph: string): Promise<W
 async function getCharacterDetails(
   db: TranscrobesDatabase,
   graphs: string[],
+): Promise<(CharacterType | null)[]> {
+  let chars: (CharacterType | null)[] = [];
+  const values = await getCharacterDetailsUnsafe(db, graphs);
+  if (graphs && graphs.length > 0) {
+    chars = graphs.map((w: string) => {
+      const word = values.get(w);
+      if (word) return clone(word.toJSON());
+      else return null;
+    });
+  }
+  return chars;
+}
+
+async function getCharacterDetailsUnsafe(
+  db: TranscrobesDatabase,
+  graphs: string[],
 ): Promise<Map<string, CharacterDocument>> {
   return await db.characters.findByIds(graphs);
 }
@@ -490,8 +540,10 @@ async function getCharacterDetails(
 async function createCards(
   db: TranscrobesDatabase,
   newCards: CardType[],
-): Promise<{ success: CardDocument[]; error: RxStorageBulkWriteError<CardType>[] }> {
-  return await db.cards.bulkInsert(newCards);
+): Promise<{ success: CardType[]; error: RxStorageBulkWriteError<CardType>[] }> {
+  const values = await db.cards.bulkInsert(newCards);
+  const success = values.success.map((x) => x.toJSON());
+  return { error: values.error, success };
 }
 
 async function updateRecentSentences(
@@ -535,11 +587,6 @@ async function addRecentSentences(
   );
 }
 
-function recentSentencesFromLZ(wordId: string, lzContent: string): RecentSentencesType | null {
-  const uncompress = LZString.decompressFromUTF16(lzContent);
-  return uncompress ? { id: wordId, posSentences: JSON.parse(uncompress) as PosSentences } : null;
-}
-
 async function getRecentSentences(
   db: TranscrobesDatabase,
   ids: string[],
@@ -555,9 +602,9 @@ async function getRecentSentences(
 async function getWordFromDBs(
   db: TranscrobesDatabase,
   word: string,
-): Promise<DefinitionDocument | null> {
-  const wordObj = await db.definitions.findOne().where("graph").eq(word).exec();
-  return wordObj;
+): Promise<DefinitionType | null> {
+  const value = await db.definitions.findOne().where("graph").eq(word).exec();
+  return value ? clone(value.toJSON()) : null;
 }
 
 async function getContentConfigFromStore(
@@ -586,9 +633,11 @@ async function setContentConfigToStore(
 async function submitLookupEvents(
   db: TranscrobesDatabase,
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-  lemmaAndContexts: any,
-  userStatsMode: number,
-  source: string,
+  {
+    lemmaAndContexts,
+    userStatsMode,
+    source,
+  }: { lemmaAndContexts: any; userStatsMode: number; source: string },
 ): Promise<boolean> {
   const events = [];
   for (const lemmaAndContext of lemmaAndContexts) {
@@ -619,14 +668,19 @@ async function submitUserEvents(db: TranscrobesDatabase, eventData: any): Promis
 
 async function addOrUpdateCardsForWord(
   db: TranscrobesDatabase,
-  wordId: string,
-  grade: number,
-): Promise<CardDocument[]> {
+  { wordId, grade }: { wordId: string; grade: number },
+): Promise<CardType[]> {
   const cards = [];
   for (const cardType of $enum(CARD_TYPES).getValues()) {
     const cardId = getCardId(wordId, cardType);
     const existing = await db.cards.findOne(cardId).exec();
-    cards.push(await practiceCard(db, existing || { id: cardId }, grade, 0)); // Promise.all?
+    cards.push(
+      await practiceCard(db, {
+        currentCard: existing || { id: cardId },
+        grade,
+        badReviewWaitSecs: 0,
+      }),
+    ); // Promise.all?
   }
   return cards;
 }
@@ -634,11 +688,12 @@ async function addOrUpdateCardsForWord(
 // FIXME: any, this will require not using the isRxDocument and being clean
 async function practiceCard(
   db: TranscrobesDatabase,
-  // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-  currentCard: any,
-  grade: number,
-  badReviewWaitSecs: number,
-): Promise<CardDocument> {
+  {
+    currentCard,
+    grade,
+    badReviewWaitSecs,
+  }: { currentCard: any; grade: number; badReviewWaitSecs: number },
+): Promise<CardType> {
   const isCardDoc = isRxDocument(currentCard) && "toJSON" in currentCard;
   const cardToSave = practice(
     isCardDoc ? currentCard.toJSON() : currentCard,
@@ -668,7 +723,7 @@ async function practiceCard(
     cardToSave.lastRevisionDate = newDate;
     cardObject = await db.cards.upsert(cardToSave);
   }
-  return cardObject;
+  return cardObject.toJSON();
 }
 
 async function updateCard(db: TranscrobesDatabase, card: CardType): Promise<void> {
@@ -691,7 +746,8 @@ async function practiceCardsForWord(
   for (const cardType of $enum(CARD_TYPES).getValues()) {
     const cardId = getCardId(wordInfo.id, cardType);
     const card = existing.get(cardId) || { id: cardId };
-    await practiceCard(db, card, grade, 0); // here failureSeconds doesn't really have meaning
+    // here failureSeconds doesn't really have meaning
+    await practiceCard(db, { currentCard: card, grade, badReviewWaitSecs: 0 });
   }
 }
 

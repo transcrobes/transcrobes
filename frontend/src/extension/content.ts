@@ -154,7 +154,6 @@ platformHelper
         return "";
       },
     );
-
     // This ensures that when the transcrobed tab has focus, the background script will
     // be active or reactivated if unloaded (which happens regularly)
     setInterval(

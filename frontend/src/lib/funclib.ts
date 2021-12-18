@@ -1,16 +1,27 @@
 import { HistogramGeneratorNumber } from "d3-array";
 import dayjs from "dayjs";
+import LZString from "lz-string";
 import {
   FirstSuccess,
   HistoData,
   KeyedModels,
+  PosSentences,
   PythonCounter,
+  RecentSentencesType,
   RepetrobesActivityConfigType,
   SentenceType,
 } from "./types";
 
 export function UUID(): string {
   return Date.now().toString(36) + Math.random().toString(36).substring(2);
+}
+
+export function recentSentencesFromLZ(
+  wordId: string,
+  lzContent: string,
+): RecentSentencesType | null {
+  const uncompress = LZString.decompressFromUTF16(lzContent);
+  return uncompress ? { id: wordId, posSentences: JSON.parse(uncompress) as PosSentences } : null;
 }
 
 export function validInt(value: any, minValue?: number, maxValue?: number): boolean {

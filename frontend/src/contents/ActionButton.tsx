@@ -12,7 +12,7 @@ function enrich(id: Identifier) {
   window.componentsConfig.proxy.sendMessage(
     {
       source: DATA_SOURCE,
-      type: "enrich",
+      type: "submitContentEnrichRequest",
       value: { contentId: id.toString() },
     },
     () => {

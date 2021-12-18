@@ -1,4 +1,5 @@
 import { RxDatabase } from "rxdb/dist/types/core";
+import dayjs from "dayjs";
 
 import { getDb, unloadDatabaseFromMemory } from "./database/Database";
 import {
@@ -12,19 +13,9 @@ import {
   DEFAULT_RETRIES,
 } from "./lib/lib";
 import * as data from "./lib/data";
-import {
-  CardType,
-  CharacterType,
-  DayCardWords,
-  DefinitionType,
-  EventData,
-  RecentSentencesStoredType,
-  WordDetailsType,
-} from "./lib/types";
+import { DayCardWords, DefinitionType, EventData } from "./lib/types";
 import { getAccess, getRefresh, getUsername } from "./lib/JWTAuthProvider";
-import dayjs from "dayjs";
 import { GRADE, TranscrobesCollections, TranscrobesDatabase } from "./database/Schema";
-import { clone } from "rxdb";
 
 // FIXME: move to redux!!! or something less nasty!!!
 let dayCardWords: DayCardWords | null;
@@ -90,7 +81,11 @@ async function loadDb(
   const progressCallback = (progressMessage: string, isFinished: boolean) => {
     const progress = { message: progressMessage, isFinished };
     if (event) {
-      postIt(event, { source: message.source, type: message.type + "-progress", value: progress });
+      postIt(event, {
+        source: message.source,
+        type: message.type + "-progress",
+        value: progress,
+      });
     }
   };
   return getDb({ url: url }, progressCallback).then((dbObj) => {
@@ -167,322 +162,92 @@ export function manageEvent(sw: ServiceWorkerGlobalScope, event: ExtendableMessa
     console.debug("Received an event without a message", event);
     return;
   }
-  const message = event.data;
-  if (message.type === "syncDB") {
-    loadDb(message, sw, event);
-  } else if (message.type === "heartbeat") {
-    postIt(event, { source: message.source, type: message.type, value: dayjs().format() });
-  } else if (message.type === "getWordFromDBs") {
-    loadDb(message, sw).then(([ldb, msg]) => {
-      data.getWordFromDBs(ldb, msg.value).then((values) => {
-        const daVal = values ? values.toJSON() : null;
-        postIt(event, {
-          source: msg.source,
-          type: msg.type,
-          value: daVal,
-        });
-      });
-    });
-  } else if (message.type === "getKnownWordIds") {
-    loadDb(message, sw).then(([ldb, msg]) => {
-      data.getKnownWordIds(ldb).then((values) => {
-        postIt(event, { source: msg.source, type: msg.type, value: values });
-      });
-    });
-  } else if (message.type === "getCardWords") {
-    getLocalCardWords(message, sw).then((dayCW) => {
-      postIt(event, {
-        source: message.source,
-        type: message.type,
-        // convert to arrays or Set()s get silently purged in chrome extensions, so
-        // need to mirror here for the same return types... Because JS is sooooooo awesome!
-        // value: [Array.from(values[0]), Array.from(values[1]), values[2]]
-        value: {
-          allCardWordGraphs: Array.from(dayCW.allCardWordGraphs),
-          knownCardWordGraphs: Array.from(dayCW.knownCardWordGraphs),
-          knownWordIdsCounter: dayCW.knownWordIdsCounter,
-        },
-      });
-    });
-  } else if (message.type === "submitLookupEvents") {
-    loadDb(message, sw).then(([ldb, msg]) => {
-      data
-        .submitLookupEvents(ldb, msg.value.lookupEvents, msg.value.userStatsMode, msg.source)
-        .then(() => {
-          postIt(event, {
-            source: msg.source,
-            type: msg.type,
-            value: "Lookup Events submitted",
-          });
-        });
-    });
-  } else if (message.type === "getUserListWords") {
-    loadDb(message, sw).then(([ldb, msg]) => {
-      data.getUserListWords(ldb).then((values) => {
-        // console.debug("getUserListWords results in sw.js", msg, values);
-        postIt(event, { source: msg.source, type: msg.type, value: values });
-      });
-    });
-  } else if (message.type === "getDefaultWordLists") {
-    loadDb(message, sw).then(([ldb, msg]) => {
-      data.getDefaultWordLists(ldb).then((values) => {
-        // console.debug("getDefaultWordLists results in sw.js", msg, values);
-        postIt(event, { source: msg.source, type: msg.type, value: values });
-      });
-    });
-  } else if (message.type === "getWordListWordIds") {
-    loadDb(message, sw).then(([ldb, msg]) => {
-      data.getWordListWordIds(ldb, message.value).then((values) => {
-        // console.debug("getWordListWordIds results in sw.js", msg, values);
-        postIt(event, { source: msg.source, type: msg.type, value: values });
-      });
-    });
-  } else if (message.type === "createCards") {
-    loadDb(message, sw).then(([ldb, msg]) => {
-      data.createCards(ldb, msg.value).then((values) => {
-        // console.debug("createCards results in sw.js", msg, values);
-        dayCardWords = null; // simpler to set to null rather than try and merge lots
-        const success = values.success.map((x) => x.toJSON());
-        postIt(event, {
-          source: msg.source,
-          type: msg.type,
-          value: { error: values.error, success },
-        });
-      });
-    });
-  } else if (message.type === "setContentConfigToStore") {
-    loadDb(message, sw).then(([ldb, msg]) => {
-      data.setContentConfigToStore(ldb, msg.value).then((values) => {
-        // console.debug("setContentConfigToStore results in sw.js", msg, values);
-        postIt(event, {
-          source: msg.source,
-          type: msg.type,
-          value: "Content config saved",
-        });
-      });
-    });
-  } else if (message.type === "getCharacterDetails") {
-    loadDb(message, sw).then(([ldb, msg]) => {
-      data.getCharacterDetails(ldb, msg.value).then((values) => {
-        // console.debug("getCharacterDetails results in sw.js", msg, values);
-        let chars: (CharacterType | null)[] = [];
-        if (msg.value && msg.value.length > 0) {
-          chars = msg.value.map((w: string) => {
-            const word = values.get(w);
-            if (word) return clone(word.toJSON());
-            else return null;
-          });
-        }
+  const message = event.data as EventData;
+
+  switch (message.type) {
+    case "syncDB":
+      loadDb(message, sw, event);
+      break;
+    case "heartbeat":
+      postIt(event, { source: message.source, type: message.type, value: dayjs().format() });
+      break;
+    case "getCardWords":
+      getLocalCardWords(message, sw).then((dayCW) => {
         postIt(event, {
           source: message.source,
           type: message.type,
-          value: chars,
+          // convert to arrays or Set()s get silently purged in chrome extensions, so
+          // need to mirror here for the same return types... Because JS is sooooooo awesome!
+          // value: [Array.from(values[0]), Array.from(values[1]), values[2]]
+          value: {
+            allCardWordGraphs: Array.from(dayCW.allCardWordGraphs),
+            knownCardWordGraphs: Array.from(dayCW.knownCardWordGraphs),
+            knownWordIdsCounter: dayCW.knownWordIdsCounter,
+          },
         });
       });
-    });
-  } else if (message.type === "getByIds") {
-    loadDb(message, sw).then(([ldb, msg]) => {
-      data.getByIds(ldb, msg.value.collection, msg.value.ids).then((values) => {
-        postIt(event, {
-          source: msg.source,
-          type: msg.type,
-          value: [...values.values()].map((x) => x.toJSON()),
+      break;
+    case "sentenceTranslation":
+      loadDb(message, sw).then(() => {
+        fetchPlus(
+          baseUrl + "api/v1/enrich/translate", // FIXME: hardcoded nastiness
+          JSON.stringify({ data: message.value }),
+          DEFAULT_RETRIES,
+        ).then((translation) => {
+          postIt(event, { source: message.source, type: message.type, value: translation });
         });
       });
-    });
-  } else if (message.type === "getAllFromDB") {
-    loadDb(message, sw).then(([ldb, msg]) => {
-      data.getAllFromDB(ldb, msg.value.collection, msg.value.queryObj).then((values) => {
-        // console.debug("getAllFromDB results in sw.js", msg, values);
-        postIt(event, {
-          source: msg.source,
-          type: msg.type,
-          value: values.map((x) => x.toJSON()),
-        });
-      });
-    });
-  } else if (message.type === "getContentConfigFromStore") {
-    loadDb(message, sw).then(([ldb, msg]) => {
-      data.getContentConfigFromStore(ldb, msg.value).then((values) => {
-        // console.debug("getContentConfigFromStore results in sw.js", msg, values);
-        postIt(event, { source: msg.source, type: msg.type, value: values });
-      });
-    });
-  } else if (message.type === "getVocabReviews") {
-    loadDb(message, sw).then(([ldb, msg]) => {
-      data.getVocabReviews(ldb, msg.value).then((values) => {
-        // console.debug("getVocabReviews results in sw.js", msg, values);
-        postIt(event, { source: msg.source, type: msg.type, value: values });
-      });
-    });
-  } else if (message.type === "getSRSReviews") {
-    loadDb(message, sw).then(([ldb, msg]) => {
-      data.getSRSReviews(ldb, msg.value).then((value) => {
-        console.debug("the return from getSRSReviewsBetter", value);
-        postIt(event, { source: msg.source, type: msg.type, value: value });
-      });
-    });
-  } else if (message.type === "submitUserEvents") {
-    loadDb(message, sw).then(([ldb, msg]) => {
-      data.submitUserEvents(ldb, msg.value).then(() => {
-        postIt(event, {
-          source: msg.source,
-          type: msg.type,
-          value: "User Events submitted",
-        });
-      });
-    });
-  } else if (message.type === "practiceCard") {
-    const { currentCard, grade, badReviewWaitSecs } = message.value;
-    loadDb(message, sw).then(([ldb, msg]) => {
-      data.practiceCard(ldb, currentCard, grade, badReviewWaitSecs).then((values) => {
-        // console.debug("practiceCard in sw.js", msg, values);
-        postIt(event, {
-          source: msg.source,
-          type: msg.type,
-          value: values ? values.toJSON() : null,
-        });
-      });
-    });
-  } else if (message.type === "practiceCardsForWord") {
-    const practiceDetails = message.value;
-    const { wordInfo, grade } = practiceDetails;
-    loadDb(message, sw).then(([ldb, msg]) => {
-      data.practiceCardsForWord(ldb, practiceDetails).then((values) => {
-        addToLocalKnown(msg, wordInfo, grade, sw);
-        // console.debug("Practiced in sw.js", msg, values);
-        postIt(event, { source: msg.source, type: msg.type, value: "Cards Practiced" });
-      });
-    });
-  } else if (message.type === "addOrUpdateCards") {
-    const { wordId, grade } = message.value;
-    loadDb(message, sw).then(([ldb, msg]) => {
-      data.addOrUpdateCardsForWord(ldb, wordId, grade).then((cards) => {
-        // console.debug("addOrUpdateCards in sw.js", cards);
-        postIt(event, {
-          source: msg.source,
-          type: msg.type,
-          value: cards.map((x) => x.toJSON()),
-        });
-      });
-    });
-  } else if (message.type === "getWordDetails") {
-    const { graph } = message.value;
-    loadDb(message, sw).then(([ldb, msg]) => {
-      data.getWordDetails(ldb, graph).then((details) => {
-        // console.debug("getWordDetails result in sw.js", details);
-        let chars: (CharacterType | null)[] = [];
-        if (details.word) {
-          chars = details.word.graph.split("").map((w) => {
-            const word = details.characters.get(w);
-            if (word) return clone(word.toJSON());
-            else return null;
-          });
-        }
-        const safe: WordDetailsType = {
-          word: details.word ? clone(details.word.toJSON()) : null,
-          cards: [...details.cards.values()].map((x) => clone(x.toJSON())),
-          characters: chars,
-          recentPosSentences: details.recentPosSentences,
-          wordModelStats: details.wordModelStats ? clone(details.wordModelStats.toJSON()) : null,
-        };
-        postIt(event, { source: msg.source, type: msg.type, value: safe });
-      });
-    });
-  } else if (message.type === "saveSurvey") {
-    const { dataValue, surveyId } = message.value;
-    loadDb(message, sw).then(([ldb, msg]) => {
-      data.saveSurvey(ldb, surveyId, dataValue).then((result) => {
-        postIt(event, {
-          source: msg.source,
-          type: msg.type,
-          value: result,
-        });
-      });
-    });
-  } else if (message.type === "enrich") {
-    const { contentId } = message.value;
-    loadDb(message, sw).then(([ldb, msg]) => {
-      data.submitContentEnrichRequest(ldb, contentId).then((result) => {
-        postIt(event, {
-          source: msg.source,
-          type: msg.type,
-          value: result,
-        });
-      });
-    });
-  } else if (message.type === "sentenceTranslation") {
-    loadDb(message, sw).then(() => {
-      fetchPlus(
-        baseUrl + "api/v1/enrich/translate", // FIXME: hardcoded nastiness
-        JSON.stringify({ data: message.value }),
-        DEFAULT_RETRIES,
-      ).then((translation) => {
-        postIt(event, { source: message.source, type: message.type, value: translation });
-      });
-    });
-  } else if (message.type === "updateRecentSentences") {
-    loadDb(message, sw).then(([ldb, msg]) => {
-      data.updateRecentSentences(ldb, message.value).then((result) => {
-        postIt(event, {
-          source: msg.source,
-          type: msg.type,
-          value: result,
-        });
-      });
-    });
-  } else if (message.type === "addRecentSentences") {
-    loadDb(message, sw).then(([ldb, msg]) => {
-      data.addRecentSentences(ldb, message.value).then((result) => {
-        postIt(event, {
-          source: msg.source,
-          type: msg.type,
-          value: result,
-        });
-      });
-    });
-  } else if (message.type === "getRecentSentences") {
-    loadDb(message, sw).then(([ldb, msg]) => {
-      data.getRecentSentences(ldb, message.value).then((result) => {
-        postIt(event, {
-          source: msg.source,
-          type: msg.type,
-          value: result,
-        });
-      });
-    });
-  } else if (message.type === "updateCard") {
-    loadDb(message, sw).then(([ldb, msg]) => {
+      break;
+    // FIXME: is this better? or is the other safer and better with negligible performance hit?
+    // case "practiceCardsForWord":
+    //   loadDb(message, sw).then(([ldb, msg]) => {
+    //     data.practiceCardsForWord(ldb, message.value).then((values) => {
+    //       addToLocalKnown(msg, message.value.wordInfo, message.value.grade, sw);
+    //       postIt(event, { source: msg.source, type: msg.type, value: "Cards Practiced" });
+    //     });
+    //   });
+    //   break;
+
+    // The following devalidate the dayCardWords "cache", so setting to null
+    case "practiceCardsForWord":
+    case "addOrUpdateCardsForWord":
+    case "updateCard":
+    case "createCards":
       dayCardWords = null; // simpler to set to null rather than try and merge lots
-      data["updateCard"](ldb, message.value).then((result) => {
-        postIt(event, {
-          source: msg.source,
-          type: msg.type,
-          value: result,
+    // eslint-disable-next-line no-fallthrough
+    case "getCharacterDetails":
+    case "getAllFromDB":
+    case "getByIds":
+    case "getWordDetails":
+    case "practiceCard":
+    case "getWordFromDBs":
+    case "getKnownWordIds":
+    case "saveSurvey":
+    case "submitLookupEvents":
+    case "getUserListWords":
+    case "getDefaultWordLists":
+    case "getWordListWordIds":
+    case "setContentConfigToStore":
+    case "getContentConfigFromStore":
+    case "getVocabReviews":
+    case "getSRSReviews":
+    case "submitUserEvents":
+    case "updateRecentSentences":
+    case "addRecentSentences":
+    case "getRecentSentences":
+    case "getFirstSuccessStatsForList":
+    case "getFirstSuccessStatsForImport":
+    case "submitContentEnrichRequest":
+      loadDb(message, sw).then(([ldb, msg]) => {
+        // @ts-ignore FIXME: can I properly type this somehow and it actually be clean/useful?
+        data[message.type](ldb, message.value).then((result) => {
+          postIt(event, { source: msg.source, type: msg.type, value: result });
         });
       });
-    });
-  } else if (message.type === "getFirstSuccessStatsForList") {
-    loadDb(message, sw).then(([ldb, msg]) => {
-      data.getFirstSuccessStatsForList(ldb, message.value).then((result) => {
-        postIt(event, {
-          source: msg.source,
-          type: msg.type,
-          value: result,
-        });
-      });
-    });
-  } else if (message.type === "getFirstSuccessStatsForImport") {
-    loadDb(message, sw).then(([ldb, msg]) => {
-      data.getFirstSuccessStatsForImport(ldb, message.value).then((result) => {
-        postIt(event, {
-          source: msg.source,
-          type: msg.type,
-          value: result,
-        });
-      });
-    });
-  } else {
-    console.warn("Service Worker received a message event that I had no manager for", event);
+      break;
+
+    default:
+      console.warn("Service Worker received a message event that I had no manager for", event);
+      break;
   }
 }

@@ -15,7 +15,6 @@ export default function RecentSentenceExample({
   onDelete,
   isListItem = true,
 }: Props): ReactElement {
-  console.log("RecentSentenceExample", modelId);
   const del = onDelete ? () => onDelete(modelId) : undefined;
   const etf = (
     <div

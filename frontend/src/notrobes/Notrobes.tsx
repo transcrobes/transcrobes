@@ -86,7 +86,7 @@ function Notrobes({ proxy, url }: Props): ReactElement {
     await proxy.sendMessagePromise({
       source: DATA_SOURCE,
       type: "submitLookupEvents",
-      value: { lookupEvents, userStatsMode },
+      value: { lemmaAndContexts: lookupEvents, userStatsMode, source: DATA_SOURCE },
     });
   }
 
@@ -109,7 +109,7 @@ function Notrobes({ proxy, url }: Props): ReactElement {
     const details = await proxy.sendMessagePromise<WordDetailsType>({
       source: DATA_SOURCE,
       type: "getWordDetails",
-      value: { graph: query },
+      value: query,
     });
 
     console.debug(`Attempted to getWordDetails, response is`, details);
@@ -211,7 +211,7 @@ function Notrobes({ proxy, url }: Props): ReactElement {
     // FIXME: grade should be an enum
     const updatedCards = await proxy.sendMessagePromise<CardDocument[]>({
       source: DATA_SOURCE,
-      type: "addOrUpdateCards",
+      type: "addOrUpdateCardsForWord",
       value: { wordId: wordId, grade },
     });
     setCards(updatedCards);

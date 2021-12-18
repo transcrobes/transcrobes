@@ -45,20 +45,33 @@ function PracticerInput({
   const classes = useStyles({ iconColour: iconColour, iconSize: iconSize });
   return (
     <div className={classes.practicerStyle}>
-      <IconButton className={classes.iconStyle} title="I don't know this word yet">
-        <SentimentVeryDissatisfiedIcon onClick={() => addOrUpdateCards(GRADE.UNKNOWN)} />
+      <IconButton
+        className={classes.iconStyle}
+        title="I don't know this word yet"
+        onClick={() => addOrUpdateCards(GRADE.UNKNOWN)}
+      >
+        <SentimentVeryDissatisfiedIcon />
       </IconButton>
-      <IconButton className={classes.iconStyle} title="I am not confident with this word">
-        <SentimentSatisfiedIcon onClick={() => addOrUpdateCards(GRADE.HARD)} />
+      <IconButton
+        className={classes.iconStyle}
+        title="I am not confident with this word"
+        onClick={() => addOrUpdateCards(GRADE.HARD)}
+      >
+        <SentimentSatisfiedIcon />
       </IconButton>
-      <IconButton className={classes.iconStyle} title="I am comfortable with this word">
-        <SentimentVerySatisfiedIcon onClick={() => addOrUpdateCards(GRADE.GOOD)} />
+      <IconButton
+        className={classes.iconStyle}
+        title="I am comfortable with this word"
+        onClick={() => addOrUpdateCards(GRADE.GOOD)}
+      >
+        <SentimentVerySatisfiedIcon />
       </IconButton>
       <IconButton
         className={classes.iconStyle}
         title="I know this word, I don't need to revise it again"
+        onClick={() => addOrUpdateCards(GRADE.KNOWN)}
       >
-        <CheckIcon onClick={() => addOrUpdateCards(GRADE.KNOWN)} />
+        <CheckIcon />
       </IconButton>
     </div>
   );

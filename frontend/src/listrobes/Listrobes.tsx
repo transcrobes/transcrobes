@@ -89,7 +89,7 @@ export function Listrobes({ proxy }: Props): ReactElement {
     proxy.sendMessage({
       source: DATA_SOURCE,
       type: "submitLookupEvents",
-      value: { lookupEvents, userStatsMode },
+      value: { lemmaAndContexts: lookupEvents, userStatsMode, source: DATA_SOURCE },
     });
   }
 

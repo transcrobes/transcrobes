@@ -1,6 +1,5 @@
 import * as utils from "../lib/lib";
 import * as data from "../lib/data";
-import { sendUserEvents, getCardWords } from "../lib/data";
 import { GRADE, TranscrobesDatabase } from "../database/Schema";
 import { getDb } from "../database/Database";
 import dayjs from "dayjs";
@@ -119,7 +118,7 @@ async function loadDb(callback: any, message: any) {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     eventQueueTimer = setInterval(
-      () => sendUserEvents(db, new URL(utils.baseUrl)),
+      () => data.sendUserEvents(db, new URL(utils.baseUrl)),
       utils.EVENT_QUEUE_PROCESS_FREQ,
     );
   }
@@ -160,15 +159,14 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
     sendResponse({ source: message.source, type: message.type, value: dayjs().format() });
   } else if (message.type === "getByIds") {
     loadDb(debug, message).then((ldb) => {
-      data.getByIds(ldb, message.value.collection, message.value.ids).then((values) => {
-        const saveDefinitions = [...values.values()].map((def) => def.toJSON());
-        sendResponse({ source: message.source, type: message.type, value: saveDefinitions });
+      data.getByIds(ldb, message.value).then((values) => {
+        sendResponse({ source: message.source, type: message.type, value: values });
       });
     });
   } else if (message.type === "getWordFromDBs") {
     loadDb(debug, message).then((ldb) => {
       data.getWordFromDBs(ldb, message.value).then((values) => {
-        sendResponse({ source: message.source, type: message.type, value: values?.toJSON() });
+        sendResponse({ source: message.source, type: message.type, value: values });
       });
     });
   } else if (message.type === "getCardWords") {
@@ -184,7 +182,7 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
       });
     } else {
       loadDb(console.debug, message).then((ldb) => {
-        getCardWords(ldb).then((values) => {
+        data.getCardWords(ldb).then((values) => {
           // convert to arrays or Set()s get silently purged... Because JS is sooooooo awesome!
           knownCardWordGraphs = values.knownCardWordGraphs;
           allCardWordGraphs = values.allCardWordGraphs;
@@ -210,12 +208,11 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
   } else if (message.type === "submitLookupEvents") {
     loadDb(console.debug, message).then((ldb) => {
       data
-        .submitLookupEvents(
-          ldb,
-          message.value.lookupEvents,
-          message.value.userStatsMode,
-          EVENT_SOURCE,
-        )
+        .submitLookupEvents(ldb, {
+          lemmaAndContexts: message.value.lookupEvents,
+          userStatsMode: message.value.userStatsMode,
+          source: EVENT_SOURCE,
+        })
         .then((values) => {
           console.debug("submitLookupEvents results in background.js", message, values);
           sendResponse({
