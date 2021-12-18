@@ -25,6 +25,8 @@ function enrich(id: Identifier) {
 
 // FIXME: any
 function ActionButton(props: any): ReactElement {
+  const stopPropagation = (e: React.MouseEvent<HTMLElement>) => e.stopPropagation();
+
   const content = useRecordContext(props) as Content;
   if (content.processing === PROCESSING.FINISHED) {
     let verb = "Watch";
@@ -38,11 +40,21 @@ function ActionButton(props: any): ReactElement {
         children={<Icon />}
         label={verb}
         component={Link}
+        onClick={stopPropagation}
         to={`/contents/${content.id}/${verb.toLowerCase()}`}
       />
     );
   } else if (content.processing === PROCESSING.NONE) {
-    return <Button children={<EnrichIcon />} label="Enrich" onClick={() => enrich(content.id)} />;
+    return (
+      <Button
+        children={<EnrichIcon />}
+        label="Enrich"
+        onClick={(e: React.MouseEvent<HTMLElement>) => {
+          e.stopPropagation();
+          enrich(content.id);
+        }}
+      />
+    );
   } else {
     return <></>;
   }
