@@ -8,41 +8,40 @@ import CheckIcon from "@material-ui/icons/Check";
 import { Property } from "csstype";
 
 interface IconProps {
-  iconSize?: Property.FontSize;
   iconColour?: Property.Color;
 }
 
-const useStyles = makeStyles<Theme, IconProps>(() => ({
+const useStyles = makeStyles<Theme, IconProps>((theme) => ({
   practicerStyle: {
     display: "flex",
     justifyContent: "space-between",
     padding: "0.5em",
   },
+
   iconStyle: {
     "& svg": {
-      fontSize: ({ iconSize }: IconProps) => iconSize || 100,
+      [theme.breakpoints.down("sm")]: {
+        fontSize: 75,
+      },
+      [theme.breakpoints.up("sm")]: {
+        fontSize: 100,
+      },
       color: ({ iconColour }: IconProps) => iconColour || "blue",
     },
   },
 }));
 
 interface PracticerInputProps {
-  iconSize?: Property.FontSize;
   iconColour?: Property.Color;
   onPractice: (wordId: string, grade: number) => void;
   wordId: string;
 }
 
-function PracticerInput({
-  wordId,
-  onPractice,
-  iconSize,
-  iconColour,
-}: PracticerInputProps): ReactElement {
+function PracticerInput({ wordId, onPractice, iconColour }: PracticerInputProps): ReactElement {
   function addOrUpdateCards(grade: number) {
     onPractice(wordId, grade);
   }
-  const classes = useStyles({ iconColour: iconColour, iconSize: iconSize });
+  const classes = useStyles({ iconColour: iconColour });
   return (
     <div className={classes.practicerStyle}>
       <IconButton

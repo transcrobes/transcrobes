@@ -4,41 +4,76 @@ import { CardType, DefinitionType, PosSentences } from "../lib/types";
 export const CentredFlex = styled("div")(() => ({
   display: "flex",
   justifyContent: "center",
+  alignItems: "center",
   padding: "0.2em",
 }));
 
-export const QuestionWrapper = styled("div")(() => ({
+export const QuestionWrapper = styled("div")(({ theme }) => ({
   display: "flex",
   justifyContent: "center",
-  padding: "1em",
+  alignItems: "center",
+  [theme.breakpoints.down("sm")]: {
+    padding: "0.3em",
+  },
+  [theme.breakpoints.up("sm")]: {
+    padding: "1em",
+  },
 }));
 
-export const AnswerWrapper = styled("div")(() => ({
+export const AnswerWrapper = styled("div")(({ theme }) => ({
   display: "flex",
   justifyContent: "center",
-  padding: "1em",
+  alignItems: "center",
+  [theme.breakpoints.down("sm")]: {
+    padding: "0.3em",
+  },
+  [theme.breakpoints.up("sm")]: {
+    padding: "1em",
+  },
 }));
 
-export const GraphSoundQuestionStyle = styled("div")(() => ({
-  fontSize: "4em",
-  padding: "0.5em",
+export const GraphSoundQuestionStyle = styled("div")(({ theme }) => ({
+  [theme.breakpoints.down("sm")]: {
+    fontSize: "3em",
+    padding: "0.1em",
+  },
+  [theme.breakpoints.up("sm")]: {
+    fontSize: "4em",
+    padding: "0.5em",
+  },
 }));
 
-export const StyledAnswer = styled("div")(() => ({
+export const StyledAnswer = styled("div")(({ theme }) => ({
   display: "flex",
   justifyContent: "center",
+  alignItems: "center",
   fontSize: "2em",
-  padding: "1em",
+  [theme.breakpoints.down("sm")]: {
+    padding: "0.3em",
+  },
+  [theme.breakpoints.up("sm")]: {
+    padding: "1em",
+  },
 }));
 
-export const StyledQuestion = styled("div")(() => ({
+export const StyledQuestion = styled("div")(({ theme }) => ({
   fontSize: "2em",
-  padding: "1em",
+  [theme.breakpoints.down("sm")]: {
+    padding: "0.3em",
+  },
+  [theme.breakpoints.up("sm")]: {
+    padding: "1em",
+  },
 }));
 
-export const MeaningWrapper = styled("div")(() => ({
+export const MeaningWrapper = styled("div")(({ theme }) => ({
   display: "block",
-  padding: "1em",
+  [theme.breakpoints.down("sm")]: {
+    padding: "0.2em",
+  },
+  [theme.breakpoints.up("sm")]: {
+    padding: "1em",
+  },
 }));
 
 export const LauncherStyle = styled("div")(() => ({

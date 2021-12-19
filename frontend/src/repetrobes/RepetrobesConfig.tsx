@@ -142,7 +142,7 @@ export default function RepetrobesConfig({ activityConfig, onConfigChange }: Pro
       <TCCheckbox
         name="showRecents"
         className={classes.checkbox}
-        label="Show recent sentences"
+        label="Show recent phrases"
         isSelected={activityConfig.showRecents}
         onCheckboxChange={handleSimpleChange}
       />

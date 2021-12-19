@@ -1,4 +1,4 @@
-import { ReactElement, useEffect, useState } from "react";
+import { ReactElement, useEffect, useRef, useState } from "react";
 import dayjs from "dayjs";
 import _ from "lodash";
 
@@ -52,6 +52,7 @@ const EMPTY_STATE = {
 const useStyles = makeStyles((theme: Theme) => ({
   toolbar: {
     justifyContent: "space-between",
+    alignItems: "center",
   },
   revisor: {
     padding: "1em",
@@ -77,6 +78,15 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
   const [daState, setDaState] = useState<ReviewablesInfoType>(EMPTY_STATE);
   const [stateActivityConfig, setStateActivityConfig] =
     useState<RepetrobesActivityConfigType>(EMPTY_ACTIVITY);
+
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollToBottom = () => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  };
+
+  useEffect(scrollToBottom, [showAnswer]);
 
   useEffect(() => {
     (async () => {
@@ -275,7 +285,8 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
       } else if (
         card.lastRevisionDate <= todayStarts &&
         card.firstRevisionDate < todayStarts &&
-        !wordIdsReviewedToday.has(getWordId(cardId))
+        !wordIdsReviewedToday.has(getWordId(cardId)) &&
+        card.dueDate < dayjs.unix(todayStarts).add(1, "day").unix()
       ) {
         possibleRevisionsToday.add(cardId);
         toRereviewQueue.set(cardId, card);
@@ -476,6 +487,7 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
           onShowAnswer={handleShowAnswer}
         />
       </div>
+      <div ref={messagesEndRef} />
     </div>
   );
 }
