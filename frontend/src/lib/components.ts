@@ -34,7 +34,7 @@ const DEFINITION_LOADING = "loading...";
 const RETRY_DEFINITION_MS = 5000;
 const RETRY_DEFINITION_MAX_TRIES = 20;
 
-const NUMBER_POS = new Set<TREEBANK_POS_TYPES>(["OD", "NT"]);
+const NUMBER_POS = new Set<TREEBANK_POS_TYPES>(["OD", "NT", "CD"]);
 
 declare global {
   interface Window {
