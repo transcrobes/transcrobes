@@ -324,13 +324,23 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
       const readyCandidates = candidates.filter((x) => x.dueDate <= dayjs().unix());
       console.log("sorted candidates and readies", candidates, readyCandidates);
       let reviewCard: CardType;
+      // if something is already due, chose one of those
       if (readyCandidates.length > 0) {
         reviewCard = getRandomNext(readyCandidates);
       } else {
-        reviewCard = candidates[0];
+        const readyCandidates = candidates.filter(
+          (x) =>
+            x.lastRevisionDate <=
+            dayjs().add(-stateActivityConfig.badReviewWaitSecs, "seconds").unix(),
+        );
+        // else find something that is not something failed just now (and not yet ready)
+        if (readyCandidates.length > 0) {
+          reviewCard = getRandomNext(readyCandidates);
+        } else {
+          // else no good option, we either have nothing "fresh" left or we are failing badly...
+          reviewCard = candidates[0];
+        }
       }
-      // const [reviewCard, _reviewCardType] = await newRevisionFromState(state, activityConfig);
-      // console.debug("Next practice review card", reviewCard, _reviewCardType);
 
       const allNewToday = newToday.size + availableNewToday;
       const todaysNewLimit = Math.min(allNewToday, activityConfig.maxNew);

@@ -25,8 +25,10 @@ import PhraseAnswer from "./PhraseAnswer";
 import PhraseQuestion from "./PhraseQuestion";
 import dayjs from "dayjs";
 import localizedFormat from "dayjs/plugin/localizedFormat";
-import SearchLoading from "../components/SearchLoading";
-
+import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone";
+dayjs.extend(utc);
+dayjs.extend(timezone);
 dayjs.extend(localizedFormat);
 
 const DATA_SOURCE = "VocabRevisor.tsx";
@@ -220,6 +222,9 @@ export function VocabRevisor({
     dayjs().unix(),
     dayjs(currentCard?.dueDate),
     dayjs(currentCard?.updatedAt),
+    dayjs.tz.guess(),
+    dayjs(currentCard?.dueDate).tz(dayjs.tz.guess()).format("LTS"),
+    dayjs().tz(dayjs.tz.guess()).format("LTS"),
     loading,
   );
   return (
@@ -229,7 +234,7 @@ export function VocabRevisor({
         <>
           {premature && (
             <div style={{ backgroundColor: premature ? "orange" : "inherit" }}>
-              Card not due until {dayjs(currentCard.dueDate).format("LTS")}
+              Card not due until {dayjs(currentCard.dueDate).tz(dayjs.tz.guess()).format("LTS")}
             </div>
           )}
           <QuestionWrapper style={{ backgroundColor: premature ? "orange" : "inherit" }}>
