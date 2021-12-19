@@ -34,6 +34,8 @@ const DEFINITION_LOADING = "loading...";
 const RETRY_DEFINITION_MS = 5000;
 const RETRY_DEFINITION_MAX_TRIES = 20;
 
+const NUMBER_POS = new Set<TREEBANK_POS_TYPES>(["OD", "NT"]);
+
 declare global {
   interface Window {
     transcrobesModel: KeyedModels;
@@ -937,6 +939,10 @@ async function getNormalGloss(
   return gloss;
 }
 
+function isNumberToken(token: TokenType): boolean {
+  return !!token.pos && NUMBER_POS.has(token.pos);
+}
+
 async function updateWordForEntry(
   entry: HTMLElement,
   glossing: number,
@@ -992,7 +998,7 @@ async function updateWordForEntry(
     glossing > USER_STATS_MODE.NO_GLOSS &&
     !uCardWords.knownCardWordGraphs.has(lemma) &&
     !!token.pos &&
-    (token.pos !== "NT" || glossNumberNouns);
+    (!isNumberToken(token) || glossNumberNouns);
 
   if (needsGloss) {
     const gloss = await getNormalGloss(token, glossing, uCardWords);
