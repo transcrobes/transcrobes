@@ -25,7 +25,7 @@ const injectables: Injectable[] = [
     // transcrobes
     type: "script",
     // the hash is required or Android basically never updates...
-    url: `${origin}/readium-bundle.js?` + __webpack_hash__,
+    url: `${origin}/readium.${__webpack_hash__}.js`,
     r2before: true,
   },
   {

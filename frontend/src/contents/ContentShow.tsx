@@ -12,6 +12,7 @@ import { Content, CONTENT_TYPE, PROCESSING, reverseEnum } from "../lib/types";
 import ActionButton from "./ActionButton";
 import { ImportProgress } from "../imports/ImportProgress";
 import { HelpShowActions } from "../components/HelpShowActions";
+import CacheSwitch from "./CacheSwitch";
 
 const ContentShow: FC<FieldProps<Content>> = (props) => (
   <Show
@@ -38,6 +39,7 @@ const ContentShow: FC<FieldProps<Content>> = (props) => (
       <TextField label="Language" source="lang" />
       <BooleanField source="shared" />
       <ActionButton props={props} />
+      <CacheSwitch label="Offline?" props={props} />
       <hr />
       <h3>Progress</h3>
       <ImportProgress />

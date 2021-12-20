@@ -14,8 +14,6 @@ function page({ title, description }: { title: string; description: string }) {
       new HtmlWebpackPlugin({
         context: { title, description },
         template: "./src/index.html",
-        chunks: ["main"],
-        hash: true,
       }),
     ],
   };
@@ -37,7 +35,7 @@ const commonConfig = merge<Configuration>([
 
   page({ title: "Transcrobes", description: "Transcrobes Language Learning Platform" }),
   loadStaticResources("", ""),
-  parts.injectManifest(),
+  parts.injectManifest({ limit: mode === "development" ? 100 : 15 }),
   parts.loadCSS(),
   parts.loadTypescript(),
   parts.loadImages(),

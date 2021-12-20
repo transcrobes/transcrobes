@@ -137,6 +137,10 @@ export enum PROCESSING {
   ERROR = 4,
 }
 
+export const SUBS_DATA_SUFFIX = ".data.json";
+
+export const ONE_YEAR_IN_SECS = 365 * 24 * 60 * 60; // default is only a week
+
 export enum STATUS {
   INACTIVE = 0,
   ACTIVE = 1,

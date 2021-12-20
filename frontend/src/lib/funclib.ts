@@ -16,6 +16,25 @@ export function UUID(): string {
   return Date.now().toString(36) + Math.random().toString(36).substring(2);
 }
 
+export function handleBadResponse(url: string, response: Response): void {
+  if (!response.ok) {
+    const message = `Bad response status for: ${url}. Status: ${response.status}`;
+    console.warn(message);
+    throw new Error(message);
+  }
+}
+
+export function getContentBaseURL(contentId: string): string {
+  return `/api/v1/data/content/${contentId}`;
+}
+
+export function getSubsURL(contentId: string): string {
+  return `${getContentBaseURL(contentId)}/subtitles.vtt`;
+}
+
+export function getManifestURL(contentId: string): string {
+  return `${getContentBaseURL(contentId)}/manifest.json`;
+}
 export function recentSentencesFromLZ(
   wordId: string,
   lzContent: string,

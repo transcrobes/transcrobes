@@ -28,9 +28,14 @@ function RefreshCacheButton({ onCacheEmptied }: RefreshCacheButtonProps): ReactE
   const classes = useStyles();
 
   function handleClick() {
-    const version = "v1"; // FIXME: horrible, nasty hardcoding!!!
-    caches.delete(version).then(() => {
-      const message = "Caches cleared";
+    // WEBPUB_CACHE_NAME
+    caches.keys().then(async (cacheNames) => {
+      await Promise.all(
+        cacheNames.map(async (cacheName) => {
+          await caches.delete(cacheName);
+        }),
+      );
+      const message = `Cleared the following cached ${cacheNames.join(", ")}`;
       console.log(message);
       onCacheEmptied(message);
     });

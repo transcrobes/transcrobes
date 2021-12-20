@@ -13,9 +13,9 @@ import {
   DEFAULT_RETRIES,
 } from "./lib/lib";
 import * as data from "./lib/data";
-import { DayCardWords, DefinitionType, EventData } from "./lib/types";
+import { DayCardWords, EventData } from "./lib/types";
 import { getAccess, getRefresh, getUsername } from "./lib/JWTAuthProvider";
-import { GRADE, TranscrobesCollections, TranscrobesDatabase } from "./database/Schema";
+import { TranscrobesCollections, TranscrobesDatabase } from "./database/Schema";
 
 // FIXME: move to redux!!! or something less nasty!!!
 let dayCardWords: DayCardWords | null;
@@ -120,27 +120,6 @@ function getLocalCardWords(message: EventData, sw: ServiceWorkerGlobalScope) {
   }
 }
 
-function addToLocalKnown(
-  message: EventData,
-  wordInfo: DefinitionType,
-  grade: GRADE,
-  sw: ServiceWorkerGlobalScope,
-): void {
-  getLocalCardWords(message, sw).then((dayCW) => {
-    dayCW.allCardWordGraphs.add(wordInfo.graph);
-    if (grade > GRADE.UNKNOWN) {
-      // console.debug("Adding to known words", wordInfo);
-      dayCW.knownCardWordGraphs.add(wordInfo.graph);
-      dayCW.knownWordIdsCounter[wordInfo.id] = dayCW.knownWordIdsCounter[wordInfo.id]
-        ? dayCW.knownWordIdsCounter[wordInfo.id] + 1
-        : 1;
-    }
-    // else {
-    //   console.debug("NOT adding to known words", wordInfo);
-    // }
-  });
-}
-
 export async function resetDBConnections(): Promise<void> {
   db = null;
   dayCardWords = null;
@@ -198,16 +177,6 @@ export function manageEvent(sw: ServiceWorkerGlobalScope, event: ExtendableMessa
         });
       });
       break;
-    // FIXME: is this better? or is the other safer and better with negligible performance hit?
-    // case "practiceCardsForWord":
-    //   loadDb(message, sw).then(([ldb, msg]) => {
-    //     data.practiceCardsForWord(ldb, message.value).then((values) => {
-    //       addToLocalKnown(msg, message.value.wordInfo, message.value.grade, sw);
-    //       postIt(event, { source: msg.source, type: msg.type, value: "Cards Practiced" });
-    //     });
-    //   });
-    //   break;
-
     // The following devalidate the dayCardWords "cache", so setting to null
     case "practiceCardsForWord":
     case "addOrUpdateCardsForWord":

@@ -1,34 +1,24 @@
 import * as React from "react";
 import { FC } from "react";
 import {
-  BooleanField,
   Datagrid,
-  EditButton,
   FunctionField,
   List,
   ListProps,
   ReferenceField,
-  ShowButton,
   TextField,
   TopToolbar,
 } from "react-admin";
 import HelpButton from "../components/HelpButton";
 import { CONTENT_TYPE, PROCESSING, reverseEnum } from "../lib/types";
 import ActionButton from "./ActionButton";
+import CacheSwitch from "./CacheSwitch";
 
 const ContentActions: FC<any> = () => (
   <TopToolbar>
     <HelpButton url="https://transcrob.es/page/software/configure/contents/" />
   </TopToolbar>
 );
-
-// const ContentFilter: FC = (props) => (
-//   <Filter {...props}>
-//     <SearchInput source="q" alwaysOn />
-//   </Filter>
-// );
-
-//
 
 export const ContentList: FC<ListProps> = (props) => {
   return (
@@ -47,6 +37,7 @@ export const ContentList: FC<ListProps> = (props) => {
           render={(record: any) => reverseEnum(CONTENT_TYPE, record.contentType)}
         />
         <ActionButton label="Action" props={props} />
+        <CacheSwitch label="Offline?" props={props} />
       </Datagrid>
     </List>
   );

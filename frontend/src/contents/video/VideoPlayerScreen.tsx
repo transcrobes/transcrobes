@@ -5,9 +5,9 @@ import { createColor } from "material-ui-color";
 import { ServiceWorkerProxy } from "../../lib/proxies";
 import VideoPlayer from "./videoplayer/VideoPlayer";
 import { VideoConfig, VideoContentConfig } from "./videoplayer/types";
-import { ContentConfigType, DefinitionType, Content } from "../../lib/types";
+import { ContentConfigType, DefinitionType, Content, SUBS_DATA_SUFFIX } from "../../lib/types";
 import { fetchPlus, USER_STATS_MODE } from "../../lib/lib";
-import { wordIdsFromModels } from "../../lib/funclib";
+import { getSubsURL, wordIdsFromModels } from "../../lib/funclib";
 
 type ContentParams = {
   id: string;
@@ -21,7 +21,6 @@ const DATA_SOURCE = "VideoPlayerScreen.tsx";
 // Obtain a ref if you need to call any methods.
 export default function VideoPlayerScreen({ proxy }: ContentProps): ReactElement {
   const { id } = useParams<ContentParams>();
-  const SUBS_URL = `/api/v1/data/content/${id}/subtitles.vtt`;
   const [fileURL, setFileURL] = useState<string>("");
   const [contentConfig, setContentConfig] = useState<VideoContentConfig | null>(null);
   const [content, setContent] = useState<Content | null>(null);
@@ -80,7 +79,7 @@ export default function VideoPlayerScreen({ proxy }: ContentProps): ReactElement
       setContentConfig(videoConfig);
 
       // FIXME: this nastiness needs fixing... via redux ?
-      window.transcrobesModel = await fetchPlus(`${SUBS_URL}.data.json`);
+      window.transcrobesModel = await fetchPlus(`${getSubsURL(id)}${SUBS_DATA_SUFFIX}`);
       const uniqueIds = wordIdsFromModels(window.transcrobesModel);
       window.componentsConfig.proxy
         .sendMessagePromise<DefinitionType[]>({
@@ -129,7 +128,7 @@ export default function VideoPlayerScreen({ proxy }: ContentProps): ReactElement
     return (
       <div id="container" style={{ maxWidth: "1000px" }}>
         <VideoPlayer
-          subsUrl={SUBS_URL}
+          subsUrl={getSubsURL(id)}
           videoUrl={fileURL}
           contentConfig={contentConfig}
           contentLabel={content?.title}

@@ -29,7 +29,7 @@ export function config(ouputDir = "./dist"): webpack.Configuration {
     },
     output: {
       path: path.resolve(__dirname, ouputDir),
-      filename: "[name]-bundle.js",
+      filename: "[name].[fullhash].js",
     },
     plugins: [
       new webpack.ProvidePlugin({
@@ -76,11 +76,15 @@ export function checkCircularDependencies(): webpack.Configuration {
   };
 }
 
-export function injectManifest(): webpack.Configuration {
+export function injectManifest(
+  { limit }: { limit: number } = { limit: 100 },
+): webpack.Configuration {
   return {
     plugins: [
       new InjectManifest({
         swSrc: "./src/service-worker.ts",
+        dontCacheBustURLsMatching: /.*\.css$|.*\.woff2?$/,
+        maximumFileSizeToCacheInBytes: limit * 1024 * 1024,
       }),
     ],
   };
