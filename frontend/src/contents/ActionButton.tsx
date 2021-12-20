@@ -1,5 +1,5 @@
 import { ReactElement } from "react";
-import { Button, Identifier, Link, useRecordContext } from "react-admin";
+import { Button, Identifier, useRecordContext } from "react-admin";
 import { Content, CONTENT_TYPE, PROCESSING } from "../lib/types";
 import WatchIcon from "@material-ui/icons/Theaters";
 import EnrichIcon from "@material-ui/icons/Add";
@@ -36,13 +36,9 @@ function ActionButton(props: any): ReactElement {
       Icon = ReadIcon;
     }
     return (
-      <Button
-        children={<Icon />}
-        label={verb}
-        component={Link}
-        onClick={stopPropagation}
-        to={`/contents/${content.id}/${verb.toLowerCase()}`}
-      />
+      <a href={`/#/contents/${content.id}/${verb.toLowerCase()}`}>
+        <Button children={<Icon />} label={verb} onClick={stopPropagation} />
+      </a>
     );
   } else if (content.processing === PROCESSING.NONE) {
     return (
