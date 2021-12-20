@@ -101,7 +101,7 @@ def make_contributor(val, manager: EnrichmentManager):
 def make_toc_item(epub, it, manager: EnrichmentManager):
     res = {"href": adjust_href(epub, it.href), "title": manager.enricher().clean_text(it.title)}
     if it.children:
-        res["children"] = [make_toc_item(epub, c) for c in it.children]
+        res["children"] = [make_toc_item(epub, c, manager) for c in it.children]
     return res
 
 
@@ -158,8 +158,12 @@ def make_manifest(epub: Epub, manager: EnrichmentManager):  # noqa:C901  # pylin
             res["rel"] = "cover"
         resources.append(res)
 
+        if v.href.endswith("html") and "html" in v.mimetype:
+            res = {"href": adjust_href(epub, v.href + DATA_JS_SUFFIX), "type": "text/javascript"}
+            resources.append(res)
+
     # TOC
-    data["toc"] = [make_toc_item(epub, it) for it in epub.toc]
+    data["toc"] = [make_toc_item(epub, it, manager) for it in epub.toc]
 
     return data
 
@@ -172,7 +176,7 @@ async def unpack_epub_file(db: AsyncSession, the_import: Import, manager: Enrich
 
     import_path = absolute_imports_path(the_import.created_by.id, the_import.import_file)
     with open(import_path, "rb") as f, dawn.open(f) as upload:
-        manifest = make_manifest(upload)
+        manifest = make_manifest(upload, manager)
         title = get_metadata_item(upload, "titles", manager) or ""
         author = get_metadata_item(upload, "creators", manager) or ""
         description = get_metadata_item(upload, "description", manager) or ""
