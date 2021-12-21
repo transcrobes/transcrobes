@@ -79,14 +79,16 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
   const [stateActivityConfig, setStateActivityConfig] =
     useState<RepetrobesActivityConfigType>(EMPTY_ACTIVITY);
 
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const scrollToBottom = () => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
-    }
-  };
+  const windowEndRef = useRef<HTMLDivElement>(null);
+  const windowBeginRef = useRef<HTMLDivElement>(null);
 
-  useEffect(scrollToBottom, [showAnswer]);
+  useEffect(() => {
+    if (windowBeginRef.current && windowEndRef.current) {
+      (showAnswer ? windowEndRef.current : windowBeginRef.current).scrollIntoView({
+        behavior: "smooth",
+      });
+    }
+  }, [showAnswer]);
 
   useEffect(() => {
     (async () => {
@@ -451,6 +453,7 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
   const ac = stateActivityConfig;
   return (
     <div>
+      <div ref={windowBeginRef} />
       <TopToolbar className={classes.toolbar}>
         <RepetrobesConfigLauncher activityConfig={ac} onConfigChange={handleConfigChange} />
         <div className={classes.progress}>
@@ -487,7 +490,7 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
           onShowAnswer={handleShowAnswer}
         />
       </div>
-      <div ref={messagesEndRef} />
+      <div ref={windowEndRef} />
     </div>
   );
 }
