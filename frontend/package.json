@@ -102,6 +102,7 @@
     "d3-array": "^3.1.1",
     "dayjs": "^1.10.7",
     "dexie": "^3.0.3",
+    "framer-motion": "^5.5.5",
     "graphql": "^15.5.3",
     "hanzi-writer": "^3.2.0",
     "html-parsed-element": "^0.4.1",
