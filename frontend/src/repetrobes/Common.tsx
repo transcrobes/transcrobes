@@ -1,6 +1,30 @@
 import { styled } from "@material-ui/core";
-import { CardType, DefinitionType, PosSentences } from "../lib/types";
+import { ReactElement } from "react";
+import DefinitionGraph from "../components/DefinitionGraph";
+import useWindowDimensions from "../hooks/WindowDimensions";
+import { CardType, CharacterType, DefinitionType, PosSentences } from "../lib/types";
 
+interface QuestionDefinitionGraphProps {
+  characters: (CharacterType | null)[];
+  showAnswer: boolean;
+}
+
+export default function QuestionDefinitionGraph({
+  characters,
+  showAnswer,
+}: QuestionDefinitionGraphProps): ReactElement {
+  const dimensions = useWindowDimensions();
+  // the min char size should allow 4 on an old iphone before scrollbars appear
+  const newDim = Math.max(72, Math.min(150, dimensions.width / characters.length - 18));
+  return (
+    <DefinitionGraph
+      characters={characters}
+      showAnswer={showAnswer}
+      charHeight={newDim}
+      charWidth={newDim}
+    />
+  );
+}
 export const CentredFlex = styled("div")(() => ({
   display: "flex",
   justifyContent: "center",

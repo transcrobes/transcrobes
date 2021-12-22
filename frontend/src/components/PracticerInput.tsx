@@ -21,7 +21,7 @@ const useStyles = makeStyles<Theme, IconProps>((theme) => ({
   iconStyle: {
     "& svg": {
       [theme.breakpoints.down("sm")]: {
-        fontSize: 75,
+        fontSize: 72,
       },
       [theme.breakpoints.up("sm")]: {
         fontSize: 100,

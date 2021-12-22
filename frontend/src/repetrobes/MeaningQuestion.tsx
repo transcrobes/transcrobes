@@ -1,5 +1,5 @@
 import { ReactElement } from "react";
-import DefinitionGraph from "../components/DefinitionGraph";
+import QuestionDefinitionGraph from "./Common";
 import Meaning from "../components/Meaning";
 import { CardType, CharacterType, DefinitionType } from "../lib/types";
 import { MeaningWrapper, StyledQuestion } from "./Common";
@@ -36,7 +36,7 @@ export default function MeaningQuestion({
           {showL2LengthHint && <div key="lenHint">(L2 length: {definition.graph.length})</div>}
         </MeaningWrapper>
       </StyledQuestion>
-      <DefinitionGraph characters={characters} showAnswer={showAnswer}></DefinitionGraph>
+      <QuestionDefinitionGraph characters={characters} showAnswer={showAnswer} />
     </div>
   );
 }

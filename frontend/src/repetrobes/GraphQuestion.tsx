@@ -1,5 +1,5 @@
 import { ReactElement } from "react";
-import DefinitionGraph from "../components/DefinitionGraph";
+import QuestionDefinitionGraph from "./Common";
 import { CardType, CharacterType } from "../lib/types";
 import { GraphSoundQuestionStyle } from "./Common";
 
@@ -15,7 +15,7 @@ export default function GraphQuestion({ card, characters }: GraphQuestionProps):
       {card && card.front ? (
         card.front
       ) : (
-        <DefinitionGraph characters={characters} showAnswer={true}></DefinitionGraph>
+        <QuestionDefinitionGraph characters={characters} showAnswer={true} />
       )}{" "}
     </GraphSoundQuestionStyle>
   );

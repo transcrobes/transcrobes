@@ -1,9 +1,9 @@
 import { Button, Grid, makeStyles } from "@material-ui/core";
 import { ReactElement, useState } from "react";
 import { InfoBox } from "../components/Common";
-import DefinitionGraph from "../components/DefinitionGraph";
 import RecentSentenceExample from "../components/RecentSentenceExample";
 import { CharacterType, PosSentence, PosSentences, ZH_TB_POS_LABELS } from "../lib/types";
+import QuestionDefinitionGraph from "./Common";
 
 interface Props {
   recentSentences: PosSentences | null;
@@ -60,7 +60,7 @@ export default function PhraseQuestion({
           )}
         </Grid>
       )) || <div>Nothing found</div>}
-      <DefinitionGraph characters={characters} showAnswer={showAnswer}></DefinitionGraph>
+      <QuestionDefinitionGraph characters={characters} showAnswer={showAnswer} />
     </div>
   );
 }

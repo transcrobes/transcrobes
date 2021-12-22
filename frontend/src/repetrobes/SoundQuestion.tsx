@@ -1,6 +1,6 @@
 import { Button } from "@material-ui/core";
 import { ReactElement } from "react";
-import DefinitionGraph from "../components/DefinitionGraph";
+import QuestionDefinitionGraph from "./Common";
 import { say } from "../lib/funclib";
 import { CardType, CharacterType, DefinitionType } from "../lib/types";
 import { CentredFlex, GraphSoundQuestionStyle } from "./Common";
@@ -26,7 +26,7 @@ export default function SoundQuestion({
           Say it!
         </Button>
       </CentredFlex>
-      <DefinitionGraph characters={characters} showAnswer={showAnswer}></DefinitionGraph>
+      <QuestionDefinitionGraph characters={characters} showAnswer={showAnswer} />
     </GraphSoundQuestionStyle>
   );
 }
