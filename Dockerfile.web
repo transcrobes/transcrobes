@@ -1,4 +1,5 @@
 ARG TRANSCROBES_DOCKER_REPO
+ARG TRANSCROBES_BACKEND_IMAGE_TAG
 # Stage 0, "build-stage", based on Node.js, to build and compile the frontend
 FROM node:16 as build-stage
 
@@ -14,22 +15,6 @@ ARG ENVIRONMENT=prod
 
 RUN npm run build:${ENVIRONMENT}
 
-FROM ${TRANSCROBES_DOCKER_REPO:-transcrobes}/transcrobes-base
+FROM ${TRANSCROBES_DOCKER_REPO:-transcrobes}/transcrobes-backend:${TRANSCROBES_BACKEND_IMAGE_TAG:-latest}
 
-ENV PYTHONPATH=/app
-ENV PYTHONUNBUFFERED=1
-
-WORKDIR /app/
-COPY --from=build-stage /app/dist /fapp
-
-COPY ./backend/app/start.sh /start.sh
-RUN chmod +x /start.sh
-
-COPY ./backend/app/gunicorn_conf.py /gunicorn_conf.py
-
-COPY ./backend/app/start-reload.sh /start-reload.sh
-COPY ./backend/app/start-uvicorn.sh /start-uvicorn.sh
-RUN chmod +x /start-reload.sh
-RUN chmod +x /start-uvicorn.sh
-
-CMD ["/bin/bash", "/start.sh"]
+CMD ["/bin/bash", "/start-uvicorn.sh"]

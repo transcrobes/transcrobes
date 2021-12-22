@@ -15,7 +15,7 @@ services:
   backend:
     ports:
       - "8888:8888"
-      - "8880:80"
+      - "8880:8000"
     volumes:
       - ./backend/app:/app
       - ./frontend/dist:/fapp
@@ -27,7 +27,7 @@ services:
       args:
         INSTALL_DEV: ${INSTALL_DEV-true}
     # command: bash -c "while true; do sleep 1; done"  # Infinite loop to keep container live doing nothing
-    command: /start-reload.sh
+    command: /bin/bash /start-reload.sh
 
   faustworker:
     ports:
