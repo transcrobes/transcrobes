@@ -22,8 +22,8 @@ services:
     environment:
       - SERVER_HOST=http://${DOMAIN?Variable not set}
     build:
-      context: ./backend
-      dockerfile: backend.dockerfile
+      context: .
+      dockerfile: Dockerfile.web
       args:
         INSTALL_DEV: ${INSTALL_DEV-true}
     # command: bash -c "while true; do sleep 1; done"  # Infinite loop to keep container live doing nothing
@@ -38,7 +38,7 @@ services:
       - RUN=faust worker -A app.fworker -l info
       - SERVER_HOST=http://${DOMAIN?Variable not set}
     build:
-      context: ./backend
-      dockerfile: faustworker.dockerfile
+      context: .
+      dockerfile: Dockerfile.worker
       args:
         INSTALL_DEV: ${INSTALL_DEV-true}

@@ -56,10 +56,11 @@ services:
       # Allow explicit env var override for tests
       - SMTP_HOST=${SMTP_HOST}
     build:
-      context: ./backend
-      dockerfile: backend.dockerfile
+      context: .
+      dockerfile: Dockerfile.web
       args:
         INSTALL_DEV: ${INSTALL_DEV-false}
+        TRANSCROBES_DOCKER_REPO: ${TRANSCROBES_DOCKER_REPO-transcrobes}
 
   faustworker:
     image: "${DOCKER_IMAGE_FAUSTWORKER?Variable not set}:${TAG-latest}"
@@ -80,10 +81,11 @@ services:
       - SMTP_HOST=${SMTP_HOST?Variable not set}
       - FAUST_PORT=${FAUST_PORT?6066}
     build:
-      context: ./backend
-      dockerfile: faustworker.dockerfile
+      context: .
+      dockerfile: Dockerfile.worker
       args:
         INSTALL_DEV: ${INSTALL_DEV-false}
+        TRANSCROBES_DOCKER_REPO: ${TRANSCROBES_DOCKER_REPO-transcrobes}
 
   # frontend:
   #   image: "${DOCKER_IMAGE_FRONTEND?Variable not set}:${TAG-latest}"

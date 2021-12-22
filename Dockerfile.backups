@@ -1,4 +1,3 @@
-# Then build our backup image
 FROM postgres:14
 LABEL maintainer="Anton Melser <anton@transcrob.es>"
 
