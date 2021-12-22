@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 import mimetypes
 import os
+from email.utils import formatdate
 from typing import Any, List
 
 from app import models, schemas, stats
@@ -146,9 +148,25 @@ async def serve_content(  # pylint: disable=R0914  # FIXME: consider reducing
                                 token[prop] = value
 
         if destination.endswith(DATA_JS_SUFFIX):
-            return Response(
-                content=f'var transcrobesModel = {json.dumps(combined, separators=(",", ":"))};',
+            content = f'var transcrobesModel = {json.dumps(combined, separators=(",", ":"))};'
+            content_length = str(len(content))
+
+            # TODO: decide whether to keep this.
+            # Here we calculate the file stats from file dates, so normal browser caching works
+            # This may be dangerous/annoying but if we want to not cache at all then we'll need
+            # to get rid of these header in the FileResponse above, or they *will* get cached
+            # and this *won't*
+            mtime = os.path.getmtime(destination_no_data_suffix)
+            etag_base = str(mtime) + "-" + content_length
+            etag = hashlib.md5(etag_base.encode()).hexdigest()
+
+            resp = Response(
+                content=content,
                 media_type="text/javascript",
             )
+            resp.headers.setdefault("content-length", content_length)
+            resp.headers.setdefault("last-modified", formatdate(mtime, usegmt=True))
+            resp.headers.setdefault("etag", etag)
+            return resp
         else:
             return JSONResponse(combined)
