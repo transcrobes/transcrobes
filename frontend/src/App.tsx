@@ -35,7 +35,7 @@ declare global {
 const authProvider = jwtTokenAuthProvider();
 
 const wb = new Workbox("/service-worker.js");
-wb.register();
+wb.register({ immediate: true });
 defineElements();
 
 const dataProvider = SWDataProvider({ wb: wb });

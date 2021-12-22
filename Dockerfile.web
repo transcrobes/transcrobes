@@ -16,5 +16,6 @@ ARG ENVIRONMENT=prod
 RUN npm run build:${ENVIRONMENT}
 
 FROM ${TRANSCROBES_DOCKER_REPO:-transcrobes}/transcrobes-backend:${TRANSCROBES_BACKEND_IMAGE_TAG:-latest}
+COPY --from=build-stage /app/dist /fapp
 
 CMD ["/bin/bash", "/start-uvicorn.sh"]
