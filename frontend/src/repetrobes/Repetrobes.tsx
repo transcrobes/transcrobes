@@ -6,7 +6,6 @@ import { GRADE, getWordId, getCardType, getCardId } from "../database/Schema";
 import RepetrobesConfigLauncher from "./RepetrobesConfigLauncher";
 import VocabRevisor from "./VocabRevisor";
 import { USER_STATS_MODE } from "../lib/lib";
-
 import {
   CardType,
   CharacterType,

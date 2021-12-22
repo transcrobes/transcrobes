@@ -1,20 +1,22 @@
 import { ReactElement, useEffect, useState } from "react";
 import { useRecordContext } from "react-admin";
+import { Switch } from "@material-ui/core";
+import { PrecachePublicationsMessage } from "@nypl/web-reader/dist/esm/ServiceWorker/types";
+import { registerRoute } from "workbox-routing";
+import { ExpirationPlugin } from "workbox-expiration";
+import { CacheFirst } from "workbox-strategies";
+
 import {
   Content,
   CONTENT_TYPE,
   ONE_YEAR_IN_SECS,
   PROCESSING,
   SUBS_DATA_SUFFIX,
+  PRECACHE_PUBLICATIONS,
+  WEBPUB_CACHE_NAME,
 } from "../lib/types";
-import { Switch } from "@material-ui/core";
-import { PrecachePublicationsMessage } from "../web-reader/types";
-import { PRECACHE_PUBLICATIONS, WEBPUB_CACHE_NAME } from "../web-reader/constants";
-import { getContentBaseURL, getManifestURL, getSubsURL, handleBadResponse } from "../lib/funclib";
-import { registerRoute } from "workbox-routing";
-import { ExpirationPlugin } from "workbox-expiration";
 
-import { CacheFirst } from "workbox-strategies";
+import { getContentBaseURL, getManifestURL, getSubsURL, handleBadResponse } from "../lib/funclib";
 
 const cacheFirst = new CacheFirst({
   cacheName: WEBPUB_CACHE_NAME,

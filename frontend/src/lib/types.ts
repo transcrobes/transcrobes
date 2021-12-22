@@ -140,6 +140,19 @@ export enum PROCESSING {
 export const SUBS_DATA_SUFFIX = ".data.json";
 
 export const ONE_YEAR_IN_SECS = 365 * 24 * 60 * 60; // default is only a week
+export const WEBPUB_CACHE_NAME = "webpub-cache";
+export const PRECACHE_PUBLICATIONS = "PRECACHE_PUBLICATIONS";
+export const IS_DEV = process.env.NODE_ENV === "development";
+
+// each logging line will be prepended with the service worker version
+export function log(
+  message: string,
+  level: "log" | "warn" | "error" | "debug" = "log",
+  // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
+  ...rest: any
+): void {
+  if (IS_DEV) console[level](`MAIN -`, message, ...rest);
+}
 
 export enum STATUS {
   INACTIVE = 0,
