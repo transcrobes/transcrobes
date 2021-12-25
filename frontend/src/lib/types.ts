@@ -145,13 +145,28 @@ export const PRECACHE_PUBLICATIONS = "PRECACHE_PUBLICATIONS";
 export const IS_DEV = process.env.NODE_ENV === "development";
 
 // each logging line will be prepended with the service worker version
-export function log(
-  message: string,
+function dolog(
   level: "log" | "warn" | "error" | "debug" = "log",
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
   ...rest: any
 ): void {
-  if (IS_DEV) console[level](`MAIN -`, message, ...rest);
+  if (IS_DEV) console[level](`MAIN -`, ...rest);
+}
+
+export function warn(...rest: any): void {
+  dolog("warn", ...rest);
+}
+
+export function error(...rest: any): void {
+  dolog("error", ...rest);
+}
+
+export function debug(...rest: any): void {
+  dolog("debug", ...rest);
+}
+
+export function log(...rest: any): void {
+  dolog("log", ...rest);
 }
 
 export enum STATUS {
