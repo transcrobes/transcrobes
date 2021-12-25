@@ -12,6 +12,8 @@ import {
   DailyReviewables,
   DefinitionType,
   EMPTY_CARD,
+  log,
+  debug,
   RecentSentencesStoredType,
   RecentSentencesType,
   RepetrobesActivityConfigType,
@@ -114,10 +116,10 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
         ...daState,
         ...reviewLists,
       };
-      console.debug("Config set up, about to get the next practice item", tempState);
+      debug("Config set up, about to get the next practice item", tempState);
       nextPractice(tempState, activityConfigNew).then((practiceOut) => {
         const partial = { ...tempState, ...practiceOut };
-        console.debug("the partial is", partial);
+        debug("The partial state is", partial);
         setLoading(!(!!partial.currentCard && !!partial.definition));
         setDaState({
           ...daState,
@@ -245,6 +247,120 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
     return validExisting;
   }
 
+  function getOverdueTodaysRepeat(toRereviewQueue: Map<string, CardType>, todayStarts: number) {
+    // Check if we have a failed review from today that is due already
+    const candidates = [...toRereviewQueue.values()].sort((a, b) => a.dueDate - b.dueDate);
+    const readyCandidates = candidates.filter((x) => x.dueDate <= dayjs().unix());
+    const overdueRepeatNow = readyCandidates.filter(
+      (x) =>
+        x.lastRevisionDate <=
+          dayjs().add(-stateActivityConfig.badReviewWaitSecs, "seconds").unix() &&
+        x.lastRevisionDate > todayStarts,
+    );
+    log("getOverdueTodaysRepeat", candidates, readyCandidates, overdueRepeatNow);
+    return { candidates, readyCandidates, goodCard: overdueRepeatNow[0] };
+  }
+
+  async function getNewCard(
+    newToday: Set<string>,
+    state: ReviewablesInfoType,
+    activityConfig: RepetrobesActivityConfigType,
+    possibleRevisionsToday: Set<string>,
+    revisionsToday: Set<string>,
+    filteredPossibleRevisionsToday: number,
+    availableNewToday: number,
+  ) {
+    const allRevisionsToday = revisionsToday.size + filteredPossibleRevisionsToday;
+    const allNewToday = newToday.size + availableNewToday;
+
+    let currentCard: CardType | null = null;
+    let getNew = newToday.size < activityConfig.maxNew;
+    log(
+      "getNew false at the start",
+      getNew,
+      possibleRevisionsToday,
+      new Set([...possibleRevisionsToday].map((c) => getWordId(c))),
+    );
+
+    if (
+      newToday.size / revisionsToday.size >
+      Math.min(allNewToday, activityConfig.maxNew) /
+        Math.min(allRevisionsToday, activityConfig.maxRevisions)
+    ) {
+      getNew = false;
+    }
+
+    if (state.potentialCardsMap.size > 0) {
+      const [wordId, cardTypes] = state.potentialCardsMap.entries().next().value;
+      const cards = [...cardTypes].map((ct) => {
+        return {
+          ...EMPTY_CARD,
+          id: getCardId(wordId, ct),
+        };
+      });
+      currentCard = await unrevisedCard(getRandomNext(cards).id);
+    } else {
+      getNew = false; // strictly only useful for logging...
+    }
+
+    debug("Next practice new card", getNew, currentCard, state.potentialCardsMap);
+    return { getNew, currentCard };
+  }
+
+  function getReviewCard(
+    candidates: CardType[],
+    readyCandidates: CardType[],
+    newToday: Set<string>,
+    availableNewToday: number,
+    activityConfig: RepetrobesActivityConfigType,
+  ) {
+    console.log("sorted candidates and readies", candidates, readyCandidates);
+    let reviewCard: CardType;
+    // if something is already due, chose one of those
+    if (readyCandidates.length > 0) {
+      reviewCard = getRandomNext(readyCandidates);
+    } else {
+      const readyCandidates = candidates.filter(
+        (x) =>
+          x.lastRevisionDate <=
+          dayjs().add(-stateActivityConfig.badReviewWaitSecs, "seconds").unix(),
+      );
+      // else find something that is not something failed just now (and not yet ready)
+      if (readyCandidates.length > 0) {
+        reviewCard = getRandomNext(readyCandidates);
+      } else {
+        // else no good option, we either have nothing "fresh" left or we are failing badly...
+        reviewCard = candidates[0];
+      }
+    }
+
+    const allNewToday = newToday.size + availableNewToday;
+    const todaysNewLimit = Math.min(allNewToday, activityConfig.maxNew);
+    if (reviewCard && (reviewCard.dueDate < dayjs().unix() || newToday.size >= todaysNewLimit)) {
+      console.debug(
+        "Assigning review",
+        reviewCard,
+        reviewCard?.dueDate,
+        dayjs().unix(),
+        newToday.size >= todaysNewLimit,
+        newToday,
+        todaysNewLimit,
+      );
+      return reviewCard;
+    } else {
+      console.debug(
+        "NOT Assigning review",
+        reviewCard,
+        reviewCard?.dueDate,
+        dayjs().unix(),
+        newToday.size >= todaysNewLimit,
+        newToday,
+        todaysNewLimit,
+      );
+      return null;
+    }
+  }
+
   async function nextPractice(
     state: ReviewablesInfoType,
     activityConfig: RepetrobesActivityConfigType,
@@ -293,92 +409,41 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
         toRereviewQueue.set(cardId, card);
       }
     }
-    let getNew = newToday.size < activityConfig.maxNew;
-    console.log(
-      "getNew false at the start",
-      getNew,
-      possibleRevisionsToday,
-      new Set([...possibleRevisionsToday].map((c) => getWordId(c))),
-    );
-
     const filteredPossibleRevisionsToday = new Set(
       [...possibleRevisionsToday].map((c) => getWordId(c)),
     ).size;
-    const allRevisionsToday = revisionsToday.size + filteredPossibleRevisionsToday;
     const availableNewToday = state.potentialCardsMap.size;
-    const allNewToday = newToday.size + availableNewToday;
 
-    if (
-      newToday.size / revisionsToday.size >
-      Math.min(allNewToday, activityConfig.maxNew) /
-        Math.min(allRevisionsToday, activityConfig.maxRevisions)
-    ) {
-      getNew = false;
-    }
-
-    if (state.potentialCardsMap.size > 0) {
-      const [wordId, cardTypes] = state.potentialCardsMap.entries().next().value;
-      const cards = [...cardTypes].map((ct) => {
-        return {
-          ...EMPTY_CARD,
-          id: getCardId(wordId, ct),
-        };
-      });
-      currentCard = await unrevisedCard(getRandomNext(cards).id);
-      definition = state.allReviewableDefinitions.get(wordId) || null;
+    const { candidates, readyCandidates, goodCard } = getOverdueTodaysRepeat(
+      toRereviewQueue,
+      todayStarts,
+    );
+    if (goodCard) {
+      currentCard = goodCard;
+      definition = state.allReviewableDefinitions.get(getWordId(currentCard)) || null;
     } else {
-      getNew = false; // strictly only useful for logging...
+      const newStuff = await getNewCard(
+        newToday,
+        state,
+        activityConfig,
+        possibleRevisionsToday,
+        revisionsToday,
+        filteredPossibleRevisionsToday,
+        availableNewToday,
+      );
+      if (!(newStuff.getNew && newStuff.currentCard)) {
+        currentCard = getReviewCard(
+          candidates,
+          readyCandidates,
+          newToday,
+          availableNewToday,
+          activityConfig,
+        );
+      }
+      currentCard = currentCard || newStuff.currentCard;
     }
-
-    console.debug("Next practice new card", getNew, currentCard, state.potentialCardsMap);
-    if (!(getNew && currentCard)) {
-      const candidates = [...toRereviewQueue.values()].sort((a, b) => a.dueDate - b.dueDate);
-      const readyCandidates = candidates.filter((x) => x.dueDate <= dayjs().unix());
-      console.log("sorted candidates and readies", candidates, readyCandidates);
-      let reviewCard: CardType;
-      // if something is already due, chose one of those
-      if (readyCandidates.length > 0) {
-        reviewCard = getRandomNext(readyCandidates);
-      } else {
-        const readyCandidates = candidates.filter(
-          (x) =>
-            x.lastRevisionDate <=
-            dayjs().add(-stateActivityConfig.badReviewWaitSecs, "seconds").unix(),
-        );
-        // else find something that is not something failed just now (and not yet ready)
-        if (readyCandidates.length > 0) {
-          reviewCard = getRandomNext(readyCandidates);
-        } else {
-          // else no good option, we either have nothing "fresh" left or we are failing badly...
-          reviewCard = candidates[0];
-        }
-      }
-
-      const allNewToday = newToday.size + availableNewToday;
-      const todaysNewLimit = Math.min(allNewToday, activityConfig.maxNew);
-      if (reviewCard && (reviewCard.dueDate < dayjs().unix() || newToday.size >= todaysNewLimit)) {
-        console.debug(
-          "Assigning review",
-          reviewCard,
-          reviewCard?.dueDate,
-          dayjs().unix(),
-          newToday.size >= todaysNewLimit,
-          newToday,
-          todaysNewLimit,
-        );
-        currentCard = reviewCard;
-        definition = state.allReviewableDefinitions.get(getWordId(reviewCard)) || null;
-      } else {
-        console.debug(
-          "NOT Assigning review",
-          reviewCard,
-          reviewCard?.dueDate,
-          dayjs().unix(),
-          newToday.size >= todaysNewLimit,
-          newToday,
-          todaysNewLimit,
-        );
-      }
+    if (currentCard) {
+      definition = state.allReviewableDefinitions.get(getWordId(currentCard)) || null;
     }
     const characters = definition ? getCharacters(state.allPotentialCharacters, definition) : null;
     return {
