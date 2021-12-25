@@ -10,7 +10,7 @@ import HtmlWebpackPlugin from "html-webpack-plugin";
 import CircularDependencyPlugin from "circular-dependency-plugin";
 import { InjectManifest } from "workbox-webpack-plugin";
 
-export function config(ouputDir = "./dist"): webpack.Configuration {
+export function config(): webpack.Configuration {
   return {
     resolve: {
       extensions: [".ts", ".tsx", ".js"],
@@ -26,10 +26,6 @@ export function config(ouputDir = "./dist"): webpack.Configuration {
         stream: false,
         crypto: false,
       },
-    },
-    output: {
-      path: path.resolve(__dirname, ouputDir),
-      filename: "[name].[fullhash].js",
     },
     plugins: [
       new webpack.ProvidePlugin({

@@ -18,9 +18,9 @@ import { getAccess, getRefresh, getUsername } from "./lib/JWTAuthProvider";
 import { TranscrobesCollections, TranscrobesDatabase } from "./database/Schema";
 
 import { CacheFirst, StaleWhileRevalidate } from "workbox-strategies";
-import { WebpubManifest } from "@nypl/web-reader/dist/esm/WebpubManifestTypes/WebpubManifest";
-import { ReadiumLink } from "@nypl/web-reader/dist/esm/WebpubManifestTypes/ReadiumLink";
-import { PublicationConfig } from "@nypl/web-reader/dist/esm/ServiceWorker/types";
+import { WebpubManifest } from "./contents/boocrobes/WebpubManifestTypes/WebpubManifest";
+import { ReadiumLink } from "./contents/boocrobes/WebpubManifestTypes/ReadiumLink";
+import { PublicationConfig } from "./contents/boocrobes/ServiceWorker/types";
 import { ONE_YEAR_IN_SECS, WEBPUB_CACHE_NAME } from "./lib/types";
 import { registerRoute } from "workbox-routing";
 import { ExpirationPlugin } from "workbox-expiration";

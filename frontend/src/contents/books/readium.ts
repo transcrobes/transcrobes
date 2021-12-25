@@ -7,8 +7,8 @@ const DATA_SOURCE = "readium.ts";
 
 function loadSettingsFromParentFrame() {
   console.debug("Loading injectables");
-  components.setPlatformHelper(window.parent.componentsConfig.proxy);
   components.setEventSource(DATA_SOURCE);
+  components.setPlatformHelper(window.parent.componentsConfig.proxy);
   components.setBaseUrl(window.parent.componentsConfig.url.origin);
   components.setLangPair(window.parent.componentsConfig.langPair);
   components.setSegmentation(window.parent.readerConfig.segmentation);

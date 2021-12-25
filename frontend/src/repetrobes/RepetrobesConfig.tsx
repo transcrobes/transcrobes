@@ -1,6 +1,6 @@
 import { ReactElement } from "react";
 import Select from "react-select";
-import "reactjs-popup/dist/index.css";
+// import "reactjs-popup/dist/index.css";
 import _ from "lodash";
 import dayjs from "dayjs";
 

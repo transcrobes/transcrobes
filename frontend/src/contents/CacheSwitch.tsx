@@ -1,7 +1,7 @@
 import { ReactElement, useEffect, useState } from "react";
 import { useRecordContext } from "react-admin";
-import { Switch } from "@material-ui/core";
-import { PrecachePublicationsMessage } from "@nypl/web-reader/dist/esm/ServiceWorker/types";
+import { FormControlLabel, Switch } from "@material-ui/core";
+import { PrecachePublicationsMessage } from "./boocrobes/ServiceWorker/types";
 import { registerRoute } from "workbox-routing";
 import { ExpirationPlugin } from "workbox-expiration";
 import { CacheFirst } from "workbox-strategies";
@@ -89,15 +89,27 @@ export default function CacheSwitch(props: any): ReactElement {
       }
     }
   }, [cached]);
+  // <FormControlLabel
+  //   className={classes.controls}
+  //   control={
+  //     <Switch checked={segmentation} onChange={(_e, checked) => setSegmentation(checked)} />
+  //   }
+  //   label="Segment words"
+  // />
 
   if (content.processing === PROCESSING.FINISHED) {
     return (
-      <Switch
-        checked={cached}
-        onClick={(e: React.MouseEvent<HTMLElement>) => {
-          e.stopPropagation();
-          setCached(!cached);
-        }}
+      <FormControlLabel
+        label=""
+        control={
+          <Switch
+            checked={cached}
+            onClick={(e: React.MouseEvent<HTMLElement>) => {
+              e.stopPropagation();
+              setCached(!cached);
+            }}
+          />
+        }
       />
     );
   } else {

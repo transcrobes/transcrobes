@@ -23,7 +23,7 @@ function page({ title }: { title: string }) {
 }
 
 const commonConfig = merge<Configuration>([
-  parts.config("./extdist"),
+  parts.config(),
   {
     entry: {
       options: ["./src/extension/index.tsx"],
@@ -36,7 +36,12 @@ const commonConfig = merge<Configuration>([
       }),
     ],
   },
-
+  {
+    output: {
+      path: path.resolve(__dirname, "./extdist"),
+      filename: "[name]-bundle.js",
+    },
+  },
   page({ title: "Transcrobes Options" }),
   loadStaticResources("", ""),
   parts.loadCSS(),

@@ -1,17 +1,14 @@
-import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { useAuthenticated } from "react-admin";
 import D2Reader from "@d-i-t-a/reader";
-import { ChakraProvider, Link, Text } from "@chakra-ui/react";
-import "@nypl/design-system-react-components/dist/styles.css";
-import WebReader, { getTheme } from "@nypl/web-reader";
-import { IconButton } from "@material-ui/core";
-import HomeIcon from "@material-ui/icons/Home";
+// import { ChakraProvider, Link, Text } from "@chakra-ui/react";
 
+// import "@nypl/design-system-react-components/dist/styles.css";
+// import "./styles.css";
+// import { getTheme } from "../boocrobes/ui/theme";
+import WebReader from "./WebReader";
 import injectables from "./injectables";
-import SettingsCard from "./SettingsCard";
 import { USER_STATS_MODE } from "../../lib/lib";
-import { MouseoverType, SegmentationType } from "../../lib/types";
 
 type ContentParams = {
   id: string;
@@ -25,10 +22,6 @@ declare global {
   }
 }
 
-type HeaderLeftProps = {
-  doUpdate: () => void;
-};
-
 // FIXME: This should be done as content preferences saved at each change, like the video player
 window.readerConfig = {
   segmentation: true,
@@ -37,77 +30,10 @@ window.readerConfig = {
   popupParent: window.document.body,
 };
 
-function HeaderLeft({ doUpdate }: HeaderLeftProps): React.ReactElement {
-  const [glossing, setGlossing] = useState(USER_STATS_MODE.L1.toString());
-  const [segmentation, setSegmentation] = useState<SegmentationType>("segmented");
-  const [mouseover, setMouseover] = useState<MouseoverType>("mouseover");
-  // const linkColor = useColorModeValue("gray.700", "gray.100", "gray.700");
-
-  function updateGlossing(glossIt: string) {
-    setGlossing(glossIt);
-    window.readerConfig.glossing = parseInt(glossIt);
-    doUpdate();
-  }
-
-  function updateSegmentation(segmentIt: SegmentationType) {
-    setSegmentation(segmentIt);
-    window.readerConfig.segmentation = segmentIt === "segmented";
-    doUpdate();
-  }
-
-  function updateMouseover(mouseoverIt: MouseoverType) {
-    setMouseover(mouseoverIt);
-    window.readerConfig.mouseover = mouseoverIt === "mouseover";
-    doUpdate();
-  }
-
-  return (
-    <>
-      <Link
-        href="/#/contents"
-        aria-label="Return to Content"
-        tabIndex={0}
-        fontSize={0}
-        py={1}
-        textTransform="uppercase"
-        d="flex"
-        // color={linkColor}
-        height="100%"
-        alignItems="center"
-        _hover={{
-          textDecoration: "none",
-        }}
-      >
-        <IconButton title="Return to Content">
-          <HomeIcon />
-        </IconButton>
-
-        <Text paddingLeft={2} variant="headerNav">
-          Back to Content
-        </Text>
-      </Link>
-      <SettingsCard
-        glossing={glossing}
-        setGlossing={updateGlossing}
-        segmentation={segmentation}
-        setSegmentation={updateSegmentation}
-        mouseover={mouseover}
-        setMouseover={updateMouseover}
-      />
-    </>
-  );
-}
-
 export default function Reader(): JSX.Element {
   useAuthenticated(); // redirects to login if not authenticated, required because shown as RouteWithoutLayout
   const { id } = useParams<ContentParams>();
   const url = new URL(`/api/v1/data/content/${id}/manifest.json`, window.location.href);
-
-  const [localInjectables, setLocalInjectables] = useState(injectables);
-
-  function forceReload() {
-    setLocalInjectables([...localInjectables]);
-  }
 
   // FIXME: this is currently brokens, meaning it is impossible to use paginated mode!!!
   // useEffect(() => {
@@ -139,12 +65,8 @@ export default function Reader(): JSX.Element {
   // }, []);
 
   return (
-    <ChakraProvider theme={getTheme("day")}>
-      <WebReader
-        headerLeft={<HeaderLeft doUpdate={forceReload} />}
-        webpubManifestUrl={url.href}
-        injectables={localInjectables}
-      />
-    </ChakraProvider>
+    // <ChakraProvider theme={getTheme("day")}>
+    <WebReader webpubManifestUrl={url.href} injectables={injectables} />
+    // </ChakraProvider>
   );
 }
