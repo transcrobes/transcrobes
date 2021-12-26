@@ -110,6 +110,7 @@ function WordInfo({
         </div>
         <div className={classes.meaningBox}>
           <Meaning
+            editable={false}
             showSynonyms={false}
             definition={definition}
             card={meaningCard}

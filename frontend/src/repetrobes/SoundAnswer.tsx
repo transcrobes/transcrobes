@@ -19,6 +19,7 @@ export default function SoundAnswer({
         <>
           <MeaningWrapper>
             <Meaning
+              editable={false}
               showSynonyms={showSynonyms}
               definition={definition}
               card={card}

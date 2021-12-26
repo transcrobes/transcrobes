@@ -10,7 +10,6 @@ import {
   MenuList,
   Theme,
 } from "@material-ui/core";
-import useColorModeValue from "./hooks/useColorModeValue";
 import { ReadiumLink } from "../WebpubManifestTypes/ReadiumLink";
 
 import { Navigator, WebpubManifest } from "../types";
@@ -25,19 +24,14 @@ const useStyles = makeStyles((theme: Theme) =>
 type Props = {
   navigator: Navigator;
   manifest: WebpubManifest;
-  // containerRef: React.MutableRefObject<HTMLDivElement | null>;
+  onClickChapter: () => void;
 };
 
-function TableOfContents({
-  navigator,
-  manifest,
-}: //containerRef
-Props): ReactElement {
+function TableOfContents({ navigator, manifest, onClickChapter }: Props): ReactElement {
   const tocLinkHandler = (href: string) => {
     navigator.goToPage(href);
+    onClickChapter();
   };
-
-  const tocBgColor = useColorModeValue("ui.white", "ui.black", "ui.sepia");
 
   const getLinkHref = (link: ReadiumLink): string => {
     if (link.href) return link.href;
@@ -53,8 +47,8 @@ Props): ReactElement {
             key={content.title}
             aria-label={content.title}
             onClick={() => tocLinkHandler(getLinkHref(content))}
-            // html={content.title ?? ""}
           >
+            {/* FIXME: make sure it's safe!!! */}
             <span dangerouslySetInnerHTML={{ __html: content.title ?? "" }} />
             {content.children && (
               <>
@@ -63,8 +57,6 @@ Props): ReactElement {
                     aria-label={subLink.title}
                     key={subLink.title}
                     onClick={() => tocLinkHandler(getLinkHref(subLink))}
-                    // pl={10}
-                    // html={subLink.title ?? ""}
                   >
                     <span dangerouslySetInnerHTML={{ __html: subLink.title ?? "" }} />
                   </MenuItem>
@@ -79,8 +71,12 @@ Props): ReactElement {
     </MenuList>
   );
 }
+type TableOfContentsLauncherProps = {
+  navigator: Navigator;
+  manifest: WebpubManifest;
+};
 
-export default function TableOfContentsLauncher(props: Props): ReactElement {
+export default function TableOfContentsLauncher(props: TableOfContentsLauncherProps): ReactElement {
   const [isOpen, setIsOpen] = React.useState(false);
   const classes = useStyles();
 
@@ -109,7 +105,7 @@ export default function TableOfContentsLauncher(props: Props): ReactElement {
       </IconButton>
       <Drawer anchor="left" open={isOpen} onClose={toggleDrawer(false)}>
         <Box sx={{ width: dimensions.width * 0.8 }} role="presentation">
-          <TableOfContents {...props} />
+          <TableOfContents {...props} onClickChapter={() => setIsOpen(false)} />
         </Box>
       </Drawer>
     </div>

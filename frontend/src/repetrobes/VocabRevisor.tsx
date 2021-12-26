@@ -215,6 +215,7 @@ export function VocabRevisor({
     "prematurity",
     premature,
     currentCard,
+    definition,
     currentCard?.dueDate,
     currentCard?.updatedAt,
     dayjs().unix(),

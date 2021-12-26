@@ -63,7 +63,6 @@ export default function ReaderConfig(props: HtmlSettingsProps): React.ReactEleme
         <ButtonGroup className={classes.button}>
           <Button
             className={classes.button}
-            // flexGrow={1}
             aria-label="Decrease font size"
             onClick={decreaseFontSize}
           >
@@ -71,46 +70,12 @@ export default function ReaderConfig(props: HtmlSettingsProps): React.ReactEleme
           </Button>
           <Button
             className={classes.button}
-            //flexGrow={1}
             aria-label="Increase font size"
             onClick={increaseFontSize}
           >
             A+
           </Button>
         </ButtonGroup>
-      </Conftainer>
-      <Conftainer>
-        <ToggleButtonGroup
-          className={classes.button}
-          value={colorMode}
-          onChange={(event: React.MouseEvent<HTMLElement>, value: any) => setColorMode(value)}
-          exclusive
-        >
-          <ToggleButton
-            className={classes.button}
-            // colorMode="day"
-            value="day"
-            // label="Day"
-            // _checked={{ bg: "ui.white" }} // default _checked color is green for toggles
-          >
-            Day
-          </ToggleButton>
-          <ToggleButton
-            className={classes.button}
-            // colorMode="sepia"
-            value="sepia"
-            // bg="ui.sepia" // distinct case where default needs to be sepia
-            // _active={{ bg: "ui.sepia" }}
-            // _hover={{ bg: "ui.sepia" }}
-            // _checked={{ bg: "ui.sepia" }}
-          >
-            Sepia
-          </ToggleButton>
-          {/* <ToggleButton colorMode="night" label="Night" _checked={{ bg: "ui.black" }}> */}
-          <ToggleButton className={classes.button} value="night">
-            Night
-          </ToggleButton>
-        </ToggleButtonGroup>
       </Conftainer>
       <Conftainer>
         <ToggleButtonGroup

@@ -420,7 +420,7 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
     );
     if (goodCard) {
       currentCard = goodCard;
-      definition = state.allReviewableDefinitions.get(getWordId(currentCard)) || null;
+      console.log("Doing a re-review for today", currentCard);
     } else {
       const newStuff = await getNewCard(
         newToday,
@@ -432,18 +432,20 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
         availableNewToday,
       );
       if (!(newStuff.getNew && newStuff.currentCard)) {
-        currentCard = getReviewCard(
-          candidates,
-          readyCandidates,
-          newToday,
-          availableNewToday,
-          activityConfig,
-        );
+        currentCard =
+          getReviewCard(candidates, readyCandidates, newToday, availableNewToday, activityConfig) ||
+          newStuff.currentCard;
+        console.log("Either we don't need a new, or there isn't one to get", newStuff, currentCard);
+      } else {
+        console.log("We need a new, and we have one", newStuff);
+        currentCard = newStuff.currentCard;
       }
-      currentCard = currentCard || newStuff.currentCard;
     }
     if (currentCard) {
       definition = state.allReviewableDefinitions.get(getWordId(currentCard)) || null;
+      console.log("The definition found for the current card is", currentCard, definition);
+    } else {
+      console.warn("The current card is null, this is the end of our revisions...");
     }
     const characters = definition ? getCharacters(state.allPotentialCharacters, definition) : null;
     return {

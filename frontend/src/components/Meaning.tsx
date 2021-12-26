@@ -21,6 +21,7 @@ const useStyles = makeStyles((theme: Theme) =>
   }),
 );
 interface MeaningProps {
+  editable: boolean;
   definition: DefinitionType;
   showSynonyms: boolean;
   card: CardType;
@@ -28,6 +29,7 @@ interface MeaningProps {
 }
 
 export default function Meaning({
+  editable,
   definition,
   showSynonyms,
   card,
@@ -52,7 +54,7 @@ export default function Meaning({
   }
 
   const open = Boolean(anchorEl);
-  const clickOpen = Boolean(anchorElClick);
+  const clickOpen = editable && Boolean(anchorElClick);
   const id = clickOpen ? "simple-popover" : undefined;
   const posTrans: ReactElement[] = [];
   let defaultProvider = "";

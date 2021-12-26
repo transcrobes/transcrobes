@@ -28,6 +28,7 @@ export default function MeaningQuestion({
       <StyledQuestion>
         <MeaningWrapper>
           <Meaning
+            editable={true}
             showSynonyms={showSynonyms}
             definition={definition}
             card={card}

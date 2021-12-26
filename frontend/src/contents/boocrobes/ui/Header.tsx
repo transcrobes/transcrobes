@@ -1,21 +1,17 @@
 import React, { ComponentProps } from "react";
-// import { Flex, Link, HStack, Text } from "@chakra-ui/react";
 import { ActiveReader } from "../types";
-// import useColorModeValue from "../ui/hooks/useColorModeValue";
 import Fullscreen from "@material-ui/icons/Fullscreen";
 import FullscreenExit from "@material-ui/icons/FullscreenExit";
 
-import TableOfContents from "./TableOfContentsLauncher";
+import TableOfContentsLauncher from "./TableOfContentsLauncher";
 import useFullscreen from "./hooks/useFullScreen";
 import { HEADER_HEIGHT } from "../constants";
 import ReaderConfigLauncher from "./ReaderConfigLauncher";
-import { Box, Grid, IconButton, Link, Typography } from "@material-ui/core";
+import { Box, IconButton, Link } from "@material-ui/core";
 
 import HomeIcon from "@material-ui/icons/Home";
-import { CentredFlex } from "../../../repetrobes/Common";
 
 export function HeaderLeft(): React.ReactElement {
-  // const linkColor = useColorModeValue("gray.700", "gray.100", "gray.700");
   return (
     <Box display="flex">
       <Link href="/#/contents" aria-label="Return to Content">
@@ -38,7 +34,7 @@ export default function Header(
     <HeaderWrapper>
       <HeaderLeft />
       <Box display="flex">
-        <TableOfContents navigator={navigator} manifest={manifest} />
+        <TableOfContentsLauncher navigator={navigator} manifest={manifest} />
         <ReaderConfigLauncher {...props} />
 
         <IconButton onClick={toggleFullScreen}>
