@@ -1,4 +1,4 @@
-import * as React from 'react';
+import * as React from "react";
 
 const HtmlReaderContent: React.FC<{
   height: string;
@@ -19,12 +19,12 @@ const HtmlReaderContent: React.FC<{
            * content. In paginated mode, however, we must have this set because
            * we have to decide how big the content should be.
            */
-          height: shouldGrow ? 'initial' : height,
+          height: shouldGrow ? "initial" : height,
           /**
            * We always want the height to be at least the defined height
            */
           minHeight: height,
-          overflow: 'hidden',
+          overflow: "hidden",
         }}
       >
         <div id="reader-loading" className="loading"></div>

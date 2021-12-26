@@ -60,6 +60,7 @@ export const HeaderWrapper = React.forwardRef<HTMLDivElement, ComponentProps<typ
           justifyContent: "space-between",
           position: "sticky",
           height: `${HEADER_HEIGHT}px`,
+          bgcolor: "#faf4e8",
         }}
       >
         {children}

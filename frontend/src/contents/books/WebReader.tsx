@@ -7,6 +7,7 @@ import Header from "../boocrobes/ui/Header";
 import { FOOTER_HEIGHT } from "../boocrobes/constants";
 import KeyboardArrowLeftIcon from "@material-ui/icons/KeyboardArrowLeft";
 import KeyboardArrowRightIcon from "@material-ui/icons/KeyboardArrowRight";
+import Reader from "./Reader";
 
 export type WebReaderProps = UseWebReaderArguments;
 
@@ -17,6 +18,31 @@ const useStyles = makeStyles((theme: Theme) =>
     },
   }),
 );
+
+// From Reader.css
+// [data-viewer-theme="day"] {
+//   background-color: #fff; }
+
+// [data-viewer-theme="sepia"] {
+//   background-color: #faf4e8; }
+//   [data-viewer-theme="sepia"] button {
+//     background: #faf4e8;
+//     color: #5B5852; }
+//   [data-viewer-theme="sepia"] a {
+//     color: #5B5852; }
+//   [data-viewer-theme="sepia"] .info {
+//     color: #5B5852; }
+
+// [data-viewer-theme="night"] {
+//   background-color: #000000;
+//   color: #fff; }
+//   [data-viewer-theme="night"] button {
+//     background: #000000;
+//     color: #DADADA; }
+//   [data-viewer-theme="night"] a {
+//     color: #DADADA; }
+//   [data-viewer-theme="night"] .info {
+//     color: #DADADA; }
 
 const WebReader: FC<WebReaderProps> = ({ webpubManifestUrl, getContent, ...props }) => {
   const classes = useStyles();
@@ -54,6 +80,7 @@ const WebReader: FC<WebReaderProps> = ({ webpubManifestUrl, getContent, ...props
           justifyContent: "space-between",
           position: "sticky",
           height: `${FOOTER_HEIGHT}px`,
+          bgcolor: "#faf4e8",
         }}
       >
         <IconButton
