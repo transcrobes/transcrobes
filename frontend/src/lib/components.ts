@@ -18,6 +18,7 @@ import {
   TokenType,
   TREEBANK_POS_TYPES,
 } from "./types";
+import { HEADER_HEIGHT } from "../contents/boocrobes/constants";
 export * from "./lib";
 
 let timeoutId: number;
@@ -491,7 +492,7 @@ async function addOrUpdateCards(
 function cleanupAfterCardsUpdate(doc: Document, grade: number, wordInfo: DefinitionType) {
   //remove existing defs if we are setting knowledge level > UNKNOWN
   if (grade > GRADE.UNKNOWN) {
-    for (const wordEl of doc.querySelectorAll(".tcrobe-gloss")) {
+    for (const wordEl of doc.getElementsByClassName("tcrobe-gloss")) {
       if (wordEl.textContent === wordInfo.graph) {
         wordEl.classList.remove("tcrobe-gloss");
       }
@@ -665,18 +666,13 @@ function popupDefinitionsRx(doc: Document, wordInfo: DefinitionType, popupContai
 }
 
 function destroyPopup(event: MouseEvent, doc: Document, popupParent: Document): boolean {
-  const currentTarget = doc.querySelector(".tcrobe-popup-target");
+  const currentTarget = doc.getElementsByClassName("tcrobe-popup-target")[0];
+  clearAllPopups(popupParent);
   if (currentTarget) {
     currentTarget.classList.remove("tcrobe-popup-target");
     event.stopPropagation(); // we don't want other events, but we DO want the default, for clicking on links
-    popupParent.querySelectorAll("token-details").forEach((el) => el.remove());
-    popupParent.querySelectorAll("tc-mouseover-popup").forEach((el) => el.remove());
     return true;
   }
-
-  // clear any existing popups
-  popupParent.querySelectorAll("token-details").forEach((el) => el.remove());
-  popupParent.querySelectorAll("tc-mouseover-popup").forEach((el) => el.remove());
   return false;
 }
 
@@ -686,6 +682,8 @@ function populateMouseover(
   uCardWords: DayCardWords,
   token: TokenType,
 ) {
+  clearMouseover(popupParent.ownerDocument);
+
   const target = event.target! as HTMLElement;
   target.dataset.isMouseOn = "1";
   getPopoverText(token, uCardWords).then((popoverText) => {
@@ -720,17 +718,68 @@ function populateMouseover(
       // The background-color is set in the Readium css to 'transparent !important' so in order
       // to override we need to declare directly in the style, or do some other css magic that
       // is too advanced for my stupid brain.
-      const pstyle =
-        "padding: .3em; border-color: #fff; border-width: medium; border-style: solid; background-color: black !important; z-index: 99999; opacity: 1 !important; min-width: 120px; margin-left: -60px; bottom: 100%; left: 50%; color: #fff; text-align: center; padding: 5px 0; border-radius: 6px; position: absolute;";
+      const pstyle = `padding: .3em; border-color: #fff; border-width: medium; border-style: solid;
+        background-color: black !important; z-index: 99999; opacity: 1 !important;
+        min-width: 120px; margin-left: -60px; color: #fff; max-width: 250px;
+        text-align: center; padding: 5px 5px; border-radius: 6px; position: absolute;`;
       popup.setAttribute("style", pstyle);
-      popup.addEventListener("mouseenter", (event: MouseEvent) => {
-        (event.target as HTMLElement)?.parentElement
-          ?.querySelectorAll(".tc-mouseover-popup")
-          .forEach((el) => el.remove());
+      positionPopup(popup, event, popupParent);
+      popupParent.append(popup);
+      target.addEventListener("mouseleave", () => {
+        popup.remove();
       });
-      target.append(popup);
     }
   });
+}
+
+function positionPopup(
+  popup: HTMLElement,
+  event: MouseEvent,
+  popupParent: HTMLElement,
+): HTMLElement {
+  // position the html block
+  const eventX = event.clientX;
+  const eventY = window.frameElement ? event.clientY : event.pageY;
+  // place the popup just under the clicked item
+  popup.style.display = "block";
+  // added for readium
+  popup.style.position = "absolute";
+
+  const popupWidth = popup.getBoundingClientRect().width;
+
+  if (eventX < popupWidth / 2) {
+    popup.style.left = "0px";
+  } else if (popupParent.ownerDocument.documentElement.clientWidth < eventX + popupWidth / 2) {
+    popup.style.left = `${popupParent.ownerDocument.documentElement.clientWidth - popupWidth}px`;
+  } else {
+    popup.style.left = `${eventX - popupWidth / 2}px`;
+  }
+  let translateDown = 20;
+  if (window.frameElement && window.frameElement.getBoundingClientRect) {
+    translateDown += HEADER_HEIGHT;
+  }
+  popup.style.top = `${eventY + translateDown}px`;
+  const fsElem = document.fullscreenElement || window.parent.document.fullscreenElement;
+  if (fsElem) {
+    const maxHeight = fsElem.getBoundingClientRect().height - popup.getBoundingClientRect().top;
+    if (popup.getBoundingClientRect().height > maxHeight) {
+      popup.style.height = `${maxHeight}px`;
+    }
+  }
+  return popup;
+}
+
+function clearAllPopups(doc: Document) {
+  for (const el of doc.getElementsByTagName("token-details")) {
+    el.remove();
+  }
+  clearMouseover(doc);
+}
+
+function clearMouseover(doc: Document) {
+  for (const el of doc.getElementsByClassName("tc-mouseover-popup")) {
+    el.remove();
+  }
 }
 
 function populatePopup(event: MouseEvent, doc: Document) {
@@ -750,12 +799,12 @@ function populatePopup(event: MouseEvent, doc: Document) {
   }
   // We clicked on the same element twice, it's probably a link, so we shouldn't try and do any more
   // In any case, we close the popup
-  const currentTarget = doc.querySelector(".tcrobe-popup-target");
+  const currentTarget =
+    doc.getElementsByClassName("tcrobe-popup-target")[0] ||
+    popupParent.ownerDocument.getElementsByClassName("tcrobe-popup-target")[0];
+  clearAllPopups(popupParent.ownerDocument);
   if (currentTarget) {
     currentTarget.classList.remove("tcrobe-popup-target");
-    // clear any existing popups
-    popupParent.ownerDocument.querySelectorAll("token-details").forEach((el) => el.remove());
-    popupParent.ownerDocument.querySelectorAll(".tc-mouseover-popup").forEach((el) => el.remove());
     if (currentTarget === event.target) {
       event.stopPropagation(); // we don't want other events, but we DO want the default, for clicking on links
       return null;
@@ -771,42 +820,7 @@ function populatePopup(event: MouseEvent, doc: Document) {
   event.stopPropagation();
   event.preventDefault();
 
-  // position the html block
-  const eventX = event.clientX;
-
-  const eventY = event.pageY;
-
-  // place the popup just under the clicked item
-  popup.style.display = "block";
-  // added for readium
-  popup.style.position = "absolute";
-
-  const popupWidth = popup.getBoundingClientRect().width;
-
-  if (eventX < popupWidth / 2) {
-    popup.style.left = "0px";
-  } else if (popupParent.ownerDocument.documentElement.clientWidth < eventX + popupWidth / 2) {
-    // } else if (document.documentElement.clientWidth < (eventX + (width / 2)) ) {
-    // popup.style.left = `${document.documentElement.clientWidth - width}px`;
-    popup.style.left = `${popupParent.ownerDocument.documentElement.clientWidth - popupWidth}px`;
-  } else {
-    popup.style.left = `${eventX - popupWidth / 2}px`;
-  }
-  let translateDown = 20;
-
-  if (window.frameElement && window.frameElement.getBoundingClientRect) {
-    translateDown += window.frameElement.getBoundingClientRect().top;
-  }
-  popup.style.top = `${eventY + translateDown}px`;
-
-  const fsElem = document.fullscreenElement || window.parent.document.fullscreenElement;
-  if (fsElem) {
-    const maxHeight = fsElem.getBoundingClientRect().height - popup.getBoundingClientRect().top;
-    if (popup.getBoundingClientRect().height > maxHeight) {
-      popup.style.height = `${maxHeight}px`;
-    }
-  }
-  return popup;
+  return positionPopup(popup, event, popupParent);
 }
 
 async function getL2Simplified(
@@ -972,9 +986,7 @@ async function updateWordForEntry(
   if (addClick && !token.de) {
     entry.addEventListener("click", (event: MouseEvent) => {
       // remove any mouseovers - this is mainly useful for the click on mobile, which doesn't have a mouseleave
-      doc.querySelectorAll(".tc-mouseover-popup").forEach((el) => {
-        el.remove();
-      });
+      clearMouseover(doc);
       populatePopup(event, doc);
     });
   }
@@ -988,9 +1000,6 @@ async function updateWordForEntry(
         timeoutId = 0;
       }
       entry.dataset.isMouseOn = "";
-      entry.querySelectorAll(".tc-mouseover-popup").forEach((el) => {
-        el.remove();
-      });
     });
   }
 
@@ -1169,7 +1178,7 @@ class TokenDetails extends HTMLParsedElement {
     popup.classList.add("loader");
     this.shadowRoot.appendChild(popup);
 
-    const target = doc.querySelector(".tcrobe-popup-target") as HTMLElement;
+    const target = doc.getElementsByClassName("tcrobe-popup-target")[0] as HTMLElement;
     const sentenceEl = target?.closest(".tcrobe-sent") as HTMLElement;
     const entryEl = target?.closest(".tcrobe-entry") as HTMLElement;
     if (!target || !sentenceEl || !entryEl || !entryEl.dataset.tcrobeEntry) {
@@ -1296,7 +1305,7 @@ class EnrichedTextFragment extends HTMLParsedElement {
 
   ensureStyle(): void {
     // Global style for glosses
-    if (document.body && !document.querySelector("#transcrobesInjectedStyle")) {
+    if (document.body && !document.getElementById("transcrobesInjectedStyle")) {
       const rtStyle = document.createElement("style");
       rtStyle.id = "transcrobesInjectedStyle";
       rtStyle.textContent = `
