@@ -1,24 +1,23 @@
 import { ReactElement } from "react";
 import Grid from "@material-ui/core/Grid";
 import Typography from "@material-ui/core/Typography";
-import * as CSS from "csstype";
 
 interface Props {
   title: string;
-  titleStyle: CSS.Properties;
+  classes: any;
 }
 
-function VideoHeaderControls({ title, titleStyle }: Props): ReactElement {
+function VideoHeaderControls({ title, classes }: Props): ReactElement {
   return (
     <Grid
       container
       direction="row"
       alignItems="center"
       justifyContent="space-between"
-      style={{ padding: 16 }}
+      className={classes.topControls}
     >
       <Grid item>
-        <Typography variant="h5" style={titleStyle}>
+        <Typography variant="h5" className={classes.topControlsText}>
           {title}
         </Typography>
       </Grid>

@@ -1,5 +1,6 @@
 import { Injectable } from "@d-i-t-a/reader/dist/types/navigator/IFrameNavigator";
 import { USER_STATS_MODE_KEY_VALUES } from "../../lib/lib";
+import { ThemeName } from "../../lib/types";
 import { WebpubManifest } from "./WebpubManifestTypes/WebpubManifest";
 
 export type { WebpubManifest };
@@ -9,7 +10,8 @@ export const EpubMimeType = "application/epub";
 // the Mimetype for a generic webpub
 export const WebpubMimeType = "application/webpub";
 
-export type ColorMode = "night" | "sepia" | "day";
+export type ColorMode = ThemeName | "sepia";
+export type D2ColorMode = "readium-default-on" | "readium-night-on" | "readium-sepia-on";
 
 export type FontFamily = "publisher" | "serif" | "sans-serif" | "open-dyslexic";
 
@@ -29,7 +31,6 @@ export type HtmlNavigator = Navigator & {
   increaseFontSize: () => Promise<void>;
   decreaseFontSize: () => Promise<void>;
   setFontFamily: (family: FontFamily) => Promise<void>;
-  setColorMode: (mode: ColorMode) => Promise<void>;
   setGlossing: (glossing: USER_STATS_MODE_KEY_VALUES) => void;
   setSegmentation: (segmentation: boolean) => void;
   setMouseover: (mouseover: boolean) => void;
@@ -41,7 +42,6 @@ export type ReaderSettings = {
 };
 
 export type ReaderState = {
-  colorMode: ColorMode;
   isScrolling: boolean;
   fontSize: number;
   fontFamily: FontFamily;
@@ -110,3 +110,23 @@ export type InactiveReaderArguments = undefined;
 export type ReaderArguments = ActiveReaderArguments | InactiveReaderArguments;
 
 export type GetColor = (light: string, dark: string, sepia: string) => string;
+
+import { PRECACHE_PUBLICATIONS } from "./constants";
+
+export type WebReaderSWConfig = {
+  cacheExpirationSeconds?: number;
+};
+
+export type PublicationConfig = {
+  manifestUrl: string;
+  proxyUrl?: string;
+  // users can pass in a list of additonal urls
+  // we will route with a stale-while-revalidate
+  // strategy. Useful in CPW for the heavy fulfillment link.
+  swrUrls?: string[];
+};
+
+export type PrecachePublicationsMessage = {
+  type: typeof PRECACHE_PUBLICATIONS;
+  publications: PublicationConfig[];
+};

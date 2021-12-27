@@ -1,13 +1,13 @@
 import { ReactElement, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import Button from "@material-ui/core/Button";
-import { createColor } from "material-ui-color";
 import { ServiceWorkerProxy } from "../../lib/proxies";
-import VideoPlayer from "./videoplayer/VideoPlayer";
-import { VideoConfig, VideoContentConfig } from "./videoplayer/types";
+import VideoPlayer from "./VideoPlayer";
+import { VideoConfig, VideoContentConfig } from "./types";
 import { ContentConfigType, DefinitionType, Content, SUBS_DATA_SUFFIX } from "../../lib/types";
 import { fetchPlus, USER_STATS_MODE } from "../../lib/lib";
 import { getSubsURL, wordIdsFromModels } from "../../lib/funclib";
+import { Container, makeStyles } from "@material-ui/core";
 
 type ContentParams = {
   id: string;
@@ -17,6 +17,11 @@ type ContentProps = {
   proxy: ServiceWorkerProxy;
 };
 
+const useStyles = makeStyles(() => ({
+  button: { padding: "2em" },
+  input: { display: "none" },
+}));
+
 const DATA_SOURCE = "VideoPlayerScreen.tsx";
 // Obtain a ref if you need to call any methods.
 export default function VideoPlayerScreen({ proxy }: ContentProps): ReactElement {
@@ -24,7 +29,7 @@ export default function VideoPlayerScreen({ proxy }: ContentProps): ReactElement
   const [fileURL, setFileURL] = useState<string>("");
   const [contentConfig, setContentConfig] = useState<VideoContentConfig | null>(null);
   const [content, setContent] = useState<Content | null>(null);
-
+  const classes = useStyles();
   function handleFileSelect(files: FileList | null): void {
     if (files && files.length > 0) {
       const fileURL = URL.createObjectURL(files[0]);
@@ -61,10 +66,11 @@ export default function VideoPlayerScreen({ proxy }: ContentProps): ReactElement
         conf = {
           volume: 1,
           playbackRate: 1.0,
+          subPlaybackRate: 1.0,
           played: 0,
           subDelay: 0,
           subFontSize: 1,
-          subFontColour: createColor("white"),
+          subFontColour: { h: 0, s: 0, l: 100 },
           subBoxWidth: 0.8,
           subPosition: "bottom",
           glossing: USER_STATS_MODE.L1,
@@ -109,9 +115,9 @@ export default function VideoPlayerScreen({ proxy }: ContentProps): ReactElement
 
   if (!fileURL) {
     return (
-      <div id="container" style={{ maxWidth: "1000px" }}>
+      <Container className={classes.button}>
         <label htmlFor="file-input">
-          <Button variant="contained" color="primary" component="span">
+          <Button variant="outlined" component="span">
             Load video file
           </Button>
         </label>
@@ -119,23 +125,21 @@ export default function VideoPlayerScreen({ proxy }: ContentProps): ReactElement
           id="file-input"
           type="file"
           accept="video/*"
-          style={{ display: "none" }}
+          className={classes.input}
           onChange={(e) => handleFileSelect(e.target.files)}
         />
-      </div>
+      </Container>
     );
   } else {
     return (
-      <div id="container" style={{ maxWidth: "1000px" }}>
-        <VideoPlayer
-          subsUrl={getSubsURL(id)}
-          videoUrl={fileURL}
-          contentConfig={contentConfig}
-          contentLabel={content?.title}
-          onContentConfigUpdate={handleConfigUpdate}
-          srcLang={content?.lang || ""}
-        />
-      </div>
+      <VideoPlayer
+        subsUrl={getSubsURL(id)}
+        videoUrl={fileURL}
+        contentConfig={contentConfig}
+        contentLabel={content?.title}
+        onContentConfigUpdate={handleConfigUpdate}
+        srcLang={content?.lang || ""}
+      />
     );
   }
 }

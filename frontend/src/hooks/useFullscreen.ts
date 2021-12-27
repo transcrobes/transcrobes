@@ -1,18 +1,18 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useState } from "react";
 
-export default function useFullscreen(): [boolean, () => void] {
+export default function useFullscreen(): [boolean, (container?: HTMLElement | null) => void] {
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
 
   const updateFullScreenStatus = useCallback(() => {
     setIsFullscreen(!!isOnFullscreen());
   }, []);
 
-  document.addEventListener('fullscreenchange', updateFullScreenStatus);
-  document.addEventListener('webkitfullscreenchange', updateFullScreenStatus);
-  document.addEventListener('mozfullscreenchange', updateFullScreenStatus);
-  document.addEventListener('MSFullscreenChange', updateFullScreenStatus);
+  document.addEventListener("fullscreenchange", updateFullScreenStatus);
+  document.addEventListener("webkitfullscreenchange", updateFullScreenStatus);
+  document.addEventListener("mozfullscreenchange", updateFullScreenStatus);
+  document.addEventListener("MSFullscreenChange", updateFullScreenStatus);
 
-  return [isFullscreen, toggleFullScreen];
+  return [isFullscreen, toggleFullscreen];
 }
 
 // Methods for Firefox / Safari / Edge
@@ -46,25 +46,26 @@ export const fullScreenEnabled =
   doc.mozFullScreenEnabled ||
   doc.msFullscreenEnabled;
 
-const enterFullScreen = () => {
+const enterFullscreen = (container?: HTMLElement | null) => {
+  const elem = container || docElm;
   const fullScreenFunc =
-    docElm.requestFullscreen ||
+    elem.requestFullscreen ||
     docElm.mozRequestFullScreen ||
     docElm.webkitRequestFullscreen ||
     docElm.msRequestFullscreen;
 
-  if (typeof fullScreenFunc === 'function') {
-    fullScreenFunc.call(docElm);
+  if (typeof fullScreenFunc === "function") {
+    fullScreenFunc.call(elem);
   }
 };
 
-const exitFullScreen = () => {
+const exitFullscreen = () => {
   const exitFunc =
     doc.exitFullscreen ||
     doc.mozCancelFullScreen ||
     doc.webkitExitFullscreen ||
     doc.msExitFullscreen;
-  if (typeof exitFunc === 'function') {
+  if (typeof exitFunc === "function") {
     exitFunc.call(doc);
   }
 };
@@ -81,10 +82,10 @@ export const isOnFullscreen = (() => {
 /**
  * Toggles fullscreen mode on the <html> element.
  */
-export function toggleFullScreen(): void {
+export function toggleFullscreen(container?: HTMLElement | null): void {
   if (isOnFullscreen()) {
-    exitFullScreen();
+    exitFullscreen();
   } else {
-    enterFullScreen();
+    enterFullscreen(container);
   }
 }

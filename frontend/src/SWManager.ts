@@ -20,7 +20,7 @@ import { TranscrobesCollections, TranscrobesDatabase } from "./database/Schema";
 import { CacheFirst, StaleWhileRevalidate } from "workbox-strategies";
 import { WebpubManifest } from "./contents/boocrobes/WebpubManifestTypes/WebpubManifest";
 import { ReadiumLink } from "./contents/boocrobes/WebpubManifestTypes/ReadiumLink";
-import { PublicationConfig } from "./contents/boocrobes/ServiceWorker/types";
+import { PublicationConfig } from "./contents/boocrobes/types";
 import { ONE_YEAR_IN_SECS, WEBPUB_CACHE_NAME } from "./lib/types";
 import { registerRoute } from "workbox-routing";
 import { ExpirationPlugin } from "workbox-expiration";

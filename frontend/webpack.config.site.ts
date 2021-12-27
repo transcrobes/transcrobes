@@ -25,7 +25,7 @@ const commonConfig = merge<Configuration>([
   {
     entry: {
       main: ["./src/index.tsx"],
-      readium: ["./src/contents/books/readium.ts"],
+      readium: ["./src/contents/boocrobes/readium.ts"],
     },
     plugins: [
       new DefinePlugin({
