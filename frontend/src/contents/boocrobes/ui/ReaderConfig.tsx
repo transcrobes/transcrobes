@@ -1,13 +1,14 @@
 import * as React from "react";
-import { HtmlNavigator, HtmlReaderState } from "../types";
 import { ToggleButtonGroup, ToggleButton } from "@material-ui/lab";
-import { Button, ButtonGroup, makeStyles, styled } from "@material-ui/core";
+import { Button, ButtonGroup, makeStyles } from "@material-ui/core";
+
+import { HtmlNavigator, HtmlReaderState } from "../types";
 import { USER_STATS_MODE } from "../../../lib/lib";
+import { Conftainer } from "../../../components/Common";
 
 export type HtmlSettingsProps = {
   navigator: HtmlNavigator;
   readerState: HtmlReaderState;
-  // paginationValue: string;
 };
 const useStyles = makeStyles((theme) => ({
   [theme.breakpoints.up("sm")]: {
@@ -19,23 +20,13 @@ const useStyles = makeStyles((theme) => ({
   button: { width: "100%" },
 }));
 
-export const Conftainer = styled("div")(() => ({
-  display: "flex",
-  justifyContent: "center",
-  alignItems: "center",
-  padding: "0.3em",
-  width: "100%",
-}));
-
 export default function ReaderConfig(props: HtmlSettingsProps): React.ReactElement {
-  // const { navigator, readerState, paginationValue } = props;
   const { navigator, readerState } = props;
-  const { fontFamily, colorMode } = readerState;
-  const { setFontFamily, decreaseFontSize, increaseFontSize, setColorMode, setScroll } = navigator;
+  const { fontFamily } = readerState;
+  const { setFontFamily, decreaseFontSize, increaseFontSize, setScroll } = navigator;
   const { setGlossing, setSegmentation, setMouseover } = navigator;
   const { glossing, segmentation, mouseover } = readerState;
   const classes = useStyles();
-  console.warn("and here is the readerSTate", readerState);
   return (
     <>
       <Conftainer>

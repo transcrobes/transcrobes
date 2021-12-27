@@ -1,7 +1,7 @@
 import React from "react";
 import { fetchJson } from "./utils/fetch";
-import HtmlReaderContent from "./HtmlReader/HtmlReaderContent";
-import useHtmlReader from "./HtmlReader";
+import HtmlReaderContent from "./ui/HtmlReaderContent";
+import useHtmlReader from "./ui";
 import { UseWebReaderArguments, HTMLActiveReader, LoadingReader, WebpubManifest } from "./types";
 import { ConformsTo } from "./WebpubManifestTypes/ConformsTo";
 import { DEFAULT_HEIGHT, DEFAULT_SHOULD_GROW_WHEN_SCROLLING } from "./constants";

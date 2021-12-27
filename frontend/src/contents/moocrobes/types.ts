@@ -1,4 +1,4 @@
-import { Color } from "material-ui-color";
+import { HslColor } from "react-colorful";
 
 // "above" ?
 export type SubPosition = "top" | "bottom" | "under";
@@ -6,10 +6,11 @@ export type SubPosition = "top" | "bottom" | "under";
 export type VideoConfig = {
   volume: number;
   playbackRate: number;
+  subPlaybackRate: number;
   played: number;
   subDelay: number;
   subFontSize: number;
-  subFontColour: Color;
+  subFontColour: HslColor;
   subBoxWidth: number;
   subPosition: SubPosition;
   segmentation: boolean;

@@ -1,11 +1,11 @@
 import { ReactElement, useEffect, useState } from "react";
 import { useRecordContext } from "react-admin";
 import { FormControlLabel, Switch } from "@material-ui/core";
-import { PrecachePublicationsMessage } from "./boocrobes/ServiceWorker/types";
 import { registerRoute } from "workbox-routing";
 import { ExpirationPlugin } from "workbox-expiration";
 import { CacheFirst } from "workbox-strategies";
 
+import { PrecachePublicationsMessage } from "./boocrobes/types";
 import {
   Content,
   CONTENT_TYPE,
@@ -15,7 +15,6 @@ import {
   PRECACHE_PUBLICATIONS,
   WEBPUB_CACHE_NAME,
 } from "../lib/types";
-
 import { getContentBaseURL, getManifestURL, getSubsURL, handleBadResponse } from "../lib/funclib";
 
 const cacheFirst = new CacheFirst({

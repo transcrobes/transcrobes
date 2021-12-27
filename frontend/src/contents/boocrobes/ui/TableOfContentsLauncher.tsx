@@ -1,25 +1,11 @@
 import React, { ReactElement } from "react";
 import TocIcon from "@material-ui/icons/Toc";
-import {
-  Box,
-  createStyles,
-  Drawer,
-  IconButton,
-  makeStyles,
-  MenuItem,
-  MenuList,
-  Theme,
-} from "@material-ui/core";
+import { Box, Drawer, MenuItem, MenuList } from "@material-ui/core";
 import { ReadiumLink } from "../WebpubManifestTypes/ReadiumLink";
 
 import { Navigator, WebpubManifest } from "../types";
 import useWindowDimensions from "../../../hooks/WindowDimensions";
-
-const useStyles = makeStyles((theme: Theme) =>
-  createStyles({
-    settings: {},
-  }),
-);
+import { Button } from "react-admin";
 
 type Props = {
   navigator: Navigator;
@@ -78,7 +64,6 @@ type TableOfContentsLauncherProps = {
 
 export default function TableOfContentsLauncher(props: TableOfContentsLauncherProps): ReactElement {
   const [isOpen, setIsOpen] = React.useState(false);
-  const classes = useStyles();
 
   // TODO: work out how to do this as proper functions!
   const toggleDrawer = (open: boolean) => (event: React.KeyboardEvent | React.MouseEvent) => {
@@ -94,20 +79,18 @@ export default function TableOfContentsLauncher(props: TableOfContentsLauncherPr
 
   const dimensions = useWindowDimensions();
   return (
-    <div>
-      <IconButton
-        className={classes.settings}
+    <>
+      <Button
+        size="large"
+        children={<TocIcon />}
+        label="Table of contents"
         onClick={toggleDrawer(true)}
-        color="primary"
-        aria-label="settings"
-      >
-        <TocIcon />
-      </IconButton>
+      />
       <Drawer anchor="left" open={isOpen} onClose={toggleDrawer(false)}>
         <Box sx={{ width: dimensions.width * 0.8 }} role="presentation">
           <TableOfContents {...props} onClickChapter={() => setIsOpen(false)} />
         </Box>
       </Drawer>
-    </div>
+    </>
   );
 }

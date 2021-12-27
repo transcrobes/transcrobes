@@ -4,9 +4,7 @@ import { ValueLabelProps } from "@material-ui/core/Slider";
 import Container from "@material-ui/core/Container";
 import { makeStyles, Theme } from "@material-ui/core/styles";
 import ReactPlayer from "react-player";
-import screenful from "screenfull";
 import useEventListener from "@use-it/event-listener";
-import { Color, createColor } from "material-ui-color";
 
 import VideoBottomControls from "./VideoBottomControls";
 import SubtitleControl from "./SubtitleControl";
@@ -22,8 +20,14 @@ import {
   setSegmentation,
   setLangPair,
   setPopupParent,
-} from "../../../lib/components";
-import { setMouseover, USER_STATS_MODE } from "../../../lib/lib";
+} from "../../lib/components";
+import { setMouseover, USER_STATS_MODE } from "../../lib/lib";
+import { HslColor } from "react-colorful";
+import useFullscreen from "../../hooks/useFullscreen";
+import useWindowDimensions from "../../hooks/WindowDimensions";
+import { overrideTextTrackListeners } from "../../lib/eventlisteners";
+
+overrideTextTrackListeners();
 
 let count = 0;
 let configCount = 0;
@@ -37,8 +41,13 @@ const useStyles = makeStyles((theme: Theme) => ({
   playerWrapper: {
     width: "100%",
     position: "relative",
+    [theme.breakpoints.down("sm")]: {
+      margin: `${theme.spacing(1)}px 0`,
+    },
+    [theme.breakpoints.up("sm")]: {
+      margin: `${theme.spacing(2)}px 0`,
+    },
   },
-
   controlsWrapper: {
     position: "absolute",
     top: 0,
@@ -51,85 +60,111 @@ const useStyles = makeStyles((theme: Theme) => ({
     justifyContent: "space-between",
   },
   topControls: {
-    display: "flex",
-    justifyContent: "flex-end",
-    padding: theme.spacing(2),
+    [theme.breakpoints.down("sm")]: {
+      padding: theme.spacing(1),
+    },
+    [theme.breakpoints.up("sm")]: {
+      padding: theme.spacing(2),
+    },
+  },
+  topControlsText: {
+    color: "#fff",
   },
   middleControls: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
+    [theme.breakpoints.down("sm")]: {
+      padding: `0 ${theme.spacing(1)}px ${theme.spacing(1)}px`,
+    },
+    [theme.breakpoints.up("sm")]: {
+      padding: theme.spacing(2),
+    },
   },
   bottomWrapper: {
     display: "flex",
     flexDirection: "column",
-
-    // background: "rgba(0,0,0,0.6)",
-    // height: 60,
-    padding: theme.spacing(2),
+    [theme.breakpoints.down("sm")]: {
+      padding: theme.spacing(1),
+    },
+    [theme.breakpoints.up("sm")]: {
+      padding: theme.spacing(2),
+    },
   },
-
   bottomControls: {
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
-    // height:40,
   },
-
   button: {
     margin: theme.spacing(1),
   },
-
   controlIcons: {
     color: "#777",
-
-    fontSize: 50,
+    [theme.breakpoints.down("sm")]: {
+      fontSize: 15,
+    },
+    [theme.breakpoints.up("sm")]: {
+      fontSize: 50,
+    },
     transform: "scale(0.9)",
     "&:hover": {
-      color: "#fff",
+      color: theme.palette.getContrastText(theme.palette.background.default),
       transform: "scale(1)",
     },
   },
-
   fineControlIcons: {
     color: "#777",
     fontSize: 20,
     transform: "scale(0.9)",
     "&:hover": {
-      color: "#fff",
+      color: theme.palette.getContrastText(theme.palette.background.default),
       transform: "scale(1)",
     },
   },
-
   select: {
     justifyContent: "center",
     color: "#777",
-    fontSize: 20,
+    [theme.breakpoints.down("sm")]: {
+      fontSize: 15,
+    },
+    [theme.breakpoints.up("sm")]: {
+      fontSize: 30,
+    },
     transform: "scale(0.9)",
     "&:hover": {
-      color: "#fff",
+      color: theme.palette.getContrastText(theme.palette.background.default),
       transform: "scale(1)",
     },
   },
-
   switch: {
     justifyContent: "center",
     color: "#777",
-    fontSize: 20,
+    [theme.breakpoints.down("sm")]: {
+      fontSize: 15,
+    },
+    [theme.breakpoints.up("sm")]: {
+      fontSize: 30,
+    },
     transform: "scale(0.9)",
     "&:hover": {
-      color: "#fff",
+      color: theme.palette.getContrastText(theme.palette.background.default),
       transform: "scale(1)",
     },
   },
-
   bottomIcons: {
     color: "#999",
     "&:hover": {
-      color: "#fff",
+      color: theme.palette.getContrastText(theme.palette.background.default),
+    },
+    [theme.breakpoints.down("sm")]: {
+      "& svg": {
+        fontSize: 15,
+      },
+    },
+    [theme.breakpoints.up("sm")]: {
+      "& svg": {
+        fontSize: 30,
+      },
     },
   },
-
   volumeSlider: {
     width: 100,
   },
@@ -180,15 +215,19 @@ function VideoPlayer({
   const [track, setTrack] = useState<TextTrack | null>(null);
   const [controlsVisibility, setControlsVisibility] = useState<"hidden" | "visible">("visible");
   const [volume, setVolume] = useState(1);
+  const [currentPlaybackRate, setCurrentPlaybackRate] = useState(1.0);
   const [playbackRate, setPlaybackRate] = useState(1.0);
+  const [subPlaybackRate, setSubPlaybackRate] = useState(1.0);
   const [played, setPlayed] = useState(0);
   const [subDelay, setSubDelay] = useState(0);
   const [subFontSize, setSubFontSize] = useState(1);
-  const [subFontColour, setSubFontColour] = useState(createColor("white"));
+  const [subFontColour, setSubFontColour] = useState<HslColor>({ h: 0, s: 0, l: 100 });
   const [subBoxWidth, setSubBoxWidth] = useState(0.8); // 80% of the screen
   const [glossing, setLocalGlossing] = useState(USER_STATS_MODE.L1);
   const [segmentation, setLocalSegmentation] = useState(true);
   const [mouseover, setLocalMouseover] = useState(true);
+
+  const [isFullscreen, toggleFullscreen] = useFullscreen();
 
   function updateGlossing(newGlossing: number) {
     if (contentConfig?.config) {
@@ -213,12 +252,14 @@ function VideoPlayer({
   useEffect(() => {
     if (contentConfig?.config) {
       setVolume(contentConfig.config.volume);
-      setPlaybackRate(contentConfig.config.playbackRate);
+      setPlaybackRate(contentConfig.config.playbackRate || 1.0);
+      setCurrentPlaybackRate(contentConfig.config.playbackRate || 1.0);
+      setSubPlaybackRate(contentConfig.config.subPlaybackRate || 1.0);
       setPlayed(contentConfig.config.played);
       setSubDelay(contentConfig.config.subDelay);
       setSubFontSize(contentConfig.config.subFontSize);
       setSubBoxWidth(contentConfig.config.subBoxWidth);
-      setSubFontColour(createColor(contentConfig.config.subFontColour.raw));
+      setSubFontColour(contentConfig.config.subFontColour);
       setSubPosition(contentConfig.config.subPosition);
     }
     // set up components
@@ -258,6 +299,7 @@ function VideoPlayer({
         volume,
         played,
         playbackRate,
+        subPlaybackRate,
         subDelay,
         subFontSize,
         subBoxWidth,
@@ -276,6 +318,7 @@ function VideoPlayer({
     volume,
     played,
     playbackRate,
+    subPlaybackRate,
     subDelay,
     subFontColour,
     subFontSize,
@@ -284,6 +327,14 @@ function VideoPlayer({
     segmentation,
     mouseover,
   ]);
+  useEffect(() => {
+    const htmlTrack = playerContainerRef.current?.querySelector("track");
+    const textTrack = htmlTrack?.track;
+    if (textTrack) {
+      textTrack.clearEventListeners("cuechange");
+      readContent(textTrack);
+    }
+  }, [playbackRate, subPlaybackRate]);
 
   function shiftSubs(delay: number): void {
     if (track && track.cues) {
@@ -315,10 +366,15 @@ function VideoPlayer({
   useEventListener("keydown", (e: KeyboardEvent) => {
     let matched = true;
     if (e.key == "f") {
-      toggleFullscreen();
+      toggleFullscreen(playerContainerRef?.current);
     } else if (e.key == " ") {
       // space bar, toggle pause
       setPlaying(!playing);
+      // FIXME: is this necessary?
+      // } else if (e.ctrlKey && e.shiftKey && e.key == "ArrowLeft") {
+      //   setSubPlaybackRate(playbackRate - 0.05);
+      // } else if (e.ctrlKey && e.shiftKey && e.key == "ArrowRight") {
+      //   setSubPlaybackRate(playbackRate + 0.05);
     } else if (e.ctrlKey && e.shiftKey && e.key == "ArrowLeft") {
       setPlaybackRate(playbackRate - 0.05);
     } else if (e.ctrlKey && e.shiftKey && e.key == "ArrowRight") {
@@ -345,10 +401,25 @@ function VideoPlayer({
     }
   });
 
-  function toggleFullscreen() {
-    if (screenful.isEnabled) {
-      screenful.toggle(playerContainerRef?.current || undefined);
+  function doCueChange(e: Event): void {
+    const cues = (e?.currentTarget as TextTrack).activeCues;
+    if (cues && cues[0] !== undefined) {
+      clearTimeout(timeoutId);
+      setCurrentCue((cues[0] as VTTCue).text);
+      setCurrentPlaybackRate(subPlaybackRate);
+      console.log("setting current subPlaybackRate", subPlaybackRate);
+    } else {
+      // keep the subs until they get replaced or TIMER_CLEAR_PREVIOUS_MS after they would have been removed
+      const mto = window.setTimeout(() => {
+        if ((() => playing)()) {
+          setCurrentCue("");
+          setCurrentPlaybackRate(playbackRate);
+          console.log("setting current playbackRate", playbackRate);
+        }
+      }, TIMER_CLEAR_PREVIOUS_MS);
+      timeoutId = mto;
     }
+    return;
   }
 
   function handleProgress(changeState: {
@@ -373,22 +444,7 @@ function VideoPlayer({
   function readContent(track: TextTrack) {
     if (track.oncuechange) return;
 
-    track.addEventListener("cuechange", (e) => {
-      const cues = (e?.currentTarget as TextTrack).activeCues;
-      if (cues && cues[0] !== undefined) {
-        clearTimeout(timeoutId);
-        setCurrentCue((cues[0] as VTTCue).text);
-      } else {
-        // keep the subs until they get replaced or TIMER_CLEAR_PREVIOUS_MS after they would have been removed
-        const mto = window.setTimeout(() => {
-          if ((() => playing)()) {
-            setCurrentCue("");
-          }
-        }, TIMER_CLEAR_PREVIOUS_MS);
-        timeoutId = mto;
-      }
-      return;
-    });
+    track.addEventListener("cuechange", doCueChange, true);
   }
 
   function handleReady() {
@@ -501,10 +557,11 @@ function VideoPlayer({
   const elapsedTime =
     timeDisplayFormat == "normal" ? format(currentTime) : `-${format(duration - currentTime)}`;
   const totalDuration = format(duration);
+  const dimensions = useWindowDimensions();
 
   return (
     <>
-      <Container maxWidth="md">
+      <Container>
         <div ref={playerContainerRef}>
           <div
             onMouseMove={handleMouseMove}
@@ -524,7 +581,7 @@ function VideoPlayer({
               url={videoUrl}
               playing={playing}
               controls={false}
-              playbackRate={playbackRate}
+              playbackRate={currentPlaybackRate}
               volume={volume}
               muted={muted}
               onProgress={handleProgress}
@@ -562,9 +619,9 @@ function VideoPlayer({
                   <Grid container direction="row" alignItems="center" justifyContent="center">
                     <SubtitleControl
                       subBoxWidth={subBoxWidth}
-                      subFontColour={subFontColour.hex}
+                      subFontColour={subFontColour}
                       subFontSize={subFontSize}
-                      classes={{ color: "#fff" }}
+                      classes={classes}
                       currentCue={currentCue}
                     />
                   </Grid>
@@ -572,10 +629,9 @@ function VideoPlayer({
 
                 {controlsVisibility === "visible" && (
                   <>
-                    <VideoHeaderControls
-                      title={contentLabel || ""}
-                      titleStyle={{ color: "#fff" }}
-                    />
+                    {dimensions.width > 600 && (
+                      <VideoHeaderControls title={contentLabel || ""} classes={classes} />
+                    )}
                     <VideoCentralControls
                       classes={classes}
                       onSkipNextCue={nextCue}
@@ -592,14 +648,14 @@ function VideoPlayer({
                   direction="row"
                   justifyContent="space-between"
                   alignItems="center"
-                  style={{ padding: 16 }}
+                  className={classes.middleControls}
                 >
                   {subPosition === "bottom" && currentCue && (
                     <Grid item xs={12}>
                       <Grid container direction="row" alignItems="flex-end" justifyContent="center">
                         <SubtitleControl
                           subBoxWidth={subBoxWidth}
-                          subFontColour={subFontColour.hex}
+                          subFontColour={subFontColour}
                           subFontSize={subFontSize}
                           classes={classes}
                           currentCue={currentCue}
@@ -626,6 +682,8 @@ function VideoPlayer({
                   )}
                   {controlsVisibility === "visible" && (
                     <VideoBottomControls
+                      containerRef={playerContainerRef}
+                      isFullscreen={isFullscreen}
                       classes={classes}
                       playing={playing}
                       onContentConfigUpdate={onContentConfigUpdate}
@@ -636,6 +694,7 @@ function VideoPlayer({
                       totalDuration={totalDuration}
                       muted={muted}
                       playbackRate={playbackRate}
+                      subPlaybackRate={subPlaybackRate}
                       volume={volume}
                       subDelay={subDelay}
                       subFontSize={subFontSize}
@@ -646,9 +705,7 @@ function VideoPlayer({
                       segmentation={segmentation}
                       mouseover={mouseover}
                       onSubPositionChange={(position) => setSubPosition(position)}
-                      onSubFontColourChange={(colour) =>
-                        setSubFontColour(typeof colour === "string" ? createColor(colour) : colour)
-                      }
+                      onSubFontColourChange={(colour) => setSubFontColour(colour)}
                       onSubBoxWidthChange={(width) => setSubBoxWidth(width)}
                       onSubFontSizeChange={(size) => setSubFontSize(size)}
                       onSubDelayChange={(delay) => shiftSubs(delay)}
@@ -658,10 +715,17 @@ function VideoPlayer({
                       onChangeDisplayFormat={() =>
                         setTimeDisplayFormat(timeDisplayFormat == "normal" ? "remaining" : "normal")
                       }
+                      onSubPlaybackRateChange={(rate) => {
+                        console.log("trying to set setSubPlaybackRate", rate);
+                        setSubPlaybackRate(rate);
+                      }}
                       onPlaybackRateChange={(rate) => {
+                        console.log("trying to set setPlaybackRate", rate);
                         setPlaybackRate(rate);
                       }}
-                      onToggleFullscreen={toggleFullscreen}
+                      onToggleFullscreen={() => {
+                        toggleFullscreen(playerContainerRef?.current);
+                      }}
                       onVolumeChange={handleVolumeChange}
                       onGlossingChange={updateGlossing}
                       onSegmentationChange={updateSegmentation}
@@ -676,7 +740,7 @@ function VideoPlayer({
             <Grid container direction="row" alignItems="center" justifyContent="center">
               <SubtitleControl
                 subBoxWidth={subBoxWidth}
-                subFontColour={subFontColour.hex}
+                subFontColour={subFontColour}
                 subFontSize={subFontSize}
                 classes={classes}
                 currentCue={currentCue}

@@ -1,12 +1,11 @@
 import { ReactElement } from "react";
-import Select from "react-select";
-// import "reactjs-popup/dist/index.css";
+import Select, { StylesConfig } from "react-select";
 import _ from "lodash";
 import dayjs from "dayjs";
 
 import TCCheckbox from "../components/TCCheckbox";
 import { RepetrobesActivityConfigType } from "../lib/types";
-import { makeStyles, TextField, Typography } from "@material-ui/core";
+import { makeStyles, TextField, Theme, Typography, useTheme } from "@material-ui/core";
 import { validInt } from "../lib/funclib";
 
 interface Props {
@@ -14,14 +13,21 @@ interface Props {
   onConfigChange: (activityConfig: RepetrobesActivityConfigType) => void;
 }
 
-const useStyles = makeStyles({
+const useStyles = makeStyles(() => ({
   checkbox: { padding: "0.2em 0.5em" },
-  select: { padding: "0.4em" },
+  select: {
+    padding: "0.4em",
+  },
   textbox: { display: "flex", justifyContent: "space-between", padding: "0.4em" },
-});
+}));
 
 export default function RepetrobesConfig({ activityConfig, onConfigChange }: Props): ReactElement {
   const classes = useStyles();
+  const theme = useTheme();
+  const colourStyles: StylesConfig = {
+    control: (styles) => ({ ...styles, backgroundColor: theme.palette.background.default }),
+    menu: (styles) => ({ ...styles, backgroundColor: theme.palette.background.default, zIndex: 2 }),
+  };
 
   function handleWordListsChange(sls: any) {
     // FIXME: this is SUPER nasty but see
@@ -89,25 +95,24 @@ export default function RepetrobesConfig({ activityConfig, onConfigChange }: Pro
       <div className={classes.select}>
         <Typography>Source word lists</Typography>
         <Select
+          styles={colourStyles}
           onChange={handleWordListsChange}
           defaultValue={activityConfig.wordLists.filter((x) => x.selected)}
           isMulti
           name="wordLists"
           options={activityConfig.wordLists.sort((a, b) => a.label.localeCompare(b.label))}
-          className="basic-multi-select"
-          classNamePrefix="select"
+          className={classes.select}
         />
       </div>
       <div className={classes.select}>
         <Typography>Active card types</Typography>
         <Select
+          styles={colourStyles}
           onChange={handleCardTypesChange}
           defaultValue={activityConfig.activeCardTypes.filter((x) => x.selected)}
           isMulti
           name="activeCardTypes"
           options={activityConfig.activeCardTypes}
-          className="basic-multi-select"
-          classNamePrefix="select"
         />
       </div>
       <TCCheckbox

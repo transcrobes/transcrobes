@@ -1,17 +1,26 @@
 import D2Reader from "@d-i-t-a/reader";
 import React, { useState } from "react";
-import { ColorMode, HtmlReaderState, ReaderReturn, ReaderArguments, FontFamily } from "../types";
-import HtmlReaderContent from "./HtmlReaderContent";
 import { Locator } from "@d-i-t-a/reader";
-import "../../../../node_modules/@d-i-t-a/reader/dist/reader.css";
-import { DEFAULT_HEIGHT, DEFAULT_SHOULD_GROW_WHEN_SCROLLING, HEADER_HEIGHT } from "../constants";
 import {
   GetContent,
   Injectable,
   NavigatorAPI,
 } from "@d-i-t-a/reader/dist/types/navigator/IFrameNavigator";
 import debounce from "debounce";
+import { useSelector } from "react-redux";
+
+import { DEFAULT_HEIGHT, DEFAULT_SHOULD_GROW_WHEN_SCROLLING, HEADER_HEIGHT } from "../constants";
+import HtmlReaderContent from "./HtmlReaderContent";
 import { USER_STATS_MODE_KEY_VALUES } from "../../../lib/lib";
+import { AppState } from "../../../lib/types";
+import {
+  ColorMode,
+  HtmlReaderState,
+  ReaderReturn,
+  ReaderArguments,
+  FontFamily,
+  D2ColorMode,
+} from "../types";
 
 type HtmlState = HtmlReaderState & {
   reader: D2Reader | undefined;
@@ -30,7 +39,6 @@ export type HtmlAction =
   | { type: "SET_GLOSSING"; glossing: USER_STATS_MODE_KEY_VALUES }
   | { type: "SET_SEGMENTATION"; segmentation: boolean }
   | { type: "SET_MOUSEOVER"; mouseover: boolean }
-  | { type: "SET_COLOR_MODE"; mode: ColorMode }
   | { type: "SET_SCROLL"; isScrolling: boolean }
   | { type: "SET_FONT_SIZE"; size: number }
   | { type: "SET_FONT_FAMILY"; family: FontFamily }
@@ -46,7 +54,6 @@ function htmlReducer(state: HtmlState, action: HtmlAction): HtmlState {
       return {
         reader: action.reader,
         isScrolling: settings.verticalScroll,
-        colorMode: getColorMode(settings.appearance),
         fontSize: settings.fontSize,
         fontFamily: r2FamilyToFamily[settings.fontFamily] ?? "publisher",
         currentTocUrl: action.reader.mostRecentNavigatedTocItem(),
@@ -75,12 +82,6 @@ function htmlReducer(state: HtmlState, action: HtmlAction): HtmlState {
       return {
         ...state,
         mouseover: action.mouseover,
-      };
-
-    case "SET_COLOR_MODE":
-      return {
-        ...state,
-        colorMode: action.mode,
       };
 
     case "SET_SCROLL":
@@ -141,7 +142,6 @@ export default function useHtmlReader(args: ReaderArguments): ReaderReturn {
   const defaultIsScrolling = readerSettings?.isScrolling ?? false;
 
   const [state, dispatch] = React.useReducer(htmlReducer, {
-    colorMode: "day",
     isScrolling: defaultIsScrolling,
     fontSize: 16,
     glossing: window.readerConfig.glossing,
@@ -155,7 +155,8 @@ export default function useHtmlReader(args: ReaderArguments): ReaderReturn {
     atEnd: false,
   });
   const [forceRefresh, setForceRefresh] = useState(false);
-
+  // const theme = useTheme();
+  const theme = useSelector((state: AppState) => state.theme);
   // used to handle async errors thrown in useEffect
   const [error, setError] = React.useState<Error | undefined>(undefined);
   if (error) {
@@ -172,6 +173,7 @@ export default function useHtmlReader(args: ReaderArguments): ReaderReturn {
 
     const userSettings = {
       verticalScroll: !!state.isScrolling,
+      appearance: getColorMode(theme),
     };
 
     D2Reader.build({
@@ -247,19 +249,8 @@ export default function useHtmlReader(args: ReaderArguments): ReaderReturn {
     }
   }, [reader]);
 
-  const setColorMode = React.useCallback(
-    async (mode: ColorMode) => {
-      if (!reader) return;
-      dispatch({ type: "SET_COLOR_MODE", mode });
-      await reader.applyUserSettings({ appearance: mode });
-    },
-    [reader],
-  );
-
   const setScroll = React.useCallback(
-    // async (val: "scrolling" | "paginated") => {
     async (val: boolean) => {
-      // const isScrolling = val === "scrolling";
       await reader?.scroll(val);
       dispatch({ type: "SET_SCROLL", isScrolling: val });
     },
@@ -380,7 +371,6 @@ export default function useHtmlReader(args: ReaderArguments): ReaderReturn {
       setGlossing,
       setSegmentation,
       setMouseover,
-      setColorMode,
       setScroll,
       increaseFontSize,
       decreaseFontSize,
@@ -390,17 +380,17 @@ export default function useHtmlReader(args: ReaderArguments): ReaderReturn {
   };
 }
 
-function getColorMode(d2Mode: string): ColorMode {
-  switch (d2Mode) {
-    case "readium-default-on":
-      return "day";
-    case "readium-night-on":
-      return "night";
-    case "readium-sepia-on":
-      return "sepia";
+function getColorMode(localMode: ColorMode): D2ColorMode {
+  switch (localMode) {
+    case "light":
+      return "readium-default-on";
+    case "dark":
+      return "readium-night-on";
+    case "sepia":
+      return "readium-sepia-on";
     default:
-      console.error("COLOR MODE SLIPPED THROUG", d2Mode);
-      return "day";
+      console.error("COLOR MODE SLIPPED THROUGH", localMode);
+      return "readium-default-on";
   }
 }
 

@@ -6,7 +6,7 @@ export const darkTheme = {
     secondary: {
       main: "#FBBA72",
     },
-    type: "dark" as "dark", // Switching the dark mode on is a single property value change.
+    type: "dark" as any, // Switching the dark mode on is a single property value change.
   },
   overrides: {
     MuiAppBar: {
@@ -58,7 +58,7 @@ export const lightTheme = {
     background: {
       default: "#fcfcfe",
     },
-    type: "light" as "light",
+    type: "light" as any,
   },
   shape: {
     borderRadius: 10,

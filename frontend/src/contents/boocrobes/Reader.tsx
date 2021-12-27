@@ -1,14 +1,11 @@
 import { useParams } from "react-router-dom";
 import { useAuthenticated } from "react-admin";
 import D2Reader from "@d-i-t-a/reader";
-// import { ChakraProvider, Link, Text } from "@chakra-ui/react";
-
-// import "@nypl/design-system-react-components/dist/styles.css";
-// import "./styles.css";
-// import { getTheme } from "../boocrobes/ui/theme";
-import WebReader from "./WebReader";
+import WebReader from "./ui/WebReader";
 import injectables from "./injectables";
 import { USER_STATS_MODE } from "../../lib/lib";
+import { createTheme, ThemeProvider } from "@material-ui/core";
+import { ThemeName } from "../../lib/types";
 
 type ContentParams = {
   id: string;
@@ -64,9 +61,14 @@ export default function Reader(): JSX.Element {
   //   return () => clearInterval(interval);
   // }, []);
 
+  const theme = createTheme({
+    palette: {
+      type: (localStorage.getItem("mode") as ThemeName) || "light", // Switching the dark mode on is a single property value change.
+    },
+  });
   return (
-    // <ChakraProvider theme={getTheme("day")}>
-    <WebReader webpubManifestUrl={url.href} injectables={injectables} />
-    // </ChakraProvider>
+    <ThemeProvider theme={theme}>
+      <WebReader webpubManifestUrl={url.href} injectables={injectables} />
+    </ThemeProvider>
   );
 }

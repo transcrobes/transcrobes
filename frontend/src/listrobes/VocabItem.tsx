@@ -1,8 +1,8 @@
-import { makeStyles } from "@material-ui/core";
+import { makeStyles, Theme } from "@material-ui/core";
 import { ReactElement } from "react";
 import { GradesType, VocabReview } from "../lib/types";
 
-const useStyles = makeStyles(() => ({
+const useStyles = makeStyles((theme: Theme) => ({
   tipText: {
     border: "1px #333 solid",
     padding: "3px",
@@ -16,7 +16,7 @@ const useStyles = makeStyles(() => ({
     position: "absolute",
     border: "1px solid #000",
     padding: "5px",
-    backgroundColor: "white",
+    backgroundColor: theme.palette.background.default,
     opacity: "1",
     "$tipText:hover &": {
       display: "block",

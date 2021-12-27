@@ -1,8 +1,8 @@
 import { ReactElement } from "react";
 import { DragDropContext, Droppable, Draggable, DropResult } from "react-beautiful-dnd";
-import Select from "react-select";
+import Select, { StylesConfig } from "react-select";
 import _ from "lodash";
-import { makeStyles, TextField, Theme } from "@material-ui/core";
+import { makeStyles, TextField, Theme, useTheme } from "@material-ui/core";
 
 import TCCheckbox from "../components/TCCheckbox";
 import { GraderConfig } from "../lib/types";
@@ -41,6 +41,12 @@ interface Props {
 }
 
 export function ListrobesConfig({ graderConfig, onConfigChange }: Props): ReactElement {
+  const theme = useTheme();
+  const colourStyles: StylesConfig = {
+    control: (styles) => ({ ...styles, backgroundColor: theme.palette.background.default }),
+    menu: (styles) => ({ ...styles, backgroundColor: theme.palette.background.default, zIndex: 2 }),
+  };
+
   function handleDragEnd(result: DropResult) {
     // dropped outside the list
     if (!result.destination) {
@@ -87,11 +93,11 @@ export function ListrobesConfig({ graderConfig, onConfigChange }: Props): ReactE
       <div className={classes.select}>
         <DragDropContext onDragEnd={handleDragEnd}>
           <Droppable droppableId="droppable">
-            {(provided, _snapshot) => (
+            {(provided) => (
               <div {...provided.droppableProps} ref={provided.innerRef}>
                 {gradeOrder.map((item, index) => (
                   <Draggable key={item.id} draggableId={item.id} index={index}>
-                    {(provided, snapshot) => (
+                    {(provided) => (
                       <div
                         className={classes.row}
                         ref={provided.innerRef}
@@ -114,13 +120,12 @@ export function ListrobesConfig({ graderConfig, onConfigChange }: Props): ReactE
       <div className={classes.select}>
         Source word lists
         <Select
+          styles={colourStyles}
           onChange={handleWordListsChange}
           defaultValue={graderConfig.wordLists.filter((x) => x.selected)}
           isMulti
           name="wordLists"
           options={graderConfig.wordLists.sort((a, b) => a.label.localeCompare(b.label))}
-          className="basic-multi-select"
-          classNamePrefix="select"
         />
       </div>
       <div>

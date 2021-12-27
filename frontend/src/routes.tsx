@@ -9,8 +9,8 @@ import Listrobes from "./listrobes/Listrobes";
 import Repetrobes from "./repetrobes/Repetrobes";
 import Notrobes from "./notrobes/Notrobes";
 import Brocrobes from "./Brocrobes";
-import VideoPlayer from "./contents/video/VideoPlayerScreen";
-import Reader from "./contents/books/Reader";
+import VideoPlayerScreen from "./contents/moocrobes/VideoPlayerScreen";
+import Reader from "./contents/boocrobes/Reader";
 import { USER_STATS_MODE } from "./lib/lib";
 import { ComponentsConfig } from "./lib/complexTypes";
 import Signup from "./system/Signup";
@@ -51,7 +51,11 @@ export default function routes(config: ComponentsConfig): CustomRoutes {
       render={() => <Notrobes proxy={config.proxy} url={config.url} />}
     />,
     <Route exact path="/brocrobes" render={() => <Brocrobes />} />,
-    <Route exact path="/contents/:id/watch" children={<VideoPlayer proxy={config.proxy} />} />,
+    <Route
+      exact
+      path="/contents/:id/watch"
+      children={<VideoPlayerScreen proxy={config.proxy} />}
+    />,
     <Route exact path="/system" render={() => <System proxy={config.proxy} />} />,
     <Route exact path="/help" render={() => <Help />} />,
   ];

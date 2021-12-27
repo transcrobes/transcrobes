@@ -3,18 +3,21 @@ import { ReactElement } from "react";
 import { USER_STATS_MODE, USER_STATS_MODE_KEY_VALUES } from "../lib/lib";
 
 interface Props {
+  containerRef?: React.RefObject<HTMLDivElement>;
   onGlossingChange: (glossing: number) => void;
   className?: string;
   value: USER_STATS_MODE_KEY_VALUES;
 }
 
 export default function GlossingSelector({
+  containerRef,
   onGlossingChange,
   className,
   value,
 }: Props): ReactElement {
   return (
     <Select
+      MenuProps={{ container: containerRef?.current }}
       className={className}
       value={value}
       label="Glossing"
