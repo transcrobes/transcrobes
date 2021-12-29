@@ -2,6 +2,7 @@ import { FC, ReactElement } from "react";
 import * as Survey from "survey-react";
 import "survey-react/survey.css";
 import { FieldProps, Show } from "react-admin";
+import { useTheme } from "@material-ui/core";
 
 const DATA_SOURCE = "surveyshow.tsx";
 
@@ -31,6 +32,20 @@ function TheSurvey(prop: any): ReactElement {
   model.onComplete.add(function (sender) {
     saveData(sender.data, prop.record.id);
   });
+  const palette = useTheme().palette;
+  const themeColors = Survey.StylesManager.ThemeColors["default"];
+  themeColors["$main-color"] = palette.primary.main;
+  themeColors["$main-hover-color"] = palette.primary.dark;
+  themeColors["$text-color"] = palette.text.primary;
+  themeColors["$header-color"] = palette.secondary.main;
+  themeColors["$border-color"] = palette.divider;
+  themeColors["$header-background-color"] = palette.background.paper;
+  themeColors["$body-background-color"] = palette.background.default;
+  themeColors["$body-container-background-color"] = palette.background.paper;
+  themeColors["$inputs-background-color"] = palette.background.paper;
+  themeColors["$error-color"] = palette.error.main;
+  themeColors["$error-background-color"] = palette.error.light;
+  Survey.StylesManager.applyTheme("default");
   return <Survey.Survey model={model} />;
 }
 

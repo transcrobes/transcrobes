@@ -19,14 +19,15 @@ const useStyles = makeStyles({
 const ConfigurationMenu = forwardRef<any, any>((props, ref) => {
   const translate = useTranslate();
   return (
-    <MenuItemLink
-      ref={ref}
-      to="/configuration"
-      primaryText={translate("pos.configuration")}
-      leftIcon={<SettingsIcon />}
-      onClick={props.onClick}
-      sidebarIsOpen
-    />
+    <></>
+    // <MenuItemLink
+    //   ref={ref}
+    //   to="/configuration"
+    //   primaryText={translate("pos.configuration")}
+    //   leftIcon={<SettingsIcon />}
+    //   // onClick={props.onClick}
+    //   sidebarIsOpen
+    // />
   );
 });
 

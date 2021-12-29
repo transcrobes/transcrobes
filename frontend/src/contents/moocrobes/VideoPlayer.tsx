@@ -38,13 +38,16 @@ const TIMER_CLEAR_PREVIOUS_MS = 5000;
 const SEEK_SECONDS = 5;
 
 const useStyles = makeStyles((theme: Theme) => ({
+  playerContainer: {
+    overflow: "auto",
+  },
   playerWrapper: {
     width: "100%",
     position: "relative",
-    [theme.breakpoints.down("sm")]: {
+    [theme.breakpoints.down("sm").toString() + " and (display-mode: !fullscreen)"]: {
       margin: `${theme.spacing(1)}px 0`,
     },
-    [theme.breakpoints.up("sm")]: {
+    [theme.breakpoints.up("sm").toString() + " and (display-mode: !fullscreen)"]: {
       margin: `${theme.spacing(2)}px 0`,
     },
   },
@@ -288,7 +291,9 @@ function VideoPlayer({
     setPlatformHelper(platformHelper);
     defineElements();
 
-    if (playerContainerRef.current) setPopupParent(playerContainerRef.current);
+    if (playerContainerRef.current) {
+      setPopupParent(playerContainerRef.current);
+    }
     setOnScreenDelayIsConsideredRead(ONSCREEN_DELAY_IS_CONSIDERED_READ);
   }, []);
 
@@ -407,14 +412,12 @@ function VideoPlayer({
       clearTimeout(timeoutId);
       setCurrentCue((cues[0] as VTTCue).text);
       setCurrentPlaybackRate(subPlaybackRate);
-      console.log("setting current subPlaybackRate", subPlaybackRate);
     } else {
       // keep the subs until they get replaced or TIMER_CLEAR_PREVIOUS_MS after they would have been removed
       const mto = window.setTimeout(() => {
         if ((() => playing)()) {
           setCurrentCue("");
           setCurrentPlaybackRate(playbackRate);
-          console.log("setting current playbackRate", playbackRate);
         }
       }, TIMER_CLEAR_PREVIOUS_MS);
       timeoutId = mto;
@@ -562,7 +565,7 @@ function VideoPlayer({
   return (
     <>
       <Container>
-        <div ref={playerContainerRef}>
+        <div ref={playerContainerRef} className={classes.playerContainer}>
           <div
             onMouseMove={handleMouseMove}
             onMouseLeave={handleMouseLeave}
@@ -716,11 +719,9 @@ function VideoPlayer({
                         setTimeDisplayFormat(timeDisplayFormat == "normal" ? "remaining" : "normal")
                       }
                       onSubPlaybackRateChange={(rate) => {
-                        console.log("trying to set setSubPlaybackRate", rate);
                         setSubPlaybackRate(rate);
                       }}
                       onPlaybackRateChange={(rate) => {
-                        console.log("trying to set setPlaybackRate", rate);
                         setPlaybackRate(rate);
                       }}
                       onToggleFullscreen={() => {

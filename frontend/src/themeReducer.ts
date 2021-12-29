@@ -1,5 +1,5 @@
 import { Reducer } from "redux";
-import { CHANGE_THEME, changeTheme } from "./configuration/actions";
+import { CHANGE_THEME, changeTheme } from "./system/actions";
 import { ThemeName } from "./lib/types";
 
 type State = ThemeName;

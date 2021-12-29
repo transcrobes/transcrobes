@@ -23,7 +23,6 @@ const useStyles = makeStyles((theme: Theme) => ({
 
 export default function VideoConfigLauncher({ ...props }: VideoConfigProps): ReactElement {
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
-  // const ref = useRef<HTMLDivElement>(null);
   const classes = useStyles();
   const open = Boolean(anchorEl);
   const dimensions = useWindowDimensions();

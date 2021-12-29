@@ -5,7 +5,7 @@ import CardContent from "@material-ui/core/CardContent";
 import Button from "@material-ui/core/Button";
 import { useTranslate, Title, TopToolbar } from "react-admin";
 import { makeStyles } from "@material-ui/core/styles";
-import { changeTheme } from "./actions";
+import { changeTheme } from "../system/actions";
 import { AppState, ThemeName } from "../lib/types";
 import { CardHeader } from "@material-ui/core";
 import HelpButton from "../components/HelpButton";

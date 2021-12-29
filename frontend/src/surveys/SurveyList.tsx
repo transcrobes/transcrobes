@@ -1,6 +1,14 @@
 import { makeStyles } from "@material-ui/core";
 import { FC } from "react";
-import { Datagrid, Button, List, ListProps, SortButton, TextField, TopToolbar } from "react-admin";
+import {
+  Datagrid,
+  List,
+  ListProps,
+  SortButton,
+  TextField,
+  TopToolbar,
+  ShowButton,
+} from "react-admin";
 import HelpButton from "../components/HelpButton";
 
 import { STATUS } from "../lib/types";
@@ -11,7 +19,7 @@ const useStyles = makeStyles({
     alignItems: "center",
   },
 });
-const ListActions: FC<any> = (props) => {
+const ListActions: FC<any> = () => {
   const classes = useStyles();
   const helpUrl = "https://transcrob.es/page/contribute/surveys/";
   return (
@@ -26,9 +34,8 @@ export const SurveyList: FC<ListProps> = (props) => {
   return (
     <List {...props} actions={<ListActions />} filter={{ status: STATUS.ACTIVE }}>
       <Datagrid rowClick="show">
-        {/* <TextField source="id" /> */}
         <TextField source="title" />
-        <Button label="Answer" />
+        <ShowButton />
       </Datagrid>
     </List>
   );
