@@ -116,7 +116,7 @@ class Import(DetailedMixin, Base):
     ]
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    import_file = Column(String(100), nullable=False)
+    import_file = Column(String(512), nullable=False)
     processing = Column(Integer, nullable=False, default=REQUESTED)
     process_type = Column(Integer, nullable=False, default=VOCABULARY_ONLY)
     analysis = Column(Text)
