@@ -46,8 +46,8 @@ const ImportCreate: FC<FieldProps<Import>> = (props) => (
         choices={[
           // FIXME: think about how to do this DRY
           { id: PROCESS_TYPE.VOCABULARY_ONLY, name: "Vocabulary Only" },
-          { id: PROCESS_TYPE.GRAMMAR_ONLY, name: "Grammar Only" },
-          { id: PROCESS_TYPE.VOCABULARY_GRAMMAR, name: "Vocabulary and Grammar" },
+          // { id: PROCESS_TYPE.GRAMMAR_ONLY, name: "Grammar Only" },
+          // { id: PROCESS_TYPE.VOCABULARY_GRAMMAR, name: "Vocabulary and Grammar" },
         ]}
         initialValue={PROCESS_TYPE.VOCABULARY_ONLY}
       />
