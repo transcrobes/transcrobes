@@ -40,17 +40,20 @@ export default function Meaning({
   const [anchorElClick, setAnchorElClick] = useState<HTMLElement | null>(null);
 
   function handleClickOpen(event: React.MouseEvent<HTMLElement, MouseEvent>) {
-    handlePopoverClose();
-    setAnchorElClick(event.currentTarget);
+    setAnchorEl(null);
+    if (editable) {
+      setAnchorElClick(event.currentTarget);
+    } else {
+      setAnchorEl(event.currentTarget);
+    }
   }
   function handleClickClose() {
+    setAnchorEl(null);
     setAnchorElClick(null);
   }
   function handlePopoverOpen(event: React.MouseEvent<HTMLElement, MouseEvent>) {
+    setAnchorElClick(null);
     setAnchorEl(event.currentTarget);
-  }
-  function handlePopoverClose() {
-    setAnchorEl(null);
   }
 
   const open = Boolean(anchorEl);
@@ -91,7 +94,7 @@ export default function Meaning({
         aria-owns={open ? "mouse-over-popover" : undefined}
         aria-haspopup="true"
         onMouseEnter={handlePopoverOpen}
-        onMouseLeave={handlePopoverClose}
+        onMouseLeave={() => setAnchorEl(null)}
         onClick={handleClickOpen}
       >
         <MeaningText defaultElements={posTrans} card={card} />
@@ -113,7 +116,7 @@ export default function Meaning({
           vertical: "top",
           horizontal: "center",
         }}
-        onClose={handlePopoverClose}
+        onClose={() => setAnchorEl(null)}
         disableRestoreFocus
       >
         <DefinitionTranslations definition={definition} />

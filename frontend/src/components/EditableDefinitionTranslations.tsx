@@ -75,7 +75,13 @@ export default function EditableDefinitionTranslations({
             </div>
           </Grid>
           <Grid item>
-            <Button variant="outlined" onClick={() => setEditing(true)}>
+            <Button
+              variant="outlined"
+              onClick={(event: React.MouseEvent<HTMLElement>) => {
+                event.stopPropagation();
+                setEditing(true);
+              }}
+            >
               Edit
             </Button>
           </Grid>
@@ -107,7 +113,10 @@ export default function EditableDefinitionTranslations({
                 <Grid item>
                   <Button
                     variant="outlined"
-                    onClick={() => handleEditFromDefinition(providerEntry)}
+                    onClick={(event: React.MouseEvent<HTMLElement>) => {
+                      event.stopPropagation();
+                      handleEditFromDefinition(providerEntry);
+                    }}
                   >
                     {providerEntry.provider === defaultProvider && !current && !editing
                       ? "Edit"
