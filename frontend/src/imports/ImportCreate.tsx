@@ -15,7 +15,7 @@ import { HelpCreateActions } from "../components/HelpCreateActions";
 
 import { Import, PROCESS_TYPE } from "../lib/types";
 
-const MAX_IMPORT_SIZE_BYTES = 5000000;
+const MAX_IMPORT_SIZE_BYTES = 15000000;
 
 const ImportCreate: FC<FieldProps<Import>> = (props) => (
   <Create
