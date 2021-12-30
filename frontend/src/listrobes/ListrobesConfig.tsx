@@ -4,9 +4,9 @@ import Select, { StylesConfig } from "react-select";
 import _ from "lodash";
 import { makeStyles, TextField, Theme, useTheme } from "@material-ui/core";
 
-import TCCheckbox from "../components/TCCheckbox";
-import { GraderConfig } from "../lib/types";
+import { GraderConfig, WordOrdering } from "../lib/types";
 import { validInt } from "../lib/funclib";
+import WordOrderSelector from "../components/WordOrderSelector";
 
 const useStyles = makeStyles((theme: Theme) => ({
   typography: {
@@ -16,7 +16,14 @@ const useStyles = makeStyles((theme: Theme) => ({
   itemsPerPage: { display: "flex", justifyContent: "space-between", padding: "0.4em" },
   itemsPerPageInput: { width: "30%" },
   checkbox: { padding: "0.4em" },
-  select: { padding: "0.4em" },
+  multiselect: { padding: "0.4em" },
+  select: {
+    display: "flex",
+    padding: "0.4em",
+    marginBottom: "0.4em",
+    justifyContent: "space-between",
+  },
+
   row: {
     border: "solid",
     display: "flex",
@@ -62,8 +69,8 @@ export function ListrobesConfig({ graderConfig, onConfigChange }: Props): ReactE
     onConfigChange({ ...graderConfig, gradeOrder: gradeOrder });
   }
 
-  function handleForceWcpmChange(e: React.ChangeEvent<HTMLInputElement>) {
-    onConfigChange({ ...graderConfig, forceWcpm: e.target.checked });
+  function handleOrderingChange(ordering: WordOrdering) {
+    onConfigChange({ ...graderConfig, itemOrdering: ordering });
   }
 
   // FIXME: this is SUPER nasty but see
@@ -90,7 +97,7 @@ export function ListrobesConfig({ graderConfig, onConfigChange }: Props): ReactE
   return (
     <div>
       <div>Taps for state</div>
-      <div className={classes.select}>
+      <div className={classes.multiselect}>
         <DragDropContext onDragEnd={handleDragEnd}>
           <Droppable droppableId="droppable">
             {(provided) => (
@@ -117,7 +124,7 @@ export function ListrobesConfig({ graderConfig, onConfigChange }: Props): ReactE
           </Droppable>
         </DragDropContext>
       </div>
-      <div className={classes.select}>
+      <div className={classes.multiselect}>
         Source word lists
         <Select
           styles={colourStyles}
@@ -128,13 +135,11 @@ export function ListrobesConfig({ graderConfig, onConfigChange }: Props): ReactE
           options={graderConfig.wordLists.sort((a, b) => a.label.localeCompare(b.label))}
         />
       </div>
-      <div>
-        <TCCheckbox
-          className={classes.checkbox}
-          name="forceWcpm"
-          label="Force word count per million ordering"
-          isSelected={graderConfig.forceWcpm}
-          onCheckboxChange={handleForceWcpmChange}
+      <div className={classes.select}>
+        <WordOrderSelector
+          onChange={handleOrderingChange}
+          value={graderConfig.itemOrdering}
+          name="itemOrdering"
         />
       </div>
       <div className={classes.itemsPerPage}>

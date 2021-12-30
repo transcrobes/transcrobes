@@ -1,12 +1,21 @@
-import { ReactElement } from "react";
+import { ChangeEvent, ReactElement } from "react";
 import Select, { StylesConfig } from "react-select";
 import _ from "lodash";
 import dayjs from "dayjs";
 
 import TCCheckbox from "../components/TCCheckbox";
-import { RepetrobesActivityConfigType } from "../lib/types";
-import { makeStyles, TextField, Theme, Typography, useTheme } from "@material-ui/core";
+import { RepetrobesActivityConfigType, WordOrdering } from "../lib/types";
+import {
+  FormControl,
+  FormControlLabel,
+  makeStyles,
+  Switch,
+  TextField,
+  Typography,
+  useTheme,
+} from "@material-ui/core";
 import { validInt } from "../lib/funclib";
+import WordOrderSelector from "../components/WordOrderSelector";
 
 interface Props {
   activityConfig: RepetrobesActivityConfigType;
@@ -15,10 +24,16 @@ interface Props {
 
 const useStyles = makeStyles(() => ({
   checkbox: { padding: "0.2em 0.5em" },
+  multiselect: {
+    padding: "0.4em",
+  },
   select: {
+    display: "flex",
+    justifyContent: "center",
     padding: "0.4em",
   },
   textbox: { display: "flex", justifyContent: "space-between", padding: "0.4em" },
+  wordSelection: { display: "flex", justifyContent: "flex-start", padding: "0.4em" },
 }));
 
 export default function RepetrobesConfig({ activityConfig, onConfigChange }: Props): ReactElement {
@@ -40,6 +55,10 @@ export default function RepetrobesConfig({ activityConfig, onConfigChange }: Pro
       wordList.selected = selectedMap.has(wordList.value);
     }
     onConfigChange({ ...activityConfig, wordLists: newWordLists });
+  }
+
+  function handleOrderingChange(ordering: WordOrdering) {
+    onConfigChange({ ...activityConfig, newCardOrdering: ordering });
   }
 
   function handleCardTypesChange(sts: any) {
@@ -90,21 +109,15 @@ export default function RepetrobesConfig({ activityConfig, onConfigChange }: Pro
       { ...activityConfig, badReviewWaitSecs: parseInt(e.target.value) * 60 },
     );
   }
+  function handleSystemWordSelectionChange(
+    event: ChangeEvent<HTMLInputElement>,
+    checked: boolean,
+  ): void {
+    onConfigChange({ ...activityConfig, systemWordSelection: !checked });
+  }
   return (
     <div>
-      <div className={classes.select}>
-        <Typography>Source word lists</Typography>
-        <Select
-          styles={colourStyles}
-          onChange={handleWordListsChange}
-          defaultValue={activityConfig.wordLists.filter((x) => x.selected)}
-          isMulti
-          name="wordLists"
-          options={activityConfig.wordLists.sort((a, b) => a.label.localeCompare(b.label))}
-          className={classes.select}
-        />
-      </div>
-      <div className={classes.select}>
+      <div className={classes.multiselect}>
         <Typography>Active card types</Typography>
         <Select
           styles={colourStyles}
@@ -120,13 +133,6 @@ export default function RepetrobesConfig({ activityConfig, onConfigChange }: Pro
         className={classes.checkbox}
         label="Show meaning question L2 synonyms"
         isSelected={activityConfig.showSynonyms}
-        onCheckboxChange={handleSimpleChange}
-      />
-      <TCCheckbox
-        name="forceWcpm"
-        className={classes.checkbox}
-        label="Force word count per million ordering"
-        isSelected={activityConfig.forceWcpm}
         onCheckboxChange={handleSimpleChange}
       />
       {/* This is really no longer useful with the character component */}
@@ -149,13 +155,6 @@ export default function RepetrobesConfig({ activityConfig, onConfigChange }: Pro
         className={classes.checkbox}
         label="Show recent phrases"
         isSelected={activityConfig.showRecents}
-        onCheckboxChange={handleSimpleChange}
-      />
-      <TCCheckbox
-        name="onlySelectedWordListRevisions"
-        className={classes.checkbox}
-        label="Filter Revisions by list"
-        isSelected={activityConfig.onlySelectedWordListRevisions}
         onCheckboxChange={handleSimpleChange}
       />
       <div className={classes.textbox}>
@@ -216,6 +215,49 @@ export default function RepetrobesConfig({ activityConfig, onConfigChange }: Pro
           variant="outlined"
         />
       </div>
+      <FormControl component="fieldset" className={classes.wordSelection}>
+        <FormControlLabel
+          control={
+            <Switch
+              checked={!activityConfig.systemWordSelection}
+              onChange={handleSystemWordSelectionChange}
+            />
+          }
+          label="Manual Review Selection"
+        />
+        {!activityConfig.systemWordSelection && (
+          <>
+            <div className={classes.multiselect}>
+              <Typography>Source word lists</Typography>
+              <Select
+                styles={colourStyles}
+                onChange={handleWordListsChange}
+                defaultValue={activityConfig.wordLists.filter((x) => x.selected)}
+                isMulti
+                name="wordLists"
+                options={activityConfig.wordLists.sort((a, b) => a.label.localeCompare(b.label))}
+                className={classes.multiselect}
+              />
+            </div>
+            <div className={classes.multiselect}>
+              <WordOrderSelector
+                className={classes.multiselect}
+                onChange={handleOrderingChange}
+                value={activityConfig.newCardOrdering}
+                name="newCardOrdering"
+                label="New Card Ordering"
+              />
+            </div>
+            <TCCheckbox
+              name="onlySelectedWordListRevisions"
+              className={classes.checkbox}
+              label="Filter Revisions by list"
+              isSelected={activityConfig.onlySelectedWordListRevisions}
+              onCheckboxChange={handleSimpleChange}
+            />
+          </>
+        )}
+      </FormControl>
     </div>
   );
 }

@@ -25,6 +25,8 @@ export type SIMPLE_POS_TYPES =
   | "ADJ"
   | "MODAL";
 
+export type WordOrdering = "Natural" | "WCPM" | "Personal";
+
 export const ZH_TB_POS_TO_SIMPLE_POS: { [key: string]: SIMPLE_POS_TYPES } = {
   // see src/app/zhhans/__init__.py for more details, if that is updated, then this should be too
   // TODO: consider getting/updating this via the API, to guarantee python and js always agree
@@ -106,7 +108,7 @@ export const ZH_TB_POS_LABELS: { [key in TREEBANK_POS_TYPES]: string } = {
   NT: "Temporal noun", // temporal noun
   OD: "Ordinal number", // ordinal number
   ON: "Onomatopoeia", // onomatopoeia ,
-  P: 'Preposition (excl "and"', // preposition excl. and
+  P: 'Preposition (excl "and")', // preposition excl. and
   PN: "Pronoun", // pronoun
   PU: "Punctuation", // punctuation
   SB: 'Short "BEI"', // in short bei-const ,
@@ -414,8 +416,9 @@ export type RepetrobesActivityConfigType = {
   badReviewWaitSecs: number;
   maxNew: number;
   maxRevisions: number;
-  forceWcpm: boolean;
+  newCardOrdering: WordOrdering;
   dayStartsHour: number;
+  systemWordSelection: boolean;
   wordLists: SelectableListElementType[];
   todayStarts: number;
   onlySelectedWordListRevisions: boolean;
@@ -583,7 +586,7 @@ export type ListFirstSuccessStats = {
 
 export type GraderConfig = {
   gradeOrder: GradesType[];
-  forceWcpm: boolean;
+  itemOrdering: WordOrdering;
   itemsPerPage: number;
   wordLists: SelectableListElementType[];
 };

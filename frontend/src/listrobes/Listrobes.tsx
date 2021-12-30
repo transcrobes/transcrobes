@@ -13,6 +13,7 @@ import {
   GradesType,
   SelectableListElementType,
   VocabReview,
+  WordOrdering,
 } from "../lib/types";
 import { AbstractWorkerProxy } from "../lib/proxies";
 import { TopToolbar } from "react-admin";
@@ -22,7 +23,7 @@ import SearchLoading from "../components/SearchLoading";
 
 const DATA_SOURCE = "listrobes.jsx";
 const DEFAULT_ITEMS_PER_PAGE = 50;
-const DEFAULT_FORCE_WCPM = false;
+const DEFAULT_ITEM_ORDERING: WordOrdering = "Natural";
 const MIN_LOOKED_AT_EVENT_DURATION = 1300; // milliseconds
 let timeoutId: number;
 
@@ -55,7 +56,7 @@ export function Listrobes({ proxy }: Props): ReactElement {
 
   const [graderConfig, setGraderConfig] = useState<GraderConfig>({
     gradeOrder: GRADES,
-    forceWcpm: DEFAULT_FORCE_WCPM,
+    itemOrdering: DEFAULT_ITEM_ORDERING,
     itemsPerPage: DEFAULT_ITEMS_PER_PAGE,
     wordLists: [],
   });
@@ -96,7 +97,7 @@ export function Listrobes({ proxy }: Props): ReactElement {
   function handleConfigChange(graderConfigNew: GraderConfig) {
     if (
       graderConfigNew.itemsPerPage !== graderConfig.itemsPerPage ||
-      graderConfigNew.forceWcpm !== graderConfig.forceWcpm ||
+      graderConfigNew.itemOrdering !== graderConfig.itemOrdering ||
       !_.isEqual(graderConfigNew.wordLists, graderConfig.wordLists)
     ) {
       proxy.sendMessage(

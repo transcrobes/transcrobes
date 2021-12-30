@@ -3,11 +3,15 @@ import { $enum } from "ts-enum-util";
 import { CARD_TYPES } from "../database/Schema";
 import { getSettingsValue, setSettingsValue } from "../lib/appSettings";
 import { ServiceWorkerProxy } from "../lib/proxies";
-import { RepetrobesActivityConfigType, SelectableListElementType } from "../lib/types";
+import {
+  RepetrobesActivityConfigType,
+  SelectableListElementType,
+  WordOrdering,
+} from "../lib/types";
 
 const DATA_SOURCE = "repetrobes/funclib.ts";
 
-const DEFAULT_FORCE_WCPM = false; // repeated from listrobes, show this be the same?
+const DEFAULT_ITEM_ORDERING: WordOrdering = "Personal"; // repeated from listrobes, show this be the same?
 const DEFAULT_ONLY_SELECTED_WORDLIST_REVISIONS = false;
 const DEFAULT_QUESTION_SHOW_SYNONYMS = false;
 const DEFAULT_QUESTION_SHOW_PROGRESS = false;
@@ -17,11 +21,13 @@ const DEFAULT_DAY_STARTS_HOUR = 0;
 const DEFAULT_BAD_REVIEW_WAIT_SECS = 600;
 const DEFAULT_MAX_NEW = 20;
 const DEFAULT_MAX_REVISIONS = 100;
+const DEFAULT_SYSTEM_WORD_SELECTION = true;
 export const EMPTY_ACTIVITY = {
   badReviewWaitSecs: DEFAULT_BAD_REVIEW_WAIT_SECS,
   maxNew: DEFAULT_MAX_NEW,
   maxRevisions: DEFAULT_MAX_REVISIONS,
-  forceWcpm: DEFAULT_FORCE_WCPM,
+  systemWordSelection: DEFAULT_SYSTEM_WORD_SELECTION,
+  newCardOrdering: DEFAULT_ITEM_ORDERING,
   onlySelectedWordListRevisions: DEFAULT_ONLY_SELECTED_WORDLIST_REVISIONS,
   dayStartsHour: DEFAULT_DAY_STARTS_HOUR,
   wordLists: [],

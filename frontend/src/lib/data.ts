@@ -26,13 +26,13 @@ import {
   WordDetailsRxType,
   WordListNamesType,
   RecentSentencesType,
-  PosSentences,
   InputLanguage,
   RecentSentencesStoredType,
   DailyReviewables,
   CharacterType,
   DefinitionType,
   WordDetailsType,
+  WordOrdering,
 } from "./types";
 
 import {
@@ -751,6 +751,52 @@ async function practiceCardsForWord(
   }
 }
 
+async function orderVocabReviews(
+  db: TranscrobesDatabase,
+  ordering: WordOrdering,
+  potentialWordIds: string[],
+): Promise<DefinitionDocument[]> {
+  const existingCards = new Set<string>((await db.cards.find().exec()).flatMap((x) => x.wordId()));
+  const wordIdsNoCard = [...new Set<string>(potentialWordIds.filter((x) => !existingCards.has(x)))];
+  const potentialWordsMap = await db.definitions.findByIds(wordIdsNoCard);
+  let potentialWords: DefinitionDocument[] = [];
+  if (ordering === "WCPM") {
+    potentialWords = [...potentialWordsMap.values()].sort(sortByWcpm);
+  } else if (ordering === "Personal") {
+    const seenWords = await db.word_model_stats.findByIds(wordIdsNoCard);
+    const orderedSeenWords = [...seenWords.values()].sort((a, b) => {
+      return (b.nbSeen || 0) - (a.nbSeen || 0);
+    });
+    // get the ones we have seen that have no cards, ordered by times seen
+    for (let i = 0; i < orderedSeenWords.length; i++) {
+      const word = potentialWordsMap.get(orderedSeenWords[i].id);
+      if (word) {
+        potentialWords.push(word);
+      }
+    }
+    // get the rest with natural ordering (ie, no extra ordering)
+    for (let i = 0; i < wordIdsNoCard.length; i++) {
+      if (!seenWords.has(wordIdsNoCard[i])) {
+        const word = potentialWordsMap.get(wordIdsNoCard[i]);
+        if (word) {
+          potentialWords.push(word);
+        }
+      }
+    }
+  } else {
+    // TODO: this ordering is a bit arbitrary. If there is more than one list that has duplicates then
+    // I don't know which version gets ignored, though it's likely the second. Is this what is wanted?
+    for (let i = 0; i < wordIdsNoCard.length; i++) {
+      const word = potentialWordsMap.get(wordIdsNoCard[i]);
+      if (word) {
+        potentialWords.push(word);
+      }
+    }
+  }
+
+  return potentialWords;
+}
+
 async function getVocabReviews(
   db: TranscrobesDatabase,
   graderConfig: GraderConfig,
@@ -762,23 +808,8 @@ async function getVocabReviews(
   }
   const wordListObjects = (await db.wordlists.findByIds(selectedLists)).values();
   const potentialWordIds = [...new Set<string>([...wordListObjects].flatMap((x) => x.wordIds))];
-  const existingWords = new Set<string>((await db.cards.find().exec()).flatMap((x) => x.wordId()));
 
-  const potentialWordsMap = await db.definitions.findByIds(potentialWordIds);
-  let potentialWords: DefinitionDocument[]; //  = [...potentialWordsMap.values()].filter(x => !existingWords.has(x.wordId));
-
-  if (graderConfig.forceWcpm) {
-    potentialWords = [...potentialWordsMap.values()]
-      .filter((x) => !existingWords.has(x.id))
-      .sort(sortByWcpm);
-  } else {
-    // TODO: this ordering is a bit arbitrary. If there is more than one list that has duplicates then
-    // I don't know which version gets ignored, though it's likely the second. Is this what is wanted?
-    potentialWords = [...potentialWordIds]
-      .map((x) => potentialWordsMap.get(x))
-      .filter((x) => x && !existingWords.has(x.id)) as DefinitionDocument[];
-  }
-
+  const potentialWords = await orderVocabReviews(db, graderConfig.itemOrdering, potentialWordIds);
   return potentialWords
     .slice(0, graderConfig.itemsPerPage)
     .filter((x) => !!x)
@@ -804,22 +835,93 @@ function getEmptyDailyReviewables(): DailyReviewables {
   };
 }
 
-function orderedPotentialCardsMap(
+async function orderedPotentialCardsMap(
+  db: TranscrobesDatabase,
+  ordering: WordOrdering,
   inPotentialCardsMap: Map<string, Set<string>>,
   potentialWordsMap: Map<string, DefinitionDocument>,
-): Map<string, Set<string>> {
-  const potentialWords: DefinitionDocument[] = [];
-  for (const wordId of inPotentialCardsMap.keys()) {
-    const def = potentialWordsMap.get(wordId);
-    if (def) potentialWords.push(def);
+): Promise<Map<string, Set<string>>> {
+  // By default order according to the order of the lists or by wcpm from the Ghent lads
+  // we have the final set of potential cards, now we just need to set the final ordering
+  if (ordering === "WCPM") {
+    const potentialWords: DefinitionDocument[] = [];
+    for (const wordId of inPotentialCardsMap.keys()) {
+      const def = potentialWordsMap.get(wordId);
+      if (def) potentialWords.push(def);
+    }
+    potentialWords.sort(sortByWcpm);
+    const potentialCardsMap = new Map<string, Set<string>>();
+    for (const def of potentialWords) {
+      const goodDef = inPotentialCardsMap.get(def.id);
+      if (goodDef) potentialCardsMap.set(def.id, goodDef);
+    }
+    return potentialCardsMap;
+  } else if (ordering === "Personal") {
+    const cardWordIds = [
+      ...new Set<string>([...inPotentialCardsMap.keys()].map((x) => getWordId(x))),
+    ];
+    const seenWords = await db.word_model_stats.findByIds(cardWordIds);
+    const orderedSeenWords = [...seenWords.values()].sort((a, b) => {
+      return (b.nbSeen || 0) - (a.nbSeen || 0);
+    });
+    const potentialCardsMap = new Map<string, Set<string>>();
+    // get the ones we have seen that have no cards, ordered by times seen
+    for (let i = 0; i < orderedSeenWords.length; i++) {
+      const goodDef = inPotentialCardsMap.get(orderedSeenWords[i].id);
+      if (goodDef) potentialCardsMap.set(orderedSeenWords[i].id, goodDef);
+    }
+    // get the rest with natural ordering (ie, no extra ordering)
+    const inWordIds = [...inPotentialCardsMap.keys()];
+    for (let i = 0; i < inWordIds.length; i++) {
+      // here there is no reason to check whether it's already there - setting is O(1) and
+      // setting an object that is already present won't change the ordering
+      const goodDef = inPotentialCardsMap.get(inWordIds[i]);
+      if (goodDef) potentialCardsMap.set(inWordIds[i], goodDef);
+    }
+    return potentialCardsMap;
+  } else {
+    return inPotentialCardsMap;
   }
-  potentialWords.sort(sortByWcpm);
-  const potentialCardsMap = new Map<string, Set<string>>();
-  for (const def of potentialWords) {
-    const goodDef = inPotentialCardsMap.get(def.id);
-    if (goodDef) potentialCardsMap.set(def.id, goodDef);
+}
+
+async function getPotentialWordIds(
+  db: TranscrobesDatabase,
+  activityConfig: RepetrobesActivityConfigType,
+): Promise<Set<string>> {
+  if (activityConfig.systemWordSelection) {
+    const seenWords = await db.word_model_stats.find().exec();
+    const potentialWordIds = new Set<string>(
+      [...seenWords.values()]
+        .sort((a, b) => {
+          return (b.nbSeen || 0) - (a.nbSeen || 0);
+        })
+        .map((x) => x.id),
+    );
+    const selectedLists = (await getDefaultWordLists(db))
+      .filter((x) => x.selected)
+      .map((x) => x.value);
+    const selectedListsWordIds = await db.wordlists.findByIds(selectedLists);
+    for (const sl of selectedLists) {
+      const wordlist = selectedListsWordIds.get(sl);
+      if (wordlist) {
+        for (const wordId of wordlist.wordIds) {
+          potentialWordIds.add(wordId);
+        }
+      }
+    }
+    return potentialWordIds;
+  } else {
+    const selectedLists = activityConfig.wordLists.filter((x) => x.selected).map((x) => x.value);
+    // wordIds that *haven't* already been reviewed today and are in the right lists
+    // so this is BOTH the possible new words *and* reviews
+    const selectedListsWordIds = await db.wordlists.findByIds(selectedLists);
+    // the ids of the potential words, ordered by list order (first by list, then by ordering within
+    // the list)
+    const potentialWordIds = new Set<string>(
+      [...selectedLists.map((sl) => selectedListsWordIds.get(sl))].flatMap((x) => x!.wordIds),
+    );
+    return potentialWordIds;
   }
-  return potentialCardsMap;
 }
 
 async function getSRSReviews(
@@ -830,15 +932,7 @@ async function getSRSReviews(
     console.debug("No wordLists or config not usable, not trying to find reviews");
     return getEmptyDailyReviewables();
   }
-  const selectedLists = activityConfig.wordLists.filter((x) => x.selected).map((x) => x.value);
-  // wordIds that *haven't* already been reviewed today and are in the right lists
-  // so this is BOTH the possible new words *and* reviews
-  const selectedListsWordIds = await db.wordlists.findByIds(selectedLists);
-  // the ids of the potential words, ordered by list order (first by list, then by ordering within
-  // the list)
-  const potentialWordIds = new Set<string>(
-    [...selectedLists.map((sl) => selectedListsWordIds.get(sl))].flatMap((x) => x!.wordIds),
-  );
+  const potentialWordIds = await getPotentialWordIds(db, activityConfig);
   const allKnownWordIds = new Set<string>(
     [...(await db.cards.find().where("known").eq(true).exec())].map((x) => x.wordId()),
   );
@@ -925,10 +1019,14 @@ async function getSRSReviews(
     }
   }
 
-  // By default (see above) order according to the order of the lists or by wcpm from the Ghent lads
-  // we have the final set of potential cards, now we just need to set the final ordering
-  if (activityConfig.forceWcpm) {
-    potentialCardsMap = orderedPotentialCardsMap(potentialCardsMap, allReviewableDefinitions);
+  if (!activityConfig.systemWordSelection) {
+    // systemWordSelection is already sorted
+    potentialCardsMap = await orderedPotentialCardsMap(
+      db,
+      activityConfig.newCardOrdering,
+      potentialCardsMap,
+      allReviewableDefinitions,
+    );
   }
 
   // Get all the chars that we have for all the definitions graphs
