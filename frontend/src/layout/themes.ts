@@ -1,3 +1,5 @@
+import { PaletteType } from "@material-ui/core";
+
 export const darkTheme = {
   palette: {
     primary: {
@@ -6,7 +8,7 @@ export const darkTheme = {
     secondary: {
       main: "#FBBA72",
     },
-    type: "dark" as any, // Switching the dark mode on is a single property value change.
+    type: "dark" as PaletteType, // Switching the dark mode on is a single property value change.
   },
   overrides: {
     MuiAppBar: {
@@ -58,7 +60,7 @@ export const lightTheme = {
     background: {
       default: "#fcfcfe",
     },
-    type: "light" as any,
+    type: "light" as PaletteType,
   },
   shape: {
     borderRadius: 10,
