@@ -243,7 +243,7 @@ export default function Options(): JSX.Element {
       <FormGroup className={classes.groups}>
         <FormControl className={classes.controls}>
           <InputLabel shrink>Glossing</InputLabel>
-          <GlossingSelector value={glossing} onGlossingChange={setGlossing} />
+          <GlossingSelector value={glossing} onChange={setGlossing} />
         </FormControl>
         <FormControlLabel
           className={classes.controls}

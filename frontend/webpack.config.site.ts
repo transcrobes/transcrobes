@@ -43,6 +43,7 @@ const commonConfig = merge<Configuration>([
   loadStaticResources("", ""),
   parts.injectManifest({ limit: mode === "development" ? 100 : 15 }),
   parts.loadCSS(),
+  parts.loadFonts(),
   parts.loadTypescript(),
   parts.loadImages(),
   parts.loadSVGR(),

@@ -95,7 +95,7 @@ export default function VideoConfig({
               containerRef={containerRef}
               className={classes.select}
               value={glossing}
-              onGlossingChange={onGlossingChange}
+              onChange={onGlossingChange}
             />
           </Grid>
         </div>

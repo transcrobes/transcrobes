@@ -1,5 +1,16 @@
 import { PaletteType } from "@material-ui/core";
 
+// FIXME: find out why this doesn't work, a
+// import notasansregular from "../css/NotoSansSC-Regular.otf";
+// const notafont = {
+//   fontFamily: "notasansregular",
+//   fontStyle: "normal",
+//   fontWeight: "normal",
+//   src: `
+//     url(${notasansregular}) format('opentype')
+//   `,
+// };
+
 export const darkTheme = {
   palette: {
     primary: {
@@ -10,7 +21,16 @@ export const darkTheme = {
     },
     type: "dark" as PaletteType, // Switching the dark mode on is a single property value change.
   },
+  typography: {
+    fontFamily: ["Roboto", "Helvetica", "Arial", "sans-serif", "notasansregular"].join(","),
+  },
   overrides: {
+    // FIXME: find out why this doesn't work, a
+    // MuiCssBaseline: {
+    //   "@global": {
+    //     "@font-face": [notafont],
+    //   },
+    // },
     MuiAppBar: {
       colorSecondary: {
         color: "#ffffffb3",
@@ -65,7 +85,16 @@ export const lightTheme = {
   shape: {
     borderRadius: 10,
   },
+  typography: {
+    fontFamily: ["Roboto", "Helvetica", "Arial", "sans-serif", "notasansregular"].join(","),
+  },
   overrides: {
+    // FIXME: find out why this doesn't work, a
+    // MuiCssBaseline: {
+    //   "@global": {
+    //     "@font-face": [notafont],
+    //   },
+    // },
     RaMenuItemLink: {
       root: {
         borderLeft: "3px solid #fff",

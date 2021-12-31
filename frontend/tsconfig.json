@@ -29,5 +29,5 @@
     "noImplicitThis": true,
     "strictNullChecks": true
   },
-  "include": [ "src" ]
+  "include": [ "src", "src/decs.d.ts" ]
 }

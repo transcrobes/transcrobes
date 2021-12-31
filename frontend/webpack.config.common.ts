@@ -197,6 +197,19 @@ export function loadSVG(): webpack.Configuration {
   };
 }
 
+export function loadFonts(): webpack.Configuration {
+  return {
+    module: {
+      rules: [
+        {
+          test: /\.(otf|ttf)$/,
+          type: "asset/resource",
+        },
+      ],
+    },
+  };
+}
+
 export function loadImages({ limit }: { limit: number } = { limit: 50000 }): webpack.Configuration {
   return {
     module: {

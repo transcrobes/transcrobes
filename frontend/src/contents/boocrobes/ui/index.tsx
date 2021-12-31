@@ -15,17 +15,13 @@ import { USER_STATS_MODE_KEY_VALUES } from "../../../lib/lib";
 import { AppState } from "../../../lib/types";
 import {
   ColorMode,
-  HtmlReaderState,
   ReaderReturn,
   ReaderArguments,
   FontFamily,
   D2ColorMode,
+  FontFamilyChinese,
+  HtmlState,
 } from "../types";
-
-type HtmlState = HtmlReaderState & {
-  reader: D2Reader | undefined;
-  location: undefined | Locator;
-};
 
 /**
  * If we provide injectables that are not found, the app won't load at all.
@@ -42,87 +38,103 @@ export type HtmlAction =
   | { type: "SET_SCROLL"; isScrolling: boolean }
   | { type: "SET_FONT_SIZE"; size: number }
   | { type: "SET_FONT_FAMILY"; family: FontFamily }
+  | { type: "SET_FONT_FAMILY_CHINESE"; family: FontFamilyChinese }
   | { type: "SET_CURRENT_TOC_URL"; currentTocUrl: string }
   | { type: "LOCATION_CHANGED"; location: Locator }
   | { type: "BOOK_BOUNDARY_CHANGED"; atStart: boolean; atEnd: boolean };
 
 function htmlReducer(state: HtmlState, action: HtmlAction): HtmlState {
+  let newState = state;
   switch (action.type) {
     case "SET_READER": {
-      // set all the initial settings taken from the reader
-      const settings = action.reader.currentSettings();
+      if (state.location) {
+        action.reader.goTo(state.location);
+      }
       return {
         reader: action.reader,
-        isScrolling: settings.verticalScroll,
-        fontSize: settings.fontSize,
-        fontFamily: r2FamilyToFamily[settings.fontFamily] ?? "publisher",
-        currentTocUrl: action.reader.mostRecentNavigatedTocItem(),
+        isScrolling: state.isScrolling,
+        fontSize: state.fontSize,
+        currentTocUrl: state.currentTocUrl,
+        onUpdate: state.onUpdate,
+        fontFamily: r2FamilyToFamily[state.fontFamily] ?? "publisher",
+        fontFamilyChinese: state.fontFamilyChinese ?? "notasanslight",
         glossing: state.glossing,
         mouseover: state.mouseover,
         segmentation: state.segmentation,
-        location: undefined,
-        atStart: true,
-        atEnd: false,
+        location: state.location,
+        atStart: state.atStart,
+        atEnd: state.atEnd,
       };
     }
-
     case "SET_GLOSSING":
-      return {
+      newState = {
         ...state,
         glossing: action.glossing,
       };
-
+      break;
     case "SET_SEGMENTATION":
-      return {
+      newState = {
         ...state,
         segmentation: action.segmentation,
       };
-
+      break;
     case "SET_MOUSEOVER":
-      return {
+      newState = {
         ...state,
         mouseover: action.mouseover,
       };
-
+      break;
     case "SET_SCROLL":
-      return {
+      newState = {
         ...state,
         isScrolling: action.isScrolling,
       };
-
+      break;
     case "SET_FONT_SIZE":
-      return {
+      newState = {
         ...state,
         fontSize: action.size,
       };
-
+      break;
     case "SET_FONT_FAMILY":
-      return {
+      newState = {
         ...state,
         fontFamily: action.family,
       };
-
+      break;
+    case "SET_FONT_FAMILY_CHINESE":
+      newState = {
+        ...state,
+        fontFamilyChinese: action.family,
+      };
+      break;
     case "SET_CURRENT_TOC_URL":
-      return {
+      newState = {
         ...state,
         currentTocUrl: action.currentTocUrl,
       };
-
+      break;
     case "LOCATION_CHANGED":
-      return {
+      newState = {
         ...state,
         location: action.location,
       };
-
+      break;
     case "BOOK_BOUNDARY_CHANGED":
-      return {
+      newState = {
         ...state,
         atStart: action.atStart,
         atEnd: action.atEnd,
       };
+      break;
     default:
       throw new Error("unknown state operation");
   }
+  if (newState.onUpdate) {
+    const { onUpdate, reader, ...readerSettings } = newState;
+    newState.onUpdate(readerSettings);
+  }
+  return newState;
 }
 
 const FONT_SIZE_STEP = 4;
@@ -132,30 +144,32 @@ export default function useHtmlReader(args: ReaderArguments): ReaderReturn {
     webpubManifestUrl,
     manifest,
     getContent,
+    doConfigUpdate,
     injectables = defaultInjectables,
     injectablesFixed = defaultInjectablesFixed,
     height = DEFAULT_HEIGHT,
     growWhenScrolling = DEFAULT_SHOULD_GROW_WHEN_SCROLLING,
     readerSettings,
-  } = args ?? {};
+  } = args;
 
-  const defaultIsScrolling = readerSettings?.isScrolling ?? false;
-
+  const defaultIsScrolling = !!readerSettings?.isScrolling;
   const [state, dispatch] = React.useReducer(htmlReducer, {
     isScrolling: defaultIsScrolling,
-    fontSize: 16,
-    glossing: window.readerConfig.glossing,
-    mouseover: window.readerConfig.mouseover,
-    segmentation: window.readerConfig.segmentation,
-    fontFamily: "sans-serif",
-    currentTocUrl: null,
+    fontSize: readerSettings?.fontSize || 16,
+    glossing: readerSettings?.glossing || window.readerConfig.glossing,
+    mouseover: readerSettings?.mouseover || window.readerConfig.mouseover,
+    segmentation: readerSettings?.segmentation || window.readerConfig.segmentation,
+    fontFamily: readerSettings?.fontFamily || "sans-serif",
+    fontFamilyChinese: readerSettings?.fontFamilyChinese || "notasanslight",
+    currentTocUrl: readerSettings?.currentTocUrl || null,
+    atStart: readerSettings?.atStart || true,
+    atEnd: readerSettings?.atEnd || false,
+    location: readerSettings?.location,
     reader: undefined,
-    location: undefined,
-    atStart: true,
-    atEnd: false,
+    onUpdate: doConfigUpdate,
   });
+
   const [forceRefresh, setForceRefresh] = useState(false);
-  // const theme = useTheme();
   const theme = useSelector((state: AppState) => state.theme);
   // used to handle async errors thrown in useEffect
   const [error, setError] = React.useState<Error | undefined>(undefined);
@@ -163,7 +177,7 @@ export default function useHtmlReader(args: ReaderArguments): ReaderReturn {
     throw error;
   }
 
-  const { reader, fontSize, location } = state;
+  const { reader, fontSize, fontFamily, fontFamilyChinese } = state;
 
   // initialize the reader
   React.useEffect(() => {
@@ -174,6 +188,12 @@ export default function useHtmlReader(args: ReaderArguments): ReaderReturn {
     const userSettings = {
       verticalScroll: !!state.isScrolling,
       appearance: getColorMode(theme),
+      fontFamily: `${state.fontFamily},${state.fontFamilyChinese}`,
+      fontSize: state.fontSize,
+      currentTocUrl: state.currentTocUrl,
+      location: state.location,
+      atStart: state.atStart,
+      atEnd: state.atEnd,
     };
 
     D2Reader.build({
@@ -194,10 +214,10 @@ export default function useHtmlReader(args: ReaderArguments): ReaderReturn {
       userSettings: userSettings,
       api: {
         getContent: getContent as GetContent,
-        updateCurrentLocation: async (location: Locator) => {
+        updateCurrentLocation: async (loc: Locator) => {
           // This is needed so that setBookBoundary has the updated "reader" value.
-          dispatch({ type: "LOCATION_CHANGED", location: location });
-          return location;
+          dispatch({ type: "LOCATION_CHANGED", location: loc });
+          return loc;
         },
         onError: function (e: Error) {
           setError(e);
@@ -218,9 +238,16 @@ export default function useHtmlReader(args: ReaderArguments): ReaderReturn {
 
   // Re-calculate page location on scroll/TOC navigation/page button press
   React.useEffect(() => {
-    if (!location || !reader) return;
+    if (!state.location || !reader) return;
     setBookBoundary(reader, dispatch);
-  }, [location, reader, state.isScrolling, state.glossing, state.segmentation, state.mouseover]);
+  }, [
+    state.location,
+    reader,
+    state.isScrolling,
+    state.glossing,
+    state.segmentation,
+    state.mouseover,
+  ]);
 
   // prev and next page functions
   const goForward = React.useCallback(async () => {
@@ -276,10 +303,26 @@ export default function useHtmlReader(args: ReaderArguments): ReaderReturn {
       if (!reader) return;
       const r2Family = familyToR2Family[family];
       // the applyUserSettings type is incorrect. We are supposed to pass in a string.
-      await reader.applyUserSettings({ fontFamily: r2Family as any });
+      await reader.applyUserSettings({
+        fontFamily:
+          r2Family === "Original" ? "Original" : (`${r2Family},${state.fontFamilyChinese}` as any),
+      });
       dispatch({ type: "SET_FONT_FAMILY", family });
     },
-    [reader],
+    [reader, fontFamily, fontFamilyChinese],
+  );
+
+  const setFontFamilyChinese = React.useCallback(
+    async (family: FontFamilyChinese) => {
+      if (!reader) return;
+      // the applyUserSettings type is incorrect. We are supposed to pass in a string.
+      const r2Family = familyToR2Family[state.fontFamily];
+      await reader.applyUserSettings({
+        fontFamily: r2Family === "Original" ? "Original" : (`${r2Family},${family}` as any),
+      });
+      dispatch({ type: "SET_FONT_FAMILY_CHINESE", family });
+    },
+    [reader, fontFamily, fontFamilyChinese],
   );
 
   const goToPage = React.useCallback(
@@ -375,6 +418,7 @@ export default function useHtmlReader(args: ReaderArguments): ReaderReturn {
       increaseFontSize,
       decreaseFontSize,
       setFontFamily,
+      setFontFamilyChinese,
       goToPage,
     },
   };
@@ -402,6 +446,7 @@ const familyToR2Family: Record<FontFamily, string> = {
   serif: "serif",
   "sans-serif": "sans-serif",
   "open-dyslexic": "opendyslexic",
+  monospace: "monospace",
 };
 /**
  * And vice-versa
@@ -411,6 +456,7 @@ const r2FamilyToFamily: Record<string, FontFamily | undefined> = {
   serif: "serif",
   "sans-serif": "sans-serif",
   opendyslexic: "open-dyslexic",
+  monospace: "monospace",
 };
 
 async function setBookBoundary(

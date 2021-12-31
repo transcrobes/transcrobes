@@ -6,6 +6,7 @@ import {
   DefinitionDocument,
   WordModelStatsDocument,
 } from "../database/Schema";
+import { ServiceWorkerProxy } from "./proxies";
 
 // eslint-disable-next-line @typescript-eslint/no-empty-function
 export function noop(): void {}
@@ -191,6 +192,14 @@ export enum ORDER_BY {
   ABSOLUTE_FREQUENCY = 0, // "Absolute Frequency"
   IMPORT_FREQUENCY = 1, // "Frequency in import"
 }
+
+export type ContentParams = {
+  id: string;
+};
+
+export type ContentProps = {
+  proxy: ServiceWorkerProxy;
+};
 
 function capitalise(str: string) {
   return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();

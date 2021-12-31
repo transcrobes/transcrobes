@@ -2,9 +2,6 @@ import { Injectable } from "@d-i-t-a/reader/dist/types/navigator/IFrameNavigator
 // eslint-disable-next-line no-var
 declare var __webpack_hash__: any;
 
-const origin = window.location.origin;
-//FIXME: check whether origin is necessary at all
-
 const injectables: Injectable[] = [
   {
     type: "style",

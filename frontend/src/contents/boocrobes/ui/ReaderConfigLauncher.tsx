@@ -33,7 +33,7 @@ export default function ReaderConfigLauncher(props: Props): ReactElement {
         onClick={toggleDrawer(true)}
       />
       <Drawer anchor="left" open={isOpen} onClose={toggleDrawer(false)}>
-        <Box sx={{ width: width }} role="presentation">
+        <Box sx={{ width }} role="presentation">
           <ReaderConfig navigator={props.navigator} readerState={props.state} />
         </Box>
       </Drawer>

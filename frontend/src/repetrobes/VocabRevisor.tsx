@@ -1,5 +1,5 @@
 import { ReactElement } from "react";
-import { Button } from "@material-ui/core";
+import { Button, Theme } from "@material-ui/core";
 
 import { CARD_TYPES, getCardType, getWordId } from "../database/Schema";
 import { wordIdsFromModels } from "../lib/funclib";

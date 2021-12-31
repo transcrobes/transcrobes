@@ -1,21 +1,19 @@
 import { ReactElement, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import Button from "@material-ui/core/Button";
-import { ServiceWorkerProxy } from "../../lib/proxies";
 import VideoPlayer from "./VideoPlayer";
 import { VideoConfig, VideoContentConfig } from "./types";
-import { ContentConfigType, DefinitionType, Content, SUBS_DATA_SUFFIX } from "../../lib/types";
+import {
+  ContentConfigType,
+  DefinitionType,
+  Content,
+  SUBS_DATA_SUFFIX,
+  ContentProps,
+  ContentParams,
+} from "../../lib/types";
 import { fetchPlus, USER_STATS_MODE } from "../../lib/lib";
 import { getSubsURL, wordIdsFromModels } from "../../lib/funclib";
 import { Container, makeStyles } from "@material-ui/core";
-
-type ContentParams = {
-  id: string;
-};
-
-type ContentProps = {
-  proxy: ServiceWorkerProxy;
-};
 
 const useStyles = makeStyles(() => ({
   button: { padding: "2em" },

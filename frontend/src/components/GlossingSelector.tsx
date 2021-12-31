@@ -4,14 +4,14 @@ import { USER_STATS_MODE, USER_STATS_MODE_KEY_VALUES } from "../lib/lib";
 
 interface Props {
   containerRef?: React.RefObject<HTMLDivElement>;
-  onGlossingChange: (glossing: number) => void;
+  onChange: (glossing: number) => void;
   className?: string;
   value: USER_STATS_MODE_KEY_VALUES;
 }
 
 export default function GlossingSelector({
   containerRef,
-  onGlossingChange,
+  onChange,
   className,
   value,
 }: Props): ReactElement {
@@ -22,7 +22,7 @@ export default function GlossingSelector({
       value={value}
       label="Glossing"
       onChange={(event) => {
-        onGlossingChange(event.target.value as number);
+        onChange(event.target.value as number);
       }}
     >
       <MenuItem value={USER_STATS_MODE.NO_GLOSS}>None</MenuItem>

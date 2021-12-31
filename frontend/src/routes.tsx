@@ -38,7 +38,12 @@ export default function routes(config: ComponentsConfig): CustomRoutes {
     <RouteWithoutLayout exact path="/signup" render={() => <Signup />} noLayout />,
 
     // manual auth in the page
-    <RouteWithoutLayout exact path="/contents/:id/read" render={() => <Reader />} noLayout />,
+    <RouteWithoutLayout
+      exact
+      path="/contents/:id/read"
+      render={() => <Reader proxy={config.proxy} />}
+      noLayout
+    />,
     <RouteWithoutLayout exact path="/init" render={() => <Init />} noLayout />,
 
     // authed

@@ -13,7 +13,13 @@ export const WebpubMimeType = "application/webpub";
 export type ColorMode = ThemeName | "sepia";
 export type D2ColorMode = "readium-default-on" | "readium-night-on" | "readium-sepia-on";
 
-export type FontFamily = "publisher" | "serif" | "sans-serif" | "open-dyslexic";
+export type FontFamily = "publisher" | "serif" | "sans-serif" | "open-dyslexic" | "monospace";
+
+export type FontFamilyChinese =
+  | "notasanslight"
+  | "notaserifextralight"
+  | "notaserifregular"
+  | "mashanzheng";
 
 export type Navigator = {
   goForward: () => void;
@@ -31,33 +37,38 @@ export type HtmlNavigator = Navigator & {
   increaseFontSize: () => Promise<void>;
   decreaseFontSize: () => Promise<void>;
   setFontFamily: (family: FontFamily) => Promise<void>;
+  setFontFamilyChinese: (family: FontFamilyChinese) => Promise<void>;
   setGlossing: (glossing: USER_STATS_MODE_KEY_VALUES) => void;
   setSegmentation: (segmentation: boolean) => void;
   setMouseover: (mouseover: boolean) => void;
 };
 
 // Optional settings to initialize the reader with
-export type ReaderSettings = {
-  isScrolling?: boolean;
+export type ReaderSettings = HtmlReaderState & {
+  location?: undefined | Locator;
 };
 
 export type ReaderState = {
   isScrolling: boolean;
   fontSize: number;
   fontFamily: FontFamily;
+  fontFamilyChinese: FontFamilyChinese;
   currentTocUrl: string | null;
   atStart: boolean;
   atEnd: boolean;
 };
-
-// PDF specific reader state
-export type PdfReaderState = ReaderState;
 
 // HTML specific reader state
 export type HtmlReaderState = ReaderState & {
   glossing: USER_STATS_MODE_KEY_VALUES;
   segmentation: boolean;
   mouseover: boolean;
+};
+
+export type HtmlState = HtmlReaderState & {
+  reader: D2Reader | undefined;
+  location?: undefined | Locator;
+  onUpdate: (state: ReaderSettings) => void;
 };
 
 export type InactiveReader = null;
@@ -91,27 +102,28 @@ export type ReaderReturn = InactiveReader | LoadingReader | ActiveReader;
 export type GetContent = (href: string) => Promise<string>;
 
 export type UseWebReaderArguments = {
-  // doUpdate: () => void;
   webpubManifestUrl: string;
   getContent?: GetContent;
+  doConfigUpdate: (state: ReaderSettings, location?: Locator) => void;
   injectables?: Injectable[];
   injectablesFixed?: Injectable[];
   height?: string; // CSS string (ie: "800px" or `calc(100vh-${CHROME_HEIGHT}`)
   growWhenScrolling?: boolean; // should the reader grow to fit content in scroll mode (ie. disregard the height)?
-  readerSettings?: ReaderSettings;
+  readerSettings: ReaderSettings;
 };
 
 export type ActiveReaderArguments = UseWebReaderArguments & {
-  manifest: WebpubManifest;
+  manifest?: WebpubManifest;
 };
 
-export type InactiveReaderArguments = undefined;
+// export type InactiveReaderArguments = undefined;
 
-export type ReaderArguments = ActiveReaderArguments | InactiveReaderArguments;
+export type ReaderArguments = ActiveReaderArguments; //  | InactiveReaderArguments;
 
 export type GetColor = (light: string, dark: string, sepia: string) => string;
 
 import { PRECACHE_PUBLICATIONS } from "./constants";
+import D2Reader, { Locator } from "@d-i-t-a/reader";
 
 export type WebReaderSWConfig = {
   cacheExpirationSeconds?: number;

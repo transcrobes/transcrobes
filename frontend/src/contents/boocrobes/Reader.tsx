@@ -1,12 +1,15 @@
 import { useParams } from "react-router-dom";
 import { useAuthenticated } from "react-admin";
-import D2Reader from "@d-i-t-a/reader";
+import D2Reader, { Locator } from "@d-i-t-a/reader";
 import WebReader from "./ui/WebReader";
 import injectables from "./injectables";
 import { USER_STATS_MODE } from "../../lib/lib";
 import { createTheme, ThemeProvider } from "@material-ui/core";
-import { ThemeName } from "../../lib/types";
-
+import { AppState, ContentConfigType, ContentProps } from "../../lib/types";
+import { Injectable } from "@d-i-t-a/reader/dist/types/navigator/IFrameNavigator";
+import { ReaderSettings } from "./types";
+import { ReactElement, useEffect, useState } from "react";
+import { useSelector } from "react-redux";
 type ContentParams = {
   id: string;
 };
@@ -27,10 +30,61 @@ window.readerConfig = {
   popupParent: window.document.body,
 };
 
-export default function Reader(): JSX.Element {
+export type ReaderContentConfig = {
+  id: string;
+  config?: ReaderSettings;
+};
+
+export default function Reader({ proxy }: ContentProps): ReactElement {
   useAuthenticated(); // redirects to login if not authenticated, required because shown as RouteWithoutLayout
   const { id } = useParams<ContentParams>();
   const url = new URL(`/api/v1/data/content/${id}/manifest.json`, window.location.href);
+
+  const [contentConfig, setContentConfig] = useState<ReaderSettings>();
+
+  function handleConfigUpdate(newConfig: ReaderSettings) {
+    const configToSave: ContentConfigType = {
+      id: id,
+      configString: JSON.stringify({ readerState: newConfig }),
+    };
+    proxy.sendMessagePromise({
+      source: "Reader.tsx",
+      type: "setContentConfigToStore",
+      value: configToSave,
+    });
+  }
+
+  useEffect(() => {
+    (async () => {
+      const contentConf = await proxy.sendMessagePromise<ContentConfigType>({
+        source: "Reader.tsx",
+        type: "getContentConfigFromStore",
+        value: id,
+      });
+      let conf: ReaderSettings;
+      if (contentConf && contentConf.configString) {
+        const { readerState } = JSON.parse(contentConf.configString);
+        conf = readerState;
+        window.readerConfig.segmentation = readerState.segmentation;
+        window.readerConfig.mouseover = readerState.mouseover;
+        window.readerConfig.glossing = readerState.glossing;
+      } else {
+        conf = {
+          isScrolling: false,
+          fontSize: 16,
+          glossing: USER_STATS_MODE.L1,
+          segmentation: true,
+          mouseover: true,
+          fontFamily: "publisher",
+          fontFamilyChinese: "notasanslight",
+          currentTocUrl: null,
+          atStart: true,
+          atEnd: false,
+        };
+      }
+      setContentConfig(conf);
+    })();
+  }, []);
 
   // FIXME: this is currently brokens, meaning it is impossible to use paginated mode!!!
   // useEffect(() => {
@@ -61,14 +115,38 @@ export default function Reader(): JSX.Element {
   //   return () => clearInterval(interval);
   // }, []);
 
+  const themeName = useSelector((state: AppState) => state.theme);
   const theme = createTheme({
     palette: {
-      type: (localStorage.getItem("mode") as ThemeName) || "light", // Switching the dark mode on is a single property value change.
+      type: themeName || "light", // Switching the dark mode on is a single property value change.
     },
   });
+  const augmentedInjectables: Injectable[] = [];
+  for (const fontFamily of ["serif", "sans-serif", "opendyslexic", "monospace"]) {
+    for (const fontFamilyChinese of [
+      "notasanslight",
+      "notaserifextralight",
+      "notaserifregular",
+      "mashanzheng",
+    ]) {
+      augmentedInjectables.push({
+        type: "style",
+        url: `${origin}/chinese.css`,
+        fontFamily: `${fontFamily},${fontFamilyChinese}`,
+      });
+    }
+  }
+
   return (
     <ThemeProvider theme={theme}>
-      <WebReader webpubManifestUrl={url.href} injectables={injectables} />
+      {contentConfig && (
+        <WebReader
+          readerSettings={contentConfig}
+          doConfigUpdate={handleConfigUpdate}
+          webpubManifestUrl={url.href}
+          injectables={[...injectables, ...augmentedInjectables]}
+        />
+      )}
     </ThemeProvider>
   );
 }

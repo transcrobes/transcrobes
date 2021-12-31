@@ -239,7 +239,7 @@ math {
 /* The following will also work for zh-Hans */
 
 :lang(zh) {
-  --RS__baseFontFamily: "方体", "PingFang SC", "黑体", "Heiti SC", "Microsoft JhengHei UI", "Microsoft JhengHei", Roboto, Noto, "Noto Sans CJK SC", sans-serif;
+  /* --RS__baseFontFamily: "方体", "PingFang SC", "黑体", "Heiti SC", "Microsoft JhengHei UI", "Microsoft JhengHei", Roboto, Noto, "Noto Sans CJK SC", sans-serif; */
 
   /* For CJK, the line-height is usually 15–20% more than for Latin */
   --RS__lineHeightCompensation: 1.167;
@@ -247,14 +247,14 @@ math {
 
 :lang(zh-Hant),
 :lang(zh-TW) {
-  --RS__baseFontFamily: "方體", "PingFang TC", "黑體", "Heiti TC", "Microsoft JhengHei UI", "Microsoft JhengHei", Roboto, Noto, "Noto Sans CJK TC", sans-serif;
+  /* --RS__baseFontFamily: "方體", "PingFang TC", "黑體", "Heiti TC", "Microsoft JhengHei UI", "Microsoft JhengHei", Roboto, Noto, "Noto Sans CJK TC", sans-serif; */
 
   /* For CJK, the line-height is usually 15–20% more than for Latin */
   --RS__lineHeightCompensation: 1.167;
 }
 
 :lang(zh-HK) {
-  --RS__baseFontFamily: "方體", "PingFang HK", "方體", "PingFang TC", "黑體", "Heiti TC", "Microsoft JhengHei UI", "Microsoft JhengHei", Roboto, Noto, "Noto Sans CJK TC", sans-serif;
+  /* --RS__baseFontFamily: "方體", "PingFang HK", "方體", "PingFang TC", "黑體", "Heiti TC", "Microsoft JhengHei UI", "Microsoft JhengHei", Roboto, Noto, "Noto Sans CJK TC", sans-serif; */
 
   /* For CJK, the line-height is usually 15–20% more than for Latin */
   --RS__lineHeightCompensation: 1.167;
