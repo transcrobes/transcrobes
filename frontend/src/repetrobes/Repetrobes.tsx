@@ -250,17 +250,35 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
     return validExisting;
   }
 
-  function getOverdueTodaysRepeat(toRereviewQueue: Map<string, CardType>, todayStarts: number) {
+  function getOverdueTodaysRepeat(
+    toRereviewQueue: Map<string, CardType>,
+    todayStarts: number,
+    forceUnfinished: boolean,
+  ) {
     // Check if we have a failed review from today that is due already
     const candidates = [...toRereviewQueue.values()].sort((a, b) => a.dueDate - b.dueDate);
     const readyCandidates = candidates.filter((x) => x.dueDate <= dayjs().unix());
-    const overdueRepeatNow = readyCandidates.filter(
+    let overdueRepeatNow = readyCandidates.filter(
       (x) =>
         x.lastRevisionDate <=
           dayjs().add(-stateActivityConfig.badReviewWaitSecs, "seconds").unix() &&
         x.lastRevisionDate > todayStarts,
     );
     log("getOverdueTodaysRepeat", candidates, readyCandidates, overdueRepeatNow);
+    if (overdueRepeatNow.length === 0 && forceUnfinished) {
+      overdueRepeatNow = candidates.filter(
+        (x) =>
+          x.lastRevisionDate >=
+          dayjs().add(-stateActivityConfig.badReviewWaitSecs, "seconds").unix(),
+      );
+      log(
+        "getOverdueTodaysRepeat looks like we are already over quota, finishing " +
+          "those started, even if they aren't officially ready",
+        candidates,
+        readyCandidates,
+        overdueRepeatNow,
+      );
+    }
     return { candidates, readyCandidates, goodCard: overdueRepeatNow[0] };
   }
 
@@ -422,6 +440,7 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
     const { candidates, readyCandidates, goodCard } = getOverdueTodaysRepeat(
       toRereviewQueue,
       todayStarts,
+      newToday.size >= activityConfig.maxNew && revisionsToday.size >= activityConfig.maxRevisions,
     );
     if (goodCard) {
       currentCard = goodCard;
