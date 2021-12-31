@@ -28,7 +28,7 @@ import { getRandomNext } from "./Common";
 import { EMPTY_ACTIVITY, getUserConfig } from "./funclib";
 import { TopToolbar } from "react-admin";
 import HelpButton from "../components/HelpButton";
-import { makeStyles, Theme } from "@material-ui/core";
+import { makeStyles, Theme, useTheme } from "@material-ui/core";
 import SearchLoading from "../components/SearchLoading";
 
 const DATA_SOURCE = "Repetrobes.tsx";
@@ -50,7 +50,7 @@ const EMPTY_STATE = {
   possibleRevisionsToday: 0,
 };
 
-const useStyles = makeStyles((theme: Theme) => ({
+const useStyles = makeStyles(() => ({
   toolbar: {
     justifyContent: "space-between",
     alignItems: "center",
@@ -190,7 +190,8 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
   }
 
   function isListFiltered(card: CardType, activityConfig: RepetrobesActivityConfigType): boolean {
-    if (!activityConfig.onlySelectedWordListRevisions) return false;
+    if (!activityConfig.onlySelectedWordListRevisions || activityConfig.systemWordSelection)
+      return false;
     const wId = getWordId(card);
     if (!userListWords[wId]) return true;
     const lists = new Set<string>(userListWords[wId].map((l) => l.listId));
@@ -238,7 +239,9 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
     for (const [k, v] of existingCards) {
       if (
         !v.known &&
-        (!activityConfig.onlySelectedWordListRevisions || !isListFiltered(v, activityConfig)) &&
+        (activityConfig.systemWordSelection ||
+          !activityConfig.onlySelectedWordListRevisions ||
+          !isListFiltered(v, activityConfig)) &&
         potentialTypes.includes(getCardType(v))
       ) {
         validExisting.set(k, v);
@@ -517,6 +520,7 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
     return null;
   }
   const classes = useStyles();
+  const theme = useTheme();
   const helpUrl = "https://transcrob.es/page/software/learn/repetrobes/";
   const ac = stateActivityConfig;
   return (
@@ -546,6 +550,7 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
       )}
       <div>
         <VocabRevisor
+          theme={theme}
           showAnswer={showAnswer}
           activityConfig={stateActivityConfig}
           currentCard={daState.currentCard}

@@ -138,6 +138,7 @@ function getQuestion(
 }
 
 interface Props {
+  theme: Theme;
   showAnswer: boolean;
   currentCard: CardType | null;
   definition: DefinitionType | null;
@@ -151,6 +152,7 @@ interface Props {
 }
 
 export function VocabRevisor({
+  theme,
   showAnswer,
   currentCard,
   definition,
@@ -181,7 +183,7 @@ export function VocabRevisor({
           const now = Date.now() + Math.random();
           sent.sentence.t.forEach((t) => {
             if (t.l === lemma && t.pos === pos) {
-              t.style = { color: "green", "font-weight": "bold" };
+              t.style = { color: theme.palette.success.main, "font-weight": "bold" };
               t.de = true;
             }
           });

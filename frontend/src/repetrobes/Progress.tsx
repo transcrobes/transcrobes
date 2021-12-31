@@ -1,11 +1,9 @@
-import { styled } from "@material-ui/core";
+import { styled, Theme, useTheme } from "@material-ui/core";
 import { ReactElement } from "react";
 import { RepetrobesActivityConfigType } from "../lib/types";
 
-type ProgressColour = "green" | "yellow" | "inherit";
-
 interface StyleProps {
-  colour: ProgressColour;
+  colour: string;
   children?: React.ReactNode;
 }
 
@@ -29,9 +27,9 @@ interface ProgressProps {
   possibleRevisionsToday: number;
 }
 
-function progressColour(started: number, completed: number, maxTodo: number): ProgressColour {
-  if (completed >= maxTodo) return "green";
-  if (started >= maxTodo) return "yellow";
+function progressColour(theme: Theme, started: number, completed: number, maxTodo: number): string {
+  if (completed >= maxTodo) return theme.palette.success.main;
+  if (started >= maxTodo) return theme.palette.warning.main;
   return "inherit";
 }
 
@@ -46,10 +44,12 @@ export default function Progress({
 }: ProgressProps): ReactElement {
   const allRevisionsToday = revisionsToday + possibleRevisionsToday;
   const allNewToday = newToday + availableNewToday;
+  const theme = useTheme();
   return (
     <div>
       <ProgressStyle
         colour={progressColour(
+          theme,
           newToday,
           completedNewToday,
           Math.min(allNewToday, activityConfig.maxNew),
@@ -60,6 +60,7 @@ export default function Progress({
       </ProgressStyle>
       <ProgressStyle
         colour={progressColour(
+          theme,
           revisionsToday,
           completedRevisionsToday,
           Math.min(allRevisionsToday, activityConfig.maxRevisions),

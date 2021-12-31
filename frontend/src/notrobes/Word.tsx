@@ -1,7 +1,7 @@
 import { ReactElement, useState } from "react";
 import dayjs from "dayjs";
 import { $enum } from "ts-enum-util";
-import { Button, makeStyles } from "@material-ui/core";
+import { Button, makeStyles, useTheme } from "@material-ui/core";
 
 import { say, wordIdsFromModels } from "../lib/funclib";
 import { CARD_TYPES, getCardType, getCardId } from "../database/Schema";
@@ -349,6 +349,7 @@ function Word({
   setSegmentation(true);
   setLangPair(window.componentsConfig.langPair);
   setPlatformHelper(window.componentsConfig.proxy);
+  const theme = useTheme();
 
   if (recentPosSentences) {
     window.transcrobesModel = window.transcrobesModel || {};
@@ -359,7 +360,7 @@ function Word({
           const now = Date.now() + Math.random();
           sent.sentence.t.forEach((t) => {
             if (t.l == lemma && t.pos === pos) {
-              t.style = { color: "green", "font-weight": "bold" };
+              t.style = { color: theme.palette.success.main, "font-weight": "bold" };
             }
           });
           window.transcrobesModel[now] = { id: now, s: [sent.sentence] };
