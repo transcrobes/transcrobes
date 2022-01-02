@@ -21,6 +21,9 @@ import {
   D2ColorMode,
   FontFamilyChinese,
   HtmlState,
+  DEFAULT_FONT_SIZE,
+  DEFAULT_FONT_FAMILY,
+  DEFAULT_FONT_FAMILY_CHINESE,
 } from "../types";
 
 /**
@@ -155,12 +158,13 @@ export default function useHtmlReader(args: ReaderArguments): ReaderReturn {
   const defaultIsScrolling = !!readerSettings?.isScrolling;
   const [state, dispatch] = React.useReducer(htmlReducer, {
     isScrolling: defaultIsScrolling,
-    fontSize: readerSettings?.fontSize || 16,
+    fontSize: readerSettings?.fontSize || DEFAULT_FONT_SIZE,
     glossing: readerSettings?.glossing || window.readerConfig.glossing,
     mouseover: readerSettings?.mouseover || window.readerConfig.mouseover,
     segmentation: readerSettings?.segmentation || window.readerConfig.segmentation,
-    fontFamily: readerSettings?.fontFamily || "sans-serif",
-    fontFamilyChinese: readerSettings?.fontFamilyChinese || "notasanslight",
+    fontFamily: readerSettings?.fontFamily || DEFAULT_FONT_FAMILY,
+    fontFamilyChinese: readerSettings?.fontFamilyChinese || DEFAULT_FONT_FAMILY_CHINESE,
+
     currentTocUrl: readerSettings?.currentTocUrl || null,
     atStart: readerSettings?.atStart || true,
     atEnd: readerSettings?.atEnd || false,

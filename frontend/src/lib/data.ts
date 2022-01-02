@@ -620,7 +620,7 @@ async function setContentConfigToStore(
   db: TranscrobesDatabase,
   contentConfig: ContentConfigType,
 ): Promise<boolean> {
-  await db.content_config.upsert({
+  await db.content_config.atomicUpsert({
     id: contentConfig.id.toString(),
     configString: JSON.stringify(contentConfig),
   });

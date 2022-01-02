@@ -5,10 +5,10 @@ import SentimentVerySatisfiedIcon from "@material-ui/icons/SentimentVerySatisfie
 import SentimentVeryDissatisfiedIcon from "@material-ui/icons/SentimentVeryDissatisfied";
 import SentimentSatisfiedIcon from "@material-ui/icons/SentimentSatisfied";
 import CheckIcon from "@material-ui/icons/Check";
-import { Property } from "csstype";
+import * as CSS from "csstype";
 
 interface IconProps {
-  iconColour?: Property.Color;
+  iconColour?: CSS.Color;
 }
 
 const useStyles = makeStyles<Theme, IconProps>((theme) => ({
@@ -32,7 +32,7 @@ const useStyles = makeStyles<Theme, IconProps>((theme) => ({
 }));
 
 interface PracticerInputProps {
-  iconColour?: Property.Color;
+  iconColour?: CSS.Color;
   onPractice: (wordId: string, grade: number) => void;
   wordId: string;
 }

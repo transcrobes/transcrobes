@@ -10,6 +10,10 @@ export const EpubMimeType = "application/epub";
 // the Mimetype for a generic webpub
 export const WebpubMimeType = "application/webpub";
 
+export const DEFAULT_FONT_SIZE = 108;
+export const DEFAULT_FONT_FAMILY = "publisher";
+export const DEFAULT_FONT_FAMILY_CHINESE = "notasanslight";
+
 export type ColorMode = ThemeName | "sepia";
 export type D2ColorMode = "readium-default-on" | "readium-night-on" | "readium-sepia-on";
 

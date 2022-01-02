@@ -29,7 +29,7 @@ function TheSurvey(prop: any): ReactElement {
   if (prop.record.data) {
     model.data = JSON.parse(prop.record.data);
   }
-  model.onComplete.add(function (sender) {
+  model.onComplete.add((sender: any) => {
     saveData(sender.data, prop.record.id);
   });
   const palette = useTheme().palette;

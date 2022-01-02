@@ -7,7 +7,12 @@ import { USER_STATS_MODE } from "../../lib/lib";
 import { createTheme, ThemeProvider } from "@material-ui/core";
 import { AppState, ContentConfigType, ContentProps } from "../../lib/types";
 import { Injectable } from "@d-i-t-a/reader/dist/types/navigator/IFrameNavigator";
-import { ReaderSettings } from "./types";
+import {
+  DEFAULT_FONT_FAMILY,
+  DEFAULT_FONT_FAMILY_CHINESE,
+  DEFAULT_FONT_SIZE,
+  ReaderSettings,
+} from "./types";
 import { ReactElement, useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 type ContentParams = {
@@ -71,12 +76,12 @@ export default function Reader({ proxy }: ContentProps): ReactElement {
       } else {
         conf = {
           isScrolling: false,
-          fontSize: 16,
+          fontSize: DEFAULT_FONT_SIZE,
           glossing: USER_STATS_MODE.L1,
           segmentation: true,
           mouseover: true,
-          fontFamily: "publisher",
-          fontFamilyChinese: "notasanslight",
+          fontFamily: DEFAULT_FONT_FAMILY,
+          fontFamilyChinese: DEFAULT_FONT_FAMILY_CHINESE,
           currentTocUrl: null,
           atStart: true,
           atEnd: false,
@@ -139,13 +144,15 @@ export default function Reader({ proxy }: ContentProps): ReactElement {
 
   return (
     <ThemeProvider theme={theme}>
-      {contentConfig && (
+      {contentConfig ? (
         <WebReader
           readerSettings={contentConfig}
           doConfigUpdate={handleConfigUpdate}
           webpubManifestUrl={url.href}
           injectables={[...injectables, ...augmentedInjectables]}
         />
+      ) : (
+        <div></div>
       )}
     </ThemeProvider>
   );
