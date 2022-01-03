@@ -73,6 +73,14 @@ type SVGTemplate = {
   viewBox: string;
   d: string;
 };
+const SVG_FLASHLIGHT_OFF: SVGTemplate = {
+  viewBox: "0 0 24 24",
+  d: "M2.81 2.81L1.39 4.22 8 10.83V22h8v-3.17l3.78 3.78 1.41-1.41L2.81 2.81zM14 20h-4v-7.17l4 4V20zM16 4v1H7.83l2 2H16v.39l-2 3.01v.77l2 2V11l2-3V2H6v1.17l.83.83z",
+};
+const SVG_FLASHLIGHT_ON: SVGTemplate = {
+  viewBox: "0 0 24 24",
+  d: "M18 2H6v6l2 3v11h8V11l2-3V2zm-2 2v1H8V4h8zm-2 6.4V20h-4v-9.61l-2-3V7h8v.39l-2 3.01z",
+};
 
 const SVG_SOLID_PLUS: SVGTemplate = {
   viewBox: "0 0 448 512",
@@ -606,6 +614,42 @@ function printPosRx(doc: Document, token: TokenType, parentDiv: HTMLElement) {
   doCreateElement(doc, "div", null, `POS: ${pos}`, null, posDiv);
 }
 
+function toggleGloss(
+  toggleGlossOn: SVGSVGElement,
+  toggleGlossOff: SVGSVGElement,
+  token: TokenType,
+  wordInfo: DefinitionType,
+  doc: Document,
+) {
+  if (toggleGlossOn.classList.contains("hidden")) {
+    toggleGlossOn.classList.remove("hidden");
+    toggleGlossOff.classList.add("hidden");
+  } else {
+    toggleGlossOn.classList.add("hidden");
+    toggleGlossOff.classList.remove("hidden");
+  }
+  for (const wordEl of doc.getElementsByClassName("tcrobe-word")) {
+    const word = wordEl as HTMLElement;
+    if (wordEl.textContent === wordInfo.graph) {
+      if (wordEl.classList.contains("tcrobe-gloss")) {
+        //remove
+        wordEl.classList.remove("tcrobe-gloss");
+      } else {
+        //add
+        if (!word.dataset.tcrobeGloss) {
+          getUserCardWords().then((uCardWords) => {
+            getNormalGloss(token, utils.glossing, uCardWords).then((gloss) => {
+              word.dataset.tcrobeGloss = gloss;
+              wordEl.classList.add("tcrobe-gloss");
+            });
+          });
+        }
+        wordEl.classList.add("tcrobe-gloss");
+      }
+    }
+  }
+}
+
 function printActionsRx(
   doc: Document,
   wordInfo: DefinitionType,
@@ -615,6 +659,40 @@ function printActionsRx(
 ) {
   doCreateElement(doc, "hr", null, null, null, parentDiv);
   const actionsDiv = doCreateElement(doc, "div", "tcrobe-def-actions", null, null, parentDiv);
+
+  // local force gloss or not
+  const isGlossed = originElement.classList.contains("tcrobe-gloss");
+  const toggleGlossOn = createSVG(
+    SVG_FLASHLIGHT_ON,
+    null,
+    [
+      ["title", "Gloss right now"],
+      ["width", "32"],
+      ["height", "32"],
+    ],
+    actionsDiv,
+  );
+  const toggleGlossOff = createSVG(
+    SVG_FLASHLIGHT_OFF,
+    null,
+    [
+      ["title", "Don't gloss right now"],
+      ["width", "32"],
+      ["height", "32"],
+    ],
+    actionsDiv,
+  );
+  toggleGlossOn.addEventListener("click", () =>
+    toggleGloss(toggleGlossOn, toggleGlossOff, token, wordInfo, doc),
+  );
+  toggleGlossOff.addEventListener("click", () =>
+    toggleGloss(toggleGlossOn, toggleGlossOff, token, wordInfo, doc),
+  );
+  if (isGlossed) {
+    toggleGlossOn.classList.add("hidden");
+  } else {
+    toggleGlossOff.classList.add("hidden");
+  }
   for (const [grade, gradeObj] of Object.entries(GRADE_SVGS))
     createSVG(
       gradeObj[0],
