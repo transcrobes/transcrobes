@@ -48,7 +48,6 @@ const WebReader: FC<UseWebReaderArguments> = ({ webpubManifestUrl, getContent, .
         sx={{
           bottom: 0,
           width: "100%",
-          borderTop: "1px solid",
           justifyContent: "space-between",
           position: "sticky",
           height: `${FOOTER_HEIGHT}px`,

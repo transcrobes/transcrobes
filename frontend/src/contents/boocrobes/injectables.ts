@@ -1,8 +1,8 @@
-import { Injectable } from "@d-i-t-a/reader/dist/types/navigator/IFrameNavigator";
+// import { Injectable } from "@d-i-t-a/reader/dist/types/navigator/IFrameNavigator";
 // eslint-disable-next-line no-var
 declare var __webpack_hash__: any;
 
-const injectables: Injectable[] = [
+const injectables: any[] = [
   {
     type: "style",
     url: `${origin}/ReadiumCSS-before.css`,

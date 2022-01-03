@@ -1,12 +1,11 @@
 import { useParams } from "react-router-dom";
 import { useAuthenticated } from "react-admin";
-import D2Reader, { Locator } from "@d-i-t-a/reader";
 import WebReader from "./ui/WebReader";
 import injectables from "./injectables";
 import { USER_STATS_MODE } from "../../lib/lib";
 import { createTheme, ThemeProvider } from "@material-ui/core";
 import { AppState, ContentConfigType, ContentProps } from "../../lib/types";
-import { Injectable } from "@d-i-t-a/reader/dist/types/navigator/IFrameNavigator";
+// import { Injectable } from "@d-i-t-a/reader/dist/types/navigator/IFrameNavigator";
 import {
   DEFAULT_FONT_FAMILY,
   DEFAULT_FONT_FAMILY_CHINESE,
@@ -15,23 +14,24 @@ import {
 } from "./types";
 import { ReactElement, useEffect, useState } from "react";
 import { useSelector } from "react-redux";
+import D2Reader from "@d-i-t-a/reader";
 type ContentParams = {
   id: string;
 };
 
 declare global {
   interface Window {
-    r2d2bc: D2Reader;
+    r2d2bc: any;
     etfLoaded: Set<string>; // this could probably be a boolean?
     r2d2bcFontSize: number;
   }
 }
 
-// FIXME: This should be done as content preferences saved at each change, like the video player
 window.readerConfig = {
   segmentation: true,
   mouseover: true,
   glossing: USER_STATS_MODE.L1,
+  fontSize: 108,
   popupParent: window.document.body,
 };
 
@@ -69,10 +69,11 @@ export default function Reader({ proxy }: ContentProps): ReactElement {
       let conf: ReaderSettings;
       if (contentConf && contentConf.configString) {
         const { readerState } = JSON.parse(contentConf.configString);
-        conf = readerState;
-        window.readerConfig.segmentation = readerState.segmentation;
-        window.readerConfig.mouseover = readerState.mouseover;
-        window.readerConfig.glossing = readerState.glossing;
+        conf = readerState as ReaderSettings;
+        window.readerConfig.segmentation = conf.segmentation;
+        window.readerConfig.mouseover = conf.mouseover;
+        window.readerConfig.glossing = conf.glossing;
+        window.readerConfig.fontSize = conf.fontSize;
       } else {
         conf = {
           isScrolling: false,
@@ -88,45 +89,39 @@ export default function Reader({ proxy }: ContentProps): ReactElement {
         };
       }
       setContentConfig(conf);
+      // This is a hack to make sure that the D2Reader resizes after all the web components have
+      // been loaded. If not, in scrolling mode, the size (and so end of the iframe viewport gets finalised
+      // before the components have been loaded, and potentially large amounts of text are not visible.
+      // While it seems like a hack, it is also unclear how one might do this better, as this needs to be
+      // done after the last component has loaded. Potentially setTimeout could be used instead, repeating
+      // once more if etfLoaded still has a "loaded", otherwise stop. This is pretty lightweight though, so
+      // for the moment it will suffice.
+      // There might be a prettier way of doing this without setting the fontSize to itself, but I couldn't
+      // find it.
+      const interval = setInterval(() => {
+        if (!window.r2d2bc) return;
+        window.r2d2bc.settings.isPaginated().then((paginated: any) => {
+          if (!paginated) {
+            const iframe = document.querySelector("#D2Reader-Container")?.querySelector("iframe");
+            if (!!iframe && iframe.contentWindow && iframe.contentWindow.etfLoaded) {
+              if (iframe.contentWindow.etfLoaded.delete("loaded")) {
+                console.log("Doing the fontsize hack");
+                D2Reader.applyUserSettings({ fontSize: window.readerConfig.fontSize });
+              }
+            }
+          }
+        });
+      }, 1000);
+      return () => clearInterval(interval);
     })();
   }, []);
-
-  // FIXME: this is currently brokens, meaning it is impossible to use paginated mode!!!
-  // useEffect(() => {
-  //   // This is a hack to make sure that the D2Reader resizes after all the web components have
-  //   // been loaded. If not, in scrolling mode, the size (and so end of the iframe viewport gets finalised
-  //   // before the components have been loaded, and potentially large amounts of text are not visible.
-  //   // While it seems like a hack, it is also unclear how one might do this better, as this needs to be
-  //   // done after the last component has loaded. Potentially setTimeout could be used instead, repeating
-  //   // once more if etfLoaded still has a "loaded", otherwise stop. This is pretty lightweight though, so
-  //   // for the moment it will suffice.
-  //   // There might be a prettier way of doing this without setting the fontSize to itself, but I couldn't
-  //   // find it.
-  //   const interval = setInterval(() => {
-  //     console.log("interval running", window.r2d2bc);
-  //     if (!window.r2d2bc) return;
-  //     window.r2d2bc.settings.isPaginated().then((paginated) => {
-  //       console.log("interval paginated", paginated);
-  //       if (!paginated) {
-  //         const iframe = document.querySelector("#D2Reader-Container")?.querySelector("iframe");
-  //         if (!!iframe && iframe.contentWindow && iframe.contentWindow.etfLoaded) {
-  //           if (iframe.contentWindow.etfLoaded.delete("loaded")) {
-  //             window.r2d2bc.applyUserSettings({ fontSize: window.r2d2bcFontSize });
-  //           }
-  //         }
-  //       }
-  //     });
-  //   }, 500);
-  //   return () => clearInterval(interval);
-  // }, []);
-
   const themeName = useSelector((state: AppState) => state.theme);
   const theme = createTheme({
     palette: {
       type: themeName || "light", // Switching the dark mode on is a single property value change.
     },
   });
-  const augmentedInjectables: Injectable[] = [];
+  const augmentedInjectables: any[] = [];
   for (const fontFamily of ["serif", "sans-serif", "opendyslexic", "monospace"]) {
     for (const fontFamilyChinese of [
       "notasanslight",
@@ -141,7 +136,6 @@ export default function Reader({ proxy }: ContentProps): ReactElement {
       });
     }
   }
-
   return (
     <ThemeProvider theme={theme}>
       {contentConfig ? (

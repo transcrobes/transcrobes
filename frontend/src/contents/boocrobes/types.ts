@@ -1,7 +1,8 @@
-import { Injectable } from "@d-i-t-a/reader/dist/types/navigator/IFrameNavigator";
+// import { Injectable } from "@d-i-t-a/reader/dist/types/navigator/IFrameNavigator";
 import { USER_STATS_MODE_KEY_VALUES } from "../../lib/lib";
 import { ThemeName } from "../../lib/types";
 import { WebpubManifest } from "./WebpubManifestTypes/WebpubManifest";
+import { PRECACHE_PUBLICATIONS } from "./constants";
 
 export type { WebpubManifest };
 
@@ -11,13 +12,13 @@ export const EpubMimeType = "application/epub";
 export const WebpubMimeType = "application/webpub";
 
 export const DEFAULT_FONT_SIZE = 108;
-export const DEFAULT_FONT_FAMILY = "publisher";
+export const DEFAULT_FONT_FAMILY = "Original";
 export const DEFAULT_FONT_FAMILY_CHINESE = "notasanslight";
 
 export type ColorMode = ThemeName | "sepia";
 export type D2ColorMode = "readium-default-on" | "readium-night-on" | "readium-sepia-on";
 
-export type FontFamily = "publisher" | "serif" | "sans-serif" | "open-dyslexic" | "monospace";
+export type FontFamily = "Original" | "serif" | "sans-serif" | "opendyslexic" | "monospace";
 
 export type FontFamilyChinese =
   | "notasanslight"
@@ -49,7 +50,7 @@ export type HtmlNavigator = Navigator & {
 
 // Optional settings to initialize the reader with
 export type ReaderSettings = HtmlReaderState & {
-  location?: undefined | Locator;
+  location?: undefined | any;
 };
 
 export type ReaderState = {
@@ -70,8 +71,8 @@ export type HtmlReaderState = ReaderState & {
 };
 
 export type HtmlState = HtmlReaderState & {
-  reader: D2Reader | undefined;
-  location?: undefined | Locator;
+  reader: any | undefined;
+  location?: undefined | any;
   onUpdate: (state: ReaderSettings) => void;
 };
 
@@ -108,9 +109,9 @@ export type GetContent = (href: string) => Promise<string>;
 export type UseWebReaderArguments = {
   webpubManifestUrl: string;
   getContent?: GetContent;
-  doConfigUpdate: (state: ReaderSettings, location?: Locator) => void;
-  injectables?: Injectable[];
-  injectablesFixed?: Injectable[];
+  doConfigUpdate: (state: ReaderSettings, location?: any) => void;
+  injectables?: any[];
+  injectablesFixed?: any[];
   height?: string; // CSS string (ie: "800px" or `calc(100vh-${CHROME_HEIGHT}`)
   growWhenScrolling?: boolean; // should the reader grow to fit content in scroll mode (ie. disregard the height)?
   readerSettings: ReaderSettings;
@@ -125,9 +126,6 @@ export type ActiveReaderArguments = UseWebReaderArguments & {
 export type ReaderArguments = ActiveReaderArguments; //  | InactiveReaderArguments;
 
 export type GetColor = (light: string, dark: string, sepia: string) => string;
-
-import { PRECACHE_PUBLICATIONS } from "./constants";
-import D2Reader, { Locator } from "@d-i-t-a/reader";
 
 export type WebReaderSWConfig = {
   cacheExpirationSeconds?: number;

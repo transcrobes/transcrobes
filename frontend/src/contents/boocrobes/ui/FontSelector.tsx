@@ -25,10 +25,10 @@ export default function FontSelector({
         onChange(event.target.value as FontFamily);
       }}
     >
-      <MenuItem value="publisher">Publisher</MenuItem>
+      <MenuItem value="Original">Original</MenuItem>
       <MenuItem value="serif">Serif</MenuItem>
       <MenuItem value="sans-serif">Sans-Serif</MenuItem>
-      <MenuItem value="open-dyslexic">Dyslexia-Friendly</MenuItem>
+      <MenuItem value="opendyslexic">Dyslexia-Friendly</MenuItem>
     </Select>
   );
 }

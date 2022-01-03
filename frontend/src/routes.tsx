@@ -21,6 +21,7 @@ import RecoverPassword from "./system/RecoverPassword";
 window.readerConfig = {
   segmentation: true,
   mouseover: true,
+  fontSize: 108,
   glossing: USER_STATS_MODE.L1,
   popupParent: window.document.body,
 };

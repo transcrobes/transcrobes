@@ -125,6 +125,7 @@ export const ZH_TB_POS_LABELS: { [key in TREEBANK_POS_TYPES]: string } = {
 export type ComponentsAppConfig = {
   segmentation: boolean;
   glossing: number;
+  fontSize: number;
   mouseover: boolean;
   popupParent: HTMLElement;
 };

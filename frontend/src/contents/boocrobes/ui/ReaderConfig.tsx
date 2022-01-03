@@ -4,7 +4,6 @@ import { Button, ButtonGroup, makeStyles, Switch } from "@material-ui/core";
 
 import { HtmlNavigator, HtmlReaderState } from "../types";
 import { USER_STATS_MODE } from "../../../lib/lib";
-// import { Conftainer } from "../../../components/Common";
 import { FormControl, FormControlLabel } from "@material-ui/core";
 import { ReactElement } from "react";
 import Conftainer from "../../../components/Conftainer";
@@ -59,11 +58,11 @@ export default function ReaderConfig(props: HtmlSettingsProps): React.ReactEleme
       <Conftainer label="Font family" id="ff">
         <FormControl component="fieldset" className={classes.wordSelection}>
           <FormControlLabel
-            control={<Switch checked={fontFamily !== "publisher"} />}
+            control={<Switch checked={fontFamily !== "Original"} />}
             label="Manual Font Selection"
-            onChange={() => setFontFamily(fontFamily === "publisher" ? "sans-serif" : "publisher")}
+            onChange={() => setFontFamily(fontFamily === "Original" ? "sans-serif" : "Original")}
           />
-          {fontFamily !== "publisher" && (
+          {fontFamily !== "Original" && (
             <>
               <Conftainer label="English Font family" id="ffe">
                 <ToggleButtonGroup
@@ -83,7 +82,7 @@ export default function ReaderConfig(props: HtmlSettingsProps): React.ReactEleme
                   <ToggleButton className={classes.button} value="monospace">
                     Monospace
                   </ToggleButton>
-                  <ToggleButton className={classes.button} value="open-dyslexic">
+                  <ToggleButton className={classes.button} value="opendyslexic">
                     Dyslexia-Friendly
                   </ToggleButton>
                 </ToggleButtonGroup>
