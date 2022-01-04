@@ -1181,7 +1181,8 @@ function toggleSentenceVisible(event: MouseEvent, l1Sentence: HTMLElement) {
   event.stopPropagation();
 }
 
-const popupStyle = `
+function popupStyle(fontSize: number) {
+  return `
   hr {
   	margin: 0;
   }
@@ -1194,6 +1195,7 @@ const popupStyle = `
     max-width: 90%;
     min-width: 180px;
     opacity: 1;
+    font-size: ${fontSize}%;
   }
   @media (min-width: 400px) {
     .tcrobe-def-popup {
@@ -1212,6 +1214,7 @@ const popupStyle = `
   .tcrobe-def-best { box-sizing: border-box; padding: 2px; }
   .tcrobe-def-sentbutton { box-sizing: border-box; padding: 2px; }
 `;
+}
 
 class TokenDetails extends HTMLParsedElement {
   static get observedAttributes(): ["theme-css-url", "theme-name"] {
@@ -1226,7 +1229,7 @@ class TokenDetails extends HTMLParsedElement {
         const style = document.createElement("style");
         style.textContent = `
           ${TranscrobesCSS}
-          ${popupStyle}
+          ${popupStyle(utils.fontSize)}
         `;
 
         this.shadowRoot.appendChild(style);

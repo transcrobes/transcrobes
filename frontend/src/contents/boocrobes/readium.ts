@@ -14,6 +14,7 @@ function loadSettingsFromParentFrame() {
   components.setSegmentation(window.parent.readerConfig.segmentation);
   components.setMouseover(window.parent.readerConfig.mouseover);
   components.setGlossing(window.parent.readerConfig.glossing);
+  components.setFontSize(window.parent.readerConfig.fontSize);
   components.setPopupParent(window.parent.readerConfig.popupParent);
 }
 
