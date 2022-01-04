@@ -37,6 +37,8 @@ const RETRY_DEFINITION_MAX_TRIES = 20;
 
 const NUMBER_POS = new Set<TREEBANK_POS_TYPES>(["OD", "NT", "CD"]);
 
+const ENGLISH_PERCENT_OF_CHINESE_FONTSIZE = 80;
+
 declare global {
   interface Window {
     transcrobesModel: KeyedModels;
@@ -533,7 +535,6 @@ async function printRecentExamplesRx(doc: Document, token: TokenType, parentDiv:
 
   doCreateElement(doc, "hr", null, null, null, parentDiv);
   const infoDiv = doCreateElement(doc, "div", "tc-recentsentences", null, null, parentDiv);
-
   const sentsDiv = doCreateElement(
     doc,
     "div",
@@ -1195,7 +1196,7 @@ function popupStyle(fontSize: number) {
     max-width: 90%;
     min-width: 180px;
     opacity: 1;
-    font-size: ${fontSize}%;
+    font-size: ${fontSize * (ENGLISH_PERCENT_OF_CHINESE_FONTSIZE / 100)}%;
   }
   @media (min-width: 400px) {
     .tcrobe-def-popup {
@@ -1203,7 +1204,8 @@ function popupStyle(fontSize: number) {
     }
   }
   .tcrobe-def-container { text-align: left; }
-  .tc-recentsentences-entry { text-align: left; }
+  .tc-recentsentences-entry { text-align: left; font-size: ${fontSize}%; }
+  .tc-synonym-list { font-size: ${fontSize}%; }
   .tcrobe-def-source { margin-left: 6px; padding: 5px 0; }
   .tcrobe-def-source-name { box-sizing: border-box; text-align: left; }
   .tcrobe-def-source-pos { margin-left: 12px; }
@@ -1396,6 +1398,8 @@ class EnrichedTextFragment extends HTMLParsedElement {
         .tcrobe-entry { position: relative; cursor: pointer; }
         span.tcrobe-word.tcrobe-gloss::after {
           content: ' (' attr(data-tcrobe-gloss) ')';
+          font-size: ${ENGLISH_PERCENT_OF_CHINESE_FONTSIZE}%;
+          vertical-align: ${(100 - ENGLISH_PERCENT_OF_CHINESE_FONTSIZE) / 2}%;
         }`;
       document.body.appendChild(rtStyle);
     }
