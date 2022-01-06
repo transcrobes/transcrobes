@@ -99,6 +99,14 @@ export default function RxDBProvider(params: RxDBDataProviderParams): DbDataProv
       if (!("id" in insert) || !insert.id) {
         insert.id = uuidv4();
       }
+      // this is nasty - they get updated properly server side but we need one here for
+      // the list views ordered by createdAt, or the don't appear
+      if (
+        ["imports", "contents", "goals", "userlists", "usersurveys"].includes(resource) &&
+        (!("createdAt" in insert) || !insert.createdAt)
+      ) {
+        insert.createdAt = new Date().getTime() / 1000;
+      }
       for (const key in insert) {
         const obj = insert[key];
         if (typeof obj === "object" && obj != null && "rawFile" in obj) {

@@ -17,7 +17,6 @@ import { RxDBQueryBuilderPlugin } from "rxdb/plugins/query-builder";
 // import { RxDBDevModePlugin } from "rxdb/plugins/dev-mode";
 // FIXME: only validate in dev and for not web extension (has `eval`)
 import { RxDBValidatePlugin } from "rxdb/plugins/validate";
-import { RxDBNoValidatePlugin } from "rxdb/plugins/no-validate";
 import { RxDBDataProviderParams } from "../ra-data-rxdb";
 
 import { RxDBMigrationPlugin } from "rxdb/plugins/migration";
@@ -34,12 +33,15 @@ import {
   TranscrobesDatabase,
   TranscrobesCollections,
   DefinitionDocument,
+  reloadRequired,
 } from "./Schema";
 import { getAccess, getUsername, refreshAccessToken } from "../lib/JWTAuthProvider";
 import { getFileStorage, IDBFileStorage } from "../lib/IDBFileStorage";
 import { API_PREFIX, fetchPlus } from "../lib/lib";
 
 import { addPouchPlugin, getRxStoragePouch } from "rxdb";
+
+declare const self: ServiceWorkerGlobalScope;
 
 addPouchPlugin(require("pouchdb-adapter-idb"));
 
@@ -48,8 +50,6 @@ addRxPlugin(RxDBQueryBuilderPlugin);
 // FIXME: I'm not sure this works, I still get errors in the ext
 if (process?.env?.NODE_ENV?.trim() === "development" && process?.env?.PLATFORM === "site") {
   addRxPlugin(RxDBValidatePlugin);
-} else {
-  addRxPlugin(RxDBNoValidatePlugin);
 }
 addRxPlugin(RxDBMigrationPlugin);
 addRxPlugin(RxDBUpdatePlugin);
@@ -285,7 +285,9 @@ function setupTwoWayReplication(
     console.log("Attempting to refresh token two-way replication, if that was the issue");
     refreshTokenIfRequired(new URL(syncURL), replicationState, err);
   });
-  // replicationState.change$.subscribe(change => {console.log("I just replicated something") && console.dir(change)});
+  // replicationState.send$.subscribe((change) => {
+  //   console.debug("I just replicated something up for", colName, change);
+  // });
   return replicationState;
 }
 
@@ -339,7 +341,22 @@ async function createDatabase(dbName: string): Promise<TranscrobesDatabase> {
 
 async function createCollections(db: TranscrobesDatabase) {
   console.log("Create collections...");
-  await db.addCollections(DBCollections);
+  for (const [colName, col] of Object.entries(DBCollections)) {
+    try {
+      await db.addCollections({ [colName]: col });
+    } catch (error) {
+      console.error(`Error adding collection ${colName}, removing and re-adding`, error);
+      if (["characters", "cards", "definitions", "word_model_stats"].includes(colName)) {
+        throw new Error(`Can't remove collection ${colName}, bailing`);
+      }
+      await db.removeCollection(colName);
+      await db.addCollections({ [colName]: col });
+      reloadRequired.add("true");
+    }
+  }
+  if (reloadRequired.size > 0 && self && typeof self.needsReload !== "undefined") {
+    self.needsReload = true;
+  }
 
   // FIXME: this is no longer true but anyway
   return (await db.definitions.findByIds(["670"])).size === 0; // look for "de", if exists, we aren't new

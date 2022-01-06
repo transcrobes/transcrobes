@@ -52,6 +52,21 @@ window.componentsConfig = {
   langPair: DEFAULT_LANGUAGE_PAIR,
 };
 
+setInterval(async () => {
+  const lusername = await getUsername();
+  if (lusername && (await isInitialisedAsync(lusername))) {
+    const needsReload = await window.componentsConfig.proxy.sendMessagePromise<boolean>({
+      source: "App.tsx",
+      type: "NEEDS_RELOAD",
+      value: "",
+    });
+    if (needsReload) {
+      console.log("Reloading after NEEDS_RELOAD");
+      location.reload();
+    }
+  }
+}, 2000);
+
 function App(): ReactElement {
   const [inited, setInited] = useState(false);
   useEffect(() => {

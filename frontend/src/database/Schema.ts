@@ -25,6 +25,8 @@ const INITIALISATION_CACHE_NAME = `${CACHE_NAME}.initialisation`;
 const LIVE_INTERVAL = 60;
 const BATCH_SIZE = 10000;
 
+export const reloadRequired = new Set<string>();
+
 function getWordId(card: CardType | string): string {
   if (typeof card === "string") {
     return card.split(CARD_ID_SEPARATOR)[0];
@@ -508,7 +510,7 @@ const IMPORTS_SCHEMA: RxJsonSchema<Import> = {
       shared: { type: "boolean", default: false },
     },
   },
-  indexes: ["title", "processing", "processType"],
+  indexes: ["title", "processing", "processType", "createdAt"],
 };
 
 type ContentDocument = RxDocument<Content>;
@@ -530,7 +532,7 @@ const CONTENTS_SCHEMA: RxJsonSchema<Content> = {
       shared: { type: "boolean", default: false },
     },
   },
-  indexes: ["title", "processing", "contentType"],
+  indexes: ["title", "processing", "contentType", "createdAt"],
 };
 
 type UserListDocument = RxDocument<UserList>;
@@ -554,7 +556,7 @@ const USERLISTS_SCHEMA: RxJsonSchema<UserList> = {
       minimumAbsFrequency: { type: "number", default: NO_LIMIT },
     },
   },
-  indexes: ["title", "processing", "theImport"],
+  indexes: ["title", "processing", "theImport", "createdAt"],
 };
 
 type UserSurveyDocument = RxDocument<UserSurvey>;
@@ -571,7 +573,7 @@ const USERSURVEYS_SCHEMA: RxJsonSchema<UserSurvey> = {
       data: { type: ["string", "null"] },
     },
   },
-  indexes: ["surveyId"],
+  indexes: ["surveyId", "createdAt"],
 };
 
 type GoalDocument = RxDocument<Goal>;
@@ -589,7 +591,7 @@ const GOALS_SCHEMA: RxJsonSchema<Goal> = {
       priority: { type: "number", default: 5 },
     },
   },
-  indexes: ["title", "userList", "priority"],
+  indexes: ["title", "userList", "priority", "createdAt"],
 };
 
 // type DBSyncCollectionType = {
@@ -645,12 +647,6 @@ const DBTwoWayCollections = {
     subscriptionParams: {
       token: "String!",
     },
-    //   methods: {
-    //     somemethod: function () { return something(this) },
-    //   },
-    //   migrationStrategies: {
-    //     1: function (oldDoc) { return oldDoc; },
-    //   }
   },
   imports: {
     schema: IMPORTS_SCHEMA,

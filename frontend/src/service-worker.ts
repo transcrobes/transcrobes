@@ -24,6 +24,8 @@ declare const self: ServiceWorkerGlobalScope;
 declare global {
   interface ServiceWorkerGlobalScope {
     tcb: Promise<TranscrobesDatabase> | null;
+    needsReload: boolean;
+    needsSWReload: boolean;
   }
 }
 let dataProvider: DataProvider | null;
@@ -36,6 +38,7 @@ self.addEventListener("install", (event) => {
     // skip the waiting phase and activate immediately
     await self.skipWaiting();
     log("INSTALLED");
+    self.needsReload = true;
   }
   event.waitUntil(installSW());
 });
@@ -100,6 +103,13 @@ self.addEventListener("message", (event) => {
       console.log("Database unloaded");
       event.ports[0].postMessage("Database unloaded");
     });
+  } else if (event.data && event.data.type === "NEEDS_RELOAD") {
+    event.ports[0].postMessage({
+      source: event.data.source,
+      type: event.data.type,
+      value: self.needsReload,
+    });
+    self.needsReload = false;
   } else if (event.data && event.data.type === "DataProvider") {
     // this is the code for managing the react-admin queries, see rx-data-sw
     if (!dataProvider) {

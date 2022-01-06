@@ -17,7 +17,7 @@ from app.enrich import TokenPhoneType, definitions_json_paths, hanzi_json_paths
 from app.enrich.data import EnrichmentManager, managers
 from app.enrich.models import definition, reload_definitions_cache
 from app.fworker import import_process_topic, regenerate
-from app.models.migrated import CachedDefinition
+from app.models import CachedDefinition, Import
 from app.models.user import absolute_imports_path
 from app.schemas.cache import DataType, RegenerationType
 from app.schemas.files import ProcessData
@@ -284,8 +284,16 @@ async def import_file(
     filename: str = Form(...),
     afile: UploadFile = File(...),
     current_user: models.AuthUser = Depends(deps.get_current_good_user),
+    db: AsyncSession = Depends(deps.get_db),
 ):
     import_id = os.path.basename(filename).split("_")[0]
+    stmt = select(Import.id).where(Import.id == import_id)
+    result = await db.execute(stmt)
+    is_ready = result.scalar_one_or_none()
+    if not is_ready:
+        # we need this because the sync needs to happen before this can
+        return {"status": "unknown_import"}
+
     filepath = absolute_imports_path(current_user.id, filename)
     pathlib.Path(os.path.dirname(filepath)).mkdir(parents=True, exist_ok=True)
     async with aiofiles.open(filepath, "wb") as out_file:

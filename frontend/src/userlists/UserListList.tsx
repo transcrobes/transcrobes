@@ -27,7 +27,7 @@ const ListActions: FC<any> = () => {
     <TopToolbar className={classes.toolbar}>
       {/* {cloneElement(props.filters, { context: 'button' })} */}
       <CreateButton />
-      <SortButton fields={["id", "processing"]} />
+      <SortButton fields={["createdAt", "title", "processing"]} />
       <HelpButton url="https://transcrob.es/page/software/configure/wordlists/" />
     </TopToolbar>
   );
@@ -36,7 +36,7 @@ const ListActions: FC<any> = () => {
 export const UserListList: FC<ListProps> = (props) => {
   return (
     <>
-      <List {...props} actions={<ListActions />}>
+      <List {...props} actions={<ListActions />} sort={{ field: "createdAt", order: "DESC" }}>
         <Datagrid rowClick="show">
           <TextField source="title" />
           <ReferenceField label="Source import" source="theImport" reference="imports" link="show">

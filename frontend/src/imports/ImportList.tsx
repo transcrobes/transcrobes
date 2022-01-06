@@ -16,14 +16,14 @@ import { PROCESSING, PROCESS_TYPE, reverseEnum } from "../lib/types";
 const ListActions: FC<any> = () => (
   <TopToolbar>
     <CreateButton />
-    <SortButton fields={["id", "processing"]} />
+    <SortButton fields={["createdAt", "title", "processing"]} />
     <HelpButton url="https://transcrob.es/page/software/configure/imports/" />
   </TopToolbar>
 );
 
 export const ImportList: FC<ListProps> = (props) => {
   return (
-    <List {...props} actions={<ListActions />}>
+    <List {...props} actions={<ListActions />} sort={{ field: "createdAt", order: "DESC" }}>
       <Datagrid rowClick="show">
         <TextField source="title" />
         <FunctionField

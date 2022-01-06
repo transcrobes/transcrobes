@@ -2,36 +2,26 @@ import { FC } from "react";
 import {
   CreateButton,
   Datagrid,
-  Filter,
   List,
   ListProps,
   ReferenceField,
-  SearchInput,
   SortButton,
   TextField,
   TopToolbar,
 } from "react-admin";
 import HelpButton from "../components/HelpButton";
 
-const ListActions: FC<any> = (props) => (
+const ListActions: FC<any> = () => (
   <TopToolbar>
-    {/* {cloneElement(props.filters, { context: 'button' })} */}
     <CreateButton />
-    <SortButton fields={["id"]} />
+    <SortButton fields={["createdAt", "title"]} />
     <HelpButton url="https://transcrob.es/page/software/configure/goals/" />
   </TopToolbar>
 );
 
-const GoalFilter: FC = (props) => (
-  <Filter {...props}>
-    <SearchInput source="q" alwaysOn />
-    {/* <TextInput label="Title" source="title" defaultValue="hello" /> */}
-  </Filter>
-);
-
 export const GoalList: FC<ListProps> = (props) => {
   return (
-    <List {...props} actions={<ListActions />} filters={<GoalFilter />}>
+    <List {...props} actions={<ListActions />} sort={{ field: "createdAt", order: "DESC" }}>
       <Datagrid rowClick="show">
         <TextField source="title" />
         <ReferenceField source="userList" reference="userlists" link="show">

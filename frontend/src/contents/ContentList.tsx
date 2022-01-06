@@ -5,6 +5,7 @@ import {
   List,
   ListProps,
   ReferenceField,
+  SortButton,
   TextField,
   TopToolbar,
 } from "react-admin";
@@ -15,13 +16,14 @@ import CacheSwitch from "./CacheSwitch";
 
 const ContentActions: FC<any> = () => (
   <TopToolbar>
+    <SortButton fields={["createdAt", "title", "processing"]} />
     <HelpButton url="https://transcrob.es/page/software/configure/contents/" />
   </TopToolbar>
 );
 
 export const ContentList: FC<ListProps> = (props) => {
   return (
-    <List {...props} actions={<ContentActions />}>
+    <List {...props} actions={<ContentActions />} sort={{ field: "createdAt", order: "DESC" }}>
       <Datagrid rowClick="show">
         <TextField source="title" />
         <ReferenceField label="Source import" source="theImport" reference="imports" link="show">
