@@ -15,6 +15,7 @@ class TokenPayload(BaseModel):
     is_verified: bool
     is_superuser: bool
     lang_pair: str
+    translation_providers: list[str]
     token_use: str
     exp: int
     jti: str

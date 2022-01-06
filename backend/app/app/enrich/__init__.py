@@ -131,11 +131,15 @@ class Enricher(ABC):
         pass
 
     @abstractmethod
-    def _set_best_guess(self, sentence: Sentence, token: AnyToken, token_definition):
+    def _set_best_guess(
+        self, sentence: Sentence, token: AnyToken, token_definition, available_def_providers: list[str]
+    ):
         pass
 
     @abstractmethod
-    def _set_slim_best_guess(self, sentence: Sentence, token: AnyToken, token_definition, phone):
+    def _set_slim_best_guess(
+        self, sentence: Sentence, token: AnyToken, token_definition, phone, available_def_providers: list[str]
+    ):
         pass
 
     @abstractmethod
@@ -185,6 +189,7 @@ class Enricher(ABC):
         best_guess: bool,
         phone_type: TokenPhoneType,
         fill_id: bool,
+        available_def_providers: list[str],
     ):
         logger.debug("Attempting to async slim_model enrich: '%s'", slim_model)
 
@@ -195,6 +200,7 @@ class Enricher(ABC):
             best_guess,
             phone_type,
             fill_id,
+            available_def_providers,
         )
 
         # Here we are still using the old way of generating which adds new properties in-place
@@ -226,6 +232,7 @@ class Enricher(ABC):
         best_guess: bool,
         phone_type: TokenPhoneType,
         fill_id: bool,
+        available_def_providers: list[str],
     ):
         logger.debug("Attempting to async enrich: '%s'", text)
         clean_text = self.clean_text(text)
@@ -233,7 +240,7 @@ class Enricher(ABC):
         parsed_slim_model = manager.enricher().slim_parse(raw_model)
         model = {
             "s": await self._enrich_slim_model(
-                parsed_slim_model, manager, translate_sentence, best_guess, phone_type, fill_id
+                parsed_slim_model, manager, translate_sentence, best_guess, phone_type, fill_id, available_def_providers
             )
         }
         match = re.match(r"^\s+", text)
@@ -273,7 +280,6 @@ class Enricher(ABC):
             slim_tokens = []
             for token in sentence["tokens"]:
                 new_token = {
-                    # "lemma": lemma(token),
                     "l": lemma(token),
                 }
                 if "id" in token or "bg" in token:
@@ -333,6 +339,8 @@ class Enricher(ABC):
     async def _enrich_model(
         self, model, manager: EnrichmentManager, translate_sentence: bool, best_guess: bool, deep_transliterations: bool
     ):
+        raise Exception("Actually there are logic problems with this method..., namely the phone stuff")
+
         sentences = await asyncio.gather(
             *[
                 self._enrich_sentence(sentence, manager, translate_sentence, best_guess, deep_transliterations)
@@ -397,12 +405,15 @@ class Enricher(ABC):
         best_guess: bool,
         phone_type: TokenPhoneType,
         fill_id: bool,
+        available_def_providers: list[str],
     ):
         # FIXME: clean later
         model = slim_model["s"] if isinstance(slim_model, dict) else slim_model
         return await asyncio.gather(
             *[
-                self._enrich_slim_sentence(sentence, manager, translate_sentence, best_guess, phone_type, fill_id)
+                self._enrich_slim_sentence(
+                    sentence, manager, translate_sentence, best_guess, phone_type, fill_id, available_def_providers
+                )
                 for sentence in model
             ],
         )
@@ -415,6 +426,7 @@ class Enricher(ABC):
         best_guess: bool,
         phone_type: TokenPhoneType,
         fill_id: bool,
+        available_def_providers: list[str],
     ):
         # FIXME: find out how to put this in the header without a circular dep
         from app.enrich.models import definition  # pylint: disable=C0415
@@ -449,6 +461,8 @@ class Enricher(ABC):
                 if best_guess:
                     # no longer used, as we have this info in the client
                     # token["np"] = self.get_simple_pos(token)  # Normalised POS
-                    self._set_slim_best_guess(sentence, token, token_definition["defs"], token_definition["p"])
+                    self._set_slim_best_guess(
+                        sentence, token, token_definition["defs"], token_definition["p"], available_def_providers
+                    )
 
         return sentence

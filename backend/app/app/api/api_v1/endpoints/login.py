@@ -90,6 +90,7 @@ async def access_from_refresh(token: TcToken, expires_delta: timedelta = None) -
         "is_verified": bool(token_data.is_verified),
         "is_superuser": bool(token_data.is_superuser),
         "lang_pair": token_data.lang_pair,
+        "translation_providers": token_data.translation_providers,
         "jti": uuid.uuid4().hex,
     }
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=ALGORITHM)

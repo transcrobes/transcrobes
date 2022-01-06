@@ -517,7 +517,7 @@ async def process(flat_models, process_type):
     return analysis
 
 
-async def enrich_parse(content: Content, manager: EnrichmentManager):
+async def enrich_parse(content: Content, manager: EnrichmentManager, available_def_providers: list[str]):
     logger.info("Enriching parse for content %s on path %s", content, content.processed_path())
     # TODO: think about doing all files in parallel, not just all fragments
     for fname in glob.glob(
@@ -536,6 +536,7 @@ async def enrich_parse(content: Content, manager: EnrichmentManager):
                     best_guess=True,
                     phone_type=TokenPhoneType.NONE,
                     fill_id=True,
+                    available_def_providers=available_def_providers,
                 )
                 for timestamp, model in file_models.items()
             ]
@@ -697,7 +698,7 @@ async def process_content(content_event: ProcessData):
         await ensure_cache_preloaded(db, content.created_by.from_lang, content.created_by.to_lang)
         logger.info("Cache loaded, starting actual content processing %s", content.id)
         try:
-            await enrich_parse(content, manager)
+            await enrich_parse(content, manager, content.created_by.dictionary_ordering.split(","))
             content.processing = FINISHED
         except Exception as ex:  # pylint: disable=W0703
             content.processing = ERROR

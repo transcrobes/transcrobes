@@ -347,7 +347,7 @@ class CoreNLP_ZHHANS_Enricher(Enricher):
             return False
 
     # override Enricher
-    def _set_best_guess(self, _sentence, token: Token, token_definitions, phone):
+    def _set_best_guess(self, _sentence, token: Token, token_definitions, phone, available_def_providers: list[str]):
         # TODO: do something intelligent here - sentence isn't used yet
         # ideally this will translate the sentence using some sort of statistical method but get the best
         # translation for each individual word of the sentence, not the whole sentence, giving us the
@@ -360,6 +360,8 @@ class CoreNLP_ZHHANS_Enricher(Enricher):
         others = []
         all_defs = []
         for t in token_definitions.keys():
+            if t not in available_def_providers:
+                continue
             # FIXME: currently the tokens are stored in keyed order of the "best" source, "fallback" and then the
             # secondary dictionaries. Actually only the "best" currently has any notion of confidence (cf)
             # and all the "fallback" are "OTHER", meaning the "fallback" will only be considered after
@@ -425,8 +427,8 @@ class CoreNLP_ZHHANS_Enricher(Enricher):
         token["bg"] = best_guess
 
     # override Enricher
-    def _set_slim_best_guess(self, sentence, token, token_definitions, phone):
-        self._set_best_guess(sentence, token, token_definitions, phone)
+    def _set_slim_best_guess(self, sentence, token, token_definitions, phone, available_def_providers: list[str]):
+        self._set_best_guess(sentence, token, token_definitions, phone, available_def_providers)
         token["bg"] = token["bg"]["nt"]
 
     # override Enricher

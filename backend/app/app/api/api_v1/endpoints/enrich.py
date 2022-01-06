@@ -201,7 +201,6 @@ async def enrich_json(
     current_user: schemas.TokenPayload = Depends(deps.get_current_good_tokenpayload),
 ):
     outdata = {}
-
     manager = managers.get(current_user.lang_pair)
     if not manager:
         raise HTTPException(
@@ -217,7 +216,13 @@ async def enrich_json(
         )
 
     outdata = await manager.enricher().enrich_to_json(
-        text, manager, translate_sentence=False, best_guess=False, phone_type=TokenPhoneType.NONE, fill_id=True
+        text,
+        manager,
+        translate_sentence=False,
+        best_guess=False,
+        phone_type=TokenPhoneType.NONE,
+        fill_id=True,
+        available_def_providers=current_user.translation_providers,
     )
     return outdata
 

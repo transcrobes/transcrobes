@@ -25,6 +25,7 @@ def create_token(subject: AuthUser, token_use: str, expires_delta: timedelta = N
         "is_verified": subject.is_verified,
         "is_superuser": subject.is_superuser,
         "lang_pair": f"{subject.from_lang}:{subject.to_lang}",
+        "translation_providers": subject.dictionary_ordering.split(","),
         "jti": uuid.uuid4().hex,
     }
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=ALGORITHM)
