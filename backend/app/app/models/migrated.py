@@ -66,11 +66,13 @@ class Card(RevisionableMixin, Base):
     L2_GRAPH = 1
     L2_SOUND = 2
     L1_MEANING = 3
+    L2_PHRASE = 4
 
     CARD_TYPE = [
         (L2_GRAPH, "L2 written form"),  # JS GRAPH
         (L2_SOUND, "L2 sound form"),  # JS SOUND
         (L1_MEANING, "L1 meaning"),  # JS MEANING
+        (L2_PHRASE, "L2 Phrase"),  # JS PHRASE
     ]
 
     id = Column(Integer, primary_key=True)
@@ -477,7 +479,6 @@ class UserList(DetailedMixin, Base):
             sql += f" ORDER BY {temp_table}.freq DESC "
         else:
             sql += f" ORDER BY {temp_table}.import_frequency DESC "
-
         sql += f" LIMIT {self.nb_to_take} " if self.nb_to_take > 0 else ""
 
         result = await db.execute(text(sql))
@@ -486,9 +487,6 @@ class UserList(DetailedMixin, Base):
         new_userlistwords = []
         newstuff = result.fetchall()
         for i, word_id in enumerate(newstuff):
-            # new_userwords.append(UserWord(user_id=self.created_by_id, word_id=word_id[0]))
-            # new_userlistwords.append(UserListWord(user_list_id=self.id, word_id=word_id[0], default_order=i))
-
             if i % 4000 == 0 and i > 0:  # 4000 == 28000 / 7, which keeps us under the params limit of 32k
                 stmt = postgresql.insert(UserWord).values(new_userwords)
                 stmt = stmt.on_conflict_do_nothing(index_elements=["user_id", "word_id"])
@@ -511,29 +509,6 @@ class UserList(DetailedMixin, Base):
             )
             new_userlistwords.append({"user_list_id": self.id, "word_id": word_id[0], "default_order": i})
 
-        # bulk create using objects
-        # TODO: if this is slow due to ignore_conflicts, maybe update with the id
-        # before doing this and only select those without an id
-        # await db.execute(text(f"""
-        #     INSERT INTO userword
-        #         (user_id, word_id, nb_seen, nb_checked, nb_seen_since_last_check, is_known)
-        #     values
-        #         (:user_id, :word_id, 0, 0, 0, 'false')
-        #     ON CONFLICT (user_id, word_id) DO NOTHING
-        # """), new_userwords)
-
-        # await db.execute(text("""
-        #     INSERT INTO userlistword
-        #         (user_list_id, word_id, default_order)
-        #     VALUES
-        #         (:user_list_id, :word_id, :default_order)
-        #     ON CONFLICT (user_list_id, word_id) DO NOTHING
-        # """), new_userlistwords)
-
-        # cant ignore conflicts, so need to use other method
-        # await db.run_sync(Session.bulk_save_objects, new_userwords)
-        # await db.run_sync(Session.bulk_save_objects, new_userlistwords)
-
         if len(new_userwords) > 0:
             stmt = postgresql.insert(UserWord).values(new_userwords)
             stmt = stmt.on_conflict_do_nothing(index_elements=["user_id", "word_id"])
@@ -543,22 +518,14 @@ class UserList(DetailedMixin, Base):
             stmt = stmt.on_conflict_do_nothing(index_elements=["user_list_id", "word_id"])
             await db.execute(stmt)
 
-        # UserWord.objects.bulk_create(new_userwords, ignore_conflicts=True)
-        # UserListWord.objects.bulk_create(new_userlistwords, ignore_conflicts=True)  # can there be conflicts?
-
         logger.info(f"Added {len(new_userlistwords)} list words for user_list_{self.id} for {self.created_by.email}")
         new_cards = []
         if self.words_are_known:
             # FIXME: make this not so ugly
             result = await db.execute(select(UserListWord.word_id).where(UserListWord.user_list_id == self.id))
-            # for ul_word in UserListWord.objects.filter(user_list=self):
             for ul_word in result.scalars().all():
                 for card_type in Card.CARD_TYPE:
                     new_cards.append(
-                        # Card( user_id=self.created_by_id, word_id=ul_word, card_type=card_type[0],
-                        #   known=self.words_are_known,)
-                        # { "user_id": self.created_by.id, "word_id": ul_word[0], "card_type":card_type[0],
-                        #   "known":self.words_are_known }
                         {
                             "user_id": self.created_by.id,
                             "word_id": ul_word,
@@ -572,22 +539,11 @@ class UserList(DetailedMixin, Base):
                             "suspended": False,
                         }
                     )
-            # await db.execute(text("""
-            #     INSERT INTO card
-            #         (user_id, word_id, card_type, known, interval, repetition, efactor, deleted, suspended)
-            #     VALUES
-            #         (:user_id, :word_id, :card_type, :known, 0, 0, 2.5, 'false', 'false')
-            #     ON CONFLICT (user_id, word_id, card_type) DO NOTHING
-            # """), new_cards)
-            # await db.run_sync(Session.bulk_save_objects, new_cards)
-
             stmt = (
                 postgresql.insert(Card)
                 .values(new_cards)
                 .on_conflict_do_nothing(index_elements=["user_id", "word_id", "card_type"])
             )
-            # stmt = postgresql.insert(Card).values(new_cards)
-            # stmt = stmt.on_conflict_do_nothing (constraint="uniq_user_card")
             await db.execute(stmt)
 
         await db.execute(text(f"DROP TABLE {temp_table}"))
