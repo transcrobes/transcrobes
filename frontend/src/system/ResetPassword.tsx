@@ -239,7 +239,7 @@ function ResetPassword(): ReactElement {
                 </div>
                 <div className={classes.userManagement}>
                   <Typography>
-                    <Link to="/signup">{translate("user.signup")}</Link>
+                    <Link to="/signup">{translate("user.signup.label")}</Link>
                   </Typography>
                 </div>
                 <div className={classes.userManagement}>
