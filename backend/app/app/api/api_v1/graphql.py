@@ -28,6 +28,7 @@ from app.db.session import async_session
 from app.enrich import latest_definitions_json_dir_path
 from app.enrich.data import managers
 from app.enrich.models import ensure_cache_preloaded, update_cache
+from app.models.migrated import KNOWLEDGE_UNSET
 from app.models.mixins import ActivatorMixin, DetailedMixin
 from app.models.user import AuthUser
 from app.schemas.files import ProcessData
@@ -583,13 +584,13 @@ async def filter_cards(
                         ),
                         and_(
                             models.Card.updated_at == updated_at_datetime,
+                            models.Card.word_id == word_id,
                             models.Card.card_type > card_type,
                         ),
                     ),
                 )
             )
     result = await db.execute(stmt.order_by("updated_at", "word_id", "card_type").limit(limit))
-
     model_list = result.scalars().all()
     card_list = [Card.from_model(dj_card) for dj_card in model_list]
     return card_list
@@ -726,6 +727,7 @@ class UserList(CommonType):
     nb_to_take: Optional[int] = 0
     shared: Optional[bool] = False
     words_are_known: Optional[bool] = False
+    word_knowledge: Optional[int] = KNOWLEDGE_UNSET
     only_dictionary_words: Optional[bool] = False
 
     @staticmethod
@@ -739,6 +741,7 @@ class UserList(CommonType):
         out.nb_to_take = obj.nb_to_take
         out.shared = obj.shared
         out.words_are_known = obj.words_are_known
+        out.word_knowledge = obj.word_knowledge
         out.only_dictionary_words = obj.only_dictionary_words
         return out
 
@@ -784,6 +787,7 @@ class UserlistsInput(CommonTypeInput):
     nb_to_take: Optional[int] = 0
     shared: Optional[bool] = False
     words_are_known: Optional[bool] = False
+    word_knowledge: Optional[int] = KNOWLEDGE_UNSET
     only_dictionary_words: Optional[bool] = False
 
 
@@ -1076,6 +1080,7 @@ def fill_user_list(dj_obj: models.UserList, obj: UserlistsInput):
     dj_obj.nb_to_take = obj.nb_to_take
     dj_obj.shared = obj.shared
     dj_obj.words_are_known = obj.words_are_known
+    dj_obj.word_knowledge = obj.word_knowledge
     dj_obj.only_dictionary_words = obj.only_dictionary_words
 
 
@@ -1139,7 +1144,7 @@ class Mutation:
     # }
     @strawberry.mutation
     async def set_cards(self, info: Info[Context, Any], cards: CardsInput = None) -> Card:
-        logger.warn(f"The info is: {info=}, and the card is: {cards=}")
+        logger.debug(f"The info is: {info=}, and the card is: {cards=}")
         async with async_session() as db:
             user = await get_user(db, info.context.request)
             word_id, card_type = map(int, cards.id.split("-"))
@@ -1281,7 +1286,7 @@ class Mutation:
     async def set_usersurveys(self, info: Info[Context, Any], usersurveys: UsersurveysInput = None) -> UserSurvey:
         channel = "usersurveys"
         obj = usersurveys
-        logger.warning(f"The info is: {info=}, and the {channel=} is: {obj=}")
+        logger.debug(f"The info is: {info=}, and the {channel=} is: {obj=}")
         return await set_object(obj, models.UserSurvey, info, channel, UserSurvey, fill_user_survey)
 
 

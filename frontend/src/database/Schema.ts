@@ -1,4 +1,3 @@
-import dayjs from "dayjs";
 import { RxCollection, RxJsonSchema, RxDocument, RxDatabase } from "rxdb";
 
 import {
@@ -23,7 +22,8 @@ import {
 const CACHE_NAME = "v1";
 const INITIALISATION_CACHE_NAME = `${CACHE_NAME}.initialisation`;
 const LIVE_INTERVAL = 60;
-const BATCH_SIZE = 10000;
+const BATCH_SIZE_PULL = 10000;
+const BATCH_SIZE_PUSH = 10000;
 
 export const reloadRequired = new Set<string>();
 
@@ -54,7 +54,7 @@ const pullDefsQueryBuilder = (doc: { id: any; updatedAt: any }) => {
     };
   }
   const query = `{
-    feedDefinitions(id: "${doc.id}", updatedAt: ${doc.updatedAt}, limit: ${BATCH_SIZE}) {
+    feedDefinitions(id: "${doc.id}", updatedAt: ${doc.updatedAt}, limit: ${BATCH_SIZE_PULL}) {
       frequency {
         pos
         posFreq
@@ -347,6 +347,7 @@ const EFACTOR_DEFAULT = 2.5;
 const INTERVAL_DEFAULT = 0;
 const REPETITION_DEFAULT = 0;
 const NO_LIMIT = -1;
+const KNOWLEDGE_UNSET = 0;
 enum GRADE {
   UNKNOWN = 2,
   HARD = 3,
@@ -383,7 +384,7 @@ const CardDocumentMethods: CardDocumentMethodsType = {
 type CardDocument = RxDocument<CardType, CardDocumentMethodsType>;
 type CardCollection = RxCollection<CardType, CardDocumentMethodsType>;
 const CARDS_SCHEMA: RxJsonSchema<CardType> = {
-  version: 1,
+  version: 0,
   required: ["id"],
   type: "object",
   primaryKey: "id",
@@ -439,8 +440,6 @@ const CARDS_SCHEMA: RxJsonSchema<CardType> = {
       type: "number",
     },
   },
-  indexes: ["lastRevisionDate", "dueDate", "firstRevisionDate"],
-  // indexes: ['lastRevisionDate', 'dueDate', 'firstRevisionDate', 'suspended'],
 };
 
 type RecentSentencesDocument = RxDocument<RecentSentencesStoredType>;
@@ -549,6 +548,7 @@ const USERLISTS_SCHEMA: RxJsonSchema<UserList> = {
       shared: { type: "boolean", default: false },
       onlyDictionaryWords: { type: "boolean", default: false },
       wordsAreKnown: { type: "boolean", default: false },
+      wordKnowledge: { type: "number", default: KNOWLEDGE_UNSET },
       nbToTake: { type: "number", default: NO_LIMIT },
       theImport: { type: "string" },
       orderBy: { type: "number", default: 0 },
@@ -711,18 +711,6 @@ const DBTwoWayCollections = {
     subscriptionParams: {
       token: "String!",
     },
-    migrationStrategies: {
-      // 1 means, this transforms data from version 0 to version 1
-      1: function (oldDoc: CardType): CardType {
-        if (oldDoc.interval) {
-          oldDoc.firstSuccessDate = oldDoc.firstRevisionDate;
-          oldDoc.updatedAt = dayjs().unix();
-        } else {
-          oldDoc.firstSuccessDate = 0;
-        }
-        return oldDoc;
-      },
-    },
   },
 };
 
@@ -759,10 +747,9 @@ type TranscrobesCollections = {
   characters: CharacterCollection;
   content_config: ContentConfigsCollection;
 };
-
 type TranscrobesCollectionsKeys = keyof TranscrobesCollections;
-
 type TranscrobesDatabase = RxDatabase<TranscrobesCollections>;
+
 type TranscrobesDocumentTypes =
   | EventQueueDocument
   | ContentConfigsDocument
@@ -805,7 +792,9 @@ export {
   CACHE_NAME,
   INITIALISATION_CACHE_NAME,
   LIVE_INTERVAL,
-  BATCH_SIZE,
+  BATCH_SIZE_PULL,
+  BATCH_SIZE_PUSH,
+  KNOWLEDGE_UNSET,
   getCardType,
   getWordId,
   getCardId,

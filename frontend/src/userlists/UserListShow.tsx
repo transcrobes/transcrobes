@@ -9,8 +9,13 @@ import {
   TextField,
 } from "react-admin";
 import { HelpShowActions } from "../components/HelpShowActions";
+import { GRADE } from "../database/Schema";
 import { ORDER_BY, PROCESSING, reverseEnum, UserList } from "../lib/types";
 import { UserListProgress } from "./UserListProgress";
+
+function wordKnowledge(record: any) {
+  return record.wordKnowledge ? reverseEnum(GRADE, record.wordKnowledge) : "Don't set";
+}
 
 const UserListShow: FC<FieldProps<UserList>> = (props) => (
   <Show
@@ -35,7 +40,8 @@ const UserListShow: FC<FieldProps<UserList>> = (props) => (
         source="orderBy"
         render={(record: any) => reverseEnum(ORDER_BY, record.orderBy)}
       />
-      <BooleanField source="wordsAreKnown" />
+      {/* <BooleanField source="wordsAreKnown" /> */}
+      <FunctionField label="Set word knowledge" render={wordKnowledge} />
       <BooleanField source="shared" />
       <hr />
       <h3>Progress</h3>

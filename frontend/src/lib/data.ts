@@ -933,18 +933,21 @@ async function getSRSReviews(
     return getEmptyDailyReviewables();
   }
   const potentialWordIds = await getPotentialWordIds(db, activityConfig);
-  const allKnownWordIds = new Set<string>(
-    [...(await db.cards.find().where("known").eq(true).exec())].map((x) => x.wordId()),
-  );
-  const existingCards = new Map<string, CardDocument>(
-    (await db.cards.find().where("firstRevisionDate").gt(0).exec()).map((c) => [c.id, c]),
-  );
-  const todaysStudiedWords = new Set<string>(
-    [
-      ...(await db.cards.find().where("lastRevisionDate").gt(activityConfig.todayStarts).exec()),
-    ].map((c) => getWordId(c)),
-  );
-
+  const allKnownWordIds = new Set<string>();
+  const existingCards = new Map<string, CardDocument>();
+  const todaysStudiedWords = new Set<string>();
+  const allCards = await db.cards.find().exec();
+  for (const card of allCards) {
+    if (card.known) {
+      allKnownWordIds.add(card.wordId());
+    }
+    if (card.firstRevisionDate > 0) {
+      existingCards.set(card.id, card);
+    }
+    if (card.lastRevisionDate > activityConfig.todayStarts) {
+      todaysStudiedWords.add(card.wordId());
+    }
+  }
   // Clean the potential wordIds of those we that are already known or we have already seen today
   for (const wordId of potentialWordIds) {
     if (allKnownWordIds.has(wordId) || todaysStudiedWords.has(wordId))

@@ -5,7 +5,7 @@ import json
 import logging
 import os
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, List, TypedDict
 
 from app.data.context import get_broadcast
@@ -20,9 +20,14 @@ from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.ext.asyncio.session import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import relationship
-from sqlalchemy.sql.expression import text
+from sqlalchemy.sql.expression import text, update
 
 logger = logging.getLogger(__name__)
+
+KNOWLEDGE_UNSET = 0
+WORD_UNKNOWN = 2
+WORD_HARD = 3
+WORD_KNOWN = 5
 
 if TYPE_CHECKING:
     from app.enrich.data import EnrichmentManager
@@ -321,6 +326,7 @@ class UserList(DetailedMixin, Base):
     minimum_doc_frequency = Column(Integer, nullable=False, default=-1)
     order_by = Column(Integer, nullable=False, default=ABSOLUTE_FREQUENCY)
     words_are_known = Column(Boolean, nullable=False, default=False)
+    word_knowledge = Column(Integer, nullable=True, default=KNOWLEDGE_UNSET)
 
     the_import = relationship("Import")
 
@@ -362,18 +368,10 @@ class UserList(DetailedMixin, Base):
             f" for UserList {self.id} for user {self.created_by.username}"
         )
 
-        # temp_file = io.StringIO()
-        # writer = csv.writer(temp_file, delimiter="\t")
-        # for freq, word in word_list:
-        #     writer.writerow([word, freq, None, None])
-
-        # temp_file.seek(0)  # will be empty otherwise!!!
         data: List[UserListDict] = []
         for freq, word in word_list:
             data.append(UserListDict(word=word, import_frequency=int(freq)))
-            # writer.writerow([word, freq, None, None])
 
-        # with connection.cursor() as cur:
         temp_table = f"import_{self.id}".replace("-", "_")
 
         sql = f"""
@@ -384,12 +382,7 @@ class UserList(DetailedMixin, Base):
                                             )"""
 
         # FIXME: this algorithm needs some serious optimisation!!!
-
         await db.execute(text(sql))
-
-        # Fill database temp table from the CSV
-        # cur.copy_from(temp_file, temp_table, null="")
-
         await db.execute(
             text(
                 f"""
@@ -398,13 +391,6 @@ class UserList(DetailedMixin, Base):
             ),
             data,
         )
-
-        # FIXME: neither of these actually work
-        # print((await db.get_bind().get_raw_connection()).connection._connection)
-        # raw_connection = await db.get_bind().engine.raw_connection()
-        # with raw_connection.cursor() as rawcur:
-        #     await rawcur.copy_to_table(temp_table, temp_file)
-
         # Get the ID for each word from the reference table (currently enrich_bingapilookup)
         await db.execute(
             text(
@@ -504,7 +490,7 @@ class UserList(DetailedMixin, Base):
                     "nb_seen": 0,
                     "nb_checked": 0,
                     "nb_seen_since_last_check": 0,
-                    "is_known": self.words_are_known,
+                    "is_known": self.word_knowledge == WORD_KNOWN,
                 }
             )
             new_userlistwords.append({"user_list_id": self.id, "word_id": word_id[0], "default_order": i})
@@ -520,42 +506,72 @@ class UserList(DetailedMixin, Base):
 
         logger.info(f"Added {len(new_userlistwords)} list words for user_list_{self.id} for {self.created_by.email}")
         new_cards = []
-        if self.words_are_known:
+        if self.word_knowledge:  # not null and greater than zero
             # FIXME: make this not so ugly
+            # first we make sure that we have all of the items in the list as cards
             result = await db.execute(select(UserListWord.word_id).where(UserListWord.user_list_id == self.id))
-            for ul_word in result.scalars().all():
+            import_now = datetime.now() if self.word_knowledge > WORD_UNKNOWN else None
+            interval = 0 if self.word_knowledge < WORD_HARD else 6 if self.word_knowledge > WORD_HARD else 1
+            repetition = 0 if self.word_knowledge < WORD_HARD else 2 if self.word_knowledge > WORD_HARD else 1
+            due_date = import_now if self.word_knowledge == WORD_UNKNOWN else import_now + timedelta(days=interval)
+
+            for i, ul_word in enumerate(result.scalars().all()):
                 for card_type in Card.CARD_TYPE:
                     new_cards.append(
                         {
                             "user_id": self.created_by.id,
                             "word_id": ul_word,
                             "card_type": card_type[0],
-                            "known": self.words_are_known,
-                            "interval": 0,
-                            "repetition": 0,
+                            "known": self.word_knowledge == WORD_KNOWN,
+                            "interval": interval,
+                            "repetition": repetition,
                             "efactor": 2.5,
-                            "first_success_date": datetime.now() if self.words_are_known else 0,
                             "deleted": False,
                             "suspended": False,
                         }
                     )
+                # 900 == 32500 / (9 * 4) (nb args), which keeps us under the params limit of 32k
+                if i % 900 == 0 and i > 0:
+                    stmt = (
+                        postgresql.insert(Card)
+                        .values(new_cards)
+                        .on_conflict_do_nothing(index_elements=["user_id", "word_id", "card_type"])
+                    )
+                    await db.execute(stmt)
+                    new_cards = []
+
+            if len(new_cards) > 0:
+                stmt = (
+                    postgresql.insert(Card)
+                    .values(new_cards)
+                    .on_conflict_do_nothing(index_elements=["user_id", "word_id", "card_type"])
+                )
+                await db.execute(stmt)
+
+            # Now we have all the cards, we make sure all have been identified as "known" of some description
             stmt = (
-                postgresql.insert(Card)
-                .values(new_cards)
-                .on_conflict_do_nothing(index_elements=["user_id", "word_id", "card_type"])
+                update(Card)
+                .where(Card.user_id == self.created_by.id)
+                .where(Card.word_id == UserListWord.word_id)
+                .where(UserListWord.user_list_id == self.id)
+                .values(first_success_date=import_now)
             )
+            stmt = stmt.values(first_revision_date=import_now)
+            stmt = stmt.values(last_revision_date=import_now)
+            stmt = stmt.values(due_date=due_date)
+            stmt = stmt.values(updated_at=datetime.now())
+            stmt = stmt.execution_options(synchronize_session="fetch")
             await db.execute(stmt)
 
         await db.execute(text(f"DROP TABLE {temp_table}"))
         await db.commit()
-        await self.publish_updates((len(new_cards) > 0))
+        await self.publish_updates()
 
-    async def publish_updates(self, cards_updated: bool):
+    async def publish_updates(self):
         broadcast = await get_broadcast()
-        # await broadcast.publish(channel=f"word_list-{self.user.id}", message=1)
         await broadcast.publish(channel="word_list", message=str(self.created_by.id))
         await broadcast.publish(channel="user_list", message=str(self.created_by.id))
-        if self.words_are_known and cards_updated:
+        if self.word_knowledge:
             await broadcast.publish(channel="cards", message=str(self.created_by.id))
 
 

@@ -28,7 +28,8 @@ import {
   DBTwoWayCollectionKeys,
   DBPullCollectionKeys,
   DBPullCollections,
-  BATCH_SIZE,
+  BATCH_SIZE_PULL,
+  BATCH_SIZE_PUSH,
   LIVE_INTERVAL,
   TranscrobesDatabase,
   TranscrobesCollections,
@@ -126,7 +127,7 @@ async function loadDatabase(
     false,
   );
 
-  const perFilePercent = 85 / cacheFiles.length;
+  const perFilePercent = 80 / cacheFiles.length;
   for (const i in cacheFiles) {
     const file = cacheFiles[i];
     const response = await initialisationCache.get(file);
@@ -256,14 +257,15 @@ function setupTwoWayReplication(
   const pullQuery = pullQueryBuilderFromRxSchema(
     _.camelCase(colName),
     clone(DBTwoWayCollections[colName]),
-    BATCH_SIZE,
+    BATCH_SIZE_PULL,
   );
   const replicationState = db[colName].syncGraphQL({
     url: syncURL,
     headers: headers,
     push: {
       queryBuilder: pushQuery,
-      batchSize: 10, // FIXME: this doesn't appear to do anything
+      // WARNING: this MUST be very large, or big collections will KILL the CPU for HOURS
+      batchSize: BATCH_SIZE_PUSH,
     },
     pull: {
       queryBuilder: pullQuery,
@@ -285,9 +287,14 @@ function setupTwoWayReplication(
     console.log("Attempting to refresh token two-way replication, if that was the issue");
     refreshTokenIfRequired(new URL(syncURL), replicationState, err);
   });
+  // @ts-ignore
+  // replicationState.received$.subscribe((change: any) => {
+  //   console.debug("I just replicated something down for", colName, change);
+  // });
   // replicationState.send$.subscribe((change) => {
   //   console.debug("I just replicated something up for", colName, change);
   // });
+
   return replicationState;
 }
 
@@ -304,7 +311,7 @@ function setupPullReplication(
   const pullQueryBuilder =
     "pullQueryBuilder" in col
       ? col.pullQueryBuilder
-      : pullQueryBuilderFromRxSchema(_.camelCase(colName), col, BATCH_SIZE);
+      : pullQueryBuilderFromRxSchema(_.camelCase(colName), col, BATCH_SIZE_PULL);
 
   const replicationState = db[colName].syncGraphQL({
     url: syncURL,
@@ -346,7 +353,7 @@ async function createCollections(db: TranscrobesDatabase) {
       await db.addCollections({ [colName]: col });
     } catch (error) {
       console.error(`Error adding collection ${colName}, removing and re-adding`, error);
-      if (["characters", "cards", "definitions", "word_model_stats"].includes(colName)) {
+      if (["characters", "definitions", "word_model_stats"].includes(colName)) {
         throw new Error(`Can't remove collection ${colName}, bailing`);
       }
       await db.removeCollection(colName);
@@ -482,7 +489,7 @@ async function loadFromExports(
       progressCallback,
     );
   }
-  progressCallback("The data files have been loaded into the database : 98% complete", false);
+  progressCallback("The data files have been loaded into the database : 93% complete", false);
   const replStates = new Map<
     DBPullCollectionKeys | DBTwoWayCollectionKeys,
     RxGraphQLReplicationState<any>
@@ -499,6 +506,24 @@ async function loadFromExports(
       setupPullReplication(db, col as DBPullCollectionKeys, syncURL, accessToken),
     );
   }
+  // This can take a while. It will freeze on this if no connection (so no good for offline-first)
+  // but it won't be up-to-date otherwise...
+  if (justCreated || reinitialise) {
+    const rStates = [...replStates.values()];
+    const colNames = [...replStates.keys()];
+
+    const perPercent = 5 / colNames.length;
+    for (const i in rStates) {
+      progressCallback(
+        `Synchronising ${colNames[i]} : ${(perPercent * parseInt(i) + 93).toFixed(2)}% complete`,
+        false,
+      );
+      await rStates[i].awaitInitialReplication();
+    }
+  }
+
+  progressCallback("The collections have been synchronised : 98% complete", false);
+
   if (activateSubscription) {
     for (const [key, state] of replStates.entries()) {
       if (DBCollections[key].subscription) {

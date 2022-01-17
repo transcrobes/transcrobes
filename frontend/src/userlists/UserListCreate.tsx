@@ -11,6 +11,7 @@ import {
   ReferenceInput,
 } from "react-admin";
 import { HelpCreateActions } from "../components/HelpCreateActions";
+import { KNOWLEDGE_UNSET } from "../database/Schema";
 
 import { UserList, STATUS, PROCESSING } from "../lib/types";
 
@@ -59,7 +60,19 @@ const UserListCreate: FC<FieldProps<UserList>> = (props) => (
         ]}
         initialValue={0}
       />
-      <BooleanInput label="Words are known" source="wordsAreKnown" defaultValue={false} />
+      {/* <BooleanInput label="Words are known" source="wordsAreKnown" defaultValue={false} /> */}
+      <SelectInput
+        label="Set word knowledge"
+        source="wordKnowledge"
+        choices={[
+          { id: 0, name: "Don't set" },
+          { id: 2, name: "Unknown" },
+          { id: 3, name: "Hard" },
+          { id: 4, name: "Good" },
+          { id: 5, name: "Known" },
+        ]}
+        initialValue={KNOWLEDGE_UNSET}
+      />
       <BooleanInput label="Shared with others" source="shared" defaultValue={false} />
     </SimpleForm>
   </Create>
