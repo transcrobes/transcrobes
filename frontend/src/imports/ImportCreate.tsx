@@ -25,8 +25,10 @@ const ImportCreate: FC<FieldProps<Import>> = (props) => (
     <SimpleForm redirect="list">
       <Typography>
         Please check the{" "}
-        <a href="https://transcrob.es/page/software/configure/imports/">Online Help</a> for
-        information about supported import formats!
+        <a target="_blank" href="https://transcrob.es/page/software/configure/imports/">
+          Online Help
+        </a>{" "}
+        for information about supported import formats!
       </Typography>
 
       <TextInput label="Import name" source="title" validate={[required()]} />
