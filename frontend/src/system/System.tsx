@@ -56,24 +56,31 @@ function RefreshCacheButton({ onCacheEmptied }: RefreshCacheButtonProps): ReactE
   );
 }
 
-interface RefreshDBButtonProps {
+interface ReinstallDBButtonProps {
+  proxy: AbstractWorkerProxy;
   onDBDeleted: (message: string) => void;
 }
 
-function RefreshDBButton({ onDBDeleted }: RefreshDBButtonProps): ReactElement {
+function ReinstallDBButton({ proxy, onDBDeleted }: ReinstallDBButtonProps): ReactElement {
   const classes = useStyles();
 
   async function handleClick() {
     const username = await getUsername();
     if (username) {
       const dbName = getDatabaseName({ url: new URL(window.location.href) }, username);
-      deleteDatabase(dbName).then(async () => {
-        const message = `Removed ${dbName}`;
-        onDBDeleted(message);
-        console.log(message);
-        await setInitialisedAsync(username, false);
-        window.location.href = "/";
+      await proxy.sendMessagePromise<string>({
+        source: "System",
+        type: "resetDBConnections",
+        value: "",
       });
+      await setInitialisedAsync(username, false);
+      // FIXME: should probably have this done in the SW, not here... ideally there should
+      // be no refs to data.ts in the UI AT ALL
+      await deleteDatabase(dbName);
+      const message = `Removed ${dbName}`;
+      onDBDeleted(message);
+      console.log(message);
+      window.location.href = "/";
     }
   }
   return (
@@ -89,10 +96,10 @@ function RefreshDBButton({ onDBDeleted }: RefreshDBButtonProps): ReactElement {
   );
 }
 
-interface ReinstallDBButtonProps {
+interface ReloadDBButtonProps {
   proxy: AbstractWorkerProxy;
 }
-function ReinstallDBButton({ proxy }: ReinstallDBButtonProps): ReactElement {
+function ReloadDBButton({ proxy }: ReloadDBButtonProps): ReactElement {
   const classes = useStyles();
 
   async function handleClick() {
@@ -165,10 +172,10 @@ function System({ proxy }: Props): ReactElement {
             <RefreshCacheButton onCacheEmptied={(message) => setMessage(message)} />
           </div>
           <div>
-            <ReinstallDBButton proxy={proxy} />
+            <ReloadDBButton proxy={proxy} />
           </div>
           <div>
-            <RefreshDBButton onDBDeleted={(message) => setMessage(message)} />
+            <ReinstallDBButton proxy={proxy} onDBDeleted={(message) => setMessage(message)} />
           </div>
           <Typography>{message}</Typography>
         </CardContent>
