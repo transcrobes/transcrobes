@@ -11,6 +11,8 @@ export type VideoConfig = {
   subDelay: number;
   subFontSize: number;
   subFontColour: HslColor;
+  glossFontColour: HslColor;
+  glossFontSize: number;
   subBoxWidth: number;
   subPosition: SubPosition;
   segmentation: boolean;

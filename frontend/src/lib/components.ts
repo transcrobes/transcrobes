@@ -35,9 +35,9 @@ const DEFINITION_LOADING = "loading...";
 const RETRY_DEFINITION_MS = 5000;
 const RETRY_DEFINITION_MAX_TRIES = 20;
 
-const NUMBER_POS = new Set<TREEBANK_POS_TYPES>(["OD", "NT", "CD"]);
+const TRANSCROBES_INJECTED_STYLE = "transcrobesInjectedStyle";
 
-const ENGLISH_PERCENT_OF_CHINESE_FONTSIZE = 80;
+const NUMBER_POS = new Set<TREEBANK_POS_TYPES>(["OD", "NT", "CD"]);
 
 declare global {
   interface Window {
@@ -64,6 +64,13 @@ const readObserver = new IntersectionObserver(onScreen, {
 let popupParent: HTMLElement = document.body;
 function setPopupParent(value: HTMLElement): void {
   popupParent = value;
+}
+
+function clearGlossStyle(doc?: Document): void {
+  const elem = (doc || document).getElementById(TRANSCROBES_INJECTED_STYLE);
+  if (elem) {
+    elem.remove();
+  }
 }
 
 let platformHelper: AbstractWorkerProxy;
@@ -1201,7 +1208,7 @@ function toggleSentenceVisible(event: MouseEvent, l1Sentence: HTMLElement) {
   event.stopPropagation();
 }
 
-function popupStyle(fontSize: number) {
+function popupStyle(fontSize: number, glossFontSize: number) {
   return `
   hr {
   	margin: 0;
@@ -1215,7 +1222,7 @@ function popupStyle(fontSize: number) {
     max-width: 90%;
     min-width: 180px;
     opacity: 1;
-    font-size: ${fontSize * (ENGLISH_PERCENT_OF_CHINESE_FONTSIZE / 100)}%;
+    font-size: ${fontSize * (glossFontSize / 100)}%;
   }
   @media (min-width: 400px) {
     .tcrobe-def-popup {
@@ -1250,7 +1257,7 @@ class TokenDetails extends HTMLParsedElement {
         const style = document.createElement("style");
         style.textContent = `
           ${TranscrobesCSS}
-          ${popupStyle(utils.fontSize)}
+          ${popupStyle(utils.fontSize, utils.glossFontSize)}
         `;
 
         this.shadowRoot.appendChild(style);
@@ -1405,11 +1412,11 @@ class EnrichedTextFragment extends HTMLParsedElement {
     return ["data-model", "id"];
   }
 
-  ensureStyle(): void {
+  /*ensureStyle(): void {
     // Global style for glosses
-    if (document.body && !document.getElementById("transcrobesInjectedStyle")) {
+    if (document.body && !document.getElementById(TRANSCROBES_INJECTED_STYLE)) {
       const rtStyle = document.createElement("style");
-      rtStyle.id = "transcrobesInjectedStyle";
+      rtStyle.id = TRANSCROBES_INJECTED_STYLE;
       rtStyle.textContent = `
         token-details {
           position: absolute; z-index: 99999;
@@ -1417,8 +1424,29 @@ class EnrichedTextFragment extends HTMLParsedElement {
         .tcrobe-entry { position: relative; cursor: pointer; }
         span.tcrobe-word.tcrobe-gloss::after {
           content: ' (' attr(data-tcrobe-gloss) ')';
-          font-size: ${ENGLISH_PERCENT_OF_CHINESE_FONTSIZE}%;
-          vertical-align: ${(100 - ENGLISH_PERCENT_OF_CHINESE_FONTSIZE) / 2}%;
+          font-size: ${utils.glossFontSize}%;
+          ${utils.glossColour ? "color:" + utils.glossColour + ";" : ""}
+          vertical-align: ${(100 - utils.glossFontSize) / 2}%;
+        }`;
+      document.body.appendChild(rtStyle);
+    }
+  }*/
+
+  ensureStyle(): void {
+    // Global style for glosses
+    if (document.body && !document.getElementById(TRANSCROBES_INJECTED_STYLE)) {
+      const rtStyle = document.createElement("style");
+      rtStyle.id = TRANSCROBES_INJECTED_STYLE;
+      rtStyle.textContent = `
+        token-details {
+          position: absolute; z-index: 99999;
+        }
+        .tcrobe-entry { position: relative; cursor: pointer; }
+        span.tcrobe-word.tcrobe-gloss::after {
+          content: ' (' attr(data-tcrobe-gloss) ')';
+          font-size: ${utils.glossFontSize}%;
+          ${utils.glossColour ? "color:" + utils.glossColour + ";" : ""}
+          vertical-align: ${(100 - utils.glossFontSize) / 2}%;
         }`;
       document.body.appendChild(rtStyle);
     }
@@ -1513,6 +1541,7 @@ export {
   destroyPopup,
   createSVG,
   onScreen,
+  clearGlossStyle,
   EnrichedTextFragment,
   TokenDetails,
   SVG_HAPPY_4,

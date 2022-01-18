@@ -9,6 +9,8 @@ import { FormControl, FormLabel } from "@material-ui/core";
 
 export interface FineControlImplProps {
   classes: Properties;
+  label?: string;
+  increment?: number;
   value: number;
   onValueChange: (value: number) => void;
 }

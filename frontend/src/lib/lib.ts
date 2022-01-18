@@ -36,6 +36,8 @@ let password = "";
 let baseUrl = "";
 let glossing = -1;
 let fontSize = 100;
+let glossFontSize = 100;
+let glossColour = ""; // empty string means don't set
 let segmentation = true;
 let mouseover = true;
 let collectRecents = true;
@@ -75,6 +77,12 @@ function setOnScreenDelayIsConsideredRead(value = 5000): void {
 }
 function setFontSize(value: number): void {
   fontSize = value;
+}
+function setGlossFontSize(value: number): void {
+  glossFontSize = value;
+}
+function setGlossColour(value: string): void {
+  glossColour = value;
 }
 function setSegmentation(value: boolean): void {
   segmentation = value;
@@ -440,6 +448,8 @@ export {
   mouseover,
   collectRecents,
   fontSize,
+  glossFontSize,
+  glossColour,
   segmentation,
   onScreenDelayIsConsideredRead,
   themeName,
@@ -454,6 +464,8 @@ export {
   setGlossing,
   setGlossNumberNouns,
   setFontSize,
+  setGlossFontSize,
+  setGlossColour,
   setSegmentation,
   setMouseover,
   setCollectRecents,

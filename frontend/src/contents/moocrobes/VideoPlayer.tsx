@@ -15,17 +15,21 @@ import { SubPosition, VideoConfig, VideoContentConfig } from "./types";
 import {
   defineElements,
   setGlossing,
+  setGlossColour,
+  setGlossFontSize,
   setOnScreenDelayIsConsideredRead,
   setPlatformHelper,
   setSegmentation,
   setLangPair,
   setPopupParent,
+  clearGlossStyle,
 } from "../../lib/components";
 import { setMouseover, USER_STATS_MODE } from "../../lib/lib";
 import { HslColor } from "react-colorful";
 import useFullscreen from "../../hooks/useFullscreen";
 import useWindowDimensions from "../../hooks/WindowDimensions";
 import { overrideTextTrackListeners } from "../../lib/eventlisteners";
+import { hslToHex } from "../../lib/funclib";
 
 overrideTextTrackListeners();
 
@@ -205,6 +209,7 @@ function VideoPlayer({
   onContentConfigUpdate,
 }: Props): JSX.Element {
   const classes = useStyles();
+  const DEFAULT_FONT_COLOUR = { h: 0, s: 0, l: 100 };
 
   const [subPosition, setSubPosition] = useState<SubPosition>("bottom");
 
@@ -224,7 +229,9 @@ function VideoPlayer({
   const [played, setPlayed] = useState(0);
   const [subDelay, setSubDelay] = useState(0);
   const [subFontSize, setSubFontSize] = useState(1);
-  const [subFontColour, setSubFontColour] = useState<HslColor>({ h: 0, s: 0, l: 100 });
+  const [subFontColour, setSubFontColour] = useState<HslColor>(DEFAULT_FONT_COLOUR);
+  const [glossFontSize, setLocalGlossFontSize] = useState(1);
+  const [glossFontColour, setGlossFontColour] = useState<HslColor>(DEFAULT_FONT_COLOUR);
   const [subBoxWidth, setSubBoxWidth] = useState(0.8); // 80% of the screen
   const [glossing, setLocalGlossing] = useState(USER_STATS_MODE.L1);
   const [segmentation, setLocalSegmentation] = useState(true);
@@ -238,6 +245,22 @@ function VideoPlayer({
     }
     setGlossing(newGlossing);
   }
+  function updateGlossFontColour(newFontColour: HslColor) {
+    if (contentConfig?.config) {
+      setGlossFontColour(newFontColour);
+    }
+    clearGlossStyle(window.document);
+    setGlossColour(hslToHex(newFontColour));
+  }
+
+  function updateGlossFontSize(newFontSize: number) {
+    if (contentConfig?.config) {
+      setLocalGlossFontSize(newFontSize);
+    }
+    clearGlossStyle(window.document);
+    setGlossFontSize(newFontSize * 100);
+  }
+
   function updateSegmentation(_event: any, newSegmentation: boolean) {
     if (contentConfig?.config) {
       setLocalSegmentation(newSegmentation);
@@ -283,6 +306,9 @@ function VideoPlayer({
     const platformHelper = window.componentsConfig.proxy;
 
     updateGlossing(contentConfig?.config?.glossing || USER_STATS_MODE.L1);
+    updateGlossFontSize(contentConfig?.config?.glossFontSize || 1);
+    updateGlossFontColour(contentConfig?.config?.glossFontColour || DEFAULT_FONT_COLOUR);
+
     updateSegmentation(null, contentConfig?.config?.segmentation === false ? false : true);
     updateMouseover(null, contentConfig?.config?.mouseover === false ? false : true);
     // FIXME: this is broken...
@@ -309,6 +335,8 @@ function VideoPlayer({
         subFontSize,
         subBoxWidth,
         subFontColour,
+        glossFontColour,
+        glossFontSize,
         subPosition,
         glossing,
         segmentation,
@@ -327,6 +355,8 @@ function VideoPlayer({
     subDelay,
     subFontColour,
     subFontSize,
+    glossFontColour,
+    glossFontSize,
     subBoxWidth,
     glossing,
     segmentation,
@@ -707,10 +737,14 @@ function VideoPlayer({
                       glossing={glossing}
                       segmentation={segmentation}
                       mouseover={mouseover}
+                      glossFontColour={glossFontColour}
+                      glossFontSize={glossFontSize}
                       onSubPositionChange={(position) => setSubPosition(position)}
-                      onSubFontColourChange={(colour) => setSubFontColour(colour)}
-                      onSubBoxWidthChange={(width) => setSubBoxWidth(width)}
                       onSubFontSizeChange={(size) => setSubFontSize(size)}
+                      onSubFontColourChange={(colour) => setSubFontColour(colour)}
+                      onGlossFontSizeChange={updateGlossFontSize}
+                      onGlossFontColourChange={updateGlossFontColour}
+                      onSubBoxWidthChange={(width) => setSubBoxWidth(width)}
                       onSubDelayChange={(delay) => shiftSubs(delay)}
                       onSeekMouseDown={() => setSeeking(true)}
                       onMute={() => setMuted(!muted)}

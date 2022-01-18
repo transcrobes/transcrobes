@@ -7,12 +7,13 @@ import { Conftainer } from "../../components/Common";
 import { isOnFullscreen } from "../../hooks/useFullscreen";
 import { USER_STATS_MODE } from "../../lib/lib";
 import SubDelay from "./SubDelay";
-import SubFontBoxWidth from "./SubFontBoxWidth";
-import SubFontColour from "./SubFontColour";
-import FontSize from "./SubFontSize";
+// import SubFontBoxWidth from "./SubFontBoxWidth";
+import FontColour from "./FontColour";
+// import FontSize from "./SubFontSize";
 import { SubPosition } from "./types";
 import PlaybackRate from "./PlaybackRate";
 import SubPlaybackRate from "./SubPlaybackRate";
+import FivePercentFineControl from "./FivePercentFineControl";
 
 export interface VideoConfigProps {
   containerRef?: React.RefObject<HTMLDivElement>;
@@ -23,14 +24,18 @@ export interface VideoConfigProps {
   subBoxWidth: number;
   subFontSize: number;
   subFontColour: HslColor;
+  glossFontSize: number;
+  glossFontColour: HslColor;
   subPosition: SubPosition;
   glossing: number;
   segmentation: boolean;
   mouseover: boolean;
   onSubPositionChange: (position: SubPosition) => void;
-  onSubFontColourChange: (colour: HslColor) => void;
-  onSubBoxWidthChange: (width: number) => void;
   onSubFontSizeChange: (size: number) => void;
+  onSubFontColourChange: (colour: HslColor) => void;
+  onGlossFontSizeChange: (size: number) => void;
+  onGlossFontColourChange: (colour: HslColor) => void;
+  onSubBoxWidthChange: (width: number) => void;
   onSubDelayChange: (delay: number) => void;
   onPlaybackRateChange: (rate: number) => void;
   onSubPlaybackRateChange: (rate: number) => void;
@@ -57,14 +62,18 @@ export default function VideoConfig({
   subBoxWidth,
   subFontSize,
   subFontColour,
+  glossFontSize,
+  glossFontColour,
   subPosition,
   glossing,
   segmentation,
   mouseover,
   onSubPositionChange,
-  onSubFontColourChange,
-  onSubBoxWidthChange,
   onSubFontSizeChange,
+  onSubFontColourChange,
+  onGlossFontSizeChange,
+  onGlossFontColourChange,
+  onSubBoxWidthChange,
   onSubDelayChange,
   onPlaybackRateChange,
   onSubPlaybackRateChange,
@@ -157,14 +166,12 @@ export default function VideoConfig({
         </ToggleButtonGroup>
       </Conftainer>
       <Conftainer>
-        <SubFontBoxWidth
+        <FivePercentFineControl
+          label="Subtitle Box Width"
           onValueChange={onSubBoxWidthChange}
           value={subBoxWidth}
           classes={classes}
         />
-      </Conftainer>
-      <Conftainer>
-        <FontSize onValueChange={onSubFontSizeChange} value={subFontSize} classes={classes} />
       </Conftainer>
       <Conftainer>
         <SubDelay onValueChange={onSubDelayChange} value={subDelay} classes={classes} />
@@ -180,10 +187,35 @@ export default function VideoConfig({
         />
       </Conftainer>
       <Conftainer>
-        <SubFontColour
+        <FontColour
           value={subFontColour}
+          label="Subs colour"
           classes={classes}
           onValueChange={onSubFontColourChange}
+        />
+      </Conftainer>
+      <Conftainer>
+        <FivePercentFineControl
+          label="Subtitle Font Size"
+          onValueChange={onSubFontSizeChange}
+          value={subFontSize}
+          classes={classes}
+        />
+      </Conftainer>
+      <Conftainer>
+        <FontColour
+          value={glossFontColour}
+          label="Gloss colour"
+          classes={classes}
+          onValueChange={onGlossFontColourChange}
+        />
+      </Conftainer>
+      <Conftainer>
+        <FivePercentFineControl
+          label="Gloss Font Size"
+          onValueChange={onGlossFontSizeChange}
+          value={glossFontSize}
+          classes={classes}
         />
       </Conftainer>
     </div>

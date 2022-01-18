@@ -4,12 +4,13 @@ import { HslColor } from "react-colorful";
 
 import GlossingSelector from "../../components/GlossingSelector";
 import SubDelay from "./SubDelay";
-import SubFontBoxWidth from "./SubFontBoxWidth";
-import SubFontColour from "./SubFontColour";
-import FontSize from "./SubFontSize";
+// import SubFontBoxWidth from "./SubFontBoxWidth";
+import SubFontColour from "./FontColour";
+// import FontSize from "./SubFontSize";
 import SubSwitch from "./SubSwitch";
 import PlaybackRate from "./SubPlaybackRate";
 import { SubPosition } from "./types";
+import FivePercentFineControl from "./FivePercentFineControl";
 
 export interface VideoConfigProps {
   containerRef?: React.RefObject<HTMLDivElement>;
@@ -19,14 +20,18 @@ export interface VideoConfigProps {
   subBoxWidth: number;
   subFontSize: number;
   subFontColour: HslColor;
+  glossFontColour: HslColor;
+  glossFontSize: number;
   subPosition: SubPosition;
   glossing: number;
   segmentation: boolean;
   mouseover: boolean;
   onSubPositionChange: (position: SubPosition) => void;
-  onSubFontColourChange: (colour: HslColor) => void;
-  onSubBoxWidthChange: (width: number) => void;
   onSubFontSizeChange: (size: number) => void;
+  onSubFontColourChange: (colour: HslColor) => void;
+  onGlossFontSizeChange: (size: number) => void;
+  onGlossFontColourChange: (colour: HslColor) => void;
+  onSubBoxWidthChange: (width: number) => void;
   onSubDelayChange: (delay: number) => void;
   onPlaybackRateChange: (rate: number) => void;
   onGlossingChange: (glossing: number) => void;
@@ -42,14 +47,18 @@ export default function VideoConfig({
   subBoxWidth,
   subFontSize,
   subFontColour,
+  glossFontColour,
+  glossFontSize,
   subPosition,
   glossing,
   segmentation,
   mouseover,
   onSubPositionChange,
-  onSubFontColourChange,
-  onSubBoxWidthChange,
   onSubFontSizeChange,
+  onSubFontColourChange,
+  onGlossFontSizeChange,
+  onGlossFontColourChange,
+  onSubBoxWidthChange,
   onSubDelayChange,
   onPlaybackRateChange,
   onGlossingChange,
@@ -59,17 +68,36 @@ export default function VideoConfig({
   return (
     <div>
       <Grid container direction="column-reverse">
+        <FivePercentFineControl
+          label="Gloss font size"
+          onValueChange={onGlossFontSizeChange}
+          value={glossFontSize}
+          classes={classes}
+        />
+        <SubFontColour
+          value={glossFontColour}
+          label="Gloss colour"
+          classes={classes}
+          onValueChange={onGlossFontColourChange}
+        />
         <SubFontColour
           value={subFontColour}
+          label="Subs colour"
           classes={classes}
           onValueChange={onSubFontColourChange}
         />
-        <SubFontBoxWidth
+        <FivePercentFineControl
+          label="Subs box width"
           onValueChange={onSubBoxWidthChange}
           value={subBoxWidth}
           classes={classes}
         />
-        <FontSize onValueChange={onSubFontSizeChange} value={subFontSize} classes={classes} />
+        <FivePercentFineControl
+          label="Subs font size"
+          onValueChange={onSubFontSizeChange}
+          value={subFontSize}
+          classes={classes}
+        />
         <SubDelay onValueChange={onSubDelayChange} value={subDelay} classes={classes} />
         <PlaybackRate onValueChange={onPlaybackRateChange} value={playbackRate} classes={classes} />
         <div className={classes.select} title="Subs Position">
