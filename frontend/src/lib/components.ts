@@ -29,8 +29,8 @@ const MIN_LEVENSHTEIN_DIST_TO_KEEP = 4;
 const IDEAL_RECENT_SENTS_LENGTH = 10;
 const EVENT_SOURCE = "components";
 const DATA_SOURCE = EVENT_SOURCE;
-const MIN_LOOKED_AT_EVENT_DURATION = 2000; // milliseconds
-const UPDATE_SUBMITTED_SPINNER_DURATION_MS = 2000;
+const MIN_LOOKED_AT_EVENT_DURATION = 3000; // milliseconds
+const UPDATE_SUBMITTED_SPINNER_DURATION_MS = 500;
 const DEFINITION_LOADING = "loading...";
 const RETRY_DEFINITION_MS = 5000;
 const RETRY_DEFINITION_MAX_TRIES = 20;
@@ -438,6 +438,8 @@ async function addOrUpdateCards(
   token: TokenType,
   grade: number,
   originElement: HTMLElement,
+  toggleGlossOn: SVGSVGElement,
+  toggleGlossOff: SVGSVGElement,
 ) {
   // buttons for SRS
   // don't know : hard : good
@@ -489,6 +491,14 @@ async function addOrUpdateCards(
             icon.classList.remove("hidden");
           }
           actions.classList.remove("loader");
+          // FIXME: This is maybe sort of buggy - if it was "known" and is set to not known,
+          // the wrong button will be made visible, because I don't re-show for once known
+          // items
+          if (grade > GRADE.UNKNOWN) {
+            toggleGlossOff.classList.add("hidden");
+          } else {
+            toggleGlossOn.classList.add("hidden");
+          }
         }, UPDATE_SUBMITTED_SPINNER_DURATION_MS);
       }
       cleanupAfterCardsUpdate(doc, grade, wordInfo);
@@ -507,8 +517,9 @@ function cleanupAfterCardsUpdate(doc: Document, grade: number, wordInfo: Definit
         wordEl.classList.remove("tcrobe-gloss");
       }
     }
-    // we MUST set userCardWords to null after a potential modification. the worker also has a cache but one that is up-to-date
-    // so next time we need this an updated version will get re-pulled from the worker
+    // we MUST set userCardWords to null after a potential modification. the worker also has a
+    // cache but one that is up-to-date so next time we need this an updated version will get
+    // re-pulled from the worker
     userCardWords = null;
   }
   // This will remove addition after an add, but what if you chose wrong and want to update?
@@ -705,7 +716,15 @@ function printActionsRx(
       ],
       actionsDiv,
     ).addEventListener("click", (event) =>
-      addOrUpdateCards(event, wordInfo, token, parseInt(grade), originElement),
+      addOrUpdateCards(
+        event,
+        wordInfo,
+        token,
+        parseInt(grade),
+        originElement,
+        toggleGlossOn,
+        toggleGlossOff,
+      ),
     );
 }
 
