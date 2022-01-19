@@ -1,4 +1,5 @@
 import { ReduxState, Record, Identifier } from "react-admin";
+import { HslColor } from "react-colorful";
 
 import {
   CardDocument,
@@ -122,10 +123,15 @@ export const ZH_TB_POS_LABELS: { [key in TREEBANK_POS_TYPES]: string } = {
   URL: "URL",
 };
 
+export type GlossPosition = "row" | "column-reverse" | "column" | "row-reverse";
+
 export type ComponentsAppConfig = {
   segmentation: boolean;
   glossing: number;
   fontSize: number;
+  glossFontColour: HslColor | null;
+  glossFontSize: number;
+  glossPosition: GlossPosition;
   mouseover: boolean;
   popupParent: HTMLElement;
 };

@@ -1,4 +1,5 @@
 import { HslColor } from "react-colorful";
+import { GlossPosition } from "../../lib/types";
 
 // "above" ?
 export type SubPosition = "top" | "bottom" | "under";
@@ -13,6 +14,7 @@ export type VideoConfig = {
   subFontColour: HslColor;
   glossFontColour: HslColor;
   glossFontSize: number;
+  glossPosition: GlossPosition;
   subBoxWidth: number;
   subPosition: SubPosition;
   segmentation: boolean;

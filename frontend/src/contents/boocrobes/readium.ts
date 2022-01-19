@@ -1,5 +1,5 @@
 import * as components from "../../lib/components";
-import { wordIdsFromModels } from "../../lib/funclib";
+import { hslToHex, wordIdsFromModels } from "../../lib/funclib";
 import { DefinitionType } from "../../lib/types";
 export * from "../../lib/components";
 
@@ -12,6 +12,13 @@ function loadSettingsFromParentFrame() {
   components.setBaseUrl(window.parent.componentsConfig.url.origin);
   components.setLangPair(window.parent.componentsConfig.langPair);
   components.setSegmentation(window.parent.readerConfig.segmentation);
+  components.setGlossColour(
+    window.parent.readerConfig.glossFontColour
+      ? hslToHex(window.parent.readerConfig.glossFontColour)
+      : "",
+  );
+  components.setGlossFontSize(window.parent.readerConfig.glossFontSize * 100);
+  components.setGlossPosition(window.parent.readerConfig.glossPosition);
   components.setMouseover(window.parent.readerConfig.mouseover);
   components.setGlossing(window.parent.readerConfig.glossing);
   components.setFontSize(window.parent.readerConfig.fontSize);

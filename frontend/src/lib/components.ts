@@ -519,9 +519,10 @@ async function addOrUpdateCards(
 function cleanupAfterCardsUpdate(doc: Document, grade: number, wordInfo: DefinitionType) {
   //remove existing defs if we are setting knowledge level > UNKNOWN
   if (grade > GRADE.UNKNOWN) {
-    for (const wordEl of doc.getElementsByClassName("tcrobe-gloss")) {
-      if (wordEl.textContent === wordInfo.graph) {
-        wordEl.classList.remove("tcrobe-gloss");
+    for (const glossEl of doc.getElementsByClassName("tcrobe-gloss")) {
+      const gloss = glossEl as HTMLElement;
+      if (gloss.dataset.tcrobeLemma === wordInfo.graph) {
+        gloss.classList.add("hidden");
       }
     }
     // we MUST set userCardWords to null after a potential modification. the worker also has a
@@ -647,23 +648,35 @@ function toggleGloss(
     toggleGlossOn.classList.add("hidden");
     toggleGlossOff.classList.remove("hidden");
   }
-  for (const wordEl of doc.getElementsByClassName("tcrobe-word")) {
-    const word = wordEl as HTMLElement;
-    if (wordEl.textContent === wordInfo.graph) {
-      if (wordEl.classList.contains("tcrobe-gloss")) {
+  for (const entryEl of doc.getElementsByClassName("tcrobe-entry")) {
+    const entry = entryEl as HTMLElement;
+    if (entry.dataset.lemma === wordInfo.graph) {
+      const glossEl = entry.querySelector(".tcrobe-gloss");
+      if (glossEl && !glossEl.classList.contains("hidden")) {
         //remove
-        wordEl.classList.remove("tcrobe-gloss");
+        glossEl.classList.add("hidden");
       } else {
         //add
-        if (!word.dataset.tcrobeGloss) {
-          getUserCardWords().then((uCardWords) => {
-            getNormalGloss(token, utils.glossing, uCardWords).then((gloss) => {
-              word.dataset.tcrobeGloss = gloss;
-              wordEl.classList.add("tcrobe-gloss");
+        if (glossEl) {
+          glossEl.classList.remove("hidden");
+        } else {
+          if (!entry.dataset.tcrobeGloss) {
+            getUserCardWords().then((uCardWords) => {
+              getNormalGloss(token, utils.glossing, uCardWords).then((gloss) => {
+                const glossElement = doCreateElement(
+                  doc,
+                  "span",
+                  "tcrobe-gloss",
+                  " (" + gloss + ")",
+                  null,
+                );
+                entry.dataset.tcrobeGloss = gloss;
+                glossElement.dataset.tcrobeLemma = token.l;
+                entry.appendChild(glossElement);
+              });
             });
-          });
+          }
         }
-        wordEl.classList.add("tcrobe-gloss");
       }
     }
   }
@@ -680,7 +693,8 @@ function printActionsRx(
   const actionsDiv = doCreateElement(doc, "div", "tcrobe-def-actions", null, null, parentDiv);
 
   // local force gloss or not
-  const isGlossed = originElement.classList.contains("tcrobe-gloss");
+  const glossEl = originElement?.querySelector(".tcrobe-gloss") as HTMLElement;
+  const isGlossed = !!glossEl && !glossEl.classList.contains("hidden");
   const toggleGlossOn = createSVG(
     SVG_FLASHLIGHT_ON,
     null,
@@ -1001,15 +1015,25 @@ async function getPopoverText(token: TokenType, uCardWords: DayCardWords): Promi
 
 function awaitDefinitionReady({
   token,
-  word,
+  entry,
+  doc,
   attemptsRemaining,
 }: {
   token: TokenType;
-  word: HTMLElement;
+  entry: HTMLElement;
+  doc: Document;
   attemptsRemaining: number;
 }): void {
   if (attemptsRemaining < 0) {
-    word.dataset.tcrobeGloss = "[Error loading gloss]";
+    entry.dataset.tcrobeGloss = "[Error loading gloss]";
+    const glossElement = doCreateElement(
+      doc,
+      "span",
+      "tcrobe-gloss",
+      " [Error loading gloss]",
+      null,
+    );
+    entry.appendChild(glossElement);
     return;
   }
   let promise: Promise<DefinitionType> | null;
@@ -1022,7 +1046,8 @@ function awaitDefinitionReady({
     if (!def) {
       window.setTimeout(awaitDefinitionReady, RETRY_DEFINITION_MS, {
         token: token,
-        word: word,
+        entry: entry,
+        doc: doc,
         attemptsRemaining: attemptsRemaining - 1,
       });
     } else {
@@ -1031,7 +1056,15 @@ function awaitDefinitionReady({
       // as params means they are somehow undefined...
       getUserCardWords().then((uCardWords) => {
         getNormalGloss(token, utils.glossing, uCardWords).then((gloss) => {
-          word.dataset.tcrobeGloss = gloss;
+          const glossElement = doCreateElement(
+            doc,
+            "span",
+            "tcrobe-gloss",
+            " (" + gloss + ")",
+            null,
+          );
+          entry.appendChild(glossElement);
+          entry.dataset.tcrobeGloss = gloss;
         });
       });
     }
@@ -1063,7 +1096,7 @@ function isNumberToken(token: TokenType): boolean {
 }
 
 async function updateWordForEntry(
-  entry: HTMLElement,
+  entryContainer: HTMLElement,
   glossing: number,
   entryPadding: boolean,
   tokenData: TokenType,
@@ -1073,19 +1106,20 @@ async function updateWordForEntry(
   addClick = true,
   addMouseInOut = true,
 ): Promise<HTMLElement> {
-  entry.dataset.tcrobeEntry = JSON.stringify(tokenData);
+  entryContainer.dataset.tcrobeEntry = JSON.stringify(tokenData);
   const token = tokenData; // || (JSON.parse(entry.dataset.tcrobeEntry!) as TokenType);
+  const lemma = token.l;
+  entryContainer.dataset.lemma = lemma;
   if (entryPadding) {
     // FIXME: this should be the class but how do i make it variable? with css variables?
-    entry.style.paddingLeft = `${(SEGMENTED_BASE_PADDING * utils.fontSize) / 100}px`; // should this be padding or margin?
+    entryContainer.style.paddingLeft = `${(SEGMENTED_BASE_PADDING * utils.fontSize) / 100}px`; // should this be padding or margin?
   }
+  const entry = doCreateElement(doc, "span", "tcrobe-entry-inner", null, null, entryContainer);
   if (token.style) {
     for (const [name, value] of Object.entries(token.style)) {
       (entry.style as any)[name] = value;
     }
   }
-
-  const lemma = token.l;
   const word = doCreateElement(doc, "span", "tcrobe-word", lemma, null);
   entry.appendChild(word);
   if (addClick && !token.de) {
@@ -1119,17 +1153,17 @@ async function updateWordForEntry(
     if (gloss.startsWith(DEFINITION_LOADING)) {
       window.setTimeout(awaitDefinitionReady, RETRY_DEFINITION_MS, {
         token: token,
-        word: word,
+        entry: entry,
+        doc: doc,
         attemptsRemaining: RETRY_DEFINITION_MAX_TRIES,
       });
     }
-
-    word.dataset.tcrobeGloss = gloss;
-    word.classList.add("tcrobe-gloss");
-  } else {
-    word.classList.remove("tcrobe-gloss");
+    entry.dataset.tcrobeGloss = gloss;
+    const glossElement = doCreateElement(doc, "span", "tcrobe-gloss", " (" + gloss + ")", null);
+    glossElement.dataset.tcrobeLemma = lemma;
+    entry.appendChild(glossElement);
   }
-  return entry;
+  return entryContainer;
 }
 
 function doCreateElement(
@@ -1400,7 +1434,7 @@ class TokenDetails extends HTMLParsedElement {
       printInfosRx(doc, wordInfo, popupContainer);
       printPosRx(doc, token, popupContainer);
       printSynonymsRx(doc, wordInfo, token, popupContainer);
-      printActionsRx(doc, wordInfo, token, popupContainer, target);
+      printActionsRx(doc, wordInfo, token, popupContainer, entryEl);
       popupDefinitionsRx(doc, wordInfo, popupContainer);
       return "";
     });
@@ -1412,38 +1446,23 @@ class EnrichedTextFragment extends HTMLParsedElement {
     return ["data-model", "id"];
   }
 
-  /*ensureStyle(): void {
-    // Global style for glosses
-    if (document.body && !document.getElementById(TRANSCROBES_INJECTED_STYLE)) {
-      const rtStyle = document.createElement("style");
-      rtStyle.id = TRANSCROBES_INJECTED_STYLE;
-      rtStyle.textContent = `
-        token-details {
-          position: absolute; z-index: 99999;
-        }
-        .tcrobe-entry { position: relative; cursor: pointer; }
-        span.tcrobe-word.tcrobe-gloss::after {
-          content: ' (' attr(data-tcrobe-gloss) ')';
-          font-size: ${utils.glossFontSize}%;
-          ${utils.glossColour ? "color:" + utils.glossColour + ";" : ""}
-          vertical-align: ${(100 - utils.glossFontSize) / 2}%;
-        }`;
-      document.body.appendChild(rtStyle);
-    }
-  }*/
-
   ensureStyle(): void {
     // Global style for glosses
     if (document.body && !document.getElementById(TRANSCROBES_INJECTED_STYLE)) {
       const rtStyle = document.createElement("style");
       rtStyle.id = TRANSCROBES_INJECTED_STYLE;
       rtStyle.textContent = `
+        .hidden {
+          display: none;
+        }
         token-details {
           position: absolute; z-index: 99999;
         }
-        .tcrobe-entry { position: relative; cursor: pointer; }
-        span.tcrobe-word.tcrobe-gloss::after {
-          content: ' (' attr(data-tcrobe-gloss) ')';
+        .tcrobe-entry { position: relative; cursor: pointer; display: inline-flex; text-indent: 0; }
+        .tcrobe-entry-inner { display: flex; flex-direction: ${
+          utils.glossPosition
+        }; align-items: center; }
+        span.tcrobe-gloss {
           font-size: ${utils.glossFontSize}%;
           ${utils.glossColour ? "color:" + utils.glossColour + ";" : ""}
           vertical-align: ${(100 - utils.glossFontSize) / 2}%;

@@ -5,8 +5,10 @@ import { Button, ButtonGroup, makeStyles, Switch } from "@material-ui/core";
 import { HtmlNavigator, HtmlReaderState } from "../types";
 import { USER_STATS_MODE } from "../../../lib/lib";
 import { FormControl, FormControlLabel } from "@material-ui/core";
-import { ReactElement } from "react";
 import Conftainer from "../../../components/Conftainer";
+import { Conftainer as BasicConftainer, DEFAULT_FONT_COLOUR } from "../../../components/Common";
+import FivePercentFineControl from "../../../components/FivePercentFineControl";
+import FontColour from "../../../components/FontColour";
 
 export type HtmlSettingsProps = {
   navigator: HtmlNavigator;
@@ -20,43 +22,62 @@ const useStyles = makeStyles((theme) => ({
     buttonGroup: { flexWrap: "wrap", padding: "0.3em", width: "100%" },
   },
   button: { width: "100%" },
-  conftainer: {
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: "0.3em",
-    width: "100%",
+  fineControlIcons: {
+    color: "#777",
+    fontSize: 20,
+    transform: "scale(0.9)",
+    "&:hover": {
+      color: theme.palette.getContrastText(theme.palette.background.default),
+      transform: "scale(1)",
+    },
   },
+  fontSelection: { display: "flex", justifyContent: "flex-start", padding: "0.4em" },
+  glossFontColour: { display: "flex", justifyContent: "flex-start", padding: "0.4em" },
 }));
-
-type Props = {
-  title: string;
-  children?: React.ReactNode;
-};
-function Conftainerold({ title, children }: Props): ReactElement {
-  const classes = useStyles();
-  return (
-    <FormControl component="fieldset">
-      <FormControlLabel
-        control={<div className={classes.conftainer}>{children}</div>}
-        label={title}
-      />
-    </FormControl>
-  );
-}
 
 export default function ReaderConfig(props: HtmlSettingsProps): React.ReactElement {
   const { navigator, readerState } = props;
   const { fontFamily, fontFamilyChinese, isScrolling } = readerState;
   const { setFontFamilyChinese, setFontFamily, decreaseFontSize, increaseFontSize, setScroll } =
     navigator;
-  const { setGlossing, setSegmentation, setMouseover } = navigator;
-  const { glossing, segmentation, mouseover } = readerState;
+  const {
+    setGlossing,
+    setSegmentation,
+    setMouseover,
+    setGlossFontColour,
+    setGlossFontSize,
+    setGlossPosition,
+  } = navigator;
+  const { glossing, segmentation, mouseover, glossFontColour, glossFontSize, glossPosition } =
+    readerState;
   const classes = useStyles();
+
+  function handleGlossFontColourSelectedChange(
+    event: React.ChangeEvent<HTMLInputElement>,
+    checked: boolean,
+  ): void {
+    setGlossFontColour(checked ? DEFAULT_FONT_COLOUR : null);
+  }
+
   return (
     <>
+      <Conftainer label="Paging" id="paging">
+        <ToggleButtonGroup
+          className={classes.button}
+          onChange={(event: React.MouseEvent<HTMLElement>, value: any) => setScroll(value)}
+          value={isScrolling}
+          exclusive
+        >
+          <ToggleButton className={classes.button} value={false}>
+            Paginated
+          </ToggleButton>
+          <ToggleButton className={classes.button} value={true}>
+            Scrolling
+          </ToggleButton>
+        </ToggleButtonGroup>
+      </Conftainer>
       <Conftainer label="Font family" id="ff">
-        <FormControl component="fieldset" className={classes.wordSelection}>
+        <FormControl component="fieldset" className={classes.fontSelection}>
           <FormControlLabel
             control={<Switch checked={fontFamily !== "Original"} />}
             label="Manual Font Selection"
@@ -132,45 +153,6 @@ export default function ReaderConfig(props: HtmlSettingsProps): React.ReactEleme
           </Button>
         </ButtonGroup>
       </Conftainer>
-      <Conftainer label="Paging" id="paging">
-        <ToggleButtonGroup
-          className={classes.button}
-          onChange={(event: React.MouseEvent<HTMLElement>, value: any) => setScroll(value)}
-          value={isScrolling}
-          exclusive
-        >
-          <ToggleButton className={classes.button} value={false}>
-            Paginated
-          </ToggleButton>
-          <ToggleButton className={classes.button} value={true}>
-            Scrolling
-          </ToggleButton>
-        </ToggleButtonGroup>
-      </Conftainer>
-      <Conftainer label="Glossing" id="glossing">
-        <ToggleButtonGroup
-          className={classes.buttonGroup}
-          value={glossing}
-          exclusive
-          onChange={(event: React.MouseEvent<HTMLElement>, value: any) => setGlossing(value)}
-        >
-          <ToggleButton className={classes.button} value={USER_STATS_MODE.NO_GLOSS}>
-            None
-          </ToggleButton>
-          <ToggleButton className={classes.button} value={USER_STATS_MODE.L2_SIMPLIFIED}>
-            Simpler
-          </ToggleButton>
-          <ToggleButton className={classes.button} value={USER_STATS_MODE.TRANSLITERATION}>
-            Sounds
-          </ToggleButton>
-          <ToggleButton className={classes.button} value={USER_STATS_MODE.L1}>
-            English
-          </ToggleButton>
-          <ToggleButton className={classes.button} value={USER_STATS_MODE.TRANSLITERATION_L1}>
-            Sounds + English
-          </ToggleButton>
-        </ToggleButtonGroup>
-      </Conftainer>
       <Conftainer label="Segmentation" id="segmentation">
         <ToggleButtonGroup
           className={classes.button}
@@ -205,6 +187,77 @@ export default function ReaderConfig(props: HtmlSettingsProps): React.ReactEleme
           </ToggleButton>
         </ToggleButtonGroup>
       </Conftainer>
+      <Conftainer label="Glossing" id="glossing">
+        <ToggleButtonGroup
+          className={classes.buttonGroup}
+          value={glossing}
+          exclusive
+          onChange={(event: React.MouseEvent<HTMLElement>, value: any) => setGlossing(value)}
+        >
+          <ToggleButton className={classes.button} value={USER_STATS_MODE.NO_GLOSS}>
+            None
+          </ToggleButton>
+          <ToggleButton className={classes.button} value={USER_STATS_MODE.L2_SIMPLIFIED}>
+            Simpler
+          </ToggleButton>
+          <ToggleButton className={classes.button} value={USER_STATS_MODE.TRANSLITERATION}>
+            Sounds
+          </ToggleButton>
+          <ToggleButton className={classes.button} value={USER_STATS_MODE.L1}>
+            English
+          </ToggleButton>
+          <ToggleButton className={classes.button} value={USER_STATS_MODE.TRANSLITERATION_L1}>
+            Sounds + English
+          </ToggleButton>
+        </ToggleButtonGroup>
+      </Conftainer>
+      <Conftainer label="Gloss Position" id="gp">
+        <ToggleButtonGroup
+          className={classes.buttonGroup}
+          value={glossPosition}
+          exclusive
+          onChange={(event: React.MouseEvent<HTMLElement>, value: any) => setGlossPosition(value)}
+        >
+          <ToggleButton className={classes.button} value="row">
+            After
+          </ToggleButton>
+          <ToggleButton className={classes.button} value="column-reverse">
+            Above
+          </ToggleButton>
+          <ToggleButton className={classes.button} value="column">
+            Below
+          </ToggleButton>
+          <ToggleButton className={classes.button} value="row-reverse">
+            Before
+          </ToggleButton>
+        </ToggleButtonGroup>
+      </Conftainer>
+      <BasicConftainer>
+        <FivePercentFineControl
+          label="Gloss Font Size"
+          onValueChange={setGlossFontSize}
+          value={glossFontSize}
+          classes={classes}
+        />
+      </BasicConftainer>
+      <FormControl component="fieldset" className={classes.glossFontColour}>
+        <FormControlLabel
+          control={
+            <Switch checked={!!glossFontColour} onChange={handleGlossFontColourSelectedChange} />
+          }
+          label="Override gloss colour"
+        />
+        {!!glossFontColour && (
+          <BasicConftainer>
+            <FontColour
+              value={glossFontColour}
+              label="Gloss colour"
+              classes={classes}
+              onValueChange={setGlossFontColour}
+            />
+          </BasicConftainer>
+        )}
+      </FormControl>
     </>
   );
 }

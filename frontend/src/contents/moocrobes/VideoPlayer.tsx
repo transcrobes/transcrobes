@@ -24,12 +24,13 @@ import {
   setPopupParent,
   clearGlossStyle,
 } from "../../lib/components";
-import { setMouseover, USER_STATS_MODE } from "../../lib/lib";
+import { setGlossPosition, setMouseover, USER_STATS_MODE } from "../../lib/lib";
 import { HslColor } from "react-colorful";
 import useFullscreen from "../../hooks/useFullscreen";
 import useWindowDimensions from "../../hooks/WindowDimensions";
 import { overrideTextTrackListeners } from "../../lib/eventlisteners";
 import { hslToHex } from "../../lib/funclib";
+import { GlossPosition } from "../../lib/types";
 
 overrideTextTrackListeners();
 
@@ -232,6 +233,7 @@ function VideoPlayer({
   const [subFontColour, setSubFontColour] = useState<HslColor>(DEFAULT_FONT_COLOUR);
   const [glossFontSize, setLocalGlossFontSize] = useState(1);
   const [glossFontColour, setGlossFontColour] = useState<HslColor>(DEFAULT_FONT_COLOUR);
+  const [glossPosition, setLocalGlossPosition] = useState<GlossPosition>("row");
   const [subBoxWidth, setSubBoxWidth] = useState(0.8); // 80% of the screen
   const [glossing, setLocalGlossing] = useState(USER_STATS_MODE.L1);
   const [segmentation, setLocalSegmentation] = useState(true);
@@ -259,6 +261,14 @@ function VideoPlayer({
     }
     clearGlossStyle(window.document);
     setGlossFontSize(newFontSize * 100);
+  }
+
+  function updateGlossPosition(position: GlossPosition) {
+    if (contentConfig?.config) {
+      setLocalGlossPosition(position);
+    }
+    clearGlossStyle(window.document);
+    setGlossPosition(position);
   }
 
   function updateSegmentation(_event: any, newSegmentation: boolean) {
@@ -308,7 +318,7 @@ function VideoPlayer({
     updateGlossing(contentConfig?.config?.glossing || USER_STATS_MODE.L1);
     updateGlossFontSize(contentConfig?.config?.glossFontSize || 1);
     updateGlossFontColour(contentConfig?.config?.glossFontColour || DEFAULT_FONT_COLOUR);
-
+    updateGlossPosition(contentConfig?.config?.glossPosition || "row");
     updateSegmentation(null, contentConfig?.config?.segmentation === false ? false : true);
     updateMouseover(null, contentConfig?.config?.mouseover === false ? false : true);
     // FIXME: this is broken...
@@ -337,6 +347,7 @@ function VideoPlayer({
         subFontColour,
         glossFontColour,
         glossFontSize,
+        glossPosition,
         subPosition,
         glossing,
         segmentation,
@@ -739,11 +750,13 @@ function VideoPlayer({
                       mouseover={mouseover}
                       glossFontColour={glossFontColour}
                       glossFontSize={glossFontSize}
+                      glossPosition={glossPosition}
                       onSubPositionChange={(position) => setSubPosition(position)}
                       onSubFontSizeChange={(size) => setSubFontSize(size)}
                       onSubFontColourChange={(colour) => setSubFontColour(colour)}
                       onGlossFontSizeChange={updateGlossFontSize}
                       onGlossFontColourChange={updateGlossFontColour}
+                      onGlossPositionChange={updateGlossPosition}
                       onSubBoxWidthChange={(width) => setSubBoxWidth(width)}
                       onSubDelayChange={(delay) => shiftSubs(delay)}
                       onSeekMouseDown={() => setSeeking(true)}

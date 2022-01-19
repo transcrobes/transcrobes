@@ -31,6 +31,9 @@ window.readerConfig = {
   segmentation: true,
   mouseover: true,
   glossing: USER_STATS_MODE.L1,
+  glossFontColour: null,
+  glossFontSize: 1,
+  glossPosition: "row",
   fontSize: 108,
   popupParent: window.document.body,
 };
@@ -73,12 +76,18 @@ export default function Reader({ proxy }: ContentProps): ReactElement {
         window.readerConfig.segmentation = conf.segmentation;
         window.readerConfig.mouseover = conf.mouseover;
         window.readerConfig.glossing = conf.glossing;
+        window.readerConfig.glossFontColour = conf.glossFontColour || null;
+        window.readerConfig.glossFontSize = conf.glossFontSize || 1;
+        window.readerConfig.glossPosition = conf.glossPosition || null;
         window.readerConfig.fontSize = conf.fontSize;
       } else {
         conf = {
           isScrolling: false,
           fontSize: DEFAULT_FONT_SIZE,
           glossing: USER_STATS_MODE.L1,
+          glossFontColour: null,
+          glossFontSize: 1,
+          glossPosition: "row",
           segmentation: true,
           mouseover: true,
           fontFamily: DEFAULT_FONT_FAMILY,

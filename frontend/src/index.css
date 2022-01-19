@@ -13,3 +13,7 @@ code {
 iframe {
   border: none;
 }
+
+.hidden {
+  display: none;
+}

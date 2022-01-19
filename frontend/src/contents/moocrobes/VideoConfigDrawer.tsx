@@ -8,12 +8,13 @@ import { isOnFullscreen } from "../../hooks/useFullscreen";
 import { USER_STATS_MODE } from "../../lib/lib";
 import SubDelay from "./SubDelay";
 // import SubFontBoxWidth from "./SubFontBoxWidth";
-import FontColour from "./FontColour";
+import FontColour from "../../components/FontColour";
 // import FontSize from "./SubFontSize";
 import { SubPosition } from "./types";
 import PlaybackRate from "./PlaybackRate";
 import SubPlaybackRate from "./SubPlaybackRate";
-import FivePercentFineControl from "./FivePercentFineControl";
+import FivePercentFineControl from "../../components/FivePercentFineControl";
+import { GlossPosition } from "../../lib/types";
 
 export interface VideoConfigProps {
   containerRef?: React.RefObject<HTMLDivElement>;
@@ -26,6 +27,7 @@ export interface VideoConfigProps {
   subFontColour: HslColor;
   glossFontSize: number;
   glossFontColour: HslColor;
+  glossPosition: GlossPosition;
   subPosition: SubPosition;
   glossing: number;
   segmentation: boolean;
@@ -35,6 +37,7 @@ export interface VideoConfigProps {
   onSubFontColourChange: (colour: HslColor) => void;
   onGlossFontSizeChange: (size: number) => void;
   onGlossFontColourChange: (colour: HslColor) => void;
+  onGlossPositionChange: (position: GlossPosition) => void;
   onSubBoxWidthChange: (width: number) => void;
   onSubDelayChange: (delay: number) => void;
   onPlaybackRateChange: (rate: number) => void;
@@ -64,6 +67,7 @@ export default function VideoConfig({
   subFontColour,
   glossFontSize,
   glossFontColour,
+  glossPosition,
   subPosition,
   glossing,
   segmentation,
@@ -73,6 +77,7 @@ export default function VideoConfig({
   onSubFontColourChange,
   onGlossFontSizeChange,
   onGlossFontColourChange,
+  onGlossPositionChange,
   onSubBoxWidthChange,
   onSubDelayChange,
   onPlaybackRateChange,
@@ -162,6 +167,29 @@ export default function VideoConfig({
           </ToggleButton>
           <ToggleButton className={localClasses.button} value={true}>
             Display Mouseover
+          </ToggleButton>
+        </ToggleButtonGroup>
+      </Conftainer>
+      <Conftainer>
+        <ToggleButtonGroup
+          className={localClasses.button}
+          value={glossPosition}
+          exclusive
+          onChange={(event: React.MouseEvent<HTMLElement>, value: any) =>
+            onGlossPositionChange(value)
+          }
+        >
+          <ToggleButton className={localClasses.button} value="row">
+            After
+          </ToggleButton>
+          <ToggleButton className={localClasses.button} value="column-reverse">
+            Above
+          </ToggleButton>
+          <ToggleButton className={localClasses.button} value="column">
+            Below
+          </ToggleButton>
+          <ToggleButton className={localClasses.button} value="row-reverse">
+            Before
           </ToggleButton>
         </ToggleButtonGroup>
       </Conftainer>

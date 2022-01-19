@@ -71,6 +71,7 @@ export default function VideoPlayerScreen({ proxy }: ContentProps): ReactElement
           subFontColour: { h: 0, s: 0, l: 100 },
           glossFontSize: 1,
           glossFontColour: { h: 0, s: 0, l: 100 },
+          glossPosition: "row",
           subBoxWidth: 0.8,
           subPosition: "bottom",
           glossing: USER_STATS_MODE.L1,

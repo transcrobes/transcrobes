@@ -12,7 +12,7 @@ export interface FontColourProps {
 
 function FontColour({ classes, label, value, onValueChange }: FontColourProps): ReactElement {
   return (
-    <Box my={4}>
+    <Box my={1}>
       <Typography className={classes.fineControlIcons} variant="h4" component="h1" gutterBottom>
         {label}
       </Typography>

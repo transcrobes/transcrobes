@@ -22,6 +22,9 @@ window.readerConfig = {
   segmentation: true,
   mouseover: true,
   fontSize: 108,
+  glossFontColour: null,
+  glossFontSize: 1,
+  glossPosition: "row",
   glossing: USER_STATS_MODE.L1,
   popupParent: window.document.body,
 };

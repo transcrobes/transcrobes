@@ -11,7 +11,7 @@ import { useSelector } from "react-redux";
 import { DEFAULT_HEIGHT, DEFAULT_SHOULD_GROW_WHEN_SCROLLING, HEADER_HEIGHT } from "../constants";
 import HtmlReaderContent from "./HtmlReaderContent";
 import { USER_STATS_MODE_KEY_VALUES } from "../../../lib/lib";
-import { AppState } from "../../../lib/types";
+import { AppState, GlossPosition } from "../../../lib/types";
 import {
   ColorMode,
   ReaderReturn,
@@ -24,6 +24,7 @@ import {
   DEFAULT_FONT_FAMILY,
   DEFAULT_FONT_FAMILY_CHINESE,
 } from "../types";
+import { HslColor } from "react-colorful";
 
 const FONT_SIZE_STEP = 4;
 
@@ -38,6 +39,9 @@ export type HtmlAction =
   | { type: "SET_READER"; reader: any }
   | { type: "SET_GLOSSING"; glossing: USER_STATS_MODE_KEY_VALUES }
   | { type: "SET_SEGMENTATION"; segmentation: boolean }
+  | { type: "SET_GLOSS_FONT_COLOUR"; fontColour: HslColor | null }
+  | { type: "SET_GLOSS_FONT_SIZE"; size: number }
+  | { type: "SET_GLOSS_POSITION"; position: GlossPosition }
   | { type: "SET_MOUSEOVER"; mouseover: boolean }
   | { type: "SET_SCROLL"; isScrolling: boolean }
   | { type: "SET_FONT_SIZE"; size: number }
@@ -62,6 +66,9 @@ function htmlReducer(state: HtmlState, action: HtmlAction): HtmlState {
         onUpdate: state.onUpdate,
         fontFamily: state.fontFamily,
         fontFamilyChinese: state.fontFamilyChinese,
+        glossFontColour: state.glossFontColour,
+        glossFontSize: state.glossFontSize,
+        glossPosition: state.glossPosition,
         glossing: state.glossing,
         mouseover: state.mouseover,
         segmentation: state.segmentation,
@@ -80,6 +87,24 @@ function htmlReducer(state: HtmlState, action: HtmlAction): HtmlState {
       newState = {
         ...state,
         segmentation: action.segmentation,
+      };
+      break;
+    case "SET_GLOSS_FONT_COLOUR":
+      newState = {
+        ...state,
+        glossFontColour: action.fontColour,
+      };
+      break;
+    case "SET_GLOSS_FONT_SIZE":
+      newState = {
+        ...state,
+        glossFontSize: action.size,
+      };
+      break;
+    case "SET_GLOSS_POSITION":
+      newState = {
+        ...state,
+        glossPosition: action.position,
       };
       break;
     case "SET_MOUSEOVER":
@@ -163,6 +188,9 @@ export default function useHtmlReader(args: ReaderArguments): ReaderReturn {
     segmentation: readerSettings?.segmentation || window.readerConfig.segmentation,
     fontFamily: readerSettings?.fontFamily || DEFAULT_FONT_FAMILY,
     fontFamilyChinese: readerSettings?.fontFamilyChinese || DEFAULT_FONT_FAMILY_CHINESE,
+    glossFontColour: readerSettings?.glossFontColour || null,
+    glossFontSize: readerSettings?.glossFontSize || 1,
+    glossPosition: readerSettings?.glossPosition || "row",
     currentTocUrl: readerSettings?.currentTocUrl || null,
     atStart: readerSettings?.atStart || true,
     atEnd: readerSettings?.atEnd || false,
@@ -357,6 +385,33 @@ export default function useHtmlReader(args: ReaderArguments): ReaderReturn {
     },
     [reader],
   );
+  const setGlossFontColour = React.useCallback(
+    (fontColour: HslColor | null) => {
+      if (!reader) return;
+      window.readerConfig.glossFontColour = fontColour;
+      dispatch({ type: "SET_GLOSS_FONT_COLOUR", fontColour: fontColour });
+      forceReaderRefresh();
+    },
+    [reader],
+  );
+  const setGlossFontSize = React.useCallback(
+    (size: number) => {
+      if (!reader) return;
+      window.readerConfig.glossFontSize = size;
+      dispatch({ type: "SET_GLOSS_FONT_SIZE", size: size });
+      forceReaderRefresh();
+    },
+    [reader],
+  );
+  const setGlossPosition = React.useCallback(
+    (position: GlossPosition) => {
+      if (!reader) return;
+      window.readerConfig.glossPosition = position;
+      dispatch({ type: "SET_GLOSS_POSITION", position: position });
+      forceReaderRefresh();
+    },
+    [reader],
+  );
   const setSegmentation = React.useCallback(
     (segmentation: boolean) => {
       if (!reader) return;
@@ -417,6 +472,9 @@ export default function useHtmlReader(args: ReaderArguments): ReaderReturn {
       goBackward,
       setGlossing,
       setSegmentation,
+      setGlossFontColour,
+      setGlossFontSize,
+      setGlossPosition,
       setMouseover,
       setScroll,
       increaseFontSize,

@@ -38,6 +38,7 @@ let glossing = -1;
 let fontSize = 100;
 let glossFontSize = 100;
 let glossColour = ""; // empty string means don't set
+let glossPosition = "row"; // empty string means don't set
 let segmentation = true;
 let mouseover = true;
 let collectRecents = true;
@@ -83,6 +84,9 @@ function setGlossFontSize(value: number): void {
 }
 function setGlossColour(value: string): void {
   glossColour = value;
+}
+function setGlossPosition(value: string): void {
+  glossPosition = value;
 }
 function setSegmentation(value: boolean): void {
   segmentation = value;
@@ -450,6 +454,7 @@ export {
   fontSize,
   glossFontSize,
   glossColour,
+  glossPosition,
   segmentation,
   onScreenDelayIsConsideredRead,
   themeName,
@@ -466,6 +471,7 @@ export {
   setFontSize,
   setGlossFontSize,
   setGlossColour,
+  setGlossPosition,
   setSegmentation,
   setMouseover,
   setCollectRecents,

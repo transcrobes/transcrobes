@@ -1,5 +1,7 @@
 import { styled } from "@material-ui/core";
 
+export const DEFAULT_FONT_COLOUR = { h: 0, s: 0, l: 0 };
+
 export const InfoBox = styled("div")(() => ({
   margin: "0.7em",
 }));

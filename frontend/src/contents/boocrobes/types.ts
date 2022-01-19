@@ -1,8 +1,9 @@
 // import { Injectable } from "@d-i-t-a/reader/dist/types/navigator/IFrameNavigator";
 import { USER_STATS_MODE_KEY_VALUES } from "../../lib/lib";
-import { ThemeName } from "../../lib/types";
+import { GlossPosition, ThemeName } from "../../lib/types";
 import { WebpubManifest } from "./WebpubManifestTypes/WebpubManifest";
 import { PRECACHE_PUBLICATIONS } from "./constants";
+import { HslColor } from "react-colorful";
 
 export type { WebpubManifest };
 
@@ -46,6 +47,9 @@ export type HtmlNavigator = Navigator & {
   setGlossing: (glossing: USER_STATS_MODE_KEY_VALUES) => void;
   setSegmentation: (segmentation: boolean) => void;
   setMouseover: (mouseover: boolean) => void;
+  setGlossFontSize: (size: number) => void;
+  setGlossFontColour: (colour: HslColor | null) => void;
+  setGlossPosition: (position: GlossPosition) => void;
 };
 
 // Optional settings to initialize the reader with
@@ -68,6 +72,9 @@ export type HtmlReaderState = ReaderState & {
   glossing: USER_STATS_MODE_KEY_VALUES;
   segmentation: boolean;
   mouseover: boolean;
+  glossFontSize: number;
+  glossFontColour: HslColor | null;
+  glossPosition: GlossPosition;
 };
 
 export type HtmlState = HtmlReaderState & {

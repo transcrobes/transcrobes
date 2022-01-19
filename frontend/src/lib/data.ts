@@ -715,7 +715,7 @@ async function practiceCard(
       firstSuccessDate: cardToSave.firstSuccessDate,
       lastRevisionDate: newDate,
     };
-    await currentCard.atomicPatch(newValues);
+    await cardObject.atomicPatch(newValues);
   } else {
     if (!cardToSave.firstRevisionDate) {
       cardToSave.firstRevisionDate = newDate;

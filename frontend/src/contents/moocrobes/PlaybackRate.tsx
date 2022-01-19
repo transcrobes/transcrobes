@@ -1,5 +1,5 @@
 import { ReactElement } from "react";
-import FineControl, { FineControlImplProps } from "./FineControl";
+import FineControl, { FineControlImplProps } from "../../components/FineControl";
 
 function PlaybackRate({ classes, value, onValueChange }: FineControlImplProps): ReactElement {
   return (

@@ -6,7 +6,7 @@ import { getDb } from "../database/Database";
 import { RxDBDataProviderParams } from "../ra-data-rxdb";
 import { USER_STATS_MODE } from "../lib/lib";
 import { TranscrobesDatabase } from "../database/Schema";
-import { onError } from "../lib/funclib";
+import { hslToHex, onError } from "../lib/funclib";
 import {
   Box,
   Container,
@@ -22,6 +22,12 @@ import {
 } from "@material-ui/core";
 import GlossingSelector from "../components/GlossingSelector";
 import SearchLoading from "../components/SearchLoading";
+import { GlossPosition } from "../lib/types";
+import { HslColor } from "react-colorful";
+import { Conftainer, DEFAULT_FONT_COLOUR } from "../components/Common";
+import FivePercentFineControl from "../components/FivePercentFineControl";
+import FontColour from "../components/FontColour";
+import GlossingPositionSelector from "../components/GlossPositionSelector";
 
 declare global {
   interface Window {
@@ -48,6 +54,7 @@ const useStyles = makeStyles((theme) => ({
   loading: {
     textAlign: "center",
   },
+  glossFontColour: { display: "flex", justifyContent: "flex-start", padding: "0.4em" },
 }));
 
 function Initialisation() {
@@ -103,8 +110,11 @@ export default function Options(): JSX.Element {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [baseUrl, setBaseUrl] = useState("");
-  const [glossing, setGlossing] = useState(USER_STATS_MODE.L1);
   const [segmentation, setSegmentation] = useState(true);
+  const [glossing, setGlossing] = useState(USER_STATS_MODE.L1);
+  const [glossFontSize, setGlossFontSize] = useState(1);
+  const [glossFontColour, setGlossFontColour] = useState<HslColor | null>(null);
+  const [glossPosition, setGlossPosition] = useState<GlossPosition>("row");
   const [collectRecents, setCollectRecents] = useState(true);
   const [mouseover, setMouseover] = useState(true);
 
@@ -123,10 +133,16 @@ export default function Options(): JSX.Element {
       const gl = await ap.getValue("glossing");
       if (gl) setGlossing(parseInt(gl));
       else setGlossing(USER_STATS_MODE.L1);
-      const seg = await ap.getValue("segmentation");
-      if (seg) setSegmentation(parseInt(seg) > 0);
+      const gfs = await ap.getValue("glossFontSize");
+      if (gfs) setGlossFontSize(JSON.parse(gfs));
+      const gfc = await ap.getValue("glossFontColour");
+      if (gfc) setGlossFontColour((gfc && JSON.parse(gfc)) || null);
+      const gp = await ap.getValue("glossPosition");
+      if (gp) setGlossPosition(gp as GlossPosition);
       const mo = await ap.getValue("mouseover");
       if (mo) setMouseover(parseInt(mo) > 0);
+      const seg = await ap.getValue("segmentation");
+      if (seg) setSegmentation(parseInt(seg) > 0);
       const cr = await ap.getValue("collectRecents");
       if (cr) setCollectRecents(parseInt(cr) > 0);
     })();
@@ -137,6 +153,9 @@ export default function Options(): JSX.Element {
     utils.setPassword(password);
     utils.setBaseUrl(baseUrl.endsWith("/") ? baseUrl : baseUrl + "/");
     utils.setGlossing(glossing);
+    utils.setGlossColour(glossFontColour ? hslToHex(glossFontColour) : "");
+    utils.setGlossFontSize(glossFontSize);
+    utils.setGlossPosition(glossPosition);
     utils.setMouseover(mouseover);
     utils.setCollectRecents(collectRecents);
     utils.setSegmentation(segmentation);
@@ -146,6 +165,9 @@ export default function Options(): JSX.Element {
       ap.setPassword(utils.password),
       ap.setValue("baseUrl", utils.baseUrl),
       ap.setValue("glossing", utils.glossing.toString()),
+      ap.setValue("glossFontSize", utils.glossFontSize.toString()),
+      ap.setValue("glossFontColour", glossFontColour ? JSON.stringify(glossFontColour) : ""),
+      ap.setValue("glossPosition", utils.glossPosition),
       ap.setValue("mouseover", utils.mouseover ? "1" : "0"),
       ap.setValue("segmentation", utils.segmentation ? "1" : "0"),
       ap.setValue("collectRecents", utils.collectRecents ? "1" : "0"),
@@ -158,6 +180,13 @@ export default function Options(): JSX.Element {
     }
     utils.setAccessToken(items[0]);
     utils.setRefreshToken(items[1]);
+  }
+
+  function handleGlossFontColourSelectedChange(
+    event: React.ChangeEvent<HTMLInputElement>,
+    checked: boolean,
+  ): void {
+    setGlossFontColour(checked ? DEFAULT_FONT_COLOUR : null);
   }
 
   async function handleSubmit(forceReinit: boolean) {
@@ -244,6 +273,36 @@ export default function Options(): JSX.Element {
         <FormControl className={classes.controls}>
           <InputLabel shrink>Glossing</InputLabel>
           <GlossingSelector value={glossing} onChange={setGlossing} />
+        </FormControl>
+        <Conftainer>
+          <FivePercentFineControl
+            label="Gloss Font Size"
+            onValueChange={setGlossFontSize}
+            value={glossFontSize}
+            classes={classes as any}
+          />
+        </Conftainer>
+        <FormControl component="fieldset" className={classes.glossFontColour}>
+          <FormControlLabel
+            control={
+              <Switch checked={!!glossFontColour} onChange={handleGlossFontColourSelectedChange} />
+            }
+            label="Override gloss colour"
+          />
+          {!!glossFontColour && (
+            <Conftainer>
+              <FontColour
+                value={glossFontColour}
+                label="Gloss colour"
+                classes={classes}
+                onValueChange={setGlossFontColour}
+              />
+            </Conftainer>
+          )}
+        </FormControl>
+        <FormControl className={classes.controls}>
+          <InputLabel shrink>Gloss Position</InputLabel>
+          <GlossingPositionSelector value={glossPosition} onChange={setGlossPosition} />
         </FormControl>
         <FormControlLabel
           className={classes.controls}

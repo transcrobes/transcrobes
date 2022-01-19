@@ -5,12 +5,12 @@ import { HslColor } from "react-colorful";
 import GlossingSelector from "../../components/GlossingSelector";
 import SubDelay from "./SubDelay";
 // import SubFontBoxWidth from "./SubFontBoxWidth";
-import SubFontColour from "./FontColour";
+import SubFontColour from "../../components/FontColour";
 // import FontSize from "./SubFontSize";
 import SubSwitch from "./SubSwitch";
 import PlaybackRate from "./SubPlaybackRate";
 import { SubPosition } from "./types";
-import FivePercentFineControl from "./FivePercentFineControl";
+import FivePercentFineControl from "../../components/FivePercentFineControl";
 
 export interface VideoConfigProps {
   containerRef?: React.RefObject<HTMLDivElement>;

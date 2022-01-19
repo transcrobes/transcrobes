@@ -2,7 +2,7 @@ import * as components from "../lib/components";
 import { BackgroundWorkerProxy } from "../lib/proxies";
 import TranscrobesCSS from "../css/tccss";
 import { DefinitionType, ModelType } from "../lib/types";
-import { textNodes } from "../lib/funclib";
+import { hslToHex, textNodes } from "../lib/funclib";
 import { getInputLang } from "../lib/components";
 
 const DATA_SOURCE = "content.ts";
@@ -127,6 +127,11 @@ function ensureLoaded(qtype: string) {
 async function ensureAllLoaded() {
   components.setLangPair(await ensureLoaded("langPair"));
   components.setGlossing(parseInt(await getFromSettingsDB("glossing")));
+  const glossColour = await getFromSettingsDB("glossFontColour");
+  components.setGlossColour((glossColour && hslToHex(JSON.parse(glossColour))) || "");
+  const size = await getFromSettingsDB("glossFontSize");
+  components.setGlossFontSize(parseFloat(size) * 100 || 100);
+  components.setGlossPosition((await getFromSettingsDB("glossPosition")) || "row");
   components.setMouseover(parseInt(await getFromSettingsDB("mouseover")) > 0);
   components.setCollectRecents(parseInt(await getFromSettingsDB("collectRecents")) > 0);
   components.setSegmentation(parseInt(await getFromSettingsDB("segmentation")) > 0);

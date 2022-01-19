@@ -3,15 +3,14 @@ import * as data from "../lib/data";
 import { GRADE, TranscrobesDatabase } from "../database/Schema";
 import { getDb } from "../database/Database";
 import dayjs from "dayjs";
-import { PythonCounter } from "../lib/types";
+import { DayCardWords, EventData } from "../lib/types";
 import { getPassword, getUsername, getValue, refreshAccessToken } from "../lib/JWTAuthProvider";
 
 utils.setEventSource("chrome-extension");
 
 let db: TranscrobesDatabase;
-let knownWordIdsCounter: PythonCounter;
-let allCardWordGraphs: Set<string>;
-let knownCardWordGraphs: Set<string>;
+
+let dayCardWords: DayCardWords | null;
 
 let eventQueueTimer: number | undefined;
 
@@ -21,8 +20,24 @@ let eventQueueTimer: number | undefined;
 
 const EVENT_SOURCE = "background.ts";
 
+function getLocalCardWords(message: EventData) {
+  if (dayCardWords) {
+    console.log("i think already loaded");
+    return Promise.resolve(dayCardWords);
+  } else {
+    return loadDb(console.debug, message).then((ldb) => {
+      console.log("i am loading the cards");
+      return data.getCardWords(ldb).then((val) => {
+        dayCardWords = val;
+        console.log("they are now i am loading the cards", dayCardWords);
+        return Promise.resolve(dayCardWords);
+      });
+    });
+  }
+}
+
 // FIXME: any
-async function loadDb(callback: any, message: any) {
+async function loadDb(callback: any, message: EventData) {
   if (db) {
     callback({ source: message.source, type: message.type, value: "success" });
     return db;
@@ -34,8 +49,9 @@ async function loadDb(callback: any, message: any) {
     getValue("baseUrl"),
     getValue("glossing"),
     getValue("lang_pair"),
-    getValue("segmentation"),
-    getValue("mouseover"),
+    getValue("segmentation"), // FIXME: why do I need this here again?
+    getValue("mouseover"), // FIXME: why do I need this here again?
+    // FIXME: maybe I need glossPosition et al. here also?
     getValue("collectRecents"),
   ]);
   console.debug("DB NOT loaded, (re)loading with items", db, items);
@@ -170,41 +186,17 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
       });
     });
   } else if (message.type === "getCardWords") {
-    if (!!knownCardWordGraphs || !!allCardWordGraphs || !!knownWordIdsCounter) {
+    getLocalCardWords(message).then((dayCW) => {
       sendResponse({
         source: message.source,
         type: message.type,
         value: {
-          allCardWordGraphs: Array.from(allCardWordGraphs),
-          knownCardWordGraphs: Array.from(knownCardWordGraphs),
-          knownWordIdsCounter: knownWordIdsCounter,
+          allCardWordGraphs: Array.from(dayCW.allCardWordGraphs),
+          knownCardWordGraphs: Array.from(dayCW.knownCardWordGraphs),
+          knownWordIdsCounter: dayCW.knownWordIdsCounter,
         },
       });
-    } else {
-      loadDb(console.debug, message).then((ldb) => {
-        data.getCardWords(ldb).then((values) => {
-          // convert to arrays or Set()s get silently purged... Because JS is sooooooo awesome!
-          knownCardWordGraphs = values.knownCardWordGraphs;
-          allCardWordGraphs = values.allCardWordGraphs;
-          knownWordIdsCounter = values.knownWordIdsCounter;
-          console.log(
-            "filling up the cardWords from db in background.ts",
-            knownCardWordGraphs,
-            allCardWordGraphs,
-            knownWordIdsCounter,
-          );
-          sendResponse({
-            source: message.source,
-            type: message.type,
-            value: {
-              allCardWordGraphs: Array.from(allCardWordGraphs),
-              knownCardWordGraphs: Array.from(knownCardWordGraphs),
-              knownWordIdsCounter: knownWordIdsCounter,
-            },
-          });
-        });
-      });
-    }
+    });
   } else if (message.type === "submitLookupEvents") {
     loadDb(console.debug, message).then((ldb) => {
       data
@@ -236,16 +228,18 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
     const practiceDetails = message.value;
     const { wordInfo, grade } = practiceDetails;
     loadDb(console.debug, message).then((ldb) => {
-      data.practiceCardsForWord(ldb, practiceDetails).then((values) => {
-        allCardWordGraphs.add(wordInfo.graph);
-        if (grade > GRADE.UNKNOWN) {
-          knownCardWordGraphs.add(wordInfo.graph);
-          knownWordIdsCounter[wordInfo.wordId] = knownWordIdsCounter[wordInfo.wordId]
-            ? knownWordIdsCounter[wordInfo.wordId] + 1
-            : 1;
-        }
-        console.debug("Practiced", message, values);
-        sendResponse({ source: message.source, type: message.type, value: "Cards Practiced" });
+      getLocalCardWords(message).then((dayCW) => {
+        data.practiceCardsForWord(ldb, practiceDetails).then((values) => {
+          dayCW.allCardWordGraphs.add(wordInfo.graph);
+          if (grade > GRADE.UNKNOWN) {
+            dayCW.knownCardWordGraphs.add(wordInfo.graph);
+            dayCW.knownWordIdsCounter[wordInfo.wordId] = dayCW.knownWordIdsCounter[wordInfo.wordId]
+              ? dayCW.knownWordIdsCounter[wordInfo.wordId] + 1
+              : 1;
+          }
+          console.debug("Practiced", message, values);
+          sendResponse({ source: message.source, type: message.type, value: "Cards Practiced" });
+        });
       });
     });
   } else if (message.type === "sentenceTranslation") {
