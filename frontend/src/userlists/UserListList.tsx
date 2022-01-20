@@ -17,7 +17,6 @@ import HelpButton from "../components/HelpButton";
 import { PROCESSING, reverseEnum } from "../lib/types";
 
 const useStyles = makeStyles({
-  // toolbar: { paddingTop: "0" },
   toolbar: {},
 });
 
@@ -42,10 +41,7 @@ export const UserListList: FC<ListProps> = (props) => {
           <ReferenceField label="Source import" source="theImport" reference="imports" link="show">
             <TextField source="title" />
           </ReferenceField>
-          <FunctionField
-            source="processing"
-            render={(record: any) => reverseEnum(PROCESSING, record.processing)}
-          />
+          <FunctionField source="processing" render={(record: any) => reverseEnum(PROCESSING, record.processing)} />
           <BooleanField source="shared" sortable={false} />
         </Datagrid>
       </List>

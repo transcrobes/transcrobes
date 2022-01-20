@@ -1,7 +1,9 @@
 // import { Injectable } from "@d-i-t-a/reader/dist/types/navigator/IFrameNavigator";
+
 // eslint-disable-next-line no-var
 declare var __webpack_hash__: any;
 
+// const injectables: Injectable[] = [
 const injectables: any[] = [
   {
     type: "style",
@@ -31,5 +33,16 @@ const injectables: any[] = [
     fontFamily: "opendyslexic",
   },
 ];
+// const augmentedInjectables: Injectable[] = injectables;
+const augmentedInjectables: any[] = injectables;
+for (const fontFamily of ["serif", "sans-serif", "opendyslexic", "monospace"]) {
+  for (const fontFamilyChinese of ["notasanslight", "notaserifextralight", "notaserifregular", "mashanzheng"]) {
+    augmentedInjectables.push({
+      type: "style",
+      url: `${origin}/chinese.css`,
+      fontFamily: `${fontFamily},${fontFamilyChinese}`,
+    });
+  }
+}
 
-export default injectables;
+export default augmentedInjectables;

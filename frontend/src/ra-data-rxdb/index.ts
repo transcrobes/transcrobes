@@ -1,11 +1,5 @@
 import { CreateParams, DataProvider, GetListParams, GetManyParams, GetOneParams } from "ra-core";
-import {
-  DeleteManyParams,
-  DeleteParams,
-  GetManyReferenceParams,
-  UpdateManyParams,
-  UpdateParams,
-} from "react-admin";
+import { DeleteManyParams, DeleteParams, GetManyReferenceParams, UpdateManyParams, UpdateParams } from "react-admin";
 import { v4 as uuidv4 } from "uuid";
 
 import { getDb } from "../database/Database";
@@ -66,11 +60,7 @@ export default function RxDBProvider(params: RxDBDataProviderParams): DbDataProv
       const data = res?.toJSON();
 
       if (resource === "surveys") {
-        const usres = await db.usersurveys
-          .findOne()
-          .where("surveyId")
-          .eq(params.id.toString())
-          .exec();
+        const usres = await db.usersurveys.findOne().where("surveyId").eq(params.id.toString()).exec();
         if (usres) {
           const specialData = { data: { ...data, data: usres.data } };
           return specialData;
@@ -84,10 +74,7 @@ export default function RxDBProvider(params: RxDBDataProviderParams): DbDataProv
       const resArr = [...res.values()].map((val) => val.toJSON());
       return { data: resArr };
     },
-    getManyReference: async (
-      resource: TranscrobesCollectionsKeys,
-      params: GetManyReferenceParams,
-    ) => {
+    getManyReference: async (resource: TranscrobesCollectionsKeys, params: GetManyReferenceParams) => {
       const db = await dbProm();
       const res = await db[resource].find().where(params.target).eq(params.id).exec();
       const resArr = [...res.values()].map((val) => val.toJSON());
@@ -123,9 +110,7 @@ export default function RxDBProvider(params: RxDBDataProviderParams): DbDataProv
     },
     update: async (resource: TranscrobesCollectionsKeys, params: UpdateParams) => {
       const db = await dbProm();
-      const one = await db[resource]
-        .findOne({ selector: { id: { $eq: params.id.toString() } } })
-        .exec();
+      const one = await db[resource].findOne({ selector: { id: { $eq: params.id.toString() } } }).exec();
       if (one) {
         delete params.data.id; // FIXME: there must be a less nasty way...
         const res = await one.atomicPatch(params.data);
@@ -136,9 +121,7 @@ export default function RxDBProvider(params: RxDBDataProviderParams): DbDataProv
     },
     updateMany: async (resource: TranscrobesCollectionsKeys, params: UpdateManyParams) => {
       const db = await dbProm();
-      const many = [
-        ...(await db[resource].findByIds(params.ids.map((id) => id.toString()))).values(),
-      ];
+      const many = [...(await db[resource].findByIds(params.ids.map((id) => id.toString()))).values()];
       const updates: string[] = [];
       for (const upper of many) {
         await upper.atomicPatch(params.data);
@@ -166,5 +149,6 @@ export default function RxDBProvider(params: RxDBDataProviderParams): DbDataProv
 export interface RxDBDataProviderParams {
   test?: boolean;
   url: URL;
+  username: string;
   loggingEnabled?: boolean;
 }

@@ -1,10 +1,16 @@
-import { useState, useEffect, useRef, ReactElement } from "react";
+import { Container, makeStyles, TextField, Typography } from "@material-ui/core";
 import axios, { CancelTokenSource } from "axios";
 import { Converter, ConvertText } from "opencc-js";
-import { simpOnly } from "../lib/lib";
-import { USER_STATS_MODE } from "../lib/lib";
-import Word from "./Word";
-import { getAxiosHeaders } from "../lib/JWTAuthProvider";
+import { ReactElement, useEffect, useRef, useState } from "react";
+import { TopToolbar } from "react-admin";
+import { $enum } from "ts-enum-util";
+import { getAxiosHeaders } from "../app/createStore";
+import { useAppDispatch, useAppSelector } from "../app/hooks";
+import HelpButton from "../components/HelpButton";
+import Loading from "../components/Loading";
+import { CardDocument, CARD_TYPES, getCardId, getWordId } from "../database/Schema";
+import { setLoading } from "../features/ui/uiSlice";
+import { simpOnly } from "../lib/libMethods";
 import { ServiceWorkerProxy } from "../lib/proxies";
 import {
   CardType,
@@ -14,22 +20,17 @@ import {
   RecentSentencesType,
   SortableListElementType,
   UserListWordType,
+  USER_STATS_MODE,
   WordDetailsType,
   WordListNamesType,
   WordModelStatsType,
 } from "../lib/types";
-import { CardDocument, CARD_TYPES, getCardId, getWordId } from "../database/Schema";
-import { $enum } from "ts-enum-util";
-import { TopToolbar } from "react-admin";
-import HelpButton from "../components/HelpButton";
-import { Container, makeStyles, TextField, Typography } from "@material-ui/core";
-import SearchLoading from "../components/SearchLoading";
-
-const DATA_SOURCE = "Notrobes.jsx";
+import Word from "./Word";
 
 let timeoutId: number;
 const MIN_LOOKED_AT_EVENT_DURATION = 2000; // ms
 const MAX_ALLOWED_CHARACTERS = 6; // FIXME: obviously only somewhat sensible for Chinese...
+const DATA_SOURCE = "Notrobes";
 
 interface Props {
   proxy: ServiceWorkerProxy;
@@ -40,9 +41,6 @@ const useStyles = makeStyles((theme) => ({
   root: { margin: theme.spacing(1), maxWidth: "800px" },
   toolbar: { alignItems: "center" },
   message: { color: "red", fontWeight: "bold", fontSize: "2em" },
-  loading: {
-    textAlign: "center",
-  },
 }));
 
 function Notrobes({ proxy, url }: Props): ReactElement {
@@ -51,7 +49,6 @@ function Notrobes({ proxy, url }: Props): ReactElement {
   const [wordListNames, setWordListNames] = useState<WordListNamesType>({});
   const [userListWords, setUserListWords] = useState<UserListWordType>({});
   const [word, setWord] = useState<DefinitionType | null>(null);
-  const [loading, setLoading] = useState<boolean>(false);
   const [initialised, setInitialised] = useState<boolean>(false);
   const [message, setMessage] = useState<string>("");
   const [characters, setCharacters] = useState<(CharacterType | null)[] | null>(null);
@@ -60,6 +57,8 @@ function Notrobes({ proxy, url }: Props): ReactElement {
   const [recentPosSentences, setRecentPosSentences] = useState<PosSentences | null>(null);
   const [lists, setLists] = useState<SortableListElementType[] | null>(null);
 
+  const fromLang = useAppSelector((state) => state.userData.user.fromLang);
+  const dispatch = useAppDispatch();
   const classes = useStyles();
 
   let cancel: CancelTokenSource;
@@ -120,7 +119,7 @@ function Notrobes({ proxy, url }: Props): ReactElement {
       setWordModelStats(details.wordModelStats || { id: details.word.graph, updatedAt: 0 });
       setRecentPosSentences(details.recentPosSentences);
       setMessage("");
-      setLoading(false);
+      dispatch(setLoading(undefined));
       setLists(
         (userListWords[details.word.id] || []).map((x) => ({
           listId: x.listId,
@@ -140,11 +139,7 @@ function Notrobes({ proxy, url }: Props): ReactElement {
       const headers = await getAxiosHeaders();
       console.debug("Going to the server for query with headers", query, headers);
       try {
-        const res = (await axios.post(
-          searchUrl,
-          { data: query },
-          { cancelToken: cancel.token, headers: headers },
-        )) as any;
+        const res = (await axios.post(searchUrl, { data: query }, { cancelToken: cancel.token })) as any;
         let resultNotFoundMsg = "";
         if (!res.data.definition) {
           resultNotFoundMsg = "There are no search results. Please try a new search";
@@ -164,7 +159,7 @@ function Notrobes({ proxy, url }: Props): ReactElement {
         setRecentPosSentences(null);
         setLists([]);
         setMessage(resultNotFoundMsg);
-        setLoading(false);
+        dispatch(setLoading(undefined));
 
         if (!timeoutId && !!definition) {
           const lookupEvent = { target_word: definition.graph, target_sentence: "" };
@@ -176,7 +171,7 @@ function Notrobes({ proxy, url }: Props): ReactElement {
       } catch (error) {
         if (axios.isCancel(error) || error) {
           console.error("Error fetching new data", error);
-          setLoading(false);
+          dispatch(setLoading(undefined));
           setMessage("Failed to fetch the data. Please check network");
           if (timeoutId) {
             window.clearTimeout(timeoutId);
@@ -198,9 +193,7 @@ function Notrobes({ proxy, url }: Props): ReactElement {
       type: "getByIds",
       value: {
         collection: "cards",
-        ids: Array.from($enum(CARD_TYPES).getValues()).map((ctype) =>
-          getCardId(getWordId(card), ctype),
-        ),
+        ids: Array.from($enum(CARD_TYPES).getValues()).map((ctype) => getCardId(getWordId(card), ctype)),
       },
     });
 
@@ -215,7 +208,7 @@ function Notrobes({ proxy, url }: Props): ReactElement {
       value: { wordId: wordId, grade },
     });
     setCards(updatedCards);
-    setLoading(false);
+    dispatch(setLoading(undefined));
     setMessage("Cards recorded");
   }
 
@@ -234,11 +227,11 @@ function Notrobes({ proxy, url }: Props): ReactElement {
     setWordModelStats(null);
     setRecentPosSentences(null);
     setLists(null);
-    setLoading(false);
+    dispatch(setLoading(undefined));
 
     if (!q) {
       setMessage("");
-    } else if (q && !simpOnly(q)) {
+    } else if (q && !simpOnly(q, fromLang)) {
       console.debug("Query has illegal chars", q);
       setMessage("Only simplified characters can be searched for");
     } else if (query && converter && converter.current(query) !== query) {
@@ -248,7 +241,7 @@ function Notrobes({ proxy, url }: Props): ReactElement {
       console.debug(`Entered a query of more than ${MAX_ALLOWED_CHARACTERS} characters`, query);
       setMessage(`The system only handles words of up to ${MAX_ALLOWED_CHARACTERS} characters`);
     } else {
-      setLoading(true);
+      dispatch(setLoading(true));
       setMessage("");
       fetchSearchResults(q);
     }
@@ -283,7 +276,7 @@ function Notrobes({ proxy, url }: Props): ReactElement {
     }
   }
 
-  function renderSearchResults() {
+  function renderSearchResults(): ReactElement {
     if (word && Object.entries(word).length > 0 && characters && cards && wordModelStats && lists) {
       return (
         <div>
@@ -300,6 +293,8 @@ function Notrobes({ proxy, url }: Props): ReactElement {
           />
         </div>
       );
+    } else {
+      return <></>;
     }
   }
   const helpUrl = "https://transcrob.es/page/software/learn/notrobes/";
@@ -323,11 +318,7 @@ function Notrobes({ proxy, url }: Props): ReactElement {
             />
           </form>
         </div>
-        {loading && (
-          <div className={classes.loading}>
-            <SearchLoading />
-          </div>
-        )}
+        <Loading />
         {message && <Typography className={classes.message}>{message}</Typography>}
         {renderSearchResults()}
       </Container>

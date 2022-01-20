@@ -1,13 +1,12 @@
 import { ReactElement } from "react";
 import FineControl, { FineControlImplProps } from "../../components/FineControl";
 
-function SubDelay({ classes, value, onValueChange }: FineControlImplProps): ReactElement {
+function SubDelay({ className, value, onValueChange }: FineControlImplProps): ReactElement {
   return (
     <FineControl
-      title="Subtitle synchronisation"
       labelLess="Ahead 0.5s"
       labelMore="Behind 0.5s"
-      cssClasses={classes}
+      className={className}
       isPercent={false}
       onLess={() => {
         onValueChange(-0.5);

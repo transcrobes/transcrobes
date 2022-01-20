@@ -5,5 +5,4 @@ export type ComponentsConfig = {
   dataProvider: DataProvider;
   proxy: ServiceWorkerProxy;
   url: URL;
-  langPair: string;
 };

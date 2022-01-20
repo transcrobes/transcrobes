@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import json
 import logging
 import os
 import pathlib
+from collections import ChainMap
 from typing import Any
 
 import aiofiles
@@ -13,12 +15,14 @@ from app.api import deps
 from app.api.api_v1.graphql import DefinitionSet
 from app.cache import cached_definitions
 from app.core.config import settings
-from app.enrich import TokenPhoneType, definitions_json_paths, hanzi_json_paths
+from app.data.importer import process
+from app.enrich import TokenPhoneType, definitions_json_paths, enrich_html_fragment, hanzi_json_paths
 from app.enrich.data import EnrichmentManager, managers
 from app.enrich.models import definition, reload_definitions_cache
 from app.fworker import import_process_topic, regenerate
 from app.models import CachedDefinition, Import
 from app.models.user import absolute_imports_path
+from app.ndutils import gather_with_concurrency
 from app.schemas.cache import DataType, RegenerationType
 from app.schemas.files import ProcessData
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -277,6 +281,56 @@ async def enrich_json_full(
         text, manager, translate_sentence=True, best_guess=True, deep_transliterations=True
     )
     return outdata
+
+
+@router.post("/enrich_html_to_json", name="enrich_html_to_json")
+async def enrich_html_to_json(
+    info_request: InfoRequest,
+    current_user: schemas.TokenPayload = Depends(deps.get_current_good_tokenpayload),
+):
+    manager = managers.get(current_user.lang_pair)
+    if not manager:
+        raise HTTPException(
+            status_code=status.HTTP_501_NOT_IMPLEMENTED,
+            detail=f"Server does not support language pair {current_user.lang_pair}",
+        )
+
+    text = info_request.data
+    if not text:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail='Incorrectly formed query, you must provide a JSON like { "data": "好" }"',
+        )
+
+    html, slim_models = await enrich_html_fragment(text, manager)
+    model_futures = [
+        manager.enricher().enrich_parse_to_aids_json(
+            timestamp,
+            model,
+            manager,
+            translate_sentence=False,
+            best_guess=True,
+            phone_type=TokenPhoneType.NONE,
+            fill_id=True,
+            available_def_providers=current_user.translation_providers,
+            clean=False,
+        )
+        for timestamp, model in slim_models.items()
+    ]
+
+    processed_files_list = await gather_with_concurrency(
+        settings.IMPORT_MAX_CONCURRENT_PARSER_QUERIES,
+        *(model_futures),
+    )
+    processed_files_dict = dict(ChainMap(*processed_files_list))  # re-merge dicts from list
+    models = processed_files_dict.values()
+    analysis = json.dumps(
+        await process(models, Import.VOCABULARY_ONLY),
+        ensure_ascii=False,
+        separators=(",", ":"),
+    )
+
+    return {"html": html, "models": processed_files_dict, "analysis": analysis}
 
 
 @router.post("/import_file", name="import_file")

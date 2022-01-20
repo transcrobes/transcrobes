@@ -11,12 +11,12 @@ import {
   TextField,
   Typography,
 } from "@material-ui/core";
-import { createMuiTheme, makeStyles } from "@material-ui/core/styles";
+import { createTheme, makeStyles } from "@material-ui/core/styles";
 import { ThemeProvider } from "@material-ui/styles";
 import LockIcon from "@material-ui/icons/Lock";
 import { Notification, useTranslate, useLogin, useNotify } from "react-admin";
 import { lightTheme } from "../layout/themes";
-import { isInitialisedAsync } from "../lib/JWTAuthProvider";
+import { isInitialisedAsync } from "../database/authdb";
 
 const useStyles = makeStyles((theme) => ({
   main: {
@@ -249,7 +249,7 @@ Login.propTypes = {
 // the right theme
 function LoginWithTheme(props: any): ReactElement {
   return (
-    <ThemeProvider theme={createMuiTheme(lightTheme)}>
+    <ThemeProvider theme={createTheme(lightTheme)}>
       <Login {...props} />
     </ThemeProvider>
   );

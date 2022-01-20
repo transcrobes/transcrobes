@@ -21,8 +21,6 @@ type ListFilteringOptions = {
   filterFn?: (fileNameString: string) => boolean;
 };
 
-type WaitForDOMRequestType = {};
-
 /**
  * Wraps a DOMRequest into a promise, optionally transforming the result using the onsuccess
  * callback.
@@ -53,10 +51,10 @@ export class IDBFileStorage {
   private name: string;
   private persistent: boolean;
   private indexedDBName: string;
-  private objectStorageName: string = "IDBFilesObjectStorage";
+  private objectStorageName = "IDBFilesObjectStorage";
   // private initializedPromise: Promise;
   private initializedPromise: any;
-  private version: number = 1.0;
+  private version = 1.0;
 
   /**
    * @private private helper method used internally.
@@ -241,7 +239,7 @@ export class IDBFileStorage {
  * @returns {IDBFileStorage}
  *   The IDBFileStorage instance with the given name.
  */
-export async function getFileStorage(name: string = "default", persistent: boolean = true) {
+export async function getFileStorage(name = "default", persistent = true) {
   const filesStorage = new IDBFileStorage(name, persistent);
   await filesStorage.initializedDB();
   return filesStorage;

@@ -3,7 +3,7 @@ import { InfoBox, ThinHR } from "./Common";
 import PosItem from "./PosItem";
 import { DefinitionType, PosTranslationsType, ProviderTranslationType } from "../lib/types";
 import { makeStyles, Typography } from "@material-ui/core";
-import { filterFakeL1Definitions } from "../lib/lib";
+import { filterFakeL1Definitions } from "../lib/libMethods";
 
 const useStyles = makeStyles({
   translations: { maxWidth: "500px" },

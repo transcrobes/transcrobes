@@ -1,27 +1,23 @@
 import { Typography } from "@material-ui/core";
 import { FC } from "react";
 import {
+  BooleanInput,
   Create,
+  FieldProps,
+  FileField,
+  FileInput,
+  required,
+  SelectInput,
   SimpleForm,
   TextInput,
-  required,
-  FieldProps,
-  BooleanInput,
-  FileInput,
-  SelectInput,
-  FileField,
 } from "react-admin";
 import { HelpCreateActions } from "../components/HelpCreateActions";
-
 import { Import, PROCESS_TYPE } from "../lib/types";
 
 const MAX_IMPORT_SIZE_BYTES = 15000000;
 
 const ImportCreate: FC<FieldProps<Import>> = (props) => (
-  <Create
-    actions={<HelpCreateActions helpUrl="https://transcrob.es/page/software/configure/imports/" />}
-    {...props}
-  >
+  <Create actions={<HelpCreateActions helpUrl="https://transcrob.es/page/software/configure/imports/" />} {...props}>
     <SimpleForm redirect="list">
       <Typography>
         Please check the{" "}

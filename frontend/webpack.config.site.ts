@@ -21,11 +21,11 @@ function page({ title, description }: { title: string; description: string }) {
 }
 
 const commonConfig = merge<Configuration>([
-  parts.config(),
+  parts.config(mode),
   {
     entry: {
       main: ["./src/index.tsx"],
-      readium: ["./src/contents/boocrobes/readium.ts"],
+      readium: ["./src/contents/boocrobes/readium.tsx"],
     },
     plugins: [
       new DefinePlugin({

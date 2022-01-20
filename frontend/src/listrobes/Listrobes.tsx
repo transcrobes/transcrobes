@@ -6,7 +6,7 @@ import { CARD_TYPES, getCardId } from "../database/Schema";
 import { practice, GRADES } from "../lib/review";
 import ListrobesConfigLauncher from "./ListrobesConfigLauncher";
 import { VocabList } from "./VocabList";
-import { USER_STATS_MODE } from "../lib/lib";
+import { USER_STATS_MODE } from "../lib/types";
 import {
   EMPTY_CARD,
   GraderConfig,
@@ -19,7 +19,9 @@ import { AbstractWorkerProxy } from "../lib/proxies";
 import { TopToolbar } from "react-admin";
 import { Container, makeStyles } from "@material-ui/core";
 import HelpButton from "../components/HelpButton";
-import SearchLoading from "../components/SearchLoading";
+import Loading from "../components/Loading";
+import { useAppDispatch } from "../app/hooks";
+import { setLoading } from "../features/ui/uiSlice";
 
 const DATA_SOURCE = "listrobes.jsx";
 const DEFAULT_ITEMS_PER_PAGE = 50;
@@ -28,9 +30,6 @@ const MIN_LOOKED_AT_EVENT_DURATION = 1300; // milliseconds
 let timeoutId: number;
 
 const useStyles = makeStyles(() => ({
-  loading: {
-    textAlign: "center",
-  },
   toolbar: {
     justifyContent: "space-between",
     alignItems: "center",
@@ -54,15 +53,16 @@ interface Props {
 export function Listrobes({ proxy }: Props): ReactElement {
   const [vocab, setVocab] = useState<VocabReview[]>([]);
 
+  const dispatch = useAppDispatch();
   const [graderConfig, setGraderConfig] = useState<GraderConfig>({
     gradeOrder: GRADES,
     itemOrdering: DEFAULT_ITEM_ORDERING,
     itemsPerPage: DEFAULT_ITEMS_PER_PAGE,
     wordLists: [],
   });
-  const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
+    dispatch(setLoading(true));
     (async function () {
       const wordLists = await proxy.sendMessagePromise<SelectableListElementType[]>({
         source: DATA_SOURCE,
@@ -80,7 +80,7 @@ export function Listrobes({ proxy }: Props): ReactElement {
         },
       });
       setVocab(vocabbie);
-      setLoading(false);
+      dispatch(setLoading(undefined));
     })();
   }, []);
 
@@ -94,27 +94,20 @@ export function Listrobes({ proxy }: Props): ReactElement {
     });
   }
 
-  function handleConfigChange(graderConfigNew: GraderConfig) {
+  async function handleConfigChange(graderConfigNew: GraderConfig) {
     if (
       graderConfigNew.itemsPerPage !== graderConfig.itemsPerPage ||
       graderConfigNew.itemOrdering !== graderConfig.itemOrdering ||
       !_.isEqual(graderConfigNew.wordLists, graderConfig.wordLists)
     ) {
-      proxy.sendMessage(
-        {
+      setVocab(
+        await proxy.sendMessagePromise<VocabReview[]>({
           source: DATA_SOURCE,
           type: "getVocabReviews",
           value: { ...graderConfigNew, gradeOrder: gradesWithoutIcons(graderConfigNew.gradeOrder) },
-        },
-        (vocab: VocabReview[]) => {
-          setGraderConfig(graderConfigNew);
-          setVocab(vocab);
-          return "";
-        },
-        () => {
-          return "";
-        },
+        }),
       );
+      setGraderConfig(graderConfigNew);
     } else {
       setGraderConfig(graderConfigNew);
     }
@@ -144,8 +137,8 @@ export function Listrobes({ proxy }: Props): ReactElement {
     setVocab(items);
   }
 
-  function handleValidate() {
-    setLoading(true);
+  async function handleValidate() {
+    dispatch(setLoading(true));
     const newCards = [];
     const consultedDefinitions = [];
     for (const word of vocab) {
@@ -160,38 +153,22 @@ export function Listrobes({ proxy }: Props): ReactElement {
         });
       newCards.push(...cards);
     }
-    proxy.sendMessage(
-      {
+    await proxy.sendMessagePromise({
+      source: DATA_SOURCE,
+      type: "createCards",
+      value: newCards,
+    });
+    setVocab(
+      await proxy.sendMessagePromise<VocabReview[]>({
         source: DATA_SOURCE,
-        type: "createCards",
-        value: newCards,
-      },
-      () => {
-        proxy.sendMessage(
-          {
-            source: DATA_SOURCE,
-            type: "getVocabReviews",
-            value: {
-              ...graderConfig,
-              gradeOrder: gradesWithoutIcons(graderConfig.gradeOrder),
-            },
-          },
-          (vocab) => {
-            setVocab(vocab);
-            setLoading(false);
-            return "";
-          },
-          () => {
-            return "";
-          },
-        );
-        return "";
-      },
-      () => {
-        return "";
-      },
+        type: "getVocabReviews",
+        value: {
+          ...graderConfig,
+          gradeOrder: gradesWithoutIcons(graderConfig.gradeOrder),
+        },
+      }),
     );
-
+    dispatch(setLoading(undefined));
     submitLookupEvents(consultedDefinitions, USER_STATS_MODE.L1);
   }
   const classes = useStyles();
@@ -200,25 +177,16 @@ export function Listrobes({ proxy }: Props): ReactElement {
   return (
     <>
       <TopToolbar className={classes.toolbar}>
-        <ListrobesConfigLauncher
-          loading={loading}
-          graderConfig={graderConfig}
-          onConfigChange={handleConfigChange}
-        />
+        <ListrobesConfigLauncher graderConfig={graderConfig} onConfigChange={handleConfigChange} />
         <HelpButton url={helpUrl} />
       </TopToolbar>
 
       <Container maxWidth="lg">
-        {loading && (
-          <div className={classes.loading}>
-            <SearchLoading />
-          </div>
-        )}
+        <Loading />
         <div className={classes.columnList}>
           <VocabList
             graderConfig={graderConfig}
             vocab={vocab}
-            loading={loading}
             onGradeChange={handleGradeChange}
             onValidate={handleValidate}
             onMouseOver={handleMouseOver}

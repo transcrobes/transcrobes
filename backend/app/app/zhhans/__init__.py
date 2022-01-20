@@ -432,7 +432,9 @@ class CoreNLP_ZHHANS_Enricher(Enricher):
         token["bg"] = token["bg"]["nt"]
 
     # override Enricher
-    def clean_text(self, text: str) -> str:
-        t = "".join(text.split())  # for Chinese we can/should remove any spaces
+    def clean_text(self, text: str, remove_whitespace=True) -> str:
+        t = text
+        if remove_whitespace:
+            t = "".join(t.split())  # for Chinese we can/should remove any spaces
         # Make sure it is simplified and clean, so we don't pollute the DB
         return self.converter.convert(t)

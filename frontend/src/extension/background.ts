@@ -1,17 +1,22 @@
-import * as utils from "../lib/lib";
+import * as utils from "../lib/libMethods";
 import * as data from "../lib/data";
 import { GRADE, TranscrobesDatabase } from "../database/Schema";
 import { getDb } from "../database/Database";
 import dayjs from "dayjs";
-import { DayCardWords, EventData } from "../lib/types";
-import { getPassword, getUsername, getValue, refreshAccessToken } from "../lib/JWTAuthProvider";
-
-utils.setEventSource("chrome-extension");
+import {
+  DayCardWords,
+  DEFAULT_RETRIES,
+  EventData,
+  EVENT_QUEUE_PROCESS_FREQ,
+  SerialisableStringSet,
+} from "../lib/types";
+import { store } from "../app/createStore";
+import { getUserDexie } from "../database/authdb";
+import { throttledRefreshToken } from "../features/user/userSlice";
+import { setUser } from "../features/user/userSlice";
 
 let db: TranscrobesDatabase;
-
 let dayCardWords: DayCardWords | null;
-
 let eventQueueTimer: number | undefined;
 
 // function stopEventsSender(): void {
@@ -20,19 +25,14 @@ let eventQueueTimer: number | undefined;
 
 const EVENT_SOURCE = "background.ts";
 
-function getLocalCardWords(message: EventData) {
+async function getLocalCardWords(message: EventData) {
   if (dayCardWords) {
-    console.log("i think already loaded");
     return Promise.resolve(dayCardWords);
   } else {
-    return loadDb(console.debug, message).then((ldb) => {
-      console.log("i am loading the cards");
-      return data.getCardWords(ldb).then((val) => {
-        dayCardWords = val;
-        console.log("they are now i am loading the cards", dayCardWords);
-        return Promise.resolve(dayCardWords);
-      });
-    });
+    const ldb = await loadDb(console.debug, message);
+    const val = await data.getCardWords(ldb);
+    dayCardWords = val;
+    return Promise.resolve(dayCardWords);
   }
 }
 
@@ -43,90 +43,23 @@ async function loadDb(callback: any, message: EventData) {
     return db;
   }
   clearTimeout(eventQueueTimer);
-  const items = await Promise.all([
-    getUsername(),
-    getPassword(),
-    getValue("baseUrl"),
-    getValue("glossing"),
-    getValue("lang_pair"),
-    getValue("segmentation"), // FIXME: why do I need this here again?
-    getValue("mouseover"), // FIXME: why do I need this here again?
-    // FIXME: maybe I need glossPosition et al. here also?
-    getValue("collectRecents"),
-  ]);
-  console.debug("DB NOT loaded, (re)loading with items", db, items);
-  utils.setUsername(
-    items[0] ||
-      (() => {
-        throw new Error("Unable to get username");
-      })(),
-  );
-  utils.setPassword(
-    items[1] ||
-      (() => {
-        throw new Error("Unable to get password");
-      })(),
-  );
-  const baseUrl = items[2] ? items[2] + (items[2].endsWith("/") ? "" : "/") : "";
-  utils.setBaseUrl(baseUrl);
-  utils.setGlossing(
-    parseInt(
-      items[3] ||
-        (() => {
-          throw new Error("Unable to get glossing");
-        })(),
-    ),
-  );
-  utils.setLangPair(
-    items[4] ||
-      (() => {
-        throw new Error("Unable to get langPair");
-      })(),
-  );
-  utils.setSegmentation(
-    parseInt(
-      items[5] ||
-        (() => {
-          throw new Error("Unable to get segmentation");
-        })(),
-    ) > 0,
-  );
-  utils.setMouseover(
-    parseInt(
-      items[6] ||
-        (() => {
-          throw new Error("Unable to get mouseover");
-        })(),
-    ) > 0,
-  );
-  utils.setCollectRecents(
-    parseInt(
-      items[7] ||
-        (() => {
-          throw new Error("Unable to get collectRecents");
-        })(),
-    ) > 0,
-  );
-  console.debug(
-    "Set up with values",
-    utils.username,
-    utils.password,
-    utils.baseUrl,
-    utils.langPair,
-    utils.glossing,
-    utils.segmentation,
-    utils.mouseover,
-    utils.collectRecents,
-  );
+  const user = await getUserDexie();
+  store.dispatch(setUser(user));
 
+  console.debug("DB NOT loaded, (re)loading with items", db, user);
+  if (!user) {
+    console.error("No user found in db, cannot load", db, user);
+    throw new Error("No user found in db, cannot load");
+  }
   const progressCallback = (progressMessage: string, isFinished: boolean) => {
     const progress = { message: progressMessage, isFinished };
     console.debug("Got the progress message in background.js", progress);
     // WARNING: MUST NOT SEND A RESPONSE HERE!!!!!
     // sendResponse({source: message.source, type: message.type + "-progress", value: progress});
   };
-  await refreshAccessToken(new URL(utils.baseUrl));
-  const dbConfig = { url: new URL(utils.baseUrl) };
+  store.dispatch(throttledRefreshToken());
+
+  const dbConfig = { url: new URL(store.getState().userData.baseUrl), username: store.getState().userData.username };
   const dbHandle = await getDb(dbConfig, progressCallback);
   db = dbHandle;
   self.tcb = db;
@@ -134,8 +67,8 @@ async function loadDb(callback: any, message: EventData) {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     eventQueueTimer = setInterval(
-      () => data.sendUserEvents(db, new URL(utils.baseUrl)),
-      utils.EVENT_QUEUE_PROCESS_FREQ,
+      () => data.sendUserEvents(db, new URL(store.getState().userData.baseUrl)),
+      EVENT_QUEUE_PROCESS_FREQ,
     );
   }
   callback({ source: message.source, type: message.type, value: "success" });
@@ -143,25 +76,12 @@ async function loadDb(callback: any, message: EventData) {
 }
 
 chrome.action.onClicked.addListener(function (tab) {
-  Promise.all([getUsername(), getPassword(), getValue("baseUrl")]).then((items: any[]) => {
-    if (!items[0] || !items[1] || !items[2]) {
-      // FIXME: this can't work in a service worker...
-      alert(
-        `You need an account on a Transcrobes server to Transcrobe a page. \n\nIf you have an account please fill in the options page (right-click on the Transcrobe Me! icon -> Extension Options) with your login information (username, password, server URL).\n\n For information on available servers or how to set one up for yourself, see the Transcrobes site https://transcrob.es`,
-      );
-    } else {
-      if (tab.id) {
-        chrome.scripting.executeScript({
-          target: { tabId: tab.id, allFrames: true },
-          files: ["webcomponents-sd-ce.js"],
-        });
-        chrome.scripting.executeScript({
-          target: { tabId: tab.id, allFrames: true },
-          files: ["content-bundle.js"],
-        });
-      }
-    }
-  });
+  if (tab.id) {
+    chrome.scripting.executeScript({
+      target: { tabId: tab.id, allFrames: true },
+      files: ["content-bundle.js"],
+    });
+  }
 });
 
 chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
@@ -171,7 +91,6 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
     console.log("Starting a background syncDB db load");
     loadDb(sendResponse, message);
   } else if (message.type === "heartbeat") {
-    console.debug("got a heartbeat request in sw.js, replying with datetime");
     sendResponse({ source: message.source, type: message.type, value: dayjs().format() });
   } else if (message.type === "getByIds") {
     loadDb(debug, message).then((ldb) => {
@@ -183,6 +102,26 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
     loadDb(debug, message).then((ldb) => {
       data.getWordFromDBs(ldb, message.value).then((values) => {
         sendResponse({ source: message.source, type: message.type, value: values });
+      });
+    });
+  } else if (message.type === "getSerialisableCardWords") {
+    getLocalCardWords(message).then((dayCW) => {
+      const knownCardWordGraphs: SerialisableStringSet = {};
+      const allCardWordGraphs: SerialisableStringSet = {};
+      for (const value of dayCW.knownCardWordGraphs) {
+        knownCardWordGraphs[value] = null;
+      }
+      for (const value of dayCW.allCardWordGraphs) {
+        allCardWordGraphs[value] = null;
+      }
+      sendResponse({
+        source: message.source,
+        type: message.type,
+        value: {
+          allCardWordGraphs: allCardWordGraphs,
+          knownCardWordGraphs: knownCardWordGraphs,
+          knownWordIdsCounter: dayCW.knownWordIdsCounter,
+        },
       });
     });
   } else if (message.type === "getCardWords") {
@@ -224,6 +163,15 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
         });
       });
     });
+  } else if (message.type === "addOrUpdateCardsForWord") {
+    const practiceDetails = message.value;
+    loadDb(console.debug, message).then((ldb) => {
+      dayCardWords = null;
+      data.addOrUpdateCardsForWord(ldb, practiceDetails).then((values) => {
+        console.debug("addOrUpdateCardsForWord", message, values);
+        sendResponse({ source: message.source, type: message.type, value: "Cards Practiced" });
+      });
+    });
   } else if (message.type === "practiceCardsForWord") {
     const practiceDetails = message.value;
     const { wordInfo, grade } = practiceDetails;
@@ -247,9 +195,9 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
     loadDb(console.debug, message).then(() => {
       utils
         .fetchPlus(
-          utils.baseUrl + "api/v1/enrich/translate", // FIXME: hardcoded nastiness
+          store.getState().userData.baseUrl + "/api/v1/enrich/translate", // FIXME: hardcoded nastiness
           JSON.stringify({ data: message.value }),
-          utils.DEFAULT_RETRIES,
+          DEFAULT_RETRIES,
         )
         .then((translation) => {
           sendResponse({ source: message.source, type: message.type, value: translation });
@@ -259,9 +207,9 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
     loadDb(console.debug, message).then(() => {
       utils
         .fetchPlus(
-          utils.baseUrl + "api/v1/enrich/enrich_json",
+          store.getState().userData.baseUrl + "/api/v1/enrich/enrich_json",
           JSON.stringify({ data: message.value }),
-          utils.DEFAULT_RETRIES,
+          DEFAULT_RETRIES,
         )
         .then((parse) => {
           sendResponse({
@@ -271,17 +219,9 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
           });
         });
     });
-  } else if (message.type === "langPair") {
-    loadDb(console.debug, message).then(() => {
-      sendResponse({ source: message.source, type: message.type, value: utils.langPair });
-    });
-  } else if (message.type === "getFromSettingsDB") {
-    getValue(message.value).then((value) => {
-      sendResponse({ source: message.source, type: message.type, value: value });
-    });
-  } else if (message.type === "getUsername") {
-    getUsername().then((username) => {
-      sendResponse({ source: message.source, type: message.type, value: username });
+  } else if (message.type === "getUser") {
+    getUserDexie().then((user) => {
+      sendResponse({ source: message.source, type: message.type, value: user });
     });
   } else if (message.type === "updateRecentSentences") {
     loadDb(console.debug, message).then((ldb) => {
@@ -298,6 +238,21 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
   } else if (message.type === "getRecentSentences") {
     loadDb(console.debug, message).then((ldb) => {
       data.getRecentSentences(ldb, message.value).then((result) => {
+        sendResponse({ source: message.source, type: message.type, value: result });
+      });
+    });
+  } else if (message.type === "getContentConfigFromStore") {
+    loadDb(console.debug, message).then((ldb) => {
+      data.getContentConfigFromStore(ldb, message.value).then((result) => {
+        sendResponse({ source: message.source, type: message.type, value: result });
+      });
+    });
+  } else if (message.type === "setContentConfigToStore") {
+    console.log("i should be setting the config in the background", message);
+    loadDb(console.debug, message).then((ldb) => {
+      console.log("i should be setting the config in the background loaded db", message);
+      data.setContentConfigToStore(ldb, message.value).then((result) => {
+        console.log("i should have already set config in the background ", message, result);
         sendResponse({ source: message.source, type: message.type, value: result });
       });
     });

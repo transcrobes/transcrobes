@@ -1,5 +1,4 @@
-import { RxCollection, RxJsonSchema, RxDocument, RxDatabase } from "rxdb";
-
+import { RxCollection, RxDatabase, RxDocument, RxJsonSchema } from "rxdb";
 import {
   CardType,
   CharacterType,
@@ -594,16 +593,6 @@ const GOALS_SCHEMA: RxJsonSchema<Goal> = {
   indexes: ["title", "userList", "priority", "createdAt"],
 };
 
-// type DBSyncCollectionType = {
-//   schema: RxJsonSchema<any>;
-//   feedKeys: string[];
-//   deletedFlag: "deleted";
-//   subscription: boolean;
-//   subscriptionParams?: { token: "String!" };
-//   pullQueryBuilder?: (doc: { id: any; updatedAt: any }) => { query: string; variables: {} };
-//   methods?: any; // FIXME: any
-// };
-
 const DBPullCollections = {
   definitions: {
     schema: DEFINITIONS_SCHEMA,
@@ -767,24 +756,10 @@ type TranscrobesDocumentTypes =
   | RecentSentencesDocument;
 
 export {
-  // RxDB schemata
-  // GOALS_SCHEMA,
-  // USERLISTS_SCHEMA,
-  // WORDLISTS_SCHEMA,
-  // IMPORTS_SCHEMA,
-  // CARDS_SCHEMA,
-  // CONTENT_CONFIGS_SCHEMA,
-  // DEFINITIONS_SCHEMA,
-  // WORD_MODEL_STATS_SCHEMA,
-  // CHARACTERS_SCHEMA,
-  // EVENT_QUEUE_SCHEMA,
-  // Schema collections
   DBLocalCollections,
   DBCollections,
   DBTwoWayCollections,
   DBPullCollections,
-  // DBTwoWayCollectionKeys
-
   GRADE,
   CARD_TYPES,
   EFACTOR_DEFAULT,

@@ -1,0 +1,28 @@
+import { createComponentVNode, render } from "inferno";
+import { Provider } from "inferno-redux";
+import { ReactElement, useEffect, useRef } from "react";
+import { store } from "../../../app/createStore";
+import { useJssStyles } from "../../../app/hooks";
+import { ComponentClass, ComponentFunction, ReaderState, SentenceType } from "../../../lib/types";
+import Sentence from "../etf/Sentence";
+
+type Props = {
+  sentence: SentenceType;
+  readerConfig: ReaderState;
+};
+
+export default function ReactSentence({ sentence, readerConfig }: Props): ReactElement {
+  const ref = useRef<HTMLSpanElement>(null);
+  const classes = useJssStyles(readerConfig);
+
+  useEffect(() => {
+    const wrappedSentence = createComponentVNode(ComponentClass, Provider, {
+      store: store,
+      children: [createComponentVNode(ComponentFunction, Sentence, { classes, readerConfig, sentence })],
+    });
+
+    render(wrappedSentence, ref.current);
+  }, []);
+
+  return <span ref={ref} />;
+}

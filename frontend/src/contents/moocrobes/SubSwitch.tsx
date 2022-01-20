@@ -1,5 +1,5 @@
-import { ChangeEvent, ReactElement } from "react";
 import { FormControlLabel, FormGroup, Switch } from "@material-ui/core";
+import { ChangeEvent, ReactElement } from "react";
 
 interface SwitchProps {
   value: boolean;

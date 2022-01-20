@@ -1,14 +1,13 @@
-import { ReactElement } from "react";
+import { FormControl, FormLabel } from "@material-ui/core";
 import Grid from "@material-ui/core/Grid";
 import IconButton from "@material-ui/core/IconButton";
 import Typography from "@material-ui/core/Typography";
 import AddIcon from "@material-ui/icons/Add";
 import RemoveIcon from "@material-ui/icons/Remove";
-import { Properties } from "csstype";
-import { FormControl, FormLabel } from "@material-ui/core";
+import { ReactElement } from "react";
 
 export interface FineControlImplProps {
-  classes: Properties;
+  className: string;
   label?: string;
   increment?: number;
   value: number;
@@ -16,12 +15,12 @@ export interface FineControlImplProps {
 }
 
 interface Props {
-  title: string;
+  title?: string;
   value: number;
   isPercent: boolean;
   labelLess: string;
   labelMore: string;
-  cssClasses: any; // FIXME: any
+  className: string;
   onMore: () => void;
   onLess: () => void;
 }
@@ -32,42 +31,26 @@ function FineControl({
   isPercent,
   labelLess,
   labelMore,
-  cssClasses,
+  className,
   onLess,
   onMore,
 }: Props): ReactElement {
-  if (cssClasses)
-    return (
-      <FormControl component="fieldset">
-        <FormLabel component="legend">{title}</FormLabel>
-        <div title={title} className={cssClasses.fineControlIcons}>
-          <Grid container direction="row" alignItems="center" justifyContent="center">
-            <IconButton
-              onClick={onLess}
-              className={cssClasses.fineControlIcons}
-              aria-label={labelLess}
-              title={labelLess}
-            >
-              <RemoveIcon className={cssClasses.fineControlIcons} />
-            </IconButton>
-            <Typography className={cssClasses.fineControlIcons}>
-              {isPercent ? (value * 100).toFixed(2) + "%" : value.toFixed(2)}
-            </Typography>
-            <IconButton
-              onClick={onMore}
-              className={cssClasses.fineControlIcons}
-              aria-label={labelMore}
-              title={labelMore}
-            >
-              <AddIcon className={cssClasses.fineControlIcons} />
-            </IconButton>
-          </Grid>
-        </div>
-      </FormControl>
-    );
-  else {
-    return <div></div>;
-  }
+  return (
+    <FormControl component="fieldset">
+      <FormLabel component="legend">{title}</FormLabel>
+      <div title={title} className={className}>
+        <Grid container direction="row" alignItems="center" justifyContent="center">
+          <IconButton onClick={onLess} className={className} aria-label={labelLess} title={labelLess}>
+            <RemoveIcon className={className} />
+          </IconButton>
+          <Typography className={className}>{isPercent ? (value * 100).toFixed(2) + "%" : value.toFixed(2)}</Typography>
+          <IconButton onClick={onMore} className={className} aria-label={labelMore} title={labelMore}>
+            <AddIcon className={className} />
+          </IconButton>
+        </Grid>
+      </div>
+    </FormControl>
+  );
 }
 
 export default FineControl;

@@ -2,7 +2,7 @@ import { ReactElement } from "react";
 import FineControl, { FineControlImplProps } from "./FineControl";
 
 function FivePercentFineControl({
-  classes,
+  className,
   value,
   label,
   increment,
@@ -13,7 +13,7 @@ function FivePercentFineControl({
       title={label || ""}
       labelLess={`Decrease ${(increment || 0.05) * 100}%`}
       labelMore={`Increase ${(increment || 0.05) * 100}%`}
-      cssClasses={classes}
+      className={className}
       isPercent={true}
       onLess={() => {
         onValueChange(value - (increment || 0.05));

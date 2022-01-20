@@ -1,28 +1,27 @@
+import { Button } from "@material-ui/core";
 import { ReactElement } from "react";
-import { VocabItem } from "./VocabItem";
-import SearchLoading from "../components/SearchLoading";
+import { useAppSelector } from "../app/hooks";
 import { GraderConfig, VocabReview } from "../lib/types";
-import { Button, CircularProgress } from "@material-ui/core";
+import { VocabItem } from "./VocabItem";
 
 interface Props {
   vocab: VocabReview[];
-  loading: boolean;
   graderConfig: GraderConfig;
   onGradeChange: (index: number) => void;
   onMouseOver: (index: number) => void;
   onMouseOut: () => void;
-  onValidate: () => void;
+  onValidate: () => Promise<void>;
 }
 
 export function VocabList({
   vocab,
-  loading,
   graderConfig,
   onGradeChange,
   onMouseOut,
   onMouseOver,
   onValidate,
 }: Props): ReactElement {
+  const loading = useAppSelector((state) => state.ui.loading);
   const unloaded = loading || !vocab;
   return (
     <>

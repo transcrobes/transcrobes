@@ -1,15 +1,12 @@
+import { Grid } from "@material-ui/core";
+import { bin } from "d3-array";
 import dayjs from "dayjs";
 import { ReactElement, useEffect, useState } from "react";
-import { bin } from "d3-array";
-import { useRecordContext } from "react-admin";
 import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
-import { Grid } from "@material-ui/core";
-
-import { dateRange } from "../lib/lib";
-import { ImportFirstSuccessStats } from "../lib/types";
+import useWindowDimensions from "../hooks/WindowDimensions";
 import { binnedData } from "../lib/funclib";
-
-const DATA_SOURCE = "GoalProgress.tsx";
+import { dateRange } from "../lib/libMethods";
+import { ImportFirstSuccessStats } from "../lib/types";
 
 type GraphData = {
   name: string;
@@ -20,34 +17,16 @@ type GraphData = {
 };
 
 // FIXME: any
-export function ImportProgress(props: any): ReactElement {
+export function ImportProgress({ stats }: { stats?: ImportFirstSuccessStats }): ReactElement {
   const [data, setData] = useState<GraphData[]>([]);
-  const [stats, setStats] = useState<ImportFirstSuccessStats>();
-  const obj = useRecordContext(props);
-  const importId = "theImport" in obj ? obj.theImport : obj.id;
-
   // FIXME: currently the word tokens data are only shown if
   // stats && stats.nbTotalWords !== stats.nbUniqueWords but we still calculate them
   // This is wasteful
-
   useEffect(() => {
     (async function () {
-      const locStats: ImportFirstSuccessStats =
-        await window.componentsConfig.proxy.sendMessagePromise<ImportFirstSuccessStats>({
-          source: DATA_SOURCE,
-          type: "getFirstSuccessStatsForImport",
-          value: importId,
-        });
-      if (!locStats) return;
-
-      setStats(locStats);
+      if (!stats) return;
       const end = dayjs();
-      const thresholds: number[] = dateRange(
-        end.add(-8, "week").unix(),
-        end.unix(),
-        "week",
-        true,
-      ) as number[];
+      const thresholds: number[] = dateRange(end.add(-8, "week").unix(), end.unix(), "week", true) as number[];
 
       const binFunc = bin()
         .domain([0, end.unix()])
@@ -55,27 +34,17 @@ export function ImportProgress(props: any): ReactElement {
       const wordDataTypes = binnedData(
         binFunc,
         thresholds,
-        locStats.successWords.map((fs) => ({ firstSuccess: fs.firstSuccess, nbOccurrences: 1 })),
-        locStats.nbUniqueWords,
+        stats.successWords.map((fs) => ({ firstSuccess: fs.firstSuccess, nbOccurrences: 1 })),
+        stats.nbUniqueWords,
       );
-      const wordDataTokens = binnedData(
-        binFunc,
-        thresholds,
-        locStats.successWords,
-        locStats.nbTotalWords,
-      );
+      const wordDataTokens = binnedData(binFunc, thresholds, stats.successWords, stats.nbTotalWords);
       const charDataTypes = binnedData(
         binFunc,
         thresholds,
-        locStats.successChars.map((fs) => ({ firstSuccess: fs.firstSuccess, nbOccurrences: 1 })),
-        locStats.nbUniqueCharacters,
+        stats.successChars.map((fs) => ({ firstSuccess: fs.firstSuccess, nbOccurrences: 1 })),
+        stats.nbUniqueCharacters,
       );
-      const charDataTokens = binnedData(
-        binFunc,
-        thresholds,
-        locStats.successChars,
-        locStats.nbTotalCharacters,
-      );
+      const charDataTokens = binnedData(binFunc, thresholds, stats.successChars, stats.nbTotalCharacters);
       const locData: GraphData[] = [];
       // FIXME: is there a better way to get the number of bins?
       for (let i = 0; i < wordDataTypes.length; i++) {
@@ -89,17 +58,18 @@ export function ImportProgress(props: any): ReactElement {
       }
       setData(locData);
     })();
-  }, []);
+  }, [stats]);
 
   const blue = "#8884d8";
   const yellow = "#fcba03";
   const green = "#2cfc03";
   const pink = "#f803fc";
 
+  const dims = useWindowDimensions();
   return stats ? (
-    <Grid container alignItems="center" spacing={3}>
+    <Grid container alignItems="center" spacing={3} justifyContent="center">
       <Grid item>
-        <LineChart width={500} height={300} data={data}>
+        <LineChart width={Math.min(dims.width - 10, 600)} height={300} data={data}>
           <XAxis dataKey="name" />
           <YAxis tickFormatter={(tick) => `${tick}%`} name="Progress" />
           <CartesianGrid stroke="#eee" strokeDasharray="5 5" />

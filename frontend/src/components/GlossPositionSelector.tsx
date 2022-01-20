@@ -9,12 +9,7 @@ interface Props {
   value: GlossPosition;
 }
 
-export default function GlossingPositionSelector({
-  containerRef,
-  onChange,
-  className,
-  value,
-}: Props): ReactElement {
+export default function GlossingPositionSelector({ containerRef, onChange, className, value }: Props): ReactElement {
   return (
     <Select
       MenuProps={{ container: containerRef?.current }}

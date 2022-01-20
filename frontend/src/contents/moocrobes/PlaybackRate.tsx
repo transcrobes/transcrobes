@@ -1,13 +1,12 @@
 import { ReactElement } from "react";
 import FineControl, { FineControlImplProps } from "../../components/FineControl";
 
-function PlaybackRate({ classes, value, onValueChange }: FineControlImplProps): ReactElement {
+function PlaybackRate({ className, value, onValueChange }: FineControlImplProps): ReactElement {
   return (
     <FineControl
-      title="Playback Rate"
       labelLess="Speed up by 5%"
       labelMore="Slow down by +5%"
-      cssClasses={classes}
+      className={className}
       isPercent={false}
       onLess={() => {
         onValueChange(value - 0.05);

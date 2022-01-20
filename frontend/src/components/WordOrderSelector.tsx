@@ -1,6 +1,5 @@
 import { FormControl, InputLabel, MenuItem, Select } from "@material-ui/core";
-import React from "react";
-import { ReactElement } from "react";
+import React, { ReactElement } from "react";
 import { WordOrdering } from "../lib/types";
 
 interface Props {

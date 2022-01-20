@@ -1,35 +1,36 @@
-import { ReactElement, useEffect, useRef, useState } from "react";
+import { makeStyles, useTheme } from "@material-ui/core";
 import dayjs from "dayjs";
 import _ from "lodash";
-
-import { GRADE, getWordId, getCardType, getCardId } from "../database/Schema";
-import RepetrobesConfigLauncher from "./RepetrobesConfigLauncher";
-import VocabRevisor from "./VocabRevisor";
-import { USER_STATS_MODE } from "../lib/lib";
+import { ReactElement, useEffect, useRef, useState } from "react";
+import { TopToolbar } from "react-admin";
+import { useAppDispatch } from "../app/hooks";
+import HelpButton from "../components/HelpButton";
+import Loading from "../components/Loading";
+import { getCardId, getCardType, getWordId, GRADE } from "../database/Schema";
+import { setLoading } from "../features/ui/uiSlice";
+import { setSettingsValue } from "../lib/appSettings";
+import { configIsUsable, recentSentencesFromLZ } from "../lib/funclib";
+import { ServiceWorkerProxy } from "../lib/proxies";
 import {
   CardType,
   CharacterType,
   DailyReviewables,
+  debug,
   DefinitionType,
   EMPTY_CARD,
   log,
-  debug,
   RecentSentencesStoredType,
   RecentSentencesType,
   RepetrobesActivityConfigType,
   ReviewablesInfoType,
   UserListWordType,
+  USER_STATS_MODE,
 } from "../lib/types";
-import { ServiceWorkerProxy } from "../lib/proxies";
-import { setSettingsValue } from "../lib/appSettings";
-import { configIsUsable, recentSentencesFromLZ } from "../lib/funclib";
-import Progress from "./Progress";
 import { getRandomNext } from "./Common";
 import { EMPTY_ACTIVITY, getUserConfig } from "./funclib";
-import { TopToolbar } from "react-admin";
-import HelpButton from "../components/HelpButton";
-import { makeStyles, Theme, useTheme } from "@material-ui/core";
-import SearchLoading from "../components/SearchLoading";
+import Progress from "./Progress";
+import RepetrobesConfigLauncher from "./RepetrobesConfigLauncher";
+import VocabRevisor from "./VocabRevisor";
 
 const DATA_SOURCE = "Repetrobes.tsx";
 
@@ -62,9 +63,6 @@ const useStyles = makeStyles(() => ({
     display: "flex",
     alignItems: "center",
   },
-  loading: {
-    textAlign: "center",
-  },
 }));
 
 interface RepetrobesProps {
@@ -73,16 +71,14 @@ interface RepetrobesProps {
 
 function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
   const [showAnswer, setShowAnswer] = useState<boolean>(false);
-  const [loading, setLoading] = useState<boolean>(false);
   const [userListWords, setUserListWords] = useState<UserListWordType>({});
 
   const [daState, setDaState] = useState<ReviewablesInfoType>(EMPTY_STATE);
-  const [stateActivityConfig, setStateActivityConfig] =
-    useState<RepetrobesActivityConfigType>(EMPTY_ACTIVITY);
+  const [stateActivityConfig, setStateActivityConfig] = useState<RepetrobesActivityConfigType>(EMPTY_ACTIVITY);
 
   const windowEndRef = useRef<HTMLDivElement>(null);
   const windowBeginRef = useRef<HTMLDivElement>(null);
-
+  const dispatch = useAppDispatch();
   useEffect(() => {
     if (windowBeginRef.current && windowEndRef.current) {
       (showAnswer ? windowEndRef.current : windowBeginRef.current).scrollIntoView({
@@ -120,7 +116,7 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
       nextPractice(tempState, activityConfigNew).then((practiceOut) => {
         const partial = { ...tempState, ...practiceOut };
         debug("The partial state is", partial);
-        setLoading(!(!!partial.currentCard && !!partial.definition));
+        dispatch(setLoading(!(!!partial.currentCard && !!partial.definition)));
         setDaState({
           ...daState,
           ...partial,
@@ -133,17 +129,17 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
   useEffect(() => {
     (async () => {
       if (!configIsUsable(stateActivityConfig)) {
-        setLoading(true);
+        dispatch(setLoading(true));
         return;
       }
-      setLoading(!(!!daState.currentCard && !!daState.definition));
+      dispatch(setLoading(!(!!daState.currentCard && !!daState.definition)));
     })();
   }, [daState]);
 
   useEffect(() => {
     (async () => {
       if (!configIsUsable(stateActivityConfig)) {
-        setLoading(true);
+        dispatch(setLoading(true));
         return;
       }
       const reviewLists = await proxy.sendMessagePromise<DailyReviewables>({
@@ -158,7 +154,7 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
       };
       const practiceOut = await nextPractice(tempState, stateActivityConfig);
       const partial = { ...tempState, ...practiceOut };
-      setLoading(!(!!daState.currentCard && !!daState.definition));
+      dispatch(setLoading(!(!!daState.currentCard && !!daState.definition)));
       setDaState({ ...daState, ...partial });
     })();
   }, [stateActivityConfig]);
@@ -183,6 +179,7 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
 
   function handleConfigChange(activityConfig: RepetrobesActivityConfigType) {
     if (!_.isEqual(activityConfig, stateActivityConfig)) {
+      dispatch(setLoading(true));
       setStateActivityConfig(activityConfig);
       setSettingsValue("repetrobes", "config", JSON.stringify(activityConfig));
     }
@@ -190,8 +187,7 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
   }
 
   function isListFiltered(card: CardType, activityConfig: RepetrobesActivityConfigType): boolean {
-    if (!activityConfig.onlySelectedWordListRevisions || activityConfig.systemWordSelection)
-      return false;
+    if (!activityConfig.onlySelectedWordListRevisions || activityConfig.systemWordSelection) return false;
     const wId = getWordId(card);
     if (!userListWords[wId]) return true;
     const lists = new Set<string>(userListWords[wId].map((l) => l.listId));
@@ -231,9 +227,7 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
     existingCards: Map<string, CardType>,
     activityConfig: RepetrobesActivityConfigType,
   ): Map<string, CardType> {
-    const potentialTypes = activityConfig.activeCardTypes
-      .filter((x) => x.selected)
-      .map((x) => x.value.toString());
+    const potentialTypes = activityConfig.activeCardTypes.filter((x) => x.selected).map((x) => x.value.toString());
 
     const validExisting: Map<string, CardType> = new Map<string, CardType>();
     for (const [k, v] of existingCards) {
@@ -260,16 +254,13 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
     const readyCandidates = candidates.filter((x) => x.dueDate <= dayjs().unix());
     let overdueRepeatNow = readyCandidates.filter(
       (x) =>
-        x.lastRevisionDate <=
-          dayjs().add(-stateActivityConfig.badReviewWaitSecs, "seconds").unix() &&
+        x.lastRevisionDate <= dayjs().add(-stateActivityConfig.badReviewWaitSecs, "seconds").unix() &&
         x.lastRevisionDate > todayStarts,
     );
     log("getOverdueTodaysRepeat", candidates, readyCandidates, overdueRepeatNow);
     if (overdueRepeatNow.length === 0 && forceUnfinished) {
       overdueRepeatNow = candidates.filter(
-        (x) =>
-          x.lastRevisionDate >=
-          dayjs().add(-stateActivityConfig.badReviewWaitSecs, "seconds").unix(),
+        (x) => x.lastRevisionDate >= dayjs().add(-stateActivityConfig.badReviewWaitSecs, "seconds").unix(),
       );
       log(
         "getOverdueTodaysRepeat looks like we are already over quota, finishing " +
@@ -305,8 +296,7 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
 
     if (
       newToday.size / revisionsToday.size >
-      Math.min(allNewToday, activityConfig.maxNew) /
-        Math.min(allRevisionsToday, activityConfig.maxRevisions)
+      Math.min(allNewToday, activityConfig.maxNew) / Math.min(allRevisionsToday, activityConfig.maxRevisions)
     ) {
       getNew = false;
       debug("Setting getNew false due to ratio", getNew);
@@ -344,9 +334,7 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
       reviewCard = getRandomNext(readyCandidates);
     } else {
       const readyCandidates = candidates.filter(
-        (x) =>
-          x.lastRevisionDate <=
-          dayjs().add(-stateActivityConfig.badReviewWaitSecs, "seconds").unix(),
+        (x) => x.lastRevisionDate <= dayjs().add(-stateActivityConfig.badReviewWaitSecs, "seconds").unix(),
       );
       // else find something that is not something failed just now (and not yet ready)
       if (readyCandidates.length > 0) {
@@ -384,10 +372,7 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
     }
   }
 
-  async function nextPractice(
-    state: ReviewablesInfoType,
-    activityConfig: RepetrobesActivityConfigType,
-  ) {
+  async function nextPractice(state: ReviewablesInfoType, activityConfig: RepetrobesActivityConfigType) {
     let currentCard: CardType | null = null;
     let definition: DefinitionType | null = null;
 
@@ -401,9 +386,7 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
     // all wordIds reviewed, regardless of whether their corresponding cards are currently filtered
     // this is so we don't do repeats
     const wordIdsReviewedToday = new Set<string>(
-      [...state.existingCards.values()]
-        .filter((c) => c.lastRevisionDate > todayStarts)
-        .map((c) => getWordId(c)),
+      [...state.existingCards.values()].filter((c) => c.lastRevisionDate > todayStarts).map((c) => getWordId(c)),
     );
     const toRereviewQueue = new Map<string, CardType>();
 
@@ -432,9 +415,7 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
         toRereviewQueue.set(cardId, card);
       }
     }
-    const filteredPossibleRevisionsToday = new Set(
-      [...possibleRevisionsToday].map((c) => getWordId(c)),
-    ).size;
+    const filteredPossibleRevisionsToday = new Set([...possibleRevisionsToday].map((c) => getWordId(c))).size;
     const availableNewToday = state.potentialCardsMap.size;
 
     const { candidates, readyCandidates, goodCard } = getOverdueTodaysRepeat(
@@ -493,10 +474,9 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
   async function handlePractice(wordIdStr: string, grade: number) {
     const { currentCard, definition } = daState;
     const { badReviewWaitSecs } = stateActivityConfig;
-    setLoading(true);
+    dispatch(setLoading(true));
 
-    if (!definition || wordIdStr !== getWordId(currentCard!))
-      throw new Error("Invalid state, no definition");
+    if (!definition || wordIdStr !== getWordId(currentCard!)) throw new Error("Invalid state, no definition");
 
     if (grade < GRADE.HARD) {
       // we consider it a lookup, otherwise we wouldn't have needed to look it up
@@ -522,7 +502,7 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
         nextPractice(newState, stateActivityConfig).then((nextState) => {
           console.log("Got nextPractice, should be setting loading to false");
           setShowAnswer(false);
-          setLoading(false);
+          dispatch(setLoading(undefined));
           setDaState({ ...nextState });
         });
         return "success";
@@ -562,13 +542,10 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
           <HelpButton url={helpUrl} />
         </div>
       </TopToolbar>
-      {loading && (
-        <div className={classes.loading}>
-          <SearchLoading />
-        </div>
-      )}
+      <Loading />
       <div>
         <VocabRevisor
+          proxy={proxy}
           theme={theme}
           showAnswer={showAnswer}
           activityConfig={stateActivityConfig}
@@ -576,7 +553,6 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
           characters={daState.characters}
           definition={daState.definition}
           recentPosSentences={posSentencesFromRecent(daState)}
-          loading={loading}
           onCardFrontUpdate={handleCardFrontUpdate}
           onPractice={handlePractice}
           onShowAnswer={handleShowAnswer}

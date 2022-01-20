@@ -1,40 +1,12 @@
-import { MangoQuery } from "rxdb/dist/types/core";
-import { isRxDocument } from "rxdb/plugins/core";
-import { clone } from "rxdb";
 import dayjs from "dayjs";
+import LZString from "lz-string";
+import { clone } from "rxdb";
+import { MangoQuery } from "rxdb/dist/types/core";
+import { RxStorageBulkWriteError } from "rxdb/dist/types/types";
+import { isRxDocument } from "rxdb/plugins/core";
 import { $enum } from "ts-enum-util";
 import { v4 as uuidv4 } from "uuid";
-import { RxStorageBulkWriteError } from "rxdb/dist/types/types";
-import LZString from "lz-string";
-
-import { sortByWcpm, shortMeaning, simpOnly, toEnrich } from "./lib";
-import {
-  CardType,
-  ContentConfigType,
-  DayCardWords,
-  FirstSuccess,
-  ImportFirstSuccessStats,
-  ListFirstSuccessStats,
-  GraderConfig,
-  ImportAnalysis,
-  PracticeDetailsType,
-  PROCESSING,
-  RepetrobesActivityConfigType,
-  SelectableListElementType,
-  UserListWordType,
-  VocabReview,
-  WordDetailsRxType,
-  WordListNamesType,
-  RecentSentencesType,
-  InputLanguage,
-  RecentSentencesStoredType,
-  DailyReviewables,
-  CharacterType,
-  DefinitionType,
-  WordDetailsType,
-  WordOrdering,
-} from "./types";
-
+import { getDatabaseName } from "../database/Database";
 import {
   CardDocument,
   CARD_TYPES,
@@ -47,37 +19,59 @@ import {
   TranscrobesDatabase,
   TranscrobesDocumentTypes,
 } from "../database/Schema";
-import { practice } from "./review";
-
+import { RxDBDataProviderParams } from "../ra-data-rxdb";
 import {
   cleanSentence,
   configIsUsable,
+  getKnownChars,
+  getSuccessWords,
   pythonCounter,
   recentSentencesFromLZ,
   UUID,
 } from "./funclib";
-import { fetchPlus } from "./lib";
 import { getFileStorage, IDBFileStorage } from "./IDBFileStorage";
-import { getUsername } from "./JWTAuthProvider";
-import { getDatabaseName } from "../database/Database";
-import { RxDBDataProviderParams } from "../ra-data-rxdb";
+import { cleanAnalysis, fetchPlus, shortMeaning, simpOnly, sortByWcpm } from "./libMethods";
+import { practice } from "./review";
+import {
+  CardType,
+  CharacterType,
+  ContentConfigType,
+  DailyReviewables,
+  DayCardWords,
+  DefinitionType,
+  FirstSuccess,
+  GraderConfig,
+  ImportAnalysis,
+  ImportFirstSuccessStats,
+  InputLanguage,
+  ListFirstSuccessStats,
+  PracticeDetailsType,
+  PROCESSING,
+  RecentSentencesStoredType,
+  RecentSentencesType,
+  RepetrobesActivityConfigType,
+  SelectableListElementType,
+  UserListWordType,
+  VocabReview,
+  WordDetailsRxType,
+  WordDetailsType,
+  WordListNamesType,
+  WordOrdering,
+} from "./types";
 
 const IMPORT_FILE_STORAGE = "import_file_storage";
 
-async function getNamedFileStorage(parameters: RxDBDataProviderParams): Promise<IDBFileStorage> {
-  const username = await getUsername();
-  if (!username) {
+function getNamedFileStorage(parameters: RxDBDataProviderParams): Promise<IDBFileStorage> {
+  if (!parameters.username) {
     throw new Error("Unable to find the current user");
   }
-  const importFileStore = getFileStorage(
-    `${getDatabaseName(parameters, username)}_${IMPORT_FILE_STORAGE}`,
-  );
+  const importFileStore = getFileStorage(`${getDatabaseName(parameters)}_${IMPORT_FILE_STORAGE}`);
   return importFileStore;
 }
 
-async function pushFiles(url: URL): Promise<{ status: "success" }> {
+async function pushFiles(url: URL, username: string): Promise<{ status: "success" }> {
   const apiEndPoint = new URL("/api/v1/enrich/import_file", url.origin).href;
-  const fileStore = await getNamedFileStorage({ url: url });
+  const fileStore = await getNamedFileStorage({ url, username });
   const cacheFiles = await fileStore.list();
   for (const f in cacheFiles) {
     const upload = await fileStore.get(cacheFiles[f]);
@@ -94,11 +88,7 @@ async function pushFiles(url: URL): Promise<{ status: "success" }> {
   return { status: "success" };
 }
 
-async function sendUserEvents(
-  db: TranscrobesDatabase,
-  url: URL,
-  maxSendEvents = 500,
-): Promise<{ status: string }> {
+async function sendUserEvents(db: TranscrobesDatabase, url: URL, maxSendEvents = 500): Promise<{ status: string }> {
   if (!db) {
     console.debug("No db in sendUserEvents, not executing", db);
     return { status: "uninitialised" };
@@ -141,10 +131,7 @@ async function sendUserEvents(
 
 async function getAllFromDB(
   db: TranscrobesDatabase,
-  {
-    collection,
-    queryObj,
-  }: { collection: TranscrobesCollectionsKeys; queryObj?: MangoQuery<TranscrobesDocumentTypes> },
+  { collection, queryObj }: { collection: TranscrobesCollectionsKeys; queryObj?: MangoQuery<TranscrobesDocumentTypes> },
 ): // TODO: see whether this could be properly typed
 Promise<any[]> {
   const values = await db[collection].find(queryObj).exec();
@@ -200,59 +187,33 @@ async function getGraphs(db: TranscrobesDatabase, wordIds: string[]): Promise<Ma
   return graphs;
 }
 
-function getKnownChars(
-  knownCards: Map<string, CardType>,
-  knownGraphs: Map<string, string>,
-): Map<string, number> {
-  const knownChars = new Map<string, number>();
-  for (const [wordId, card] of knownCards.entries()) {
-    const chars = (knownGraphs.get(wordId) || "").split("");
-    for (const char of chars) {
-      const first = knownChars.get(char);
-      if (!first || first > card.firstSuccessDate) {
-        knownChars.set(char, card.firstSuccessDate);
-      }
-    }
-  }
-  return knownChars;
-}
-
-function cleanAnalysis(
-  analysis: ImportAnalysis,
-  keepLang: InputLanguage = "zh-Hans",
-): { [key: string]: string[] } {
-  const buckets: { [key: string]: string[] } = {};
-  for (const [key, value] of Object.entries(analysis.vocabulary.buckets)) {
-    const vocab = value.filter((v) => toEnrich(v, keepLang));
-    if (vocab.length > 0) {
-      buckets[key] = vocab;
-    }
-  }
-  return buckets;
-}
-
 async function getFirstSuccessStatsForImport(
   db: TranscrobesDatabase,
-  importId: string,
+  { importId, analysisString }: { importId?: string; analysisString?: string },
 ): Promise<ImportFirstSuccessStats | null> {
-  const theImport = (await db.imports.findByIds([importId])).get(importId);
-  if (!theImport) throw new Error("Invalid, import not found");
-  if (!theImport.analysis || theImport.analysis.length === 0) return null;
-
+  let analysis: ImportAnalysis;
+  if (analysisString) {
+    analysis = JSON.parse(analysisString);
+  } else if (importId) {
+    const theImport = (await db.imports.findByIds([importId])).get(importId);
+    if (!theImport) throw new Error("Invalid, import not found");
+    if (!theImport.analysis || theImport.analysis.length === 0) return null;
+    analysis = JSON.parse(theImport.analysis);
+  } else {
+    throw new Error("At least one of importId or analysisString must be provided");
+  }
   const knownCards = await getKnownCards(db);
   const knownGraphs = await getGraphs(db, [...knownCards.keys()]);
   const knownChars = getKnownChars(knownCards, knownGraphs);
 
-  const buckets = cleanAnalysis(JSON.parse(theImport.analysis), "zh-Hans");
+  const buckets = cleanAnalysis(analysis, "zh-Hans");
   const allWords: [string, number][] = [];
   let nbUniqueWords = 0;
   let nbTotalWords = 0;
   let allChars = "";
 
   for (const [nbOccurances, wordList] of Object.entries(buckets)) {
-    allWords.push(
-      ...wordList.map((word: string) => [word, parseInt(nbOccurances)] as [string, number]),
-    );
+    allWords.push(...wordList.map((word: string) => [word, parseInt(nbOccurances)] as [string, number]));
     nbTotalWords += parseInt(nbOccurances) * wordList.length;
     nbUniqueWords += wordList.length;
     allChars += wordList.join("").repeat(parseInt(nbOccurances));
@@ -281,27 +242,6 @@ async function getFirstSuccessStatsForImport(
     nbUniqueCharacters,
     nbUniqueWords,
   };
-}
-
-function getSuccessWords(
-  knownCards: Map<string, CardType>,
-  knownGraphs: Map<string, string>,
-  allWordsMap: Map<string, number>,
-): FirstSuccess[] {
-  const successWords: FirstSuccess[] = [];
-  for (const [wordId, card] of knownCards.entries()) {
-    const graph = knownGraphs.get(wordId);
-    const nbOccurrences = allWordsMap.get(graph || "");
-    if (nbOccurrences) {
-      successWords.push({
-        // wordId: wordId,
-        // graph: knownGraphs.get(wordId),
-        firstSuccess: card.firstSuccessDate,
-        nbOccurrences: nbOccurrences,
-      });
-    }
-  }
-  return successWords;
 }
 
 async function getFirstSuccessStatsForList(
@@ -353,9 +293,7 @@ async function getCardWords(db: TranscrobesDatabase): Promise<DayCardWords> {
   // "learning": in the list to learn and we sort of know/have started learning, so we don't want it translated
   // "known": we know it, so we don't want to have it in active learning, and we don't want it translated
 
-  const allCardWordIds = Array.from(
-    new Set((await db.cards.find().exec()).flatMap((x) => x.wordId())),
-  );
+  const allCardWordIds = Array.from(new Set((await db.cards.find().exec()).flatMap((x) => x.wordId())));
 
   // If we have at least one card with an firstSuccessDate greater than zero,
   // it is considered "known" (here meaning simply "we don't want it translated in content we're consuming")
@@ -483,10 +421,7 @@ async function getWordDetails(db: TranscrobesDatabase, graph: string): Promise<W
   return safe;
 }
 
-async function getWordDetailsUnsafe(
-  db: TranscrobesDatabase,
-  graph: string,
-): Promise<WordDetailsRxType> {
+async function getWordDetailsUnsafe(db: TranscrobesDatabase, graph: string): Promise<WordDetailsRxType> {
   const localDefinition = await db.definitions.find().where("graph").eq(graph).exec();
   if (localDefinition.length > 0) {
     const word = localDefinition.values().next().value as DefinitionDocument;
@@ -514,10 +449,7 @@ async function getWordDetailsUnsafe(
   };
 }
 
-async function getCharacterDetails(
-  db: TranscrobesDatabase,
-  graphs: string[],
-): Promise<(CharacterType | null)[]> {
+async function getCharacterDetails(db: TranscrobesDatabase, graphs: string[]): Promise<(CharacterType | null)[]> {
   let chars: (CharacterType | null)[] = [];
   const values = await getCharacterDetailsUnsafe(db, graphs);
   if (graphs && graphs.length > 0) {
@@ -546,10 +478,7 @@ async function createCards(
   return { error: values.error, success };
 }
 
-async function updateRecentSentences(
-  db: TranscrobesDatabase,
-  sentences: RecentSentencesType[],
-): Promise<void> {
+async function updateRecentSentences(db: TranscrobesDatabase, sentences: RecentSentencesType[]): Promise<void> {
   for (const s of cleanSentences(sentences)) {
     // Don't wait. Is this Ok?
     db.recentsentences.atomicUpsert({
@@ -572,10 +501,7 @@ function cleanSentences(sentences: RecentSentencesType[]): RecentSentencesType[]
   return sentences;
 }
 
-async function addRecentSentences(
-  db: TranscrobesDatabase,
-  sentences: RecentSentencesType[],
-): Promise<void> {
+async function addRecentSentences(db: TranscrobesDatabase, sentences: RecentSentencesType[]): Promise<void> {
   await db.recentsentences.bulkInsert(
     cleanSentences(sentences).map((s) => {
       return {
@@ -599,27 +525,18 @@ async function getRecentSentences(
   return sents;
 }
 
-async function getWordFromDBs(
-  db: TranscrobesDatabase,
-  word: string,
-): Promise<DefinitionType | null> {
+async function getWordFromDBs(db: TranscrobesDatabase, word: string): Promise<DefinitionType | null> {
   const value = await db.definitions.findOne().where("graph").eq(word).exec();
   return value ? clone(value.toJSON()) : null;
 }
 
-async function getContentConfigFromStore(
-  db: TranscrobesDatabase,
-  contentId: number,
-): Promise<ContentConfigType> {
+async function getContentConfigFromStore(db: TranscrobesDatabase, contentId: number): Promise<ContentConfigType> {
   const dbValue = await db.content_config.findOne(contentId.toString()).exec();
   const returnVal = dbValue ? JSON.parse(dbValue.configString || "{}") : {};
   return returnVal;
 }
 
-async function setContentConfigToStore(
-  db: TranscrobesDatabase,
-  contentConfig: ContentConfigType,
-): Promise<boolean> {
+async function setContentConfigToStore(db: TranscrobesDatabase, contentConfig: ContentConfigType): Promise<boolean> {
   await db.content_config.atomicUpsert({
     id: contentConfig.id.toString(),
     configString: JSON.stringify(contentConfig),
@@ -633,11 +550,7 @@ async function setContentConfigToStore(
 async function submitLookupEvents(
   db: TranscrobesDatabase,
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-  {
-    lemmaAndContexts,
-    userStatsMode,
-    source,
-  }: { lemmaAndContexts: any; userStatsMode: number; source: string },
+  { lemmaAndContexts, userStatsMode, source }: { lemmaAndContexts: any; userStatsMode: number; source: string },
 ): Promise<boolean> {
   const events = [];
   for (const lemmaAndContext of lemmaAndContexts) {
@@ -688,18 +601,10 @@ async function addOrUpdateCardsForWord(
 // FIXME: any, this will require not using the isRxDocument and being clean
 async function practiceCard(
   db: TranscrobesDatabase,
-  {
-    currentCard,
-    grade,
-    badReviewWaitSecs,
-  }: { currentCard: any; grade: number; badReviewWaitSecs: number },
+  { currentCard, grade, badReviewWaitSecs }: { currentCard: any; grade: number; badReviewWaitSecs: number },
 ): Promise<CardType> {
   const isCardDoc = isRxDocument(currentCard) && "toJSON" in currentCard;
-  const cardToSave = practice(
-    isCardDoc ? currentCard.toJSON() : currentCard,
-    grade,
-    badReviewWaitSecs,
-  );
+  const cardToSave = practice(isCardDoc ? currentCard.toJSON() : currentCard, grade, badReviewWaitSecs);
   let cardObject: CardDocument;
 
   const newDate = dayjs().unix();
@@ -730,10 +635,7 @@ async function updateCard(db: TranscrobesDatabase, card: CardType): Promise<void
   await db.cards.upsert(card);
 }
 
-async function practiceCardsForWord(
-  db: TranscrobesDatabase,
-  practiceDetails: PracticeDetailsType,
-): Promise<void> {
+async function practiceCardsForWord(db: TranscrobesDatabase, practiceDetails: PracticeDetailsType): Promise<void> {
   const wordInfo = practiceDetails.wordInfo;
   const grade = practiceDetails.grade;
 
@@ -797,10 +699,7 @@ async function orderVocabReviews(
   return potentialWords;
 }
 
-async function getVocabReviews(
-  db: TranscrobesDatabase,
-  graderConfig: GraderConfig,
-): Promise<VocabReview[] | null> {
+async function getVocabReviews(db: TranscrobesDatabase, graderConfig: GraderConfig): Promise<VocabReview[] | null> {
   const selectedLists = graderConfig.wordLists.filter((x) => x.selected).map((x) => x.value);
   if (selectedLists.length === 0) {
     console.debug("No wordLists, not trying to find reviews");
@@ -857,9 +756,7 @@ async function orderedPotentialCardsMap(
     }
     return potentialCardsMap;
   } else if (ordering === "Personal") {
-    const cardWordIds = [
-      ...new Set<string>([...inPotentialCardsMap.keys()].map((x) => getWordId(x))),
-    ];
+    const cardWordIds = [...new Set<string>([...inPotentialCardsMap.keys()].map((x) => getWordId(x)))];
     const seenWords = await db.word_model_stats.findByIds(cardWordIds);
     const orderedSeenWords = [...seenWords.values()].sort((a, b) => {
       return (b.nbSeen || 0) - (a.nbSeen || 0);
@@ -897,9 +794,7 @@ async function getPotentialWordIds(
         })
         .map((x) => x.id),
     );
-    const selectedLists = (await getDefaultWordLists(db))
-      .filter((x) => x.selected)
-      .map((x) => x.value);
+    const selectedLists = (await getDefaultWordLists(db)).filter((x) => x.selected).map((x) => x.value);
     const selectedListsWordIds = await db.wordlists.findByIds(selectedLists);
     for (const sl of selectedLists) {
       const wordlist = selectedListsWordIds.get(sl);
@@ -927,6 +822,7 @@ async function getPotentialWordIds(
 async function getSRSReviews(
   db: TranscrobesDatabase,
   activityConfig: RepetrobesActivityConfigType,
+  fromLang: InputLanguage,
 ): Promise<DailyReviewables> {
   if (!configIsUsable(activityConfig)) {
     console.debug("No wordLists or config not usable, not trying to find reviews");
@@ -950,12 +846,9 @@ async function getSRSReviews(
   }
   // Clean the potential wordIds of those we that are already known or we have already seen today
   for (const wordId of potentialWordIds) {
-    if (allKnownWordIds.has(wordId) || todaysStudiedWords.has(wordId))
-      potentialWordIds.delete(wordId);
+    if (allKnownWordIds.has(wordId) || todaysStudiedWords.has(wordId)) potentialWordIds.delete(wordId);
   }
-  const selectedTypes = activityConfig.activeCardTypes
-    .filter((ac) => ac.selected)
-    .map((act) => `${act.value}`);
+  const selectedTypes = activityConfig.activeCardTypes.filter((ac) => ac.selected).map((act) => `${act.value}`);
 
   // Map of all the possible wordIds, with a set of all possible types
   let potentialCardsMap = new Map<string, Set<string>>();
@@ -973,9 +866,7 @@ async function getSRSReviews(
   // Now we have all the possible new cards and all the existing cards
 
   // Get all the wordIds for the existing cards
-  const allWordIdsForExistingCards = new Set<string>(
-    [...existingCards.keys()].map((ec) => getWordId(ec)),
-  );
+  const allWordIdsForExistingCards = new Set<string>([...existingCards.keys()].map((ec) => getWordId(ec)));
   // get all of the recentSentences
   const recentSentences: Map<string, RecentSentencesDocument> = await db.recentsentences.findByIds(
     [...allWordIdsForExistingCards].concat([...potentialCardsMap.keys()]),
@@ -1010,10 +901,7 @@ async function getSRSReviews(
   // now clean the potential news and definitions that might have invalid graphs (for reviewing anyway!)
   const cleanReviewableDefinitions = new Map<string, DefinitionType>();
   for (const def of allReviewableDefinitions.values()) {
-    if (
-      (potentialCardsMap.has(def.id) && simpOnly(def.graph)) ||
-      allWordIdsForExistingCards.has(def.id)
-    ) {
+    if ((potentialCardsMap.has(def.id) && simpOnly(def.graph, fromLang)) || allWordIdsForExistingCards.has(def.id)) {
       cleanReviewableDefinitions.set(def.id, clone(def.toJSON()));
     } else if (potentialCardsMap.has(def.id)) {
       // it doesn't only have simplified chars, so we can't/won't review
@@ -1039,9 +927,7 @@ async function getSRSReviews(
   return {
     allReviewableDefinitions: cleanReviewableDefinitions,
     potentialCardsMap,
-    existingCards: new Map<string, CardType>(
-      [...existingCards.values()].map((v) => [v.id, clone(v.toJSON())]),
-    ),
+    existingCards: new Map<string, CardType>([...existingCards.values()].map((v) => [v.id, clone(v.toJSON())])),
     allPotentialCharacters: new Map<string, CharacterType>(
       [...allPotentialCharacters.values()].map((v) => [v.id, clone(v.toJSON())]),
     ),

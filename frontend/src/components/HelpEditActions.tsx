@@ -1,11 +1,5 @@
 import { ReactElement } from "react";
-import {
-  TopToolbar,
-  ShowButton,
-  EditActionsProps,
-  useEditContext,
-  useResourceDefinition,
-} from "react-admin";
+import { EditActionsProps, ShowButton, TopToolbar, useEditContext, useResourceDefinition } from "react-admin";
 import HelpButton from "./HelpButton";
 
 const sanitizeRestProps = ({

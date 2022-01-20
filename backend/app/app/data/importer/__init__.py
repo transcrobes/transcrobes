@@ -10,7 +10,6 @@ import os
 import posixpath
 import re
 import shutil
-import time
 from collections import ChainMap, Counter, defaultdict
 from datetime import datetime
 from itertools import chain
@@ -21,6 +20,7 @@ import aiofiles
 import dawn
 import magic
 import pytz
+import textile
 import webvtt
 from app.core.config import settings
 from app.data.context import get_broadcast
@@ -36,12 +36,12 @@ from app.data.models import (
     WEBVTT_FILE,
 )
 from app.db.session import async_session
-from app.enrich import TokenPhoneType
+from app.enrich import TokenPhoneType, enrich_html_to_html, enrich_plain_to_html
 from app.enrich.data import EnrichmentManager, managers
 from app.enrich.models import ensure_cache_preloaded
 from app.models.migrated import Content, Import, UserList
 from app.models.user import absolute_imports_path
-from app.ndutils import lemma, to_enrich
+from app.ndutils import flatten, lemma
 from app.schemas.files import ProcessData
 from app.zhhans import CORENLP_IGNORABLE_POS
 from bs4 import BeautifulSoup
@@ -54,18 +54,15 @@ from webvtt import Caption, WebVTT
 logger = logging.getLogger(__name__)
 
 
-# stolen from django.contrib.admin.utils...
-def flatten(fields):
-    """
-    Return a list which is a single level of flattening of the original list.
-    """
-    flat = []
-    for field in fields:
-        if isinstance(field, (list, tuple)):
-            flat.extend(field)
-        else:
-            flat.append(field)
-    return flat
+WEBPUB_SKELETON = {
+    "@context": "https://readium.org/webpub-manifest/context.jsonld",
+    "metadata": {
+        "@type": "http://schema.org/Book",
+    },
+    "readingOrder": [],
+    "resources": [],
+}
+CHAPTER_MAX_LENGTH = 30000
 
 
 # FOR WEBPUB
@@ -105,15 +102,64 @@ def make_toc_item(epub, it, manager: EnrichmentManager):
     return res
 
 
+def make_manifest_text(content: Content, processed_chapters):  # noqa:C901  # pylint: disable=R0912
+    data = WEBPUB_SKELETON
+    # {
+    #   "@context": "https://readium.org/webpub-manifest/context.jsonld",
+    #
+    #   "metadata": {
+    #     "@type": "http://schema.org/Book",
+    #     "title": "Moby-Dick",
+    #     "author": "Herman Melville",
+    #     "identifier": "urn:isbn:978031600000X",
+    #     "language": "en",
+    #     "modified": "2015-09-29T17:00:00Z"
+    #   },
+    #
+    #   "links": [
+    #     {"rel": "self", "href": "https://example.com/manifest.json", "type": "application/webpub+json"},
+    #     {"rel": "alternate", "href": "https://example.com/publication.epub", "type": "application/epub+zip"},
+    #     {"rel": "search", "href": "https://example.com/search{?query}", "type": "text/html", "templated": true}
+    #   ],
+    #
+    #   "readingOrder": [
+    #     {"href": "https://example.com/c001.html", "type": "text/html", "title": "Chapter 1"},
+    #     {"href": "https://example.com/c002.html", "type": "text/html", "title": "Chapter 2"}
+    #   ],
+    #
+    #   "resources": [
+    #     {"rel": "cover", "href": "https://example.com/cover.jpg", "type": "image/jpeg", "height": 600, "width": 400},
+    #     {"href": "https://example.com/style.css", "type": "text/css"},
+    #     {"href": "https://example.com/whale.jpg", "type": "image/jpeg"},
+    #     {"href": "https://example.com/boat.svg", "type": "image/svg+xml"},
+    #     {"href": "https://example.com/notes.html", "type": "text/html"}
+    #   ]
+    # }
+    metadata = data["metadata"]
+    metadata["modified"] = datetime.now().isoformat()
+    metadata["title"] = content.title
+    metadata["author"] = content.author
+    metadata["identifier"] = str(content.id)
+    metadata["language"] = "zh-CN"
+    data["readingOrder"] = []
+    data["toc"] = []
+    data["resources"] = []
+
+    # FIXME: this is obligatory according to the standard but not for r2d2bc
+    # because adding the absolute url might break something later, not putting for now
+    # data["links"] = []
+    # links = data["links"]
+    # links.append({"rel": "self", "href": "http://some.url/manifest.json", "type": "application/webpub+json"})
+    for chapter_tuple in processed_chapters:
+        chapter = chapter_tuple[0]
+        data["readingOrder"].append({"href": chapter, "type": "text/html", "title": f"{content.title}: {chapter}"})
+        data["toc"].append({"href": chapter, "title": f"{content.title}: {chapter}"})
+        data["resources"].append({"href": chapter, "title": f"{content.title}: {chapter}"})
+    return data
+
+
 def make_manifest(epub: Epub, manager: EnrichmentManager):  # noqa:C901  # pylint: disable=R0912
-    data = {
-        "@context": "https://readium.org/webpub-manifest/context.jsonld",
-        "metadata": {
-            "@type": "http://schema.org/Book",
-        },
-        "readingOrder": [],
-        "resources": [],
-    }
+    data = WEBPUB_SKELETON
 
     # METADATA
     for k, v in epub.meta.items():
@@ -247,77 +293,85 @@ def chunked(size, source):
         yield source[i : i + size]  # noqa: E203
 
 
-# FIXME: this is currently useless, probably better to delete
-def text_from_text_file(contents: str, manager: EnrichmentManager):
-    return manager.enricher().clean_text(contents)
+def text_from_text_file(contents: str, manager: EnrichmentManager, remove_whitespace=True):
+    return manager.enricher().clean_text(contents, remove_whitespace)
 
 
-async def enrich_html_to_html(chapter_id, xhtml, manager: EnrichmentManager):
-    soup = BeautifulSoup(xhtml, "html.parser")  # it appears only html.parser doesn't fail when there are BOM :-(
-    if not soup.head.title:  # html MUST have a head->title
-        soup.head.append(soup.new_tag("title"))
-        soup.head.title.string = "Title"
+async def process_text(db: AsyncSession, the_import: Import, manager: EnrichmentManager):
+    content = get_or_create_content(the_import)
+    content.the_import = the_import
+    content.created_by = the_import.created_by
+    content.updated_by = the_import.created_by
+    content.content_type = Content.BOOK
+    content.title = the_import.title
+    content.description = the_import.description
+    content.language = "zh-CN"
 
-    data_json = soup.new_tag("script")
-    data_json["src"] = f"{os.path.basename(chapter_id)}{DATA_JS_SUFFIX}"
-    soup.head.append(data_json)
+    db.add(content)
+    await db.commit()
+    # Reinit destination dir
+    directory = content.processed_path()
+    if os.path.isdir(directory):
+        logger.debug("Erasing existing content in %s", directory)
+        shutil.rmtree(directory, ignore_errors=True)
+    os.makedirs(directory)
 
-    text_nodes = soup.body.find_all(text=True)
-    slim_models = {}
-    for text_node in text_nodes:
-        text = manager.enricher().clean_text(str(text_node))
-
-        if not re.search(r"\S+", text) or not to_enrich(text):
-            continue
-
-        logger.debug(f"Starting parse for {chapter_id}: {text[:100]}")
-        parse = await manager.parser().parse(text)
-        parsed_slim_model = {"s": manager.enricher().slim_parse(parse)}
-
-        match = re.match(r"^\s+", text)
-        if match:
-            parsed_slim_model["sws"] = match.group(0)
-        match = re.search(r"\s+$", text)
-        if match:
-            parsed_slim_model["ews"] = match.group(0)
-
-        timestamp = time.time_ns()
-        text_fragment = soup.new_tag("enriched-text-fragment")
-        text_fragment["id"] = timestamp
-        text_fragment.string = text
-        slim_models[timestamp] = parsed_slim_model
-        text_node.replace_with(text_fragment)
-
-    return chapter_id, str(soup), slim_models
-
-
-async def enrich_plain_to_html(unique_key, start_text, manager: EnrichmentManager):
-    lines = ""
-    slim_models = {}
-    text_node = manager.enricher().clean_text(str(start_text))
-
-    for raw_line in text_node.splitlines():
-        text = "".join(c for c in raw_line.strip() if c.isprintable())
-        if not re.search(r"\S+", text) or not to_enrich(text):
-            template_string = text.strip()
+    html = textile.textile(text_from_import(the_import, manager, remove_whitespace=False))
+    soup = BeautifulSoup(html, "html.parser")  # it appears only html.parser doesn't fail when there are BOM :-(
+    chapter_fragments = {}
+    current_chapter_chars = ""
+    current_chapter = []
+    index = 0
+    for element in soup.find_all(recursive=False):
+        el_text = element.text.strip()
+        if len(el_text) + len(current_chapter_chars) > CHAPTER_MAX_LENGTH:
+            chapter_fragments[f"{index}.html"] = "".join([str(node) for node in current_chapter])
+            index += 1
+            current_chapter = [element]
+            current_chapter_chars = el_text
         else:
-            logger.debug(f"Starting parse for {unique_key}: {text[:100]}")
-            parsed_slim_model = {"s": manager.enricher().slim_parse(await manager.parser().parse(text))}
+            current_chapter.append(element)
+            current_chapter_chars += el_text
 
-            match = re.match(r"^\s+", text)
-            if match:
-                parsed_slim_model["sws"] = match.group(0)
-            match = re.search(r"\s+$", text)
-            if match:
-                parsed_slim_model["ews"] = match.group(0)
+    if len(current_chapter) > 0:
+        chapter_fragments[f"{index}.html"] = "".join([str(node) for node in current_chapter])
 
-            timestamp = time.time_ns()
-            template_string = f"<enriched-text-fragment id='{timestamp}'>{text}<enriched-text-fragment>"
-            slim_models[timestamp] = parsed_slim_model
+    chapters = {}
+    for filename, fragment in chapter_fragments.items():
+        text_html = f"""
+        <html>
+            <head>
+                <title>{content.title} page {index}<title>
+            </head>
+            <body>
+            {fragment}
+            </body>
+        </html>
+        """
+        chapters[filename] = text_html
 
-        lines += f"<br>{template_string}" if (lines and text.startswith("-")) else template_string
+    xhtml_futures = [enrich_html_to_html(chapter_id, chapter, manager) for chapter_id, chapter in chapters.items()]
+    processed_chapters = await gather_with_concurrency(
+        settings.IMPORT_MAX_CONCURRENT_PARSER_QUERIES,
+        *(xhtml_futures),
+    )
+    chapter_models = []
+    for chapter in processed_chapters:
+        with open(os.path.join(content.processed_path(), chapter[0]), "w+", encoding="utf8") as replacement, open(
+            os.path.join(content.processed_path(), f"{chapter[0]}{PARSE_JSON_SUFFIX}"),
+            "w+",
+            encoding="utf8",
+        ) as parse:
+            replacement.write(chapter[1])
+            json.dump(chapter[2], parse, separators=(",", ":"))
+        chapter_models.append(chapter[2])
 
-    return unique_key, lines, slim_models
+    manifest = make_manifest_text(content, processed_chapters)
+    outpath = os.path.join(content.processed_path(), MANIFEST_JSON)
+    with open(outpath, "w+", encoding="utf8") as manifest_out:
+        json.dump(manifest, manifest_out, separators=(",", ":"))
+
+    return chapter_models
 
 
 async def process_subs(db: AsyncSession, the_import: Import, manager: EnrichmentManager):
@@ -401,7 +455,7 @@ async def process_epub_to_webpub(db: AsyncSession, the_import: Import, manager: 
     return chapter_models
 
 
-def text_from_import(an_import: Import, manager: EnrichmentManager):
+def text_from_import(an_import: Import, manager: EnrichmentManager, remove_whitespace=True):
     # We should only have valid files here, but should probably add more checking anyway
 
     with open(an_import.imported_path(), encoding="utf8") as fh:
@@ -415,7 +469,7 @@ def text_from_import(an_import: Import, manager: EnrichmentManager):
         # also check for only simplifieds?
 
         if file_type in ["text/plain", "application/csv"]:
-            return text_from_text_file(contents, manager)
+            return text_from_text_file(contents, manager, remove_whitespace)
         # elif file_type in ['application/pdf', ...]:
         #     return text_from_other...
         raise Exception(f"Attempt to import from unsupported file_type {file_type}")
@@ -554,6 +608,7 @@ async def enrich_parse(content: Content, manager: EnrichmentManager, available_d
 
 async def models_from_import(db: AsyncSession, an_import: Import, manager: EnrichmentManager):
     output_dir = os.path.dirname(an_import.processed_path())
+
     if an_import.import_file.endswith(".epub"):
         Path(output_dir).mkdir(parents=True, exist_ok=True)
         models = await process_epub_to_webpub(db, an_import, manager)
@@ -562,12 +617,12 @@ async def models_from_import(db: AsyncSession, an_import: Import, manager: Enric
         Path(output_dir).mkdir(parents=True, exist_ok=True)
         models = await process_subs(db, an_import, manager)
         logger.debug("%s models found for subs import %s", len(models), an_import.id)
-    # elif an_import.import_file.path[-4:] in [CSV_EXTENTION]:
-    #     raw = text_from_import(an_import)
-    else:
+    elif an_import.import_file.endswith(".txt"):
+        Path(output_dir).mkdir(parents=True, exist_ok=True)
+        models = await process_text(db, an_import, manager)
+    else:  # FIXME: currently this should never get hit
         # synchronous get text from file into memory in chunks for later async parallel processing
         contents = list(chunked(settings.IMPORT_PARSE_CHUNK_SIZE_BYTES, text_from_import(an_import, manager)))
-
         logger.debug("Found %s chunks to parse for import %s", len(contents), an_import)
 
         models = await gather_with_concurrency(

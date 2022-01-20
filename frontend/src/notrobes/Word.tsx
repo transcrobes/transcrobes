@@ -1,12 +1,17 @@
-import { ReactElement, useState } from "react";
+import { Button, makeStyles } from "@material-ui/core";
 import dayjs from "dayjs";
+import { ReactElement } from "react";
 import { $enum } from "ts-enum-util";
-import { Button, makeStyles, useTheme } from "@material-ui/core";
-
-import { say, wordIdsFromModels } from "../lib/funclib";
-import { CARD_TYPES, getCardType, getCardId } from "../database/Schema";
+import { ThinHR } from "../components/Common";
 import DefinitionGraph from "../components/DefinitionGraph";
+import DefinitionTranslations from "../components/DefinitionTranslations";
+import Header from "../components/Header";
+import Meaning from "../components/Meaning";
+import PosItem from "../components/PosItem";
 import PracticerInput from "../components/PracticerInput";
+import RecentSentencesElement from "../components/RecentSentencesElement";
+import { CARD_TYPES, getCardId, getCardType } from "../database/Schema";
+import { say } from "../lib/funclib";
 import {
   CardType,
   CharacterType,
@@ -16,22 +21,6 @@ import {
   SortableListElementType,
   WordModelStatsType,
 } from "../lib/types";
-
-import {
-  defineElements,
-  getUserCardWords,
-  setGlossing,
-  setLangPair,
-  setPlatformHelper,
-  setSegmentation,
-  USER_STATS_MODE,
-} from "../lib/components";
-import PosItem from "../components/PosItem";
-import DefinitionTranslations from "../components/DefinitionTranslations";
-import Meaning from "../components/Meaning";
-import Header from "../components/Header";
-import RecentSentencesElement from "../components/RecentSentencesElement";
-import { ThinHR } from "../components/Common";
 
 const useStyles = makeStyles(() => ({
   soundBoxInner: {
@@ -68,10 +57,6 @@ const useStyles = makeStyles(() => ({
   },
 }));
 
-const DATA_SOURCE = "Word.tsx";
-
-defineElements();
-
 interface WordInfoProps {
   definition: DefinitionType;
   characters: (CharacterType | null)[];
@@ -79,24 +64,14 @@ interface WordInfoProps {
   onCardFrontUpdate: (card: CardType) => void;
 }
 
-function WordInfo({
-  definition,
-  characters,
-  meaningCard,
-  onCardFrontUpdate,
-}: WordInfoProps): ReactElement {
+function WordInfo({ definition, characters, meaningCard, onCardFrontUpdate }: WordInfoProps): ReactElement {
   const classes = useStyles();
   return (
     <>
       <div>
         <Header text="Card Revision Details" />
         <div className={classes.definitionGraph}>
-          <DefinitionGraph
-            charWidth={100}
-            charHeight={100}
-            characters={characters}
-            showAnswer={true}
-          />
+          <DefinitionGraph charWidth={100} charHeight={100} characters={characters} showAnswer={true} />
         </div>
         <div className={classes.soundBoxOuter}>
           <div className={classes.soundBoxInner}>
@@ -148,9 +123,7 @@ function ExistingCards({ cards }: { cards: CardType[] }): ReactElement {
     return (
       card && (
         <tr key={card.id}>
-          <td className={classes.caps}>
-            {$enum(CARD_TYPES).getKeyOrThrow(parseInt(getCardType(card)))}
-          </td>
+          <td className={classes.caps}>{$enum(CARD_TYPES).getKeyOrThrow(parseInt(getCardType(card)))}</td>
           <td>
             {/* FIXME: don't hardcode the localeString!!! */}
             {dayjs
@@ -198,9 +171,7 @@ function WordLists({ lists }: { lists: SortableListElementType[] }): ReactElemen
         <Header text="Lists (name: freq. position in list)" />
         {lists.length > 0 ? ( // cards is a map
           <div className={classes.infoBox}>
-            {lists
-              .map((wl) => `${wl.name}: ${wl.position}`)
-              .reduce((prev, curr) => prev + ", " + curr)}
+            {lists.map((wl) => `${wl.name}: ${wl.position}`).reduce((prev, curr) => prev + ", " + curr)}
           </div>
         ) : (
           <span>No lists for this item</span>
@@ -303,17 +274,13 @@ function WordMetadata({ definition }: { definition: DefinitionType }): ReactElem
         <div className={classes.infoBox}>
           <span className={classes.fieldName}>HSK: </span>
           <span>
-            {definition.hsk && definition.hsk.levels.length > 0
-              ? definition.hsk.levels.join(", ")
-              : "Not in the HSK"}
+            {definition.hsk && definition.hsk.levels.length > 0 ? definition.hsk.levels.join(", ") : "Not in the HSK"}
           </span>
         </div>
         <div className={classes.infoBox}>
           <span className={classes.fieldName}>Freq: </span>
           <span>
-            {definition.frequency && definition.frequency.wcpm
-              ? definition.frequency.wcpm
-              : "No frequency data"}
+            {definition.frequency && definition.frequency.wcpm ? definition.frequency.wcpm : "No frequency data"}
           </span>
         </div>
       </div>
@@ -344,51 +311,6 @@ function Word({
   onPractice,
   onCardFrontUpdate,
 }: WordProps): ReactElement {
-  const [loaded, setLoaded] = useState(false);
-  setGlossing(USER_STATS_MODE.NO_GLOSS);
-  setSegmentation(true);
-  setLangPair(window.componentsConfig.langPair);
-  setPlatformHelper(window.componentsConfig.proxy);
-  const theme = useTheme();
-
-  if (recentPosSentences) {
-    window.transcrobesModel = window.transcrobesModel || {};
-    Object.entries(recentPosSentences).forEach(([pos, s]) => {
-      const lemma = definition.graph;
-      if (s) {
-        s.forEach((sent) => {
-          const now = Date.now() + Math.random();
-          sent.sentence.t.forEach((t) => {
-            if (t.l == lemma && t.pos === pos) {
-              t.style = { color: theme.palette.success.main, "font-weight": "bold" };
-            }
-          });
-          window.transcrobesModel[now] = { id: now, s: [sent.sentence] };
-          sent.modelId = now;
-        });
-      }
-    });
-    const uniqueIds = wordIdsFromModels(window.transcrobesModel);
-
-    getUserCardWords().then(() => {
-      window.componentsConfig.proxy
-        .sendMessagePromise<DefinitionType[]>({
-          source: DATA_SOURCE,
-          type: "getByIds",
-          value: { collection: "definitions", ids: [...uniqueIds] },
-        })
-        .then((definitions) => {
-          window.cachedDefinitions = window.cachedDefinitions || new Map<string, DefinitionType>();
-          definitions.map((definition) => {
-            window.cachedDefinitions.set(definition.id, definition);
-          });
-          setLoaded(true);
-        });
-      document.addEventListener("click", () => {
-        document.querySelectorAll("token-details").forEach((el) => el.remove());
-      });
-    });
-  }
   return (
     definition && (
       <div>
@@ -406,11 +328,7 @@ function Word({
         <Practicer wordId={definition.id} onPractice={onPractice} />
         <ExistingCards cards={cards} />
         <WordLists lists={lists} />
-        <RecentSentencesElement
-          loaded={loaded}
-          recentPosSentences={recentPosSentences}
-          onDelete={onDeleteRecent}
-        />
+        <RecentSentencesElement recentPosSentences={recentPosSentences} onDelete={onDeleteRecent} />
         <WordMetadata definition={definition} />
         <ProviderTranslations definition={definition} />
         <Synonyms definition={definition} />

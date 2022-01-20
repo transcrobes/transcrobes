@@ -1,7 +1,7 @@
-import { ReactElement } from "react";
 import Slider, { ValueLabelProps } from "@material-ui/core/Slider";
 import { createStyles, Theme, withStyles } from "@material-ui/core/styles";
 import Tooltip from "@material-ui/core/Tooltip";
+import { ReactElement } from "react";
 
 const sliderStyles = createStyles((theme: Theme) => ({
   thumb: {

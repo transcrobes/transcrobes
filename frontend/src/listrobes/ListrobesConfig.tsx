@@ -1,12 +1,11 @@
-import { ReactElement } from "react";
-import { DragDropContext, Droppable, Draggable, DropResult } from "react-beautiful-dnd";
-import Select, { StylesConfig } from "react-select";
-import _ from "lodash";
 import { makeStyles, TextField, Theme, useTheme } from "@material-ui/core";
-
-import { GraderConfig, WordOrdering } from "../lib/types";
-import { validInt } from "../lib/funclib";
+import _ from "lodash";
+import { ReactElement } from "react";
+import { DragDropContext, Draggable, Droppable, DropResult } from "react-beautiful-dnd";
+import Select, { StylesConfig } from "react-select";
 import WordOrderSelector from "../components/WordOrderSelector";
+import { validInt } from "../lib/funclib";
+import { GraderConfig, WordOrdering } from "../lib/types";
 
 const useStyles = makeStyles((theme: Theme) => ({
   typography: {
@@ -60,11 +59,7 @@ export function ListrobesConfig({ graderConfig, onConfigChange }: Props): ReactE
       return;
     }
 
-    const gradeOrder = reorder(
-      graderConfig.gradeOrder,
-      result.source.index,
-      result.destination.index,
-    );
+    const gradeOrder = reorder(graderConfig.gradeOrder, result.source.index, result.destination.index);
 
     onConfigChange({ ...graderConfig, gradeOrder: gradeOrder });
   }
@@ -136,11 +131,7 @@ export function ListrobesConfig({ graderConfig, onConfigChange }: Props): ReactE
         />
       </div>
       <div className={classes.select}>
-        <WordOrderSelector
-          onChange={handleOrderingChange}
-          value={graderConfig.itemOrdering}
-          name="itemOrdering"
-        />
+        <WordOrderSelector onChange={handleOrderingChange} value={graderConfig.itemOrdering} name="itemOrdering" />
       </div>
       <div className={classes.itemsPerPage}>
         <TextField

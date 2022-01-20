@@ -1,6 +1,6 @@
 import { Workbox } from "workbox-window";
-import { EventData } from "./types";
-import { isInitialisedAsync, setInitialisedAsync } from "./JWTAuthProvider";
+import { isInitialisedAsync, setInitialisedAsync } from "../database/authdb";
+import type { EventData, ExtendedEventData } from "./types";
 
 type ConfigType = {
   resourceRoot?: string;
@@ -20,6 +20,12 @@ abstract class AbstractWorkerProxy {
     allowInstall?: boolean,
   ): void;
 
+  abstract asyncInit(
+    config: ConfigType,
+    progressCallback?: (x: ProgressCallbackMessage) => string,
+    allowInstall?: boolean,
+  ): Promise<void>;
+
   abstract sendMessage(
     message: EventData,
     callback?: (x: any) => string,
@@ -28,6 +34,7 @@ abstract class AbstractWorkerProxy {
   abstract getURL(relativePath: string): string;
 
   abstract sendMessagePromise<Type>(eventData: EventData): Promise<Type>;
+  abstract get loaded(): boolean;
 }
 
 type MessageWithCallbacks = {
@@ -45,6 +52,10 @@ class ServiceWorkerProxy extends AbstractWorkerProxy {
   #config: ConfigType = {};
 
   #loaded = false;
+
+  get loaded() {
+    return this.#loaded;
+  }
 
   constructor(wb: Workbox) {
     super();
@@ -65,11 +76,11 @@ class ServiceWorkerProxy extends AbstractWorkerProxy {
     this.getURL = this.getURL.bind(this);
   }
 
-  async sendMessagePromise<Type>(eventData: EventData): Promise<Type> {
+  async sendMessagePromise<Type>(eventData: ExtendedEventData, allowInstall = false): Promise<Type> {
     // FIXME: absolutely need to rationalise the messageSW vs chrome.sendMessage...
     if (
       !this.#config.username ||
-      (!(await isInitialisedAsync(this.#config.username)) && eventData.type !== "heartbeat")
+      (!(await isInitialisedAsync(this.#config.username)) && eventData.type !== "heartbeat" && !allowInstall)
     ) {
       console.error(
         "Uninitialised",
@@ -143,6 +154,25 @@ class ServiceWorkerProxy extends AbstractWorkerProxy {
     });
   }
 
+  async asyncInit(
+    config: ConfigType,
+    progressCallback?: (x: ProgressCallbackMessage) => string,
+    allowInstall = false,
+  ): Promise<void> {
+    this.#config = config;
+    if (!this.#config.username) {
+      throw new Error("Attempt to init without a username");
+    }
+    const message = {
+      source: this.DATA_SOURCE,
+      type: "syncDB",
+      value: this.#config,
+      progress: progressCallback,
+    };
+    await this.sendMessagePromise(message, allowInstall);
+    this.#loaded = true;
+  }
+
   init(
     config: ConfigType,
     callback: (x: any) => string,
@@ -157,6 +187,7 @@ class ServiceWorkerProxy extends AbstractWorkerProxy {
 
     isInitialisedAsync(this.#config.username).then((inited) => {
       if (!allowInstall && !inited) {
+        console.log("I don't have a user in sw proxy");
         window.location.href = "/#/init";
         return;
       }
@@ -198,6 +229,9 @@ class BackgroundWorkerProxy extends AbstractWorkerProxy {
   #config: ConfigType = {};
 
   #loaded = false;
+  get loaded() {
+    return this.#loaded;
+  }
 
   constructor() {
     super();
@@ -227,12 +261,17 @@ class BackgroundWorkerProxy extends AbstractWorkerProxy {
     });
   }
 
-  sendMessagePromise<Type>(eventData: EventData): Promise<Type> {
+  sendMessagePromise<Type>(eventData: ExtendedEventData, allowInstall = false): Promise<Type> {
     return new Promise((resolve, _reject) => {
-      this.sendMessage(eventData, (value) => {
-        resolve(value);
-        return "";
-      });
+      this.sendMessage(
+        eventData,
+        (value) => {
+          resolve(value);
+          return "";
+        },
+        eventData.progress,
+        allowInstall,
+      );
     });
   }
 
@@ -249,7 +288,7 @@ class BackgroundWorkerProxy extends AbstractWorkerProxy {
         progressCallback: progressCallback,
       });
       return;
-    } else if (message.type === "getUsername") {
+    } else if (message.type === "getUser") {
       this.postMessage({
         message: message,
         callback: callback,
@@ -288,6 +327,25 @@ class BackgroundWorkerProxy extends AbstractWorkerProxy {
     //     progressCallback: progressCallback,
     //   });
     // });
+  }
+
+  async asyncInit(
+    config: ConfigType,
+    progressCallback?: (x: ProgressCallbackMessage) => string,
+    allowInstall = false,
+  ): Promise<void> {
+    this.#config = config;
+    if (!this.#config.username) {
+      throw new Error("Attempt to init without a username");
+    }
+    const message = {
+      source: this.DATA_SOURCE,
+      type: "syncDB",
+      value: this.#config,
+      progress: progressCallback,
+    };
+    await this.sendMessagePromise(message, allowInstall);
+    this.#loaded = true;
   }
 
   init(
@@ -343,6 +401,11 @@ class BackgroundWorkerProxy extends AbstractWorkerProxy {
     //   );
     // });
   }
+}
+
+export let platformHelper: AbstractWorkerProxy;
+export function setPlatformHelper(value: AbstractWorkerProxy): void {
+  platformHelper = value;
 }
 
 export { ServiceWorkerProxy, BackgroundWorkerProxy, AbstractWorkerProxy };

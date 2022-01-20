@@ -1,12 +1,12 @@
 /**
  * Type definitions for a manifest
  */
-import { ReadiumWebpubContext } from '../constants';
-import { Metadata } from './Metadata';
-import { ReadiumLink } from './ReadiumLink';
+import { ReadiumWebpubContext } from "../../common/types";
+import { Metadata } from "./Metadata";
+import { ReadiumLink } from "./ReadiumLink";
 
 export interface WebpubManifest {
-  '@context'?: typeof ReadiumWebpubContext;
+  "@context"?: typeof ReadiumWebpubContext;
   metadata: Metadata;
   links: ReadiumLink[];
   readingOrder: ReadiumLink[];

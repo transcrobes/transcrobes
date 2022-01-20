@@ -5,7 +5,7 @@
     "types": [
       "chrome"
     ],
-    "target": "es6",
+    "target": "es2017",
     "lib": [
       "dom",
       "dom.iterable",
@@ -29,5 +29,5 @@
     "noImplicitThis": true,
     "strictNullChecks": true
   },
-  "include": [ "src", "src/decs.d.ts" ]
+  "include": ["src", "src/decs.d.ts"]
 }

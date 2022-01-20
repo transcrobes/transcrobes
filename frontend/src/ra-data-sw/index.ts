@@ -4,13 +4,14 @@ import { DeleteManyParams, DeleteParams, UpdateManyParams, UpdateParams } from "
 import { Workbox } from "workbox-window";
 
 type SWDataProvider = DataProvider & { wb: () => Workbox };
+const SW_MESSAGE_TYPE = "DataProvider";
 
 export default function SWDataProvider(params: SWDataProviderParams): DataProvider {
   const wb = params.wb;
   return {
     getList: async (resource: string, params: GetListParams) => {
       return await wb.messageSW({
-        type: "DataProvider",
+        type: SW_MESSAGE_TYPE,
         method: "getList",
         collection: resource,
         params: params,
@@ -18,7 +19,7 @@ export default function SWDataProvider(params: SWDataProviderParams): DataProvid
     },
     getOne: async (resource: string, params: GetOneParams) => {
       return await wb.messageSW({
-        type: "DataProvider",
+        type: SW_MESSAGE_TYPE,
         method: "getOne",
         collection: resource,
         params: params,
@@ -26,7 +27,7 @@ export default function SWDataProvider(params: SWDataProviderParams): DataProvid
     },
     getMany: async (resource: string, params: GetManyParams) => {
       return await wb.messageSW({
-        type: "DataProvider",
+        type: SW_MESSAGE_TYPE,
         method: "getMany",
         collection: resource,
         params: params,
@@ -34,7 +35,7 @@ export default function SWDataProvider(params: SWDataProviderParams): DataProvid
     },
     getManyReference: async (resource: string, params: any) => {
       return await wb.messageSW({
-        type: "DataProvider",
+        type: SW_MESSAGE_TYPE,
         method: "getManyReference",
         collection: resource,
         params: params,
@@ -42,7 +43,7 @@ export default function SWDataProvider(params: SWDataProviderParams): DataProvid
     },
     create: async (resource: string, params: CreateParams) => {
       return await wb.messageSW({
-        type: "DataProvider",
+        type: SW_MESSAGE_TYPE,
         method: "create",
         collection: resource,
         params: params,
@@ -50,7 +51,7 @@ export default function SWDataProvider(params: SWDataProviderParams): DataProvid
     },
     update: async (resource: string, params: UpdateParams) => {
       return await wb.messageSW({
-        type: "DataProvider",
+        type: SW_MESSAGE_TYPE,
         method: "update",
         collection: resource,
         params: params,
@@ -58,7 +59,7 @@ export default function SWDataProvider(params: SWDataProviderParams): DataProvid
     },
     updateMany: async (resource: string, params: UpdateManyParams) => {
       return await wb.messageSW({
-        type: "DataProvider",
+        type: SW_MESSAGE_TYPE,
         method: "updateMany",
         collection: resource,
         params: params,
@@ -66,7 +67,7 @@ export default function SWDataProvider(params: SWDataProviderParams): DataProvid
     },
     delete: async (resource: string, params: DeleteParams) => {
       return await wb.messageSW({
-        type: "DataProvider",
+        type: SW_MESSAGE_TYPE,
         method: "delete",
         collection: resource,
         params: params,
@@ -74,7 +75,7 @@ export default function SWDataProvider(params: SWDataProviderParams): DataProvid
     },
     deleteMany: async (resource: string, params: DeleteManyParams) => {
       return await wb.messageSW({
-        type: "DataProvider",
+        type: SW_MESSAGE_TYPE,
         method: "deleteMany",
         collection: resource,
         params: params,

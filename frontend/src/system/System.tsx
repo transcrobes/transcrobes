@@ -5,14 +5,14 @@ import Button from "@material-ui/core/Button";
 import { makeStyles } from "@material-ui/core/styles";
 import { CardHeader, Typography } from "@material-ui/core";
 import { useTranslate, Title, TopToolbar } from "react-admin";
-import { useSelector, useDispatch } from "react-redux";
 
-import { getUsername, setInitialisedAsync } from "../lib/JWTAuthProvider";
 import { getDatabaseName, deleteDatabase } from "../database/Database";
 import { AbstractWorkerProxy } from "../lib/proxies";
 import HelpButton from "../components/HelpButton";
-import { AppState, ThemeName } from "../lib/types";
-import { changeTheme } from "./actions";
+import { ThemeName } from "../lib/types";
+import { useAppDispatch, useAppSelector } from "../app/hooks";
+import { setInitialisedAsync } from "../database/authdb";
+import { changeTheme } from "../features/themes/themeReducer";
 
 const useStyles = makeStyles({
   label: { width: "10em", display: "inline-block" },
@@ -44,13 +44,7 @@ function RefreshCacheButton({ onCacheEmptied }: RefreshCacheButtonProps): ReactE
     });
   }
   return (
-    <Button
-      variant="contained"
-      className={classes.button}
-      // color={theme === 'dark' ? 'primary' : 'default'}
-      color={"primary"}
-      onClick={handleClick}
-    >
+    <Button variant="contained" className={classes.button} color={"primary"} onClick={handleClick}>
       Refresh Caches (instant)
     </Button>
   );
@@ -63,11 +57,11 @@ interface ReinstallDBButtonProps {
 
 function ReinstallDBButton({ proxy, onDBDeleted }: ReinstallDBButtonProps): ReactElement {
   const classes = useStyles();
+  const username = useAppSelector((state) => state.userData.username);
 
   async function handleClick() {
-    const username = await getUsername();
     if (username) {
-      const dbName = getDatabaseName({ url: new URL(window.location.href) }, username);
+      const dbName = getDatabaseName({ url: new URL(window.location.href), username });
       await proxy.sendMessagePromise<string>({
         source: "System",
         type: "resetDBConnections",
@@ -84,13 +78,7 @@ function ReinstallDBButton({ proxy, onDBDeleted }: ReinstallDBButtonProps): Reac
     }
   }
   return (
-    <Button
-      variant="contained"
-      className={classes.button}
-      // color={theme === 'dark' ? 'primary' : 'default'}
-      color={"primary"}
-      onClick={handleClick}
-    >
+    <Button variant="contained" className={classes.button} color={"primary"} onClick={handleClick}>
       Reinstall DB (takes ~20 minutes!)
     </Button>
   );
@@ -103,37 +91,16 @@ function ReloadDBButton({ proxy }: ReloadDBButtonProps): ReactElement {
   const classes = useStyles();
 
   async function handleClick() {
-    const username = await getUsername();
+    const username = useAppSelector((state) => state.userData.username);
     if (username) {
-      proxy
-        .sendMessagePromise<string>({ source: "System", type: "resetDBConnections", value: "" })
-        .then(() => {
-          getUsername().then((username) => {
-            if (username) {
-              proxy.init(
-                { username: username },
-                () => {
-                  return "";
-                },
-                () => {
-                  return "";
-                },
-              );
-            }
-          });
-        });
+      await proxy.sendMessagePromise<string>({ source: "System", type: "resetDBConnections", value: "" });
+      await proxy.asyncInit({ username: username });
     } else {
       console.error("No username found");
     }
   }
   return (
-    <Button
-      variant="contained"
-      className={classes.button}
-      // color={theme === 'dark' ? 'primary' : 'default'}
-      color={"primary"}
-      onClick={handleClick}
-    >
+    <Button variant="contained" className={classes.button} color={"primary"} onClick={handleClick}>
       Reload DB (almost instant)
     </Button>
   );
@@ -151,8 +118,8 @@ function System({ proxy }: Props): ReactElement {
 
   // const locale = useLocale();
   // const setLocale = useSetLocale();
-  const theme = useSelector((state: AppState) => state.theme);
-  const dispatch = useDispatch();
+  const theme = useAppSelector((state) => state.theme);
+  const dispatch = useAppDispatch();
 
   function handleUpdate(mode: ThemeName) {
     localStorage.setItem("mode", mode); // a bit hacky, probably better somewhere else

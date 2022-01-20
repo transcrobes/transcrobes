@@ -1,20 +1,17 @@
 import { ReactElement } from "react";
+import { DEFAULT_RECENTS_READER_CONFIG_STATE } from "../features/content/simpleReaderSlice";
 import { PosSentences, TREEBANK_POS_TYPES, ZH_TB_POS_LABELS } from "../lib/types";
 import { InfoBox, ThinHR } from "./Common";
+import Mouseover from "./content/td/Mouseover";
 import Header from "./Header";
 import RecentSentenceExample from "./RecentSentenceExample";
 
 interface Props {
   recentPosSentences: PosSentences | null;
   onDelete?: (modelId: number | BigInt) => void;
-  loaded?: boolean; // FIXME: it is almost certain this is useless
 }
 
-export default function RecentSentencesElement({
-  recentPosSentences,
-  onDelete,
-  loaded,
-}: Props): ReactElement {
+export default function RecentSentencesElement({ recentPosSentences, onDelete }: Props): ReactElement {
   return (
     <>
       <ThinHR />
@@ -33,8 +30,10 @@ export default function RecentSentencesElement({
                     entry.map((s, index) => {
                       return (
                         <RecentSentenceExample
+                          readerConfig={DEFAULT_RECENTS_READER_CONFIG_STATE}
                           key={index}
-                          modelId={s.modelId || 0}
+                          sentence={s.sentence}
+                          recentSentenceId={s.modelId || 0}
                           onDelete={onDelete}
                         />
                       );
@@ -43,6 +42,7 @@ export default function RecentSentencesElement({
               </InfoBox>
             );
           })}
+        <Mouseover readerConfig={DEFAULT_RECENTS_READER_CONFIG_STATE} />
       </div>
       {!recentPosSentences && <div>No recent phrases found</div>}
     </>

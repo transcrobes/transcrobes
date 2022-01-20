@@ -283,9 +283,13 @@ body {
 /* we don’t need to redeclare bg-color and color for :root since we will inherit and update from day/default mode */
 
 :root[style*="readium-night-on"] *:not(a) {
-  color: inherit !important;
+  /* color: inherit !important; */
   background-color: transparent !important;
   border-color: currentColor !important;
+}
+
+:root[style*="readium-night-on"] *:not(a):not(.tcrobe-word):not(.tcrobe-gloss) {
+  color: inherit !important;
 }
 
 :root[style*="readium-night-on"] svg text {

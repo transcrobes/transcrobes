@@ -1,10 +1,9 @@
-import * as React from "react";
-import { FC, Fragment, ReactElement } from "react";
-import { useSelector } from "react-redux";
-import { List, MenuItem, ListItemIcon, Typography, Collapse, Tooltip } from "@material-ui/core";
+import { Collapse, List, ListItemIcon, MenuItem, Tooltip, Typography } from "@material-ui/core";
 import { makeStyles } from "@material-ui/core/styles";
 import ExpandMore from "@material-ui/icons/ExpandMore";
-import { useTranslate, ReduxState } from "react-admin";
+import { FC, Fragment, ReactElement } from "react";
+import { ReduxState, useTranslate } from "react-admin";
+import { useSelector } from "react-redux";
 
 const useStyles = makeStyles((theme) => ({
   icon: { minWidth: theme.spacing(5) },

@@ -1,23 +1,20 @@
 import { FC } from "react";
 import {
   Edit,
-  SimpleForm,
-  TextField,
-  TextInput,
-  required,
   FieldProps,
   NumberInput,
   ReferenceInput,
+  required,
   SelectInput,
+  SimpleForm,
+  TextField,
+  TextInput,
 } from "react-admin";
 import { HelpEditActions } from "../components/HelpEditActions";
 import { Goal } from "../lib/types";
 
 const GoalEdit: FC<FieldProps<Goal>> = (props) => (
-  <Edit
-    actions={<HelpEditActions helpUrl="https://transcrob.es/page/software/configure/goals/" />}
-    {...props}
-  >
+  <Edit actions={<HelpEditActions helpUrl="https://transcrob.es/page/software/configure/goals/" />} {...props}>
     <SimpleForm redirect="list">
       <TextField source="id" />
       <TextInput label="Goal name" source="title" validate={[required()]} />

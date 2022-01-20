@@ -1,13 +1,17 @@
 import { StrictMode } from "react";
 import ReactDOM from "react-dom";
+import { CssBaseline } from "@material-ui/core";
 import "./index.css";
 import App from "./App";
-import { CssBaseline } from "@material-ui/core";
+import { store } from "./app/createStore";
+import { Provider } from "react-redux";
 
 ReactDOM.render(
   <StrictMode>
     <CssBaseline />
-    <App />
+    <Provider store={store}>
+      <App componentsConfig={window.componentsConfig} />
+    </Provider>
   </StrictMode>,
   document.getElementById("root"),
 );

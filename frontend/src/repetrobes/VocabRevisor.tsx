@@ -2,7 +2,6 @@ import { ReactElement } from "react";
 import { Button, Theme } from "@material-ui/core";
 
 import { CARD_TYPES, getCardType, getWordId } from "../database/Schema";
-import { wordIdsFromModels } from "../lib/funclib";
 import PracticerInput from "../components/PracticerInput";
 import {
   CardType,
@@ -12,8 +11,6 @@ import {
   RecentSentencesType,
   RepetrobesActivityConfigType,
 } from "../lib/types";
-import { setGlossing, setLangPair, setSegmentation, USER_STATS_MODE } from "../lib/lib";
-import { getUserCardWords, setPlatformHelper } from "../lib/components";
 import { AnswerWrapper, CentredFlex, QuestionWrapper } from "./Common";
 import SoundQuestion from "./SoundQuestion";
 import GraphQuestion from "./GraphQuestion";
@@ -26,10 +23,11 @@ import PhraseQuestion from "./PhraseQuestion";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
+import { ServiceWorkerProxy } from "../lib/proxies";
+import { useAppSelector } from "../app/hooks";
+
 dayjs.extend(utc);
 dayjs.extend(timezone);
-
-const DATA_SOURCE = "VocabRevisor.tsx";
 
 function getAnswer(
   card: CardType,
@@ -103,14 +101,7 @@ function getQuestion(
     case CARD_TYPES.GRAPH.toString():
       return <GraphQuestion card={card} characters={characters} />;
     case CARD_TYPES.SOUND.toString():
-      return (
-        <SoundQuestion
-          card={card}
-          definition={definition}
-          characters={characters}
-          showAnswer={showAnswer}
-        />
-      );
+      return <SoundQuestion card={card} definition={definition} characters={characters} showAnswer={showAnswer} />;
     case CARD_TYPES.MEANING.toString():
       return (
         <MeaningQuestion
@@ -124,13 +115,7 @@ function getQuestion(
         />
       );
     case CARD_TYPES.PHRASE.toString():
-      return (
-        <PhraseQuestion
-          recentSentences={recentSentences}
-          showAnswer={showAnswer}
-          characters={characters}
-        />
-      );
+      return <PhraseQuestion recentSentences={recentSentences} showAnswer={showAnswer} characters={characters} />;
     default:
       console.error("Unsupported cardType error", card, getCardType(card));
       throw new Error("Unsupported cardType");
@@ -138,13 +123,13 @@ function getQuestion(
 }
 
 interface Props {
+  proxy: ServiceWorkerProxy;
   theme: Theme;
   showAnswer: boolean;
   currentCard: CardType | null;
   definition: DefinitionType | null;
   characters: CharacterType[] | null;
   recentPosSentences: RecentSentencesType | null;
-  loading: boolean;
   activityConfig: RepetrobesActivityConfigType;
   onCardFrontUpdate: (card: CardType) => void;
   onPractice: (wordId: string, grade: number) => void;
@@ -152,12 +137,10 @@ interface Props {
 }
 
 export function VocabRevisor({
-  theme,
   showAnswer,
   currentCard,
   definition,
   characters,
-  loading,
   activityConfig,
   recentPosSentences,
   onCardFrontUpdate,
@@ -168,50 +151,6 @@ export function VocabRevisor({
     onPractice(wordId, grade);
   }
   const { showSynonyms, showL2LengthHint, showRecents } = activityConfig;
-
-  setGlossing(USER_STATS_MODE.NO_GLOSS);
-  setSegmentation(true);
-  setLangPair(window.componentsConfig.langPair);
-  setPlatformHelper(window.componentsConfig.proxy);
-
-  if (recentPosSentences && definition) {
-    window.transcrobesModel = window.transcrobesModel || {};
-    Object.entries(recentPosSentences.posSentences).forEach(([pos, s]) => {
-      const lemma = definition.graph;
-      if (s) {
-        s.forEach((sent) => {
-          const now = Date.now() + Math.random();
-          sent.sentence.t.forEach((t) => {
-            if (t.l === lemma && t.pos === pos) {
-              t.style = { color: theme.palette.success.main, "font-weight": "bold" };
-              t.de = true;
-            }
-          });
-          window.transcrobesModel[now] = { id: now, s: [sent.sentence] };
-          sent.modelId = now;
-        });
-      }
-    });
-    const uniqueIds = wordIdsFromModels(window.transcrobesModel);
-
-    getUserCardWords().then(() => {
-      window.componentsConfig.proxy
-        .sendMessagePromise<DefinitionType[]>({
-          source: DATA_SOURCE,
-          type: "getByIds",
-          value: { collection: "definitions", ids: [...uniqueIds] },
-        })
-        .then((definitions) => {
-          window.cachedDefinitions = window.cachedDefinitions || new Map<string, DefinitionType>();
-          definitions.map((definition) => {
-            window.cachedDefinitions.set(definition.id, definition);
-          });
-        });
-      document.addEventListener("click", () => {
-        document.querySelectorAll("token-details").forEach((el) => el.remove());
-      });
-    });
-  }
   const premature = currentCard && currentCard?.dueDate > dayjs().unix();
   console.log(
     "prematurity",
@@ -228,8 +167,8 @@ export function VocabRevisor({
       .tz(dayjs.tz.guess())
       .format("YYYY-MM-DD HH:mm:ss"),
     dayjs().tz(dayjs.tz.guess()).format("YYYY-MM-DD HH:mm:ss"),
-    loading,
   );
+  const loading = useAppSelector((state) => state.ui.loading);
   return (
     <>
       {!loading && !definition && <span>No review items loaded</span>}

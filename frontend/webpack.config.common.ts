@@ -10,8 +10,8 @@ import HtmlWebpackPlugin from "html-webpack-plugin";
 import CircularDependencyPlugin from "circular-dependency-plugin";
 import { InjectManifest } from "workbox-webpack-plugin";
 
-export function config(): webpack.Configuration {
-  return {
+export function config(mode: "production" | "development"): webpack.Configuration {
+  const out: webpack.Configuration = {
     resolve: {
       extensions: [".ts", ".tsx", ".js"],
       fallback: {
@@ -33,6 +33,11 @@ export function config(): webpack.Configuration {
       }),
     ],
   };
+  if (mode === "development") {
+    out.resolve.alias = out.resolve.alias || {};
+    out.resolve.alias["inferno"] = "inferno/dist/index.dev.esm.js";
+  }
+  return out;
 }
 
 export function splitChunks(): webpack.Configuration {
@@ -62,6 +67,7 @@ export function checkCircularDependencies(): webpack.Configuration {
         include: /src/,
         // add errors to webpack instead of warnings
         failOnError: true,
+
         // allow import cycles that include an asyncronous import,
         // e.g. via import(/* webpackMode: "weak" */ './file.js')
         allowAsyncCycles: false,
@@ -72,13 +78,11 @@ export function checkCircularDependencies(): webpack.Configuration {
   };
 }
 
-export function injectManifest(
-  { limit }: { limit: number } = { limit: 100 },
-): webpack.Configuration {
+export function injectManifest({ limit }: { limit: number } = { limit: 100 }): webpack.Configuration {
   return {
     plugins: [
       new InjectManifest({
-        swSrc: "./src/service-worker.ts",
+        swSrc: "./src/sw/service-worker.ts",
         dontCacheBustURLsMatching: /.*\.css$|.*\.woff2?$/,
         maximumFileSizeToCacheInBytes: limit * 1024 * 1024,
       }),

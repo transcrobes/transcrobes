@@ -1,21 +1,20 @@
+import { FormControlLabel, Switch } from "@material-ui/core";
 import { ReactElement, useEffect, useState } from "react";
 import { useRecordContext } from "react-admin";
-import { FormControlLabel, Switch } from "@material-ui/core";
-import { registerRoute } from "workbox-routing";
 import { ExpirationPlugin } from "workbox-expiration";
+import { registerRoute } from "workbox-routing";
 import { CacheFirst } from "workbox-strategies";
-
-import { PrecachePublicationsMessage } from "./boocrobes/types";
+import { getContentBaseURL, getManifestURL, getSubsURL, handleBadResponse } from "../lib/funclib";
 import {
   Content,
   CONTENT_TYPE,
   ONE_YEAR_IN_SECS,
+  PRECACHE_PUBLICATIONS,
   PROCESSING,
   SUBS_DATA_SUFFIX,
-  PRECACHE_PUBLICATIONS,
   WEBPUB_CACHE_NAME,
 } from "../lib/types";
-import { getContentBaseURL, getManifestURL, getSubsURL, handleBadResponse } from "../lib/funclib";
+import { PrecachePublicationsMessage } from "./common/types";
 
 const cacheFirst = new CacheFirst({
   cacheName: WEBPUB_CACHE_NAME,
@@ -63,10 +62,7 @@ export default function CacheSwitch(props: any): ReactElement {
             // route it so that workbox knows to respond.
             registerRoute(url.href, cacheFirst);
             registerRoute(url.href + SUBS_DATA_SUFFIX, cacheFirst);
-            const results = await Promise.all([
-              fetch(url.href),
-              fetch(url.href + SUBS_DATA_SUFFIX),
-            ]);
+            const results = await Promise.all([fetch(url.href), fetch(url.href + SUBS_DATA_SUFFIX)]);
             for (const res of results) {
               handleBadResponse(res.url, res);
               await cache.put(res.url, res.clone());
@@ -88,14 +84,6 @@ export default function CacheSwitch(props: any): ReactElement {
       }
     }
   }, [cached]);
-  // <FormControlLabel
-  //   className={classes.controls}
-  //   control={
-  //     <Switch checked={segmentation} onChange={(_e, checked) => setSegmentation(checked)} />
-  //   }
-  //   label="Segment words"
-  // />
-
   if (content.processing === PROCESSING.FINISHED) {
     return (
       <FormControlLabel

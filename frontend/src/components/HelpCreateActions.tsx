@@ -1,12 +1,8 @@
 import { ReactElement } from "react";
-import {
-  TopToolbar,
-  ListButton,
-  ShowActionsProps,
-  useEditContext,
-  useResourceDefinition,
-} from "react-admin";
+import { ListButton, ShowActionsProps, TopToolbar, useEditContext, useResourceDefinition } from "react-admin";
 import HelpButton from "./HelpButton";
+
+const sanitizeRestProps = ({ basePath = null, className = null, hasList = null, resource = null, ...rest }) => rest;
 
 export const HelpCreateActions = ({
   className,
@@ -25,11 +21,3 @@ export const HelpCreateActions = ({
     </TopToolbar>
   );
 };
-
-const sanitizeRestProps = ({
-  basePath = null,
-  className = null,
-  hasList = null,
-  resource = null,
-  ...rest
-}) => rest;

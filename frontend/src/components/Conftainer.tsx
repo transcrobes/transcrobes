@@ -1,8 +1,8 @@
-import React, { ReactElement, ReactNode } from "react";
 import InputLabel from "@material-ui/core/InputLabel";
 import NotchedOutline from "@material-ui/core/OutlinedInput/NotchedOutline";
 import { makeStyles, Theme } from "@material-ui/core/styles";
 import clsx from "clsx";
+import React, { ReactElement, ReactNode } from "react";
 
 const useStyles = makeStyles((theme: Theme) => ({
   root: {
@@ -13,7 +13,7 @@ const useStyles = makeStyles((theme: Theme) => ({
     position: "relative",
   },
   content: {
-    // padding: "18.5px 14px",
+    textAlign: "center",
     padding: theme.spacing(1),
   },
   inputLabel: {
@@ -44,13 +44,7 @@ export default function Conftainer({ id, label, children, className }: Props): R
   const classes = useStyles();
   return (
     <div className={clsx(className, classes.root)}>
-      <InputLabel
-        ref={labelRef}
-        htmlFor={id}
-        variant="outlined"
-        className={classes.inputLabel}
-        shrink
-      >
+      <InputLabel ref={labelRef} htmlFor={id} variant="outlined" className={classes.inputLabel} shrink>
         {label}
       </InputLabel>
       <div className={classes.contentWrapper}>

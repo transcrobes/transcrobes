@@ -1,8 +1,11 @@
 import { HistogramGeneratorNumber } from "d3-array";
 import dayjs from "dayjs";
+import { throttle } from "lodash";
 import LZString from "lz-string";
 import { HslColor } from "react-colorful";
 import {
+  CardType,
+  DefinitionsState,
   FirstSuccess,
   HistoData,
   KeyedModels,
@@ -11,7 +14,43 @@ import {
   RecentSentencesType,
   RepetrobesActivityConfigType,
   SentenceType,
+  TokenType,
 } from "./types";
+
+export function getKnownChars(
+  knownCards: Map<string, CardType>,
+  knownGraphs: Map<string, string>,
+): Map<string, number> {
+  const knownChars = new Map<string, number>();
+  for (const [wordId, card] of knownCards.entries()) {
+    const chars = (knownGraphs.get(wordId) || "").split("");
+    for (const char of chars) {
+      const first = knownChars.get(char);
+      if (!first || first > card.firstSuccessDate) {
+        knownChars.set(char, card.firstSuccessDate);
+      }
+    }
+  }
+  return knownChars;
+}
+
+export function getSuccessWords(
+  knownCards: Map<string, CardType>,
+  knownGraphs: Map<string, string>,
+  allWordsMap: Map<string, number>,
+): FirstSuccess[] {
+  const successWords: FirstSuccess[] = [];
+  for (const [wordId, card] of knownCards.entries()) {
+    const nbOccurrences = allWordsMap.get(knownGraphs.get(wordId) || "");
+    if (nbOccurrences) {
+      successWords.push({
+        firstSuccess: card.firstSuccessDate,
+        nbOccurrences: nbOccurrences,
+      });
+    }
+  }
+  return successWords;
+}
 
 export function hslToHex({ h, s, l }: HslColor): string {
   l /= 100;
@@ -49,10 +88,7 @@ export function getSubsURL(contentId: string): string {
 export function getManifestURL(contentId: string): string {
   return `${getContentBaseURL(contentId)}/manifest.json`;
 }
-export function recentSentencesFromLZ(
-  wordId: string,
-  lzContent: string,
-): RecentSentencesType | null {
+export function recentSentencesFromLZ(wordId: string, lzContent: string): RecentSentencesType | null {
   const uncompress = LZString.decompressFromUTF16(lzContent);
   return uncompress ? { id: wordId, posSentences: JSON.parse(uncompress) as PosSentences } : null;
 }
@@ -79,6 +115,32 @@ export function configIsUsable(activityConfig: RepetrobesActivityConfigType): bo
     typeof activityConfig.maxNew === "number" &&
     typeof activityConfig.maxRevisions === "number"
   );
+}
+
+export function tokensInModel(models: KeyedModels): number {
+  // TODO: actually it might be better to check whether the tokens need enriching, because
+  // that is what actually costs, but this way we don't need to filter/iterate the tokens,
+  // just get the length, so this will be much quicker, and normal sentences will contain
+  // *mainly* enrichable text... at least they do now!
+  let counter = 0;
+  for (const model of Object.values(models)) {
+    const l = model.s.length;
+    for (let i = 0; i < l; i++) {
+      counter += model.s[i].t.length;
+    }
+  }
+  return counter;
+}
+export function missingWordIdsFromModels(models: KeyedModels, existing: DefinitionsState): Set<string> {
+  const uniqueIds = wordIdsFromModels(models);
+  const newIds = new Set<string>();
+
+  for (const id of uniqueIds) {
+    if (!(id in existing)) {
+      newIds.add(id);
+    }
+  }
+  return newIds;
 }
 
 export function wordIdsFromModels(models: KeyedModels): Set<string> {
@@ -141,8 +203,7 @@ export function say(text: string, voice?: SpeechSynthesisVoice, lang = "zh-CN"):
   } else {
     getVoices().then((voices) => {
       utterance.voice =
-        voices.filter((x) => x.lang === lang && !x.localService)[0] ||
-        voices.filter((x) => x.lang === lang)[0];
+        voices.filter((x) => x.lang === lang && !x.localService)[0] || voices.filter((x) => x.lang === lang)[0];
       synth.speak(utterance);
     });
   }
@@ -150,45 +211,6 @@ export function say(text: string, voice?: SpeechSynthesisVoice, lang = "zh-CN"):
 
 export function onError(e: string): void {
   console.error(e);
-}
-
-type TreeWalkerMethods = {
-  inspect: (n: Node) => boolean;
-  collect: (n: Node) => boolean;
-};
-
-export function textNodes(node: HTMLElement): Node[] {
-  return walkNodeTree(node, {
-    inspect: (n: Node) => !["STYLE", "SCRIPT"].includes(n.nodeName),
-    collect: (n: Node) => n.nodeType === 3 && !!n.nodeValue && !!n.nodeValue.match(/\S/),
-    //callback: n => console.log(n.nodeName, n),
-  });
-}
-
-function walkNodeTree(root: HTMLElement, options: TreeWalkerMethods) {
-  options = options || {};
-  const inspect: (n: Node) => boolean = options.inspect || ((_n) => true);
-  const collect: (n: Node) => boolean = options.collect || ((_n) => true);
-  const walker = root.ownerDocument.createTreeWalker(root, NodeFilter.SHOW_ALL, {
-    acceptNode: function (node) {
-      if (!inspect(node)) {
-        return NodeFilter.FILTER_REJECT;
-      }
-      if (!collect(node)) {
-        return NodeFilter.FILTER_SKIP;
-      }
-      return NodeFilter.FILTER_ACCEPT;
-    },
-  });
-
-  const nodes = [];
-  let n;
-  while ((n = walker.nextNode())) {
-    // options.callback && options.callback(n);
-    nodes.push(n);
-  }
-
-  return nodes;
 }
 
 export function pythonCounter(value: Iterable<any>): PythonCounter {
@@ -217,16 +239,12 @@ export function binnedData(
   const data: HistoData[] = [];
   const successTotals: Map<number, number> = new Map<number, number>();
   for (const success of successes) {
-    successTotals.set(
-      success.firstSuccess,
-      (successTotals.get(success.firstSuccess) || 0) + success.nbOccurrences,
-    );
+    successTotals.set(success.firstSuccess, (successTotals.get(success.firstSuccess) || 0) + success.nbOccurrences);
   }
   const rawBins = binFunc([...successTotals.keys()].map((c) => c));
   let temp = 0;
   const binnedRaw = rawBins.map(
-    (v: Array<number>) =>
-      (temp += v.reduce((prev, next) => prev + (successTotals.get(next) || 0), 0)),
+    (v: Array<number>) => (temp += v.reduce((prev, next) => prev + (successTotals.get(next) || 0), 0)),
   );
 
   const binnedPercents = binnedRaw.map((b: number) => (b / total) * 100);
@@ -245,4 +263,26 @@ export function cleanSentence(sentence: SentenceType): SentenceType {
     delete sentence.t[i].style;
   }
   return sentence;
+}
+
+export function throttleAction(action: any, wait: number, options: any) {
+  // for options see: https://lodash.com/docs/4.17.4#throttle
+  const throttled = throttle((dispatch, actionArgs) => dispatch(action(...actionArgs)), wait, options);
+
+  // see: https://github.com/gaearon/redux-thunk
+  const thunk =
+    (...actionArgs: any[]) =>
+    (dispatch: any) =>
+      throttled(dispatch, actionArgs);
+
+  // provide hook to _.throttle().cancel() to cancel any trailing invocations
+  thunk.cancel = throttled.cancel;
+  thunk.flush = throttled.flush;
+
+  return thunk;
+}
+
+export function originalSentenceFromTokens(tokens: TokenType[]): string {
+  // currently just use
+  return tokens.map((x) => x.l).join("");
 }

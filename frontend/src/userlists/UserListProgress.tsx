@@ -1,11 +1,11 @@
 import dayjs from "dayjs";
-import { ReactElement, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { bin } from "d3-array";
 import { useRecordContext } from "react-admin";
 import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
 import { Grid } from "@material-ui/core";
 
-import { dateRange } from "../lib/lib";
+import { dateRange } from "../lib/libMethods";
 import { ListFirstSuccessStats } from "../lib/types";
 import { binnedData } from "../lib/funclib";
 
@@ -18,7 +18,7 @@ type ListGraphData = {
 };
 
 // FIXME: any
-export function UserListProgress(props: any): ReactElement {
+export function UserListProgress(props: any) {
   const [data, setData] = useState<ListGraphData[]>([]);
   const [stats, setStats] = useState<ListFirstSuccessStats>();
   const obj = useRecordContext(props);
@@ -73,7 +73,7 @@ export function UserListProgress(props: any): ReactElement {
   const blue = "#8884d8";
   const green = "#2cfc03";
   return stats ? (
-    <Grid container alignItems="center" spacing={3}>
+    <Grid container alignItems="center" spacing={3} justifyContent="center">
       <Grid item>
         <LineChart width={500} height={300} data={data}>
           <XAxis dataKey="name" />

@@ -1,6 +1,6 @@
 import { MenuItem, Select } from "@material-ui/core";
 import { ReactElement } from "react";
-import { USER_STATS_MODE, USER_STATS_MODE_KEY_VALUES } from "../lib/lib";
+import { USER_STATS_MODE, USER_STATS_MODE_KEY_VALUES } from "../lib/types";
 
 interface Props {
   containerRef?: React.RefObject<HTMLDivElement>;

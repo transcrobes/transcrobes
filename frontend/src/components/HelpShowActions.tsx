@@ -1,15 +1,8 @@
 import { ReactElement } from "react";
-import {
-  TopToolbar,
-  EditButton,
-  ShowActionsProps,
-  useEditContext,
-  useResourceDefinition,
-} from "react-admin";
+import { EditButton, ShowActionsProps, TopToolbar, useEditContext, useResourceDefinition } from "react-admin";
 import HelpButton from "./HelpButton";
 
-const sanitizeRestProps = ({ basePath, className, hasEdit, hasList, resource, ...rest }: any) =>
-  rest;
+const sanitizeRestProps = ({ basePath, className, hasEdit, hasList, resource, ...rest }: any) => rest;
 
 export const HelpShowActions = ({
   className,

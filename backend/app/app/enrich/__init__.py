@@ -12,11 +12,13 @@ from enum import Enum
 from typing import TYPE_CHECKING
 
 from app.core.config import settings
+from app.data.models import DATA_JS_SUFFIX
 from app.db.session import async_session
 from app.enrich.etypes import AnyToken, Sentence
 from app.enrich.transliterate import Transliterator
 from app.models import AuthUser
-from app.ndutils import lemma
+from app.ndutils import lemma, to_enrich
+from bs4 import BeautifulSoup
 from fastapi.routing import APIRouter
 from jinja2 import Template
 from sqlalchemy.ext.asyncio.session import AsyncSession
@@ -151,7 +153,7 @@ class Enricher(ABC):
         pass
 
     @abstractmethod
-    def clean_text(self, text: str):
+    def clean_text(self, text: str, remove_whitespace: bool):
         pass
 
     #
@@ -190,10 +192,11 @@ class Enricher(ABC):
         phone_type: TokenPhoneType,
         fill_id: bool,
         available_def_providers: list[str],
+        clean: bool = True,
     ):
         logger.debug("Attempting to async slim_model enrich: '%s'", slim_model)
 
-        combined = await self._enrich_slim_model(
+        combined = await self.enrich_slim_model(
             slim_model,
             manager,
             translate_sentence,
@@ -207,20 +210,24 @@ class Enricher(ABC):
         # so we split to multiple files
         aids_model = {"s": []}
         for sentence in combined:
-            hsentence = []
-            for token in sentence["t"]:
-                extras = {}
-                if "p" in token:  # when phone_type >= TokenPhoneType.NONE
-                    extras["p"] = token.pop("p")
-                if "bg" in token:  # when best_guess == True
-                    extras["bg"] = token.pop("bg")
-                if "id" in token:  # when fill_id == True
-                    extras["id"] = token.pop("id")
-                hsentence.append(extras)
-            new_sentence = {"t": hsentence}
-            if "l1" in sentence:
-                new_sentence["l1"] = sentence["l1"]
-            aids_model["s"].append(new_sentence)
+            if not clean:
+                aids_model["s"].append(sentence)
+                # return {timestamp: combined}
+            else:
+                hsentence = []
+                for token in sentence["t"]:
+                    extras = {}
+                    if "p" in token:  # when phone_type >= TokenPhoneType.NONE
+                        extras["p"] = token.pop("p")
+                    if "bg" in token:  # when best_guess == True
+                        extras["bg"] = token.pop("bg")
+                    if "id" in token:  # when fill_id == True
+                        extras["id"] = token.pop("id")
+                    hsentence.append(extras)
+                new_sentence = {"t": hsentence}
+                if "l1" in sentence:
+                    new_sentence["l1"] = sentence["l1"]
+                aids_model["s"].append(new_sentence)
 
         return {timestamp: aids_model}
 
@@ -239,7 +246,7 @@ class Enricher(ABC):
         raw_model = await manager.parser().parse(clean_text)
         parsed_slim_model = manager.enricher().slim_parse(raw_model)
         model = {
-            "s": await self._enrich_slim_model(
+            "s": await self.enrich_slim_model(
                 parsed_slim_model, manager, translate_sentence, best_guess, phone_type, fill_id, available_def_providers
             )
         }
@@ -397,7 +404,7 @@ class Enricher(ABC):
 
     #
     # FIXME: move - put here for easy navigation
-    async def _enrich_slim_model(
+    async def enrich_slim_model(
         self,
         slim_model,
         manager: EnrichmentManager,
@@ -466,3 +473,101 @@ class Enricher(ABC):
                     )
 
         return sentence
+
+
+async def enrich_html_fragment(xhtml, manager: EnrichmentManager):
+    soup = BeautifulSoup(xhtml, "html.parser")  # it appears only html.parser doesn't fail when there are BOM :-(
+    text_nodes = soup.find_all(text=True)
+    slim_models = {}
+    for text_node in text_nodes:
+        text = manager.enricher().clean_text(str(text_node))
+
+        if not re.search(r"\S+", text) or not to_enrich(text):
+            continue
+
+        parse = await manager.parser().parse(text)
+        parsed_slim_model = {"s": manager.enricher().slim_parse(parse)}
+
+        match = re.match(r"^\s+", text)
+        if match:
+            parsed_slim_model["sws"] = match.group(0)
+        match = re.search(r"\s+$", text)
+        if match:
+            parsed_slim_model["ews"] = match.group(0)
+
+        timestamp = time.time_ns()
+        text_fragment = soup.new_tag("enriched-text-fragment")
+        text_fragment["id"] = timestamp
+        text_fragment.string = text
+        slim_models[timestamp] = parsed_slim_model
+        text_node.replace_with(text_fragment)
+
+    return str(soup), slim_models
+
+
+async def enrich_html_to_html(chapter_id, xhtml, manager: EnrichmentManager):
+    soup = BeautifulSoup(xhtml, "html.parser")  # it appears only html.parser doesn't fail when there are BOM :-(
+    if not soup.head.title:  # html MUST have a head->title
+        soup.head.append(soup.new_tag("title"))
+        soup.head.title.string = "Title"
+
+    data_json = soup.new_tag("script")
+    data_json["src"] = f"{os.path.basename(chapter_id)}{DATA_JS_SUFFIX}"
+    soup.head.append(data_json)
+
+    text_nodes = soup.body.find_all(text=True)
+    slim_models = {}
+    for text_node in text_nodes:
+        text = manager.enricher().clean_text(str(text_node))
+
+        if not re.search(r"\S+", text) or not to_enrich(text):
+            continue
+
+        logger.debug(f"Starting parse for {chapter_id}: {text[:100]}")
+        parse = await manager.parser().parse(text)
+        parsed_slim_model = {"s": manager.enricher().slim_parse(parse)}
+
+        match = re.match(r"^\s+", text)
+        if match:
+            parsed_slim_model["sws"] = match.group(0)
+        match = re.search(r"\s+$", text)
+        if match:
+            parsed_slim_model["ews"] = match.group(0)
+
+        timestamp = time.time_ns()
+        text_fragment = soup.new_tag("enriched-text-fragment")
+        text_fragment["id"] = timestamp
+        text_fragment.string = text
+        slim_models[timestamp] = parsed_slim_model
+        text_node.replace_with(text_fragment)
+
+    return chapter_id, str(soup), slim_models
+
+
+async def enrich_plain_to_html(unique_key, start_text, manager: EnrichmentManager):
+    lines = ""
+    slim_models = {}
+    text_node = manager.enricher().clean_text(str(start_text))
+
+    for raw_line in text_node.splitlines():
+        text = "".join(c for c in raw_line.strip() if c.isprintable())
+        if not re.search(r"\S+", text) or not to_enrich(text):
+            template_string = text.strip()
+        else:
+            logger.debug(f"Starting parse for {unique_key}: {text[:100]}")
+            parsed_slim_model = {"s": manager.enricher().slim_parse(await manager.parser().parse(text))}
+
+            match = re.match(r"^\s+", text)
+            if match:
+                parsed_slim_model["sws"] = match.group(0)
+            match = re.search(r"\s+$", text)
+            if match:
+                parsed_slim_model["ews"] = match.group(0)
+
+            timestamp = time.time_ns()
+            template_string = f"<enriched-text-fragment id='{timestamp}'>{text}<enriched-text-fragment>"
+            slim_models[timestamp] = parsed_slim_model
+
+        lines += f"<br>{template_string}" if (lines and text.startswith("-")) else template_string
+
+    return unique_key, lines, slim_models

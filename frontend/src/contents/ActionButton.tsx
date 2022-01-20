@@ -1,14 +1,13 @@
+import EnrichIcon from "@material-ui/icons/Add";
+import ReadIcon from "@material-ui/icons/LocalLibrary";
+import WatchIcon from "@material-ui/icons/Theaters";
 import { ReactElement } from "react";
 import { Button, Identifier, useRecordContext } from "react-admin";
 import { Content, CONTENT_TYPE, PROCESSING } from "../lib/types";
-import WatchIcon from "@material-ui/icons/Theaters";
-import EnrichIcon from "@material-ui/icons/Add";
-import ReadIcon from "@material-ui/icons/LocalLibrary";
 
 const DATA_SOURCE = "ActionButton.tsx";
 
 function enrich(id: Identifier) {
-  console.debug("Attempting to enrich", id);
   window.componentsConfig.proxy.sendMessage(
     {
       source: DATA_SOURCE,

@@ -1,6 +1,6 @@
-import { ReactElement } from "react";
-import MUIRichTextEditor from "mui-rte";
 import { ContentState, convertToRaw } from "draft-js";
+import MUIRichTextEditor from "mui-rte";
+import { ReactElement } from "react";
 
 interface MeaningEditorProps {
   initial: ContentState;
@@ -9,7 +9,5 @@ interface MeaningEditorProps {
 
 export default function MeaningEditor({ initial, handleSave }: MeaningEditorProps): ReactElement {
   const content = JSON.stringify(convertToRaw(initial));
-  return (
-    <MUIRichTextEditor label="Type something here..." onSave={handleSave} defaultValue={content} />
-  );
+  return <MUIRichTextEditor label="Type something here..." onSave={handleSave} defaultValue={content} />;
 }

@@ -1,31 +1,81 @@
-import { ReduxState, Record, Identifier } from "react-admin";
+import { Record, Identifier } from "react-admin";
 import { HslColor } from "react-colorful";
 
-import {
-  CardDocument,
-  CharacterDocument,
-  DefinitionDocument,
-  WordModelStatsDocument,
-} from "../database/Schema";
-import { ServiceWorkerProxy } from "./proxies";
+import { CardDocument, CharacterDocument, DefinitionDocument, WordModelStatsDocument } from "../database/Schema";
+import type { ProgressCallbackMessage, ServiceWorkerProxy } from "./proxies";
 
 // eslint-disable-next-line @typescript-eslint/no-empty-function
 export function noop(): void {}
 
+export interface StyleProps {
+  segmentationPadding: string;
+  clickable: boolean;
+  glossPosition: GlossPosition;
+  glossFontSize: string;
+  glossFontColour: string;
+  verticalAlign: string;
+  fontColour: string;
+}
+
+// From inferno, but not usable???
+// enum VNodeFlags {
+//   HtmlElement = 1,
+//   ComponentUnknown = 2,
+//   ComponentClass = 4,
+//   ComponentFunction = 8,
+//   Text = 16,
+//   SvgElement = 32,
+//   InputElement = 64,
+//   TextareaElement = 128,
+//   SelectElement = 256,
+//   Void = 512,
+//   Portal = 1024,
+//   ReCreate = 2048,
+//   ContentEditable = 4096,
+//   Fragment = 8192,
+//   InUse = 16384,
+//   ForwardRef = 32768,
+//   Normalized = 65536,
+//   ForwardRefComponent = 32776,
+//   FormElement = 448,
+//   Element = 481,
+//   Component = 14,
+//   DOMRef = 2033,
+//   InUseOrNormalized = 81920,
+//   ClearInUse = -16385,
+//   ComponentKnown = 12,
+// }
+// enum ChildFlags {
+//   UnknownChildren = 0,
+//   HasInvalidChildren = 1,
+//   HasVNodeChildren = 2,
+//   HasNonKeyedChildren = 4,
+//   HasKeyedChildren = 8,
+//   HasTextChildren = 16,
+//   MultipleChildren = 12,
+// }
+
+export const ComponentClass = 4;
+export const ComponentFunction = 8;
+
+export const HtmlElement = 1;
+export const HasVNodeChildren = 2;
+
+export const MultipleChildren = 12;
+export const HasTextChildren = 16;
+
+export const API_PREFIX = "/api/v1";
+export const DEFAULT_RETRIES = 3;
+export const EVENT_QUEUE_PROCESS_FREQ = 5000; //milliseconds
+export const PUSH_FILES_PROCESS_FREQ = 5000; //milliseconds
+export const ONSCREEN_DELAY_IS_CONSIDERED_READ = 5000; // milliseconds
+export const IDEAL_GLOSS_STRING_LENGTH = 5; // pretty random but https://arxiv.org/pdf/1208.6109.pdf
+export const POPOVER_MIN_LOOKED_AT_EVENT_DURATION = 1500; // milliseconds
+
 export type KnownLanguage = "en" | "zh-Hans";
 export type InputLanguage = "zh-Hans";
 
-export type SIMPLE_POS_TYPES =
-  | "ADV"
-  | "OTHER"
-  | "CONJ"
-  | "DET"
-  | "NOUN"
-  | "VERB"
-  | "PREP"
-  | "PRON"
-  | "ADJ"
-  | "MODAL";
+export type SIMPLE_POS_TYPES = "ADV" | "OTHER" | "CONJ" | "DET" | "NOUN" | "VERB" | "PREP" | "PRON" | "ADJ" | "MODAL";
 
 export type WordOrdering = "Natural" | "WCPM" | "Personal";
 
@@ -68,6 +118,22 @@ export const ZH_TB_POS_TO_SIMPLE_POS: { [key: string]: SIMPLE_POS_TYPES } = {
   // Others added since then
   URL: "OTHER",
 };
+
+export const USER_STATS_MODE = {
+  IGNORE: -1,
+  UNMODIFIED: 0,
+  NO_GLOSS: 2, // segmented
+  L2_SIMPLIFIED: 4, // e.g, using "simple" Chinese characters
+  TRANSLITERATION: 6, // e.g, pinyin
+  L1: 8, // e.g, English
+  TRANSLITERATION_L1: 9, // e.g, pinyin + English
+};
+// FIXME: turn into config, this is likely only useful for Chinese
+export const SEGMENTED_BASE_PADDING = 6;
+
+export type USER_STATS_MODE_KEY = keyof typeof USER_STATS_MODE;
+
+export type USER_STATS_MODE_KEY_VALUES = typeof USER_STATS_MODE[USER_STATS_MODE_KEY];
 
 export type TREEBANK_POS_TYPES = keyof typeof ZH_TB_POS_TO_SIMPLE_POS;
 
@@ -123,17 +189,102 @@ export const ZH_TB_POS_LABELS: { [key in TREEBANK_POS_TYPES]: string } = {
   URL: "URL",
 };
 
+export const GLOSS_NUMBER_NOUNS = false;
+
 export type GlossPosition = "row" | "column-reverse" | "column" | "row-reverse";
 
-export type ComponentsAppConfig = {
-  segmentation: boolean;
-  glossing: number;
+export type PopupPosition = {
+  left: string;
+  top: string;
+  height?: string;
+  visibility?: "visible" | "hidden";
+};
+export type EventCoordinates = {
+  eventX: number;
+  eventY: number;
+};
+
+export type FontFamily = "Original" | "serif" | "sans-serif" | "opendyslexic" | "monospace";
+
+export type FontFamilyChinese = "notasanslight" | "notaserifextralight" | "notaserifregular" | "mashanzheng";
+
+export interface GenericState<T extends ReaderState> {
+  [key: string]: T;
+}
+
+export type ReaderType = "simpleReader" | "videoReader" | "bookReader";
+
+export interface ReaderState {
+  id: string;
+  readerType: ReaderType;
+  fontColour: HslColor | null;
+  fontFamily: FontFamily;
+  fontFamilyChinese: FontFamilyChinese;
   fontSize: number;
-  glossFontColour: HslColor | null;
   glossFontSize: number;
+  glossFontColour: HslColor | null;
   glossPosition: GlossPosition;
+  glossing: USER_STATS_MODE_KEY_VALUES;
+  segmentation: boolean;
+  collectRecents: boolean;
   mouseover: boolean;
+  clickable: boolean;
+}
+
+export const DEFAULT_READER_CONFIG_STATE: ReaderState = {
+  id: "simpleReader",
+  readerType: "simpleReader",
+  fontFamily: "Original",
+  fontFamilyChinese: "notasanslight",
+  fontSize: 1,
+  fontColour: null,
+  glossFontSize: 1,
+  glossFontColour: null,
+  glossPosition: "row",
+  glossing: USER_STATS_MODE.L1,
+  segmentation: true,
+  collectRecents: true,
+  mouseover: true,
+  clickable: true,
+};
+
+export interface ComponentsAppConfig extends ReaderState {
+  username?: string;
   popupParent: HTMLElement;
+  reloadConfig: boolean;
+}
+
+export interface UserDetails {
+  accessToken: string;
+  isAdmin: boolean;
+  refreshToken: string;
+  username: string;
+  fromLang: InputLanguage;
+}
+
+export interface UserState {
+  user: UserDetails;
+  username: string;
+  password: string;
+  baseUrl: string;
+  success: boolean;
+  error: boolean;
+}
+export const DEFAULT_USER: UserDetails = {
+  accessToken: "",
+  isAdmin: false,
+  refreshToken: "",
+  username: "",
+  fromLang: "zh-Hans",
+};
+
+export const INITIAL_USERSTATE: UserState = {
+  user: DEFAULT_USER,
+  username: "",
+  password: "",
+  baseUrl: "",
+  success: false,
+  error: false,
 };
 
 export type SegmentationType = "segmented" | "none";
@@ -224,10 +375,6 @@ export type ThemeName = "light" | "dark";
 
 export const APPLICATION_NAMES = ["repetrobes", "listrobes", "notrobes", "brocrobes"] as const;
 export type TCApplication = typeof APPLICATION_NAMES[number];
-
-export interface AppState extends ReduxState {
-  theme: ThemeName;
-}
 
 // FIXME: can these really be used???
 // interface Event {
@@ -363,6 +510,14 @@ export type SynonymType = {
   values: string[];
 };
 
+export type DefinitionState = DefinitionType & {
+  glossToggled: boolean;
+};
+
+export interface DefinitionsState {
+  [key: string]: DefinitionState;
+}
+
 export type DefinitionType = {
   id: string;
   graph: string;
@@ -463,6 +618,10 @@ export type EventData = {
   value: any;
 };
 
+export type ExtendedEventData = EventData & {
+  progress?: (message: ProgressCallbackMessage) => string;
+};
+
 export type PythonCounter = {
   [key: string]: number;
 };
@@ -470,6 +629,17 @@ export type PythonCounter = {
 export type DayCardWords = {
   knownCardWordGraphs: Set<string>;
   allCardWordGraphs: Set<string>;
+  knownWordIdsCounter: PythonCounter;
+};
+
+export type SerialisableStringSet = {
+  // [key: string]: undefined;
+  [key: string]: null;
+};
+
+export type SerialisableDayCardWords = {
+  knownCardWordGraphs: SerialisableStringSet;
+  allCardWordGraphs: SerialisableStringSet;
   knownWordIdsCounter: PythonCounter;
 };
 
@@ -548,6 +718,12 @@ export type ModelType = {
 };
 
 export type KeyedModels = { [key: string]: ModelType };
+
+export type EnrichedHtmlModels = {
+  html: string;
+  analysis: string; // this is a string because for imports it is stored as a string
+  models: KeyedModels;
+};
 
 export type RecentSentencesStoredType = {
   id: string; // wordId

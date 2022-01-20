@@ -1,46 +1,41 @@
 import _ from "lodash";
-
-import { SubscriptionClient } from "subscriptions-transport-ws";
-
+import { addPouchPlugin, getRxStoragePouch } from "rxdb";
 import { addRxPlugin, clone, createRxDatabase, removeRxDatabase } from "rxdb/plugins/core";
-
+import { RxDBMigrationPlugin } from "rxdb/plugins/migration";
+import { RxDBQueryBuilderPlugin } from "rxdb/plugins/query-builder";
 import {
   pullQueryBuilderFromRxSchema,
   pushQueryBuilderFromRxSchema,
   RxDBReplicationGraphQLPlugin,
   RxGraphQLReplicationState,
 } from "rxdb/plugins/replication-graphql";
-
-import { RxDBQueryBuilderPlugin } from "rxdb/plugins/query-builder";
-
+import { RxDBUpdatePlugin } from "rxdb/plugins/update";
 // TODO import these only in non-production build
 // import { RxDBDevModePlugin } from "rxdb/plugins/dev-mode";
 // FIXME: only validate in dev and for not web extension (has `eval`)
 import { RxDBValidatePlugin } from "rxdb/plugins/validate";
+import { SubscriptionClient } from "subscriptions-transport-ws";
+import { store } from "../app/createStore";
+import { throttledRefreshToken, setUser } from "../features/user/userSlice";
+import { getFileStorage, IDBFileStorage } from "../lib/IDBFileStorage";
+import { fetchPlus } from "../lib/libMethods";
+import { API_PREFIX } from "../lib/types";
 import { RxDBDataProviderParams } from "../ra-data-rxdb";
-
-import { RxDBMigrationPlugin } from "rxdb/plugins/migration";
-import { RxDBUpdatePlugin } from "rxdb/plugins/update";
-
+import { getUserDexie } from "./authdb";
 import {
-  DBCollections,
-  DBTwoWayCollections,
-  DBTwoWayCollectionKeys,
-  DBPullCollectionKeys,
-  DBPullCollections,
   BATCH_SIZE_PULL,
   BATCH_SIZE_PUSH,
-  LIVE_INTERVAL,
-  TranscrobesDatabase,
-  TranscrobesCollections,
+  DBCollections,
+  DBPullCollectionKeys,
+  DBPullCollections,
+  DBTwoWayCollectionKeys,
+  DBTwoWayCollections,
   DefinitionDocument,
+  LIVE_INTERVAL,
   reloadRequired,
+  TranscrobesCollections,
+  TranscrobesDatabase,
 } from "./Schema";
-import { getAccess, getUsername, refreshAccessToken } from "../lib/JWTAuthProvider";
-import { getFileStorage, IDBFileStorage } from "../lib/IDBFileStorage";
-import { API_PREFIX, fetchPlus } from "../lib/lib";
-
-import { addPouchPlugin, getRxStoragePouch } from "rxdb";
 
 declare const self: ServiceWorkerGlobalScope;
 
@@ -62,11 +57,11 @@ const LOADED_CHAR_QUERY_ENTRY = "代";
 const EXPORTS_LIST_PATH = API_PREFIX + "/enrich/exports.json";
 const HZEXPORTS_LIST_PATH = API_PREFIX + "/enrich/hzexports.json";
 
-function getDatabaseName(config: RxDBDataProviderParams, username: string): string {
+function getDatabaseName(config: RxDBDataProviderParams): string {
   if (config.test) {
     return "tmploadtest";
   } else {
-    const baseName = "tc-" + username + "-" + config.url.hostname;
+    const baseName = "tc-" + config.username + "-" + config.url.hostname;
     return baseName.toLowerCase().replace(/[^\w\s]/g, "_");
   }
 }
@@ -110,22 +105,14 @@ async function loadDatabase(
   console.debug("Found the following existing items in the cache", existingKeys);
   if (justCreated && !reinitialise && existingKeys.length > 0) {
     // we have unsuccessfully started an initialisation, and want to continue from where we left off
-    console.debug(
-      "Using the existing keys of the cache because",
-      justCreated,
-      reinitialise,
-      existingKeys.length,
-    );
+    console.debug("Using the existing keys of the cache because", justCreated, reinitialise, existingKeys.length);
     cacheFiles = existingKeys;
   } else {
     cacheFiles = await cacheExports(baseUrl, initialisationCache, progressCallback);
     console.log("Refreshed the initialisation cache with new values", cacheFiles);
   }
 
-  progressCallback(
-    "The data files have been downloaded, loading to the database : 13% complete",
-    false,
-  );
+  progressCallback("The data files have been downloaded, loading to the database : 13% complete", false);
 
   const perFilePercent = 80 / cacheFiles.length;
   for (const i in cacheFiles) {
@@ -136,10 +123,10 @@ async function loadDatabase(
     // FIXME: check whether all the inserts actually insert
     if (file.split("/").slice(-1)[0].startsWith("hanzi-")) {
       await db.characters.bulkInsert(content);
-      // force immediate index refresh so if we restart, we are already mostly ready
       await db.characters.find().where("id").eq(LOADED_CHAR_QUERY_ENTRY).exec();
     } else {
       await db.definitions.bulkInsert(content);
+      // force immediate index refresh so if we restart, we are already mostly ready
       await db.definitions.find().where("graph").eq(LOADED_DEF_QUERY_ENTRY).exec();
     }
     await initialisationCache.remove(file);
@@ -172,6 +159,7 @@ async function cacheExports(
     console.error(error);
     throw new Error(error);
   }
+  console.log("got back from ", EXPORTS_LIST_PATH, data);
   // Add the hanzi character database urls
   const hanziExportFilesListURL = new URL(HZEXPORTS_LIST_PATH, baseUrl);
   let hanziList;
@@ -185,6 +173,7 @@ async function cacheExports(
     console.error(error);
     throw new Error(error);
   }
+  console.log("got back from ", HZEXPORTS_LIST_PATH, hanziList);
   data.push(...hanziList);
 
   const entryBlock = async (url: string, origin: string) => {
@@ -199,10 +188,7 @@ async function cacheExports(
       throw new Error(message);
     }
     progressCallback("Retrieved data file: " + url.split("/").slice(-1)[0], false);
-    return await initialisationCache.put(
-      url,
-      new Blob([JSON.stringify(response)], { type: "application/json" }),
-    );
+    return await initialisationCache.put(url, new Blob([JSON.stringify(response)], { type: "application/json" }));
   };
   const allBlocks = await Promise.all(data.map((x: string) => entryBlock(x, baseUrl)));
   console.debug("Promise.all result from download and caching of all file blocks", allBlocks);
@@ -221,14 +207,9 @@ function refreshTokenIfRequired(
     console.log("The error message was", expiredMessage);
     if (expiredMessage.includes('{"statusCode":"403","detail":"Could not validate credentials"}')) {
       console.log("Looks like the token has expired, trying to refresh");
-      refreshAccessToken(url).then(() => {
-        getAccess().then((access) => {
-          if (!access) {
-            throw new Error("Unable to refresh the access token");
-          }
-          replicationState.setHeaders(getHeaders(access));
-        });
-      });
+      store.dispatch(throttledRefreshToken());
+      // FIXME: this will set rubbish until the refresh actually happens - is this worth trying to improve upon?
+      replicationState.setHeaders(getHeaders(store.getState().userData.user.accessToken));
     } else {
       console.log("There was an error but apparently not an expiration");
     }
@@ -249,10 +230,7 @@ function setupTwoWayReplication(
   const headers = getHeaders(jwtAccessToken);
 
   // WARNING! pushQueryBuilderFromRxSchema modifies the input paramater object in place!
-  const pushQuery = pushQueryBuilderFromRxSchema(
-    _.camelCase(colName),
-    clone(DBTwoWayCollections[colName]),
-  );
+  const pushQuery = pushQueryBuilderFromRxSchema(_.camelCase(colName), clone(DBTwoWayCollections[colName]));
   // WARNING! pullQueryBuilderFromRxSchema modifies the input paramater object in place!
   const pullQuery = pullQueryBuilderFromRxSchema(
     _.camelCase(colName),
@@ -334,7 +312,7 @@ function setupPullReplication(
 }
 
 async function createDatabase(dbName: string): Promise<TranscrobesDatabase> {
-  console.log(`Create new database ${dbName}...`);
+  console.log(`Create database ${dbName}...`);
   if (dbPromise) {
     const db = await dbPromise;
     if (db) await db.destroy();
@@ -445,26 +423,25 @@ async function testQueries(db: TranscrobesDatabase): Promise<DefinitionDocument[
 
 async function loadFromExports(
   config: RxDBDataProviderParams,
-  username: string,
   accessToken: string,
   reinitialise = false,
   progressCallback: (message: string, finished: boolean) => void,
 ): Promise<TranscrobesDatabase> {
   const activateSubscription = true;
 
-  const dbName = getDatabaseName(config, username);
+  const dbName = getDatabaseName(config);
 
+  console.log("before the creations", dbName);
   // FIXME: externalise the string
   const syncURL = new URL("/api/v1/graphql", config.url.origin).href;
-  const wsEndpointUrl = `ws${config.url.protocol === "https:" ? "s" : ""}://${
-    config.url.host
-  }/subscriptions`;
+  const wsEndpointUrl = `ws${config.url.protocol === "https:" ? "s" : ""}://${config.url.host}/subscriptions`;
   const initialisationCacheName = "transcrobes.initialisation"; // was `${config.cacheName}.initialisation`;
 
   if (reinitialise) {
     await deleteDatabase(dbName);
   }
   const db = await createDatabase(dbName);
+  console.log("created db", db);
   let justCreated = false;
 
   try {
@@ -480,20 +457,11 @@ async function loadFromExports(
     //justCreated = await createCollections(db);
   }
   if (justCreated || reinitialise) {
-    await loadDatabase(
-      db,
-      syncURL,
-      reinitialise,
-      justCreated,
-      initialisationCacheName,
-      progressCallback,
-    );
+    progressCallback(`Retrieving data files : 1% complete`, false);
+    await loadDatabase(db, syncURL, reinitialise, justCreated, initialisationCacheName, progressCallback);
   }
   progressCallback("The data files have been loaded into the database : 93% complete", false);
-  const replStates = new Map<
-    DBPullCollectionKeys | DBTwoWayCollectionKeys,
-    RxGraphQLReplicationState<any>
-  >();
+  const replStates = new Map<DBPullCollectionKeys | DBTwoWayCollectionKeys, RxGraphQLReplicationState<any>>();
   for (const col in DBTwoWayCollections) {
     replStates.set(
       col as DBTwoWayCollectionKeys,
@@ -514,10 +482,7 @@ async function loadFromExports(
 
     const perPercent = 5 / colNames.length;
     for (const i in rStates) {
-      progressCallback(
-        `Synchronising ${colNames[i]} : ${(perPercent * parseInt(i) + 93).toFixed(2)}% complete`,
-        false,
-      );
+      progressCallback(`Synchronising ${colNames[i]} : ${(perPercent * parseInt(i) + 93).toFixed(2)}% complete`, false);
       await rStates[i].awaitInitialReplication();
     }
   }
@@ -534,10 +499,7 @@ async function loadFromExports(
   }
   return testQueries(db).then((doc) => {
     console.debug(`Queried the db for ${LOADED_DEF_QUERY_ENTRY}:`, doc);
-    progressCallback(
-      "The indexes have now been generated. The initialisation has finished! : 100% complete",
-      true,
-    );
+    progressCallback("The indexes have now been generated. The initialisation has finished! : 100% complete", true);
     return db;
   });
 }
@@ -547,21 +509,26 @@ async function getDb(
   progressCallback: (message: string, finished: boolean) => void,
   reinitialise = false,
 ): Promise<TranscrobesDatabase> {
-  const username = await getUsername();
-  if (!username) {
-    throw new Error("No username token");
+  const userData = await getUserDexie();
+  console.debug("Setting up the db in the database for user", userData);
+  if (!userData) {
+    console.error("No user found in db, cannot load", userData);
+    throw new Error("No user found in db, cannot load");
+  }
+  store.dispatch(setUser(userData));
+
+  if (!userData || !userData.user.username) {
+    throw new Error("No db username");
   }
 
-  let accessToken = await getAccess();
-  if (!accessToken) {
-    await refreshAccessToken(config.url);
-    accessToken = await getAccess();
-    if (!accessToken) {
+  if (!userData.user.accessToken) {
+    store.dispatch(throttledRefreshToken());
+    if (!userData.user.accessToken) {
       throw new Error("No access token");
     }
   }
   if (!dbPromise) {
-    dbPromise = loadFromExports(config, username, accessToken, reinitialise, progressCallback);
+    dbPromise = loadFromExports(config, userData.user.accessToken, reinitialise, progressCallback);
   }
   const prom = await dbPromise;
   if (!prom) throw Error("DB Promise has not resolved properly");

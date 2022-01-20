@@ -5,10 +5,7 @@ import { Goal } from "../lib/types";
 import { UserListProgress } from "../userlists/UserListProgress";
 
 const GoalShow: FC<FieldProps<Goal>> = (props) => (
-  <Show
-    actions={<HelpShowActions helpUrl="https://transcrob.es/page/software/configure/goals/" />}
-    {...props}
-  >
+  <Show actions={<HelpShowActions helpUrl="https://transcrob.es/page/software/configure/goals/" />} {...props}>
     <SimpleShowLayout>
       <TextField source="id" />
       <TextField source="title" />

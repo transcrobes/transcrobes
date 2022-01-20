@@ -26,14 +26,8 @@ export const ImportList: FC<ListProps> = (props) => {
     <List {...props} actions={<ListActions />} sort={{ field: "createdAt", order: "DESC" }}>
       <Datagrid rowClick="show">
         <TextField source="title" />
-        <FunctionField
-          source="processType"
-          render={(record: any) => reverseEnum(PROCESS_TYPE, record.processType)}
-        />
-        <FunctionField
-          source="processing"
-          render={(record: any) => reverseEnum(PROCESSING, record.processing)}
-        />
+        <FunctionField source="processType" render={(record: any) => reverseEnum(PROCESS_TYPE, record.processType)} />
+        <FunctionField source="processing" render={(record: any) => reverseEnum(PROCESSING, record.processing)} />
         <BooleanField source="shared" sortable={false} />
       </Datagrid>
     </List>

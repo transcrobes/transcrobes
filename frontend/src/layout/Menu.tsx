@@ -1,32 +1,41 @@
-import { ReactElement, useState } from "react";
-import { useSelector } from "react-redux";
-import OpenInBrowserIcon from "@material-ui/icons/OpenInBrowser";
 import { makeStyles } from "@material-ui/core/styles";
-import {
-  useTranslate,
-  DashboardMenuItem,
-  MenuItemLink,
-  MenuProps,
-  WithPermissions,
-  ReduxState,
-} from "react-admin";
+import OpenInBrowserIcon from "@material-ui/icons/OpenInBrowser";
 import classnames from "classnames";
-
-import imports from "../imports";
-import userlists from "../userlists";
-import goals from "../goals";
+import { ReactElement, useState } from "react";
+import { DashboardMenuItem, MenuItemLink, MenuProps, ReduxState, useTranslate, WithPermissions } from "react-admin";
+import { useSelector } from "react-redux";
+import { useAppSelector } from "../app/hooks";
 import contents from "../contents";
-import surveys from "../surveys";
+import textcrobes from "../contents/textcrobes";
+import goals from "../goals";
+import help from "../help";
+import imports from "../imports";
 import listrobes from "../listrobes";
 import notrobes from "../notrobes";
 import repetrobes from "../repetrobes";
+import surveys from "../surveys";
 import system from "../system";
-import help from "../help";
-
+import userlists from "../userlists";
 import SubMenu from "./SubMenu";
-import { AppState } from "../lib/types";
 
 type MenuName = "menuInput" | "menuOrganisation" | "menuLearning" | "menuSurveys";
+
+const useStyles = makeStyles((theme) => ({
+  root: {
+    marginTop: theme.spacing(1),
+    marginBottom: theme.spacing(1),
+    transition: theme.transitions.create("width", {
+      easing: theme.transitions.easing.sharp,
+      duration: theme.transitions.duration.leavingScreen,
+    }),
+  },
+  open: {
+    width: 200,
+  },
+  closed: {
+    width: 55,
+  },
+}));
 
 function Menu({ dense = false }: MenuProps): ReactElement {
   const [state, setState] = useState({
@@ -36,7 +45,7 @@ function Menu({ dense = false }: MenuProps): ReactElement {
     menuSurveys: true,
   });
   const translate = useTranslate();
-  useSelector((state: AppState) => state.theme); // force rerender on theme change
+  useAppSelector((state) => state.theme); // force rerender on theme change
   const classes = useStyles();
 
   const handleToggle = (menu: MenuName) => {
@@ -56,7 +65,6 @@ function Menu({ dense = false }: MenuProps): ReactElement {
       <WithPermissions
         render={({ permissions }) =>
           Array.isArray(permissions) && permissions.includes("initialised") ? (
-            // <MenuItemLink to="/custom-route" primaryText="Miscellaneous" />
             <>
               <SubMenu
                 handleToggle={() => handleToggle("menuInput")}
@@ -130,6 +138,14 @@ function Menu({ dense = false }: MenuProps): ReactElement {
                   dense={dense}
                 />
                 <MenuItemLink
+                  to={`/textcrobes`}
+                  primaryText={translate(`resources.textcrobes.name`, {
+                    smart_count: 2,
+                  })}
+                  leftIcon={<textcrobes.icon />}
+                  dense={dense}
+                />
+                <MenuItemLink
                   to={`/contents`}
                   primaryText={translate(`resources.contents.name`, {
                     smart_count: 2,
@@ -179,22 +195,5 @@ function Menu({ dense = false }: MenuProps): ReactElement {
     </div>
   );
 }
-
-const useStyles = makeStyles((theme) => ({
-  root: {
-    marginTop: theme.spacing(1),
-    marginBottom: theme.spacing(1),
-    transition: theme.transitions.create("width", {
-      easing: theme.transitions.easing.sharp,
-      duration: theme.transitions.duration.leavingScreen,
-    }),
-  },
-  open: {
-    width: 200,
-  },
-  closed: {
-    width: 55,
-  },
-}));
 
 export default Menu;

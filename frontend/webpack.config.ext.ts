@@ -23,11 +23,11 @@ function page({ title }: { title: string }) {
 }
 
 const commonConfig = merge<Configuration>([
-  parts.config(),
+  parts.config(mode),
   {
     entry: {
       options: ["./src/extension/index.tsx"],
-      content: ["./src/extension/content.ts"],
+      content: ["./src/extension/content.tsx"],
       background: ["./src/extension/background.ts"],
     },
     plugins: [
@@ -46,9 +46,9 @@ const commonConfig = merge<Configuration>([
   loadStaticResources("", ""),
   parts.loadCSS(),
   parts.loadTypescript(),
-  parts.loadImages(),
-  parts.loadSVGR(),
-  parts.loadSVG(),
+  // parts.loadImages(),
+  // parts.loadSVGR(),
+  // parts.loadSVG(),
   parts.clean(),
   // parts.attachRevision(),
 ]);
@@ -66,19 +66,17 @@ function loadStaticResources(sourceBase: string, outputDir: string) {
             from: path.join(sourceBase, "public/*.png"),
             to: path.join(outputDir, "img/[name][ext]"),
           },
-          {
-            from: "node_modules/@webcomponents/webcomponentsjs/bundles/webcomponents-sd-ce.js",
-            to: path.join(outputDir, "[name][ext]"),
-          },
+          // {
+          //   from: "node_modules/@webcomponents/webcomponentsjs/bundles/webcomponents-sd-ce.js",
+          //   to: path.join(outputDir, "[name][ext]"),
+          // },
         ],
       }),
     ],
   };
 }
 
-const developmentConfig = merge<Configuration>([
-  parts.generateSourceMaps({ type: "inline-source-map" }),
-]);
+const developmentConfig = merge<Configuration>([parts.generateSourceMaps({ type: "inline-source-map" })]);
 
 const productionConfig = merge<Configuration>([
   parts.minifyJavaScript(),

@@ -29,14 +29,8 @@ export const ContentList: FC<ListProps> = (props) => {
         <ReferenceField label="Source import" source="theImport" reference="imports" link="show">
           <TextField source="title" />
         </ReferenceField>
-        <FunctionField
-          source="processing"
-          render={(record: any) => reverseEnum(PROCESSING, record.processing)}
-        />
-        <FunctionField
-          source="contentType"
-          render={(record: any) => reverseEnum(CONTENT_TYPE, record.contentType)}
-        />
+        <FunctionField source="processing" render={(record: any) => reverseEnum(PROCESSING, record.processing)} />
+        <FunctionField source="contentType" render={(record: any) => reverseEnum(CONTENT_TYPE, record.contentType)} />
         <ActionButton label="Action" props={props} />
         <CacheSwitch label="Offline?" props={props} />
       </Datagrid>

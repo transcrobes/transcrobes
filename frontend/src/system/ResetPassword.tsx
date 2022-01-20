@@ -15,7 +15,8 @@ import { TextField } from "@material-ui/core";
 import { useCookies } from "react-cookie";
 import PasswordStrengthBar from "react-password-strength-bar";
 import { OnChange } from "react-final-form-listeners";
-import { setAccess, setPassword, setRefresh } from "../lib/JWTAuthProvider";
+import { useAppDispatch } from "../app/hooks";
+import { throttledLogout } from "../features/user/userSlice";
 
 const useStyles = makeStyles((theme) => ({
   main: {
@@ -99,12 +100,13 @@ function ResetPassword(): ReactElement {
   const [_cookies, _setCookie, removeCookie] = useCookies(["refresh", "session"]);
 
   const token = new URLSearchParams(location.hash.substr(location.hash.indexOf("?"))).get("token");
+  const dispatch = useAppDispatch();
 
   useEffect(() => {
-    Promise.all([setRefresh(""), setAccess(""), setPassword("")]).then(() => {
-      removeCookie("refresh");
-      removeCookie("session");
-    });
+    dispatch(throttledLogout());
+    removeCookie("refresh");
+    removeCookie("session");
+
     if (!token) {
       notify("user.reset_password.error", "error");
       history.push("/recover-password");
@@ -139,12 +141,7 @@ function ResetPassword(): ReactElement {
             : error.message,
           "warning",
           {
-            _:
-              typeof error === "string"
-                ? error
-                : error && error.message
-                ? error.message
-                : undefined,
+            _: typeof error === "string" ? error : error && error.message ? error.message : undefined,
           },
         );
       });

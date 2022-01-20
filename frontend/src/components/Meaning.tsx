@@ -1,12 +1,14 @@
-import { ReactElement, useState } from "react";
 import Popover from "@material-ui/core/Popover";
-import { makeStyles, createStyles, Theme } from "@material-ui/core/styles";
+import { createStyles, makeStyles, Theme } from "@material-ui/core/styles";
+import { ReactElement, useState } from "react";
+import { useAppSelector } from "../app/hooks";
+import { filterFakeL1Definitions, toSimplePosLabels } from "../lib/libMethods";
 import { CardType, DefinitionType, SIMPLE_POS_TYPES } from "../lib/types";
 import DefinitionTranslations from "./DefinitionTranslations";
 import EditableDefinitionTranslations from "./EditableDefinitionTranslations";
-import MeaningText from "../repetrobes/MeaningText";
-import SynonymsText from "../repetrobes/SynonymsText";
-import { filterFakeL1Definitions, toSimplePosLabels } from "../lib/lib";
+import MeaningText from "./MeaningText";
+import SynonymsText from "./SynonymsText";
+
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     popover: {
@@ -38,6 +40,7 @@ export default function Meaning({
   const classes = useStyles();
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const [anchorElClick, setAnchorElClick] = useState<HTMLElement | null>(null);
+  const fromLang = useAppSelector((state) => state.userData.user.fromLang);
 
   function handleClickOpen(event: React.MouseEvent<HTMLElement, MouseEvent>) {
     setAnchorEl(null);
@@ -74,8 +77,7 @@ export default function Meaning({
             hasValidDefinitions = true;
             posTrans.push(
               <div key={"mean" + posTranslation.posTag}>
-                {toSimplePosLabels(posTranslation.posTag as SIMPLE_POS_TYPES)}:{" "}
-                {finalList.join(", ")}
+                {toSimplePosLabels(posTranslation.posTag as SIMPLE_POS_TYPES, fromLang)}: {finalList.join(", ")}
               </div>,
             );
           }

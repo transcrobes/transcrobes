@@ -18,10 +18,7 @@ function wordKnowledge(record: any) {
 }
 
 const UserListShow: FC<FieldProps<UserList>> = (props) => (
-  <Show
-    actions={<HelpShowActions helpUrl="https://transcrob.es/page/software/configure/wordlists/" />}
-    {...props}
-  >
+  <Show actions={<HelpShowActions helpUrl="https://transcrob.es/page/software/configure/wordlists/" />} {...props}>
     <SimpleShowLayout>
       <TextField source="id" />
       <TextField source="title" />
@@ -29,18 +26,11 @@ const UserListShow: FC<FieldProps<UserList>> = (props) => (
       <ReferenceField label="Source import" source="theImport" reference="imports" link="show">
         <TextField source="title" />
       </ReferenceField>
-      <FunctionField
-        label="Processing status"
-        render={(record: any) => reverseEnum(PROCESSING, record.processing)}
-      />
+      <FunctionField label="Processing status" render={(record: any) => reverseEnum(PROCESSING, record.processing)} />
       <TextField source="nbToTake" />
       <TextField source="minimumAbsFrequency" />
       <TextField source="minimumDocFrequency" />
-      <FunctionField
-        source="orderBy"
-        render={(record: any) => reverseEnum(ORDER_BY, record.orderBy)}
-      />
-      {/* <BooleanField source="wordsAreKnown" /> */}
+      <FunctionField source="orderBy" render={(record: any) => reverseEnum(ORDER_BY, record.orderBy)} />
       <FunctionField label="Set word knowledge" render={wordKnowledge} />
       <BooleanField source="shared" />
       <hr />

@@ -1,41 +1,37 @@
-import React, { ReactElement } from "react";
+import { makeStyles, Theme } from "@material-ui/core";
+import Button from "@material-ui/core/Button";
 import Grid from "@material-ui/core/Grid";
-import Slider from "@material-ui/core/Slider";
 import IconButton from "@material-ui/core/IconButton";
-import PlayArrowIcon from "@material-ui/icons/PlayArrow";
-import PauseIcon from "@material-ui/icons/Pause";
-import VolumeDown from "@material-ui/icons/VolumeDown";
-import VolumeUp from "@material-ui/icons/VolumeUp";
-import VolumeMute from "@material-ui/icons/VolumeMute";
+import Slider from "@material-ui/core/Slider";
+import Typography from "@material-ui/core/Typography";
 import Fullscreen from "@material-ui/icons/Fullscreen";
 import FullscreenExit from "@material-ui/icons/FullscreenExit";
-import Button from "@material-ui/core/Button";
+import PauseIcon from "@material-ui/icons/Pause";
+import PlayArrowIcon from "@material-ui/icons/PlayArrow";
+import VolumeDown from "@material-ui/icons/VolumeDown";
+import VolumeMute from "@material-ui/icons/VolumeMute";
+import VolumeUp from "@material-ui/icons/VolumeUp";
+import React, { ReactElement } from "react";
 import { Button as RAButton } from "react-admin";
-import Typography from "@material-ui/core/Typography";
-import VideoConfigLauncher from "./VideoConfigLauncherDrawer";
-import { VideoConfigProps } from "./VideoConfigDrawer";
-import { makeStyles, Theme } from "@material-ui/core";
+import { useParams } from "react-router-dom";
+import { useAppDispatch, useAppSelector } from "../../app/hooks";
+import { DEFAULT_VIDEO_READER_CONFIG_STATE, videoReaderActions } from "../../features/content/videoReaderSlice";
+import { ContentParams } from "../../lib/types";
+import { VideoReaderConfigProps } from "./VideoReaderConfig";
+import VideoConfigLauncher from "./VideoReaderConfigLauncher";
 
-interface Props extends VideoConfigProps {
+interface Props extends VideoReaderConfigProps {
   elapsedTime: string;
   playing: boolean;
-  volume: number;
-  muted: boolean;
   totalDuration: string;
   isFullscreen: boolean;
-  // eslint-disable-next-line @typescript-eslint/ban-types
-  onSeekMouseDown: (_e: React.ChangeEvent<{}>) => void;
-  // eslint-disable-next-line @typescript-eslint/ban-types
-  onVolumeSeekDown: (event: React.ChangeEvent<{}>, value: number | number[]) => void;
-  // eslint-disable-next-line @typescript-eslint/ban-types
-  onVolumeChange: (event: React.ChangeEvent<{}>, value: number | number[]) => void;
+  onSeekMouseDown: (_e: React.ChangeEvent<unknown>) => void;
+  onVolumeSeekDown: (event: React.ChangeEvent<unknown>, value: number | number[]) => void;
+  onVolumeChange: (event: React.ChangeEvent<unknown>, value: number | number[]) => void;
   onRewind: () => void;
   onPlayPause: () => void;
   onFastForward: () => void;
-  onChangeDisplayFormat: () => void;
   onToggleFullscreen: () => void;
-  onMute: () => void;
-  onContentConfigUpdate: (contentConfig: { id: string; configString: string }) => void;
 }
 const useStyles = makeStyles((theme: Theme) => ({
   controlsWrapper: {
@@ -58,18 +54,33 @@ const useStyles = makeStyles((theme: Theme) => ({
       marginLeft: theme.spacing(2),
     },
   },
+  bottomIcons: {
+    color: "#999",
+    "&:hover": {
+      color: theme.palette.getContrastText(theme.palette.background.default),
+    },
+    [theme.breakpoints.down("sm")]: {
+      "& svg": {
+        fontSize: 15,
+      },
+    },
+    [theme.breakpoints.up("sm")]: {
+      "& svg": {
+        fontSize: 30,
+      },
+    },
+  },
+  volumeSlider: {
+    width: 100,
+  },
+  volumeButton: {},
 }));
 
 function VideoBottomControls({
   elapsedTime,
-  classes,
   playing,
-  volume,
-  muted,
   totalDuration,
   isFullscreen,
-  onChangeDisplayFormat,
-  onMute,
   onPlayPause,
   onVolumeSeekDown,
   onVolumeChange,
@@ -78,6 +89,12 @@ function VideoBottomControls({
   ...props
 }: Props): ReactElement {
   const localClasses = useStyles();
+  const { id } = useParams<ContentParams>();
+  const { muted, volume, timeDisplayFormat } = useAppSelector(
+    (state) => state.videoReader[id] || DEFAULT_VIDEO_READER_CONFIG_STATE,
+  );
+  const dispatch = useAppDispatch();
+  const actions = videoReaderActions;
 
   return (
     <Grid
@@ -89,11 +106,14 @@ function VideoBottomControls({
     >
       <Grid item>
         <Grid container alignItems="center">
-          <IconButton onClick={onPlayPause} className={classes.bottomIcons}>
+          <IconButton onClick={onPlayPause} className={localClasses.bottomIcons}>
             {playing ? <PauseIcon /> : <PlayArrowIcon />}
           </IconButton>
 
-          <IconButton onClick={onMute} className={`${classes.bottomIcons} ${classes.volumeButton}`}>
+          <IconButton
+            onClick={() => dispatch(actions.setMuted({ id: id, value: !muted }))}
+            className={`${localClasses.bottomIcons} ${localClasses.volumeButton}`}
+          >
             {muted ? <VolumeMute /> : volume > 0.5 ? <VolumeUp /> : <VolumeDown />}
           </IconButton>
 
@@ -103,22 +123,32 @@ function VideoBottomControls({
             value={muted ? 0 : volume * 100}
             onChange={onVolumeChange}
             aria-labelledby="input-slider"
-            className={classes.volumeSlider}
+            className={localClasses.volumeSlider}
             onMouseDown={onSeekMouseDown}
             onChangeCommitted={onVolumeSeekDown}
           />
-          <Button variant="text" onClick={onChangeDisplayFormat}>
+          <Button
+            variant="text"
+            onClick={() =>
+              dispatch(
+                videoReaderActions.setTimeDisplayFormat({
+                  id: id,
+                  value: timeDisplayFormat === "normal" ? "remaining" : "normal",
+                }),
+              )
+            }
+          >
             <Typography variant="body1" className={localClasses.timer}>
               {elapsedTime}/{totalDuration}
             </Typography>
           </Button>
 
-          <VideoConfigLauncher classes={classes} {...props} />
+          <VideoConfigLauncher {...props} />
         </Grid>
       </Grid>
       <Grid item>
         <RAButton
-          className={classes.bottomIcons}
+          className={localClasses.bottomIcons}
           children={isFullscreen ? <FullscreenExit /> : <Fullscreen />}
           label="Fullscreen"
           onClick={onToggleFullscreen}

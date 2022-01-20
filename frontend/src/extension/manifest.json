@@ -1,12 +1,9 @@
 {
   "name": "brocrobes",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "description": "Browser plugin for https://transcrob.es",
   "homepage_url": "https://transcrob.es",
-  "permissions": [
-    "activeTab",
-    "scripting"
-  ],
+  "permissions": ["activeTab", "scripting"],
   "host_permissions": ["*://*/*"],
   "background": {
     "service_worker": "background-bundle.js"
@@ -19,13 +16,8 @@
   },
   "web_accessible_resources": [
     {
-      "resources": [
-        "img/*.*",
-        "*.css"
-      ],
-      "matches": [
-        "<all_urls>"
-      ]
+      "resources": ["img/*.*", "*.css"],
+      "matches": ["<all_urls>"]
     }
   ],
   "options_page": "options.html",

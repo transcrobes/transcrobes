@@ -13,7 +13,6 @@ import CircularProgress from "@material-ui/core/CircularProgress";
 import TextField from "@material-ui/core/TextField";
 import { OnChange } from "react-final-form-listeners";
 import PasswordStrengthBar from "react-password-strength-bar";
-import HelpButton from "../components/HelpButton";
 
 const emailRegex =
   /[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?/;
@@ -77,15 +76,7 @@ function renderInput({
   input: { ...inputProps },
   ...props
 }): ReactElement {
-  return (
-    <TextField
-      error={!!(touched && error)}
-      helperText={touched && error}
-      {...inputProps}
-      {...props}
-      fullWidth
-    />
-  );
+  return <TextField error={!!(touched && error)} helperText={touched && error} {...inputProps} {...props} fullWidth />;
 }
 
 const { Form } = withTypes<FormValues>();
@@ -135,12 +126,7 @@ export default function Signup(): ReactElement {
             : error.message,
           "warning",
           {
-            _:
-              typeof error === "string"
-                ? error
-                : error && error.message
-                ? error.message
-                : undefined,
+            _: typeof error === "string" ? error : error && error.message ? error.message : undefined,
           },
         );
       });
@@ -282,8 +268,8 @@ export default function Signup(): ReactElement {
               {creationSent && (
                 <div className={classes.userManagement}>
                   <Typography>
-                    A validation email has been sent to the email address provided. Please validate
-                    this email by clicking in the link in the email.
+                    A validation email has been sent to the email address provided. Please validate this email by
+                    clicking in the link in the email.
                   </Typography>
                 </div>
               )}

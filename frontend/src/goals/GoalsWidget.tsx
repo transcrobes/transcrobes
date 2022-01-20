@@ -1,8 +1,8 @@
 import { Grid } from "@material-ui/core";
 import { ReactElement, useEffect, useState } from "react";
 import { GoalDocument } from "../database/Schema";
-import { DayCardWords, STATUS, WordlistType } from "../lib/types";
 import { ComponentsConfig } from "../lib/complexTypes";
+import { DayCardWords, STATUS, WordlistType } from "../lib/types";
 
 interface Props {
   config: ComponentsConfig;

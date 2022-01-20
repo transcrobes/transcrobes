@@ -1,10 +1,11 @@
-import { ReactElement } from "react";
-import Box from "@material-ui/core/Box";
-import { HslColorPicker, HslColor } from "react-colorful";
 import { Typography } from "@material-ui/core";
+import Box from "@material-ui/core/Box";
+import { ClassNameMap } from "@material-ui/core/styles/withStyles";
+import { ReactElement } from "react";
+import { HslColor, HslColorPicker } from "react-colorful";
 
 export interface FontColourProps {
-  classes: any;
+  classes: ClassNameMap<"fineControlIcons">;
   value: HslColor;
   label: string;
   onValueChange: (value: HslColor) => void;

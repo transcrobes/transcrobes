@@ -79,6 +79,9 @@ const customEnglishMessages: TranslationMessages = {
     repetrobes: {
       name: "Repetrobes",
     },
+    textcrobes: {
+      name: "Textcrobes",
+    },
     brocrobes: {
       name: "Brocrobes",
     },

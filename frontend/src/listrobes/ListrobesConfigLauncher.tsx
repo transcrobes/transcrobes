@@ -18,15 +18,11 @@ const useStyles = makeStyles((theme: Theme) =>
 );
 
 interface Props {
-  loading: boolean;
   graderConfig: GraderConfig;
   onConfigChange: (graderConfig: GraderConfig) => void;
 }
 
-export default function ListrobesConfigLauncher({
-  graderConfig,
-  onConfigChange,
-}: Props): ReactElement {
+export default function ListrobesConfigLauncher({ graderConfig, onConfigChange }: Props): ReactElement {
   const classes = useStyles();
   const [isOpen, setIsOpen] = React.useState(false);
 
@@ -34,8 +30,7 @@ export default function ListrobesConfigLauncher({
   const toggleDrawer = (open: boolean) => (event: React.KeyboardEvent | React.MouseEvent) => {
     if (
       event.type === "keydown" &&
-      ((event as React.KeyboardEvent).key === "Tab" ||
-        (event as React.KeyboardEvent).key === "Shift")
+      ((event as React.KeyboardEvent).key === "Tab" || (event as React.KeyboardEvent).key === "Shift")
     ) {
       return;
     }
@@ -44,12 +39,7 @@ export default function ListrobesConfigLauncher({
 
   return (
     <div>
-      <IconButton
-        className={classes.settings}
-        onClick={toggleDrawer(true)}
-        color="primary"
-        aria-label="settings"
-      >
+      <IconButton className={classes.settings} onClick={toggleDrawer(true)} color="primary" aria-label="settings">
         <SettingsIcon />
       </IconButton>
       <Drawer anchor="left" open={isOpen} onClose={toggleDrawer(false)}>

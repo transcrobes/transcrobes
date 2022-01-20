@@ -42,6 +42,20 @@ def is_useful_character(char: str) -> bool:
     )
 
 
+# stolen from django.contrib.admin.utils...
+def flatten(fields):
+    """
+    Return a list which is a single level of flattening of the original list.
+    """
+    flat = []
+    for field in fields:
+        if isinstance(field, (list, tuple)):
+            flat.extend(field)
+        else:
+            flat.append(field)
+    return flat
+
+
 def user_imports_path(instance: TimestampMixin, filename: str):
     # WARNING! Only useful in a modiles.FileField
     # file uploads for imports will be uploaded to MEDIA_ROOT/user_<id>/imports/<filename>

@@ -16,14 +16,7 @@ export default function QuestionDefinitionGraph({
   const dimensions = useWindowDimensions();
   // the min char size should allow 4 on an old iphone before scrollbars appear
   const newDim = Math.max(72, Math.min(150, dimensions.width / characters.length - 18));
-  return (
-    <DefinitionGraph
-      characters={characters}
-      showAnswer={showAnswer}
-      charHeight={newDim}
-      charWidth={newDim}
-    />
-  );
+  return <DefinitionGraph characters={characters} showAnswer={showAnswer} charHeight={newDim} charWidth={newDim} />;
 }
 export const CentredFlex = styled("div")(() => ({
   display: "flex",
@@ -117,10 +110,7 @@ export interface CommonAnswerProps {
 
 const RANDOM_NEXT_WINDOW = 10;
 
-export function getRandomNext(
-  candidates: CardType[],
-  nextWindowSize: number = RANDOM_NEXT_WINDOW,
-): CardType {
+export function getRandomNext(candidates: CardType[], nextWindowSize: number = RANDOM_NEXT_WINDOW): CardType {
   const shortList = candidates.slice(0, nextWindowSize);
   return shortList[Math.floor(Math.random() * Math.floor(shortList.length))];
 }

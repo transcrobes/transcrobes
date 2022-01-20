@@ -1,11 +1,11 @@
-import { ReactElement, useState } from "react";
-import { CardType, DefinitionType, ProviderTranslationType } from "../lib/types";
 import { Button, Grid, makeStyles, Typography } from "@material-ui/core";
+import { ContentState, convertFromHTML, convertFromRaw, Editor, EditorState } from "draft-js";
+import "draft-js/dist/Draft.css";
+import { ReactElement, useState } from "react";
+import { renderToString } from "react-dom/server";
+import { CardType, DefinitionType, noop, ProviderTranslationType } from "../lib/types";
 import MeaningEditor from "./MeaningEditor";
 import PosItems from "./PosItems";
-import { renderToString } from "react-dom/server";
-import { convertFromRaw, EditorState, ContentState, Editor, convertFromHTML } from "draft-js";
-import "draft-js/dist/Draft.css";
 
 const useStyles = makeStyles({
   providerEntry: { padding: "1em" },
@@ -26,9 +26,7 @@ export default function EditableDefinitionTranslations({
   card,
   onUpdate,
 }: EditableDefinitionTranslationsProps): ReactElement {
-  const [current, setCurrent] = useState(
-    card.front ? convertFromRaw(JSON.parse(card.front)) : undefined,
-  );
+  const [current, setCurrent] = useState(card.front ? convertFromRaw(JSON.parse(card.front)) : undefined);
   const [editing, setEditing] = useState(false);
 
   const styles = useStyles();
@@ -39,10 +37,7 @@ export default function EditableDefinitionTranslations({
 
   function handleEditFromDefinition(providerTranslation: ProviderTranslationType): void {
     const contentHTML = convertFromHTML(frontFromTranslations(providerTranslation));
-    const state = ContentState.createFromBlockArray(
-      contentHTML.contentBlocks,
-      contentHTML.entityMap,
-    );
+    const state = ContentState.createFromBlockArray(contentHTML.contentBlocks, contentHTML.entityMap);
 
     setCurrent(state);
     setEditing(true);
@@ -56,10 +51,6 @@ export default function EditableDefinitionTranslations({
     setEditing(false);
   }
 
-  function handleEditorChange(editorState: EditorState) {
-    console.log(`editorState requires a method`, editorState);
-  }
-
   return (
     <>
       {current && !editing && (
@@ -67,11 +58,7 @@ export default function EditableDefinitionTranslations({
           <Grid item>
             <Typography>Current value</Typography>
             <div className={styles.editorContent}>
-              <Editor
-                editorState={EditorState.createWithContent(current)}
-                onChange={handleEditorChange}
-                readOnly={true}
-              />
+              <Editor editorState={EditorState.createWithContent(current)} onChange={noop} readOnly={true} />
             </div>
           </Grid>
           <Grid item>
@@ -118,9 +105,7 @@ export default function EditableDefinitionTranslations({
                       handleEditFromDefinition(providerEntry);
                     }}
                   >
-                    {providerEntry.provider === defaultProvider && !current && !editing
-                      ? "Edit"
-                      : "Use Me Instead"}
+                    {providerEntry.provider === defaultProvider && !current && !editing ? "Edit" : "Use Me Instead"}
                   </Button>
                 </Grid>
               </Grid>

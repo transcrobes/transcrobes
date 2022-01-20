@@ -7,6 +7,7 @@ import { useTheme } from "@material-ui/core";
 const DATA_SOURCE = "surveyshow.tsx";
 
 function saveData(surveyData: string, surveyId: string) {
+  // FIXME: how do I get rid of window.componentsConfig here?
   window.componentsConfig.proxy.sendMessage(
     {
       source: DATA_SOURCE,

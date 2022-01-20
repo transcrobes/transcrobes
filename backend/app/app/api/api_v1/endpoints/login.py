@@ -124,6 +124,7 @@ async def test_token(
 
 
 @router.get("/logout")
+@router.post("/logout")
 def logout(response: Response):
     response.delete_cookie("session")
     response.delete_cookie("refresh")
