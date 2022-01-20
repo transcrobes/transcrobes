@@ -70,7 +70,7 @@ interface RunningMessageProps {
 
 function RunningMessage({ message }: RunningMessageProps): ReactElement {
   return (
-    <div id="initialising" className="hidden">
+    <div id="initialising">
       <h1 className="h4 text-gray-900 mb-4">Initialisation started</h1>
       <p>
         Please be patient while the initialisation finishes. The initialisation will give some
