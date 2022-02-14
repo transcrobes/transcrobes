@@ -6,10 +6,11 @@ import { DEFAULT_RETRIES } from "./types";
 export class Fetcher {
   #fetch;
   store: AdminStore;
+  retries: number;
 
-  constructor(store: AdminStore) {
+  constructor(store: AdminStore, retries = DEFAULT_RETRIES) {
     this.fetchPlus = this.fetchPlus.bind(this);
-
+    this.retries = retries;
     this.store = store;
     this.#fetch = fetchBuilder(fetch, {
       // retries: DEFAULT_RETRIES,
@@ -22,7 +23,7 @@ export class Fetcher {
         if (attempt > 0) {
           console.debug(`Attempt number ${attempt + 1}`, response?.url, response?.headers);
         }
-        if (attempt >= DEFAULT_RETRIES) {
+        if (attempt >= retries) {
           return false;
         }
         if (error !== null) {
@@ -30,13 +31,19 @@ export class Fetcher {
         } else if (response && response.status >= 400) {
           if (response.status === 401 || response.status === 403) {
             store.dispatch(throttledRefreshToken());
+            return false; // we have a bad token, no point trying again as we can't update it now...
           }
           return true;
         }
       },
     });
   }
-  public async fetchPlus(url: string | URL, body?: BodyInit, retries?: number, forcePost = false): Promise<any> {
+  public async fetchPlus<T = unknown>(
+    url: string | URL,
+    body?: BodyInit,
+    retries?: number,
+    forcePost = false,
+  ): Promise<T> {
     const lurl = typeof url === "string" ? url : url.href;
     // TODO: properly determine whether the retries here actually works...
     const opts: fetchBuilder.RequestInitWithRetry = retries ? { retries: retries } : {};

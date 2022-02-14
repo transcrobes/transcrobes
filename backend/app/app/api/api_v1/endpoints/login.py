@@ -73,7 +73,7 @@ async def access_from_refresh(token: TcToken, expires_delta: timedelta = None) -
     except (jwt.JWTError, ValidationError) as ex:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Could not validate credentials",
+            detail=f'Could not validate credentials for token: {token["refresh"]}',
         ) from ex
     if expires_delta:
         expire = datetime.utcnow() + expires_delta

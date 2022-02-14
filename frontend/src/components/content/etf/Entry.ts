@@ -1,10 +1,12 @@
 import { Component, createVNode, VNode } from "inferno";
 import { connect } from "inferno-redux";
-import { RootState } from "../../../app/createStore";
+import type { RootState } from "../../../app/createStore";
 import { BOOK_READER_TYPE, SIMPLE_READER_TYPE, VIDEO_READER_TYPE } from "../../../features/content/contentSlice";
-import { setMouseover, setTokenDetails } from "../../../features/ui/uiSlice";
+import { addDefinitions } from "../../../features/definition/definitionsSlice";
+import { DOMRectangle, setMouseover, setTokenDetails } from "../../../features/ui/uiSlice";
 import { eventCoordinates, getNormalGloss, getWord, isNumberToken } from "../../../lib/componentMethods";
 import {
+  DefinitionType,
   GLOSS_NUMBER_NOUNS,
   HasTextChildren,
   HasVNodeChildren,
@@ -26,7 +28,7 @@ type EntryProps = {
 
 type LocalEntryState = {
   gloss: string;
-  tokenDetailsShowing: boolean;
+  nbRetries: number;
 };
 
 type StatedEntryProps = EntryProps & {
@@ -36,43 +38,50 @@ type StatedEntryProps = EntryProps & {
   mouseover?: boolean;
 };
 
+const DEFINITION_LOADING = "loading...";
+const RETRY_DEFINITION_MS = 5000;
+const RETRY_DEFINITION_MAX_TRIES = 20;
+
+function getBoundingClientRect(element: Element) {
+  const { top, right, bottom, left, width, height, x, y } = element.getBoundingClientRect();
+  return { top, right, bottom, left, width, height, x, y };
+}
+
+function sameCoordinates(element: Element, current: DOMRectangle) {
+  const { width, height, x, y } = element.getBoundingClientRect();
+  return width === current.width && height === current.height && x === current.x && y === current.y;
+}
+
 class Entry extends Component<StatedEntryProps, LocalEntryState> {
   constructor(props: EntryProps, context: any) {
     super(props, context);
     this.state = {
       gloss: "",
-      tokenDetailsShowing: false,
+      nbRetries: 0,
     };
 
     this.createPopover = this.createPopover.bind(this);
     this.createTokenDetails = this.createTokenDetails.bind(this);
+    this.lookForDefinitionUpdate = this.lookForDefinitionUpdate.bind(this);
   }
   createTokenDetails(event: React.MouseEvent<HTMLSpanElement>): void {
-    let newTokenDetailsShowing = this.state?.tokenDetailsShowing;
-    if (!this.context.store.getState().ui.tokenDetails) {
-      newTokenDetailsShowing = false;
-      this.setState({ tokenDetailsShowing: false });
-    }
     if (
-      !(this.context.store.getState().ui.tokenDetails && newTokenDetailsShowing) &&
-      this.props.readerConfig.clickable
+      !this.context.store.getState().ui.tokenDetails ||
+      !sameCoordinates(event.currentTarget, this.context.store.getState().ui.tokenDetails.sourceRect)
     ) {
-      this.context.store.dispatch(setTokenDetails(undefined));
-      const coordinates = eventCoordinates(event);
+      // this.context.store.dispatch(setTokenDetails(undefined));
       this.context.store.dispatch(setMouseover(undefined));
-      this.setState({ tokenDetailsShowing: true });
       this.context.store.dispatch(
         setTokenDetails({
-          coordinates,
+          coordinates: eventCoordinates(event),
           token: this.props.token,
           sentence: this.props.sentence,
           gloss: !!this.state?.gloss,
+          sourceRect: getBoundingClientRect(event.currentTarget),
         }),
       );
       event.stopPropagation();
       event.preventDefault();
-    } else {
-      this.setState({ tokenDetailsShowing: false });
     }
   }
 
@@ -101,6 +110,46 @@ class Entry extends Component<StatedEntryProps, LocalEntryState> {
     if (tokenDetails) {
       this.context.store.dispatch(setTokenDetails({ ...tokenDetails, gloss: !!localGloss }));
     }
+    if (localGloss.startsWith(DEFINITION_LOADING)) {
+      window.setTimeout(this.lookForDefinitionUpdate, RETRY_DEFINITION_MS, {
+        glossing,
+        attemptsRemaining: RETRY_DEFINITION_MAX_TRIES,
+      });
+    }
+  }
+
+  lookForDefinitionUpdate({ glossing, attemptsRemaining }: { glossing: number; attemptsRemaining: number }): void {
+    const token = this.props.token;
+    const {
+      knownCards,
+      definitions,
+      userData: {
+        user: { fromLang },
+      },
+    } = this.context.store.getState() as RootState;
+    if (attemptsRemaining < 0) {
+      this.setState({ gloss: " [Error loading gloss]" });
+      return;
+    }
+    let promise: Promise<DefinitionType> | null;
+    if (token.id && token.id.toString() in definitions) {
+      promise = Promise.resolve(definitions[token.id.toString()]);
+    } else {
+      promise = getWord(token.l);
+    }
+    promise.then((def) => {
+      if (!def) {
+        window.setTimeout(this.lookForDefinitionUpdate, RETRY_DEFINITION_MS, {
+          glossing,
+          attemptsRemaining: attemptsRemaining - 1,
+        });
+      } else {
+        this.context.store.dispatch(addDefinitions([{ ...def, glossToggled: false }]));
+        getNormalGloss(token, glossing, knownCards, definitions, fromLang || "zh-Hans").then((gloss) => {
+          this.setState({ gloss });
+        });
+      }
+    });
   }
 
   async componentWillUpdate(nextProps: StatedEntryProps, nextState: LocalEntryState, context: any): Promise<void> {

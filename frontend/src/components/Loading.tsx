@@ -29,17 +29,17 @@ interface Props {
   top?: string;
 }
 
-export default function Loading({ classes, size, disableShrink, message, position, top }: Props) {
+export function Loading({ classes, size, disableShrink, message, position, top }: Props) {
   const localClasses = useStyles({ position: position, top: top });
-  const loading = useAppSelector((state) => state.ui.loading);
-  return loading ? (
-    <>
-      <div className={classes?.loading || localClasses.loading}>
-        <CircularProgress size={size || 200} disableShrink={disableShrink} />
-        {message && <div className={classes?.message}>{message}</div>}
-      </div>
-    </>
-  ) : (
-    <></>
+  return (
+    <div className={classes?.loading || localClasses.loading}>
+      <CircularProgress size={size || 200} disableShrink={disableShrink} />
+      {message && <div className={classes?.message}>{message}</div>}
+    </div>
   );
+}
+
+export default function GlobalLoading(props: Props) {
+  const loading = useAppSelector((state) => state.ui.loading);
+  return loading ? <Loading {...props} /> : <></>;
 }

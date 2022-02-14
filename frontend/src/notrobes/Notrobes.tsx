@@ -64,6 +64,7 @@ function Notrobes({ proxy, url }: Props): ReactElement {
   let cancel: CancelTokenSource;
 
   useEffect(() => {
+    if (!proxy.loaded) return;
     (async function () {
       const ulws = await proxy.sendMessagePromise<{
         userListWords: UserListWordType;
@@ -77,7 +78,7 @@ function Notrobes({ proxy, url }: Props): ReactElement {
       setUserListWords(ulws.userListWords);
       setInitialised(true);
     })();
-  }, []);
+  }, [proxy.loaded]);
 
   async function submitLookupEvents(lookupEvents: any[], userStatsMode: number) {
     // FIXME: userStatsMode should be an enum

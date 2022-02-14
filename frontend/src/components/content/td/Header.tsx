@@ -8,7 +8,7 @@ import { getSound } from "../../../lib/componentMethods";
 import { TokenType } from "../../../lib/types";
 
 type Props = {
-  classes: ClassNameMap<string>;
+  classes: ClassNameMap<"header" | "sound" | "best" | "icons">;
   token: TokenType;
   bestGuess: string;
   extrasOpen: boolean;
@@ -23,7 +23,7 @@ export default function Header({ classes, token, bestGuess, extrasOpen, onToggle
     (async () => {
       setSound((token.p && token.p.join("")) || (await getSound(token, definitions)));
     })();
-  }, []);
+  }, [token]);
 
   function toggleSentence(event: React.MouseEvent<HTMLButtonElement>) {
     event.preventDefault();
@@ -35,7 +35,7 @@ export default function Header({ classes, token, bestGuess, extrasOpen, onToggle
     <div className={classes.header}>
       <div className={classes.sound}>{sound}</div>
       <div className={classes.best}>{bestGuess}</div>
-      <IconButton onClick={toggleSentence} aria-label="Extras">
+      <IconButton className={classes.icons} onClick={toggleSentence} aria-label="Extras">
         {extrasOpen ? <FullscreenExit /> : <Fullscreen />}
       </IconButton>
     </div>

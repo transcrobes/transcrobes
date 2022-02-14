@@ -83,7 +83,8 @@ class ServiceWorkerProxy extends AbstractWorkerProxy {
       (!(await isInitialisedAsync(this.#config.username)) && eventData.type !== "heartbeat" && !allowInstall)
     ) {
       console.error(
-        "Uninitialised",
+        "Uninitialised looking for",
+        eventData,
         this.#config.username,
         this.#config.username ? await isInitialisedAsync(this.#config.username) : null,
       );

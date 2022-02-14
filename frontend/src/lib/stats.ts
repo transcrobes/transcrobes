@@ -185,7 +185,6 @@ export function observerFunc(
               data: tstats, // WARNING!!! the tstats consider that if it has been glossed, it has been looked up!!!
               userStatsMode: readerConfig().glossing,
             };
-            console.log("sending a great bulk!", userEvent);
             platformHelper.sendMessage({
               source: "stats",
               type: "submitUserEvents",

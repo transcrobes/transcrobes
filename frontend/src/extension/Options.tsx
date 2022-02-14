@@ -53,6 +53,7 @@ const useStyles = makeStyles((theme) => ({
   glossFontColour: { display: "flex", justifyContent: "flex-start", padding: "0.4em" },
   header: { display: "inline-flex", justifyContent: "space-between", alignItems: "start" },
   headerText: { padding: "1em" },
+  configContainer: { maxWidth: "500px" },
 }));
 
 export default function Options(): JSX.Element {

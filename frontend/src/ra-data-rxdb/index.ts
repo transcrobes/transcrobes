@@ -10,14 +10,18 @@ type DbDataProvider = DataProvider & { db: () => Promise<TranscrobesDatabase> };
 
 export default function RxDBProvider(params: RxDBDataProviderParams): DbDataProvider {
   const parameters = params;
+  let dbPromise: Promise<TranscrobesDatabase>;
   function dbProm() {
-    return getDb(
-      params,
-      () => {
-        return;
-      },
-      false,
-    );
+    if (!dbPromise) {
+      dbPromise = getDb(
+        params,
+        () => {
+          return;
+        },
+        false,
+      );
+    }
+    return dbPromise;
   }
 
   return {

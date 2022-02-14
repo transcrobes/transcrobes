@@ -248,11 +248,8 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
       });
     });
   } else if (message.type === "setContentConfigToStore") {
-    console.log("i should be setting the config in the background", message);
     loadDb(console.debug, message).then((ldb) => {
-      console.log("i should be setting the config in the background loaded db", message);
       data.setContentConfigToStore(ldb, message.value).then((result) => {
-        console.log("i should have already set config in the background ", message, result);
         sendResponse({ source: message.source, type: message.type, value: result });
       });
     });

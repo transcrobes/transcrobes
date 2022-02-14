@@ -17,6 +17,7 @@ import {
   BookReaderState,
   DEFAULT_BOOK_READER_CONFIG_STATE,
 } from "../../features/content/bookReaderSlice";
+import { fetcher } from "../../lib/fetcher";
 import { ContentConfigType, ContentParams, ContentProps } from "../../lib/types";
 import {
   ColorMode,
@@ -28,7 +29,6 @@ import {
 } from "../common/types";
 import Header from "./Header";
 import injectables from "./injectables";
-import { fetchJson } from "./utils/fetch";
 import { WebpubManifest } from "./WebpubManifestTypes/WebpubManifest";
 
 declare global {
@@ -81,7 +81,7 @@ function enableResizeEvent(reader: any, dispatch: AppDispatch, id: string) {
   window.addEventListener("resize", debouncedResizeHandler, { passive: true });
 }
 
-export default function Reader({ proxy }: ContentProps): ReactElement {
+export default function BookReader({ proxy }: ContentProps): ReactElement {
   useAuthenticated(); // redirects to login if not authenticated, required because shown as RouteWithoutLayout
   const { id } = useParams<ContentParams>();
   window.bookId = id;
@@ -94,7 +94,7 @@ export default function Reader({ proxy }: ContentProps): ReactElement {
   const containerRef = useRef<HTMLDivElement>(null);
   const dispatch = useAppDispatch();
   const readerConfig = useAppSelector((state) => state.bookReader[id] || DEFAULT_BOOK_READER_CONFIG_STATE);
-
+  const userData = useAppSelector((state) => state.userData);
   const themeName = useAppSelector((state) => state.theme);
   const theme = createTheme({
     palette: {
@@ -102,18 +102,23 @@ export default function Reader({ proxy }: ContentProps): ReactElement {
     },
   });
   useEffect(() => {
-    fetchJson<WebpubManifest>(url.href)
-      .then((manif) => {
-        setManifest(manif);
-      })
-      .catch(setError);
-  }, [id]);
+    if (userData.user.accessToken) {
+      fetcher
+        .fetchPlus<WebpubManifest>(url.href)
+        .then((manif) => {
+          setManifest(manif);
+        })
+        .catch((error) => {
+          console.error("Error loading manifest", error);
+          setError(error);
+        });
+    }
+  }, [id, userData]);
 
-  if (error) {
-    throw error;
-  }
   useEffect(() => {
-    // window.readerConfig.popupParent = window.document.body;
+    if (!proxy.loaded || !manifest) {
+      return;
+    }
     (async () => {
       const config = await proxy.sendMessagePromise<ContentConfigType>({
         source: "ContentConfig.ts",
@@ -127,11 +132,7 @@ export default function Reader({ proxy }: ContentProps): ReactElement {
       const userSettings = {
         verticalScroll: !!conf.isScrolling,
         appearance: getColorMode(themeName),
-        // fontOverride: "readium-font-off",
-        // fontFamily: 0,
-        // fontOverride: false,
         fontFamily: `${conf.fontFamily},${conf.fontFamilyChinese}`,
-        // fontSize: conf.fontSize * 100,
         currentTocUrl: conf.currentTocUrl,
         location: conf.location,
         atStart: conf.atStart,
@@ -157,7 +158,7 @@ export default function Reader({ proxy }: ContentProps): ReactElement {
         } as any,
         userSettings: userSettings,
         api: {
-          // getContent: getContent as any,
+          // getContent: getContent,
           updateCurrentLocation: async (loc: any) => {
             // This is needed so that setBookBoundary has the updated "reader" value.
             // dispatch({ type: "LOCATION_CHANGED", location: loc });
@@ -205,7 +206,7 @@ export default function Reader({ proxy }: ContentProps): ReactElement {
       window.etfLoaded = undefined;
       D2Reader.unload();
     };
-  }, [manifest, forceRefresh]);
+  }, [proxy.loaded, manifest, forceRefresh]);
 
   // FIXME: this is only before completely removing dita...
   useEffect(() => {

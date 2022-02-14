@@ -1,6 +1,6 @@
 import { makeStyles, Theme } from "@material-ui/core";
 import { ReactElement, useEffect, useState } from "react";
-import { PopupPosition, ReaderState } from "../../../lib/types";
+import { EventCoordinates, PopupPosition, ReaderState } from "../../../lib/types";
 import Extras from "./Extras";
 import Header from "./Header";
 import Messages from "./Messages";
@@ -25,7 +25,7 @@ const useStyles = makeStyles<Theme, StyleProps>((theme: Theme) => ({
   popup: (props) => ({
     textAlign: "center",
     borderRadius: "6px",
-    padding: "3px 0",
+    padding: "3px",
     zIndex: 99999,
     width: "90%",
     maxWidth: "350px",
@@ -39,6 +39,7 @@ const useStyles = makeStyles<Theme, StyleProps>((theme: Theme) => ({
     fill: "white",
     backgroundColor: "black",
   }),
+  icons: { color: "white", padding: "6px" },
   container: { textAlign: "left" },
   synonymList: (props) => ({ fontSize: `${props.fontSize}%` }),
   source: { marginLeft: "6px", padding: "5px 0" },
@@ -63,6 +64,7 @@ export default function TokenDetails({ readerConfig }: Props): ReactElement {
   const invisible = {
     left: "",
     top: "",
+    padding: "0px",
     visibility: "hidden",
   } as PopupPosition;
   const classes = useStyles({
@@ -76,27 +78,34 @@ export default function TokenDetails({ readerConfig }: Props): ReactElement {
   const tokenDetails = useAppSelector((state) => state.ui.tokenDetails);
   const fromLang = useAppSelector((state) => state.userData.user.fromLang);
   const [extrasOpen, setExtrasOpen] = useState(false);
+  const [boxWidth, setBoxWidth] = useState(0);
+
+  useEffect(() => {
+    (async () => {
+      if (tokenDetails) {
+        const def =
+          (tokenDetails.token.id && definitions[tokenDetails.token.id]) || (await getWord(tokenDetails.token.l));
+        setGuess(bestGuess(tokenDetails.token, def, fromLang));
+      }
+    })();
+  }, [tokenDetails]);
+
   const { ref } = useResizeObserver<HTMLDivElement>({
     box: "border-box",
     onResize: ({ width }) => {
-      (async () => {
-        if (width && tokenDetails && tokenDetails.coordinates.eventX) {
-          const def =
-            (tokenDetails.token.id && definitions[tokenDetails.token.id]) || (await getWord(tokenDetails.token.l));
-          setGuess(bestGuess(tokenDetails.token, def, fromLang));
-
-          const positioning = positionPopup(
-            width,
-            tokenDetails.coordinates.eventX,
-            tokenDetails.coordinates.eventY,
-            window.parent.document.documentElement,
-          );
-          setStyles({ ...positioning, visibility: "visible" });
-        } else {
-          setExtrasOpen(false);
-          setStyles(invisible);
-        }
-      })();
+      if (width && tokenDetails && tokenDetails.coordinates.eventX) {
+        const positioning = positionPopup(
+          width,
+          tokenDetails.coordinates.eventX,
+          tokenDetails.coordinates.eventY,
+          window.parent.document.documentElement,
+        );
+        setStyles({ ...positioning });
+        setBoxWidth(width);
+      } else {
+        setExtrasOpen(false);
+        setStyles(invisible);
+      }
     },
   });
 
@@ -107,6 +116,14 @@ export default function TokenDetails({ readerConfig }: Props): ReactElement {
 
   useEffect(() => {
     if (tokenDetails) {
+      setStyles(
+        positionPopup(
+          boxWidth,
+          tokenDetails.coordinates.eventX,
+          tokenDetails.coordinates.eventY,
+          window.parent.document.documentElement,
+        ),
+      );
       platformHelper.sendMessage({
         source: "TokenDetails",
         type: "submitUserEvents",
@@ -120,6 +137,8 @@ export default function TokenDetails({ readerConfig }: Props): ReactElement {
           source: "TokenDetails",
         },
       });
+    } else {
+      setExtrasOpen(false);
     }
   }, [tokenDetails]);
 

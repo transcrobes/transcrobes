@@ -96,17 +96,13 @@ async function loadDb(
   });
 }
 
-function getLocalCardWords(message: EventData, sw: ServiceWorkerGlobalScope) {
-  if (dayCardWords) {
-    return Promise.resolve(dayCardWords);
-  } else {
-    return loadDb(message, sw).then(([ldb, _msg]) => {
-      return data.getCardWords(ldb).then((val) => {
-        dayCardWords = val;
-        return Promise.resolve(dayCardWords);
-      });
-    });
+async function getLocalCardWords(message: EventData, sw: ServiceWorkerGlobalScope) {
+  if (!dayCardWords) {
+    const [ldb, _msg] = await loadDb(message, sw);
+    const val = await data.getCardWords(ldb);
+    dayCardWords = val;
   }
+  return dayCardWords;
 }
 
 export async function resetDBConnections(): Promise<void> {

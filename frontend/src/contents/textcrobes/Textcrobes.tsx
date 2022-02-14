@@ -88,19 +88,21 @@ export default function Textcrobes({ proxy }: Props): ReactElement {
 
   useEffect(() => {
     (async () => {
-      const config = await proxy.sendMessagePromise<ContentConfigType>({
-        source: "ContentConfig.ts",
-        type: "getContentConfigFromStore",
-        value: id,
-      });
-      const conf: SimpleReaderState = _.merge(
-        _.cloneDeep({ ...DEFAULT_TEXT_READER_CONFIG_STATE, id }),
-        config?.configString ? JSON.parse(config.configString).readerState : null,
-      );
+      if (proxy.loaded) {
+        const config = await proxy.sendMessagePromise<ContentConfigType>({
+          source: "ContentConfig.ts",
+          type: "getContentConfigFromStore",
+          value: id,
+        });
+        const conf: SimpleReaderState = _.merge(
+          _.cloneDeep({ ...DEFAULT_TEXT_READER_CONFIG_STATE, id }),
+          config?.configString ? JSON.parse(config.configString).readerState : null,
+        );
 
-      dispatch(simpleReaderActions.setState({ id, value: conf }));
+        dispatch(simpleReaderActions.setState({ id, value: conf }));
+      }
     })();
-  }, []);
+  }, [proxy.loaded]);
 
   useEffect(() => {
     setHtml("");
@@ -111,6 +113,7 @@ export default function Textcrobes({ proxy }: Props): ReactElement {
       dispatch(setLoading(undefined));
       return;
     }
+    if (!proxy.loaded) return;
     dispatch(setLoading(true));
     proxy
       .sendMessagePromise<EnrichedHtmlModels>({

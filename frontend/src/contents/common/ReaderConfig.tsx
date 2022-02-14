@@ -1,4 +1,5 @@
 import { FormControl, FormControlLabel, makeStyles, Switch, Theme } from "@material-ui/core";
+import { ClassNameMap } from "@material-ui/core/styles/withStyles";
 import { ToggleButton, ToggleButtonGroup } from "@material-ui/lab";
 import _ from "lodash";
 import React, { ReactElement, useCallback } from "react";
@@ -16,7 +17,7 @@ import { FontFamily, FontFamilyChinese, GlossPosition, ReaderState, USER_STATS_M
 
 export interface ContentConfigProps {
   containerRef?: React.RefObject<HTMLDivElement>;
-  classes: any;
+  classes: ClassNameMap<string>;
   actions: typeof simpleReaderActions | typeof videoReaderActions | typeof bookReaderActions;
   readerConfig: ReaderState;
   allowMainTextOverride?: boolean;
@@ -60,20 +61,20 @@ export default function ContentConfig({
     dispatch(stateSetter({ id, value: checked ? DEFAULT_FONT_COLOUR : null }));
   }
   const changeFontColour = useCallback(
-    _.throttle((value: HslColor) => {
+    _.debounce((value: HslColor) => {
       dispatch(actions.setFontColour({ id, value }));
-    }, 500),
+    }, 250),
     [],
   );
   const changeGlossFontColour = useCallback(
-    _.throttle((value: HslColor) => {
+    _.debounce((value: HslColor) => {
       dispatch(actions.setGlossFontColour({ id, value }));
-    }, 500),
+    }, 250),
     [],
   );
 
   return (
-    <>
+    <div className={classes.configContainer}>
       {allowMainTextOverride && (
         <>
           <Conftainer label="Font family" id="ff">
@@ -167,7 +168,7 @@ export default function ContentConfig({
                   <FontColour
                     value={readerConfig.fontColour}
                     label=""
-                    classes={classes}
+                    className={localClasses.fineControlIcons}
                     onValueChange={changeFontColour}
                   />
                 </BasicConftainer>
@@ -253,7 +254,7 @@ export default function ContentConfig({
               <FontColour
                 value={readerConfig.glossFontColour}
                 label=""
-                classes={classes}
+                className={localClasses.fineControlIcons}
                 onValueChange={changeGlossFontColour}
               />
             </BasicConftainer>
@@ -312,6 +313,6 @@ export default function ContentConfig({
           </ToggleButton>
         </ToggleButtonGroup>
       </Conftainer>
-    </>
+    </div>
   );
 }

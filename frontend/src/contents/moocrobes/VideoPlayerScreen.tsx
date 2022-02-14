@@ -56,6 +56,7 @@ export default function VideoPlayerScreen({ proxy }: ContentProps): ReactElement
   const definitions = useAppSelector((state) => state.definitions);
 
   useEffect(() => {
+    if (!proxy.loaded) return;
     (async () => {
       const config = await proxy.sendMessagePromise<ContentConfigType>({
         source: "VideoPlayerScreen.tsx",
@@ -89,7 +90,7 @@ export default function VideoPlayerScreen({ proxy }: ContentProps): ReactElement
           );
         });
     })();
-  }, []);
+  }, [proxy.loaded]);
 
   const helpUrl = "https://transcrob.es/page/software/learn/moocrobes/";
   const vpHandle = useRef<VideoPlayerHandle>(null);

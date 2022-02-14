@@ -35,6 +35,8 @@ export default function Mouseover({ readerConfig }: Props): ReactElement {
   const invisible = {
     left: "",
     top: "",
+    padding: "0px",
+    borderWidth: "0px",
     visibility: "hidden",
   } as PopupPosition;
   const [styles, setStyles] = useState<PopupPosition>(invisible);

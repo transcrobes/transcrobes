@@ -1,10 +1,18 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { EventCoordinates, SentenceType, TokenType } from "../../lib/types";
 
+export type DOMRectangle = {
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
+};
+
 export type TokenDetailsState = {
   token: TokenType;
   sentence: SentenceType;
   coordinates: EventCoordinates;
+  sourceRect: DOMRectangle;
   gloss: boolean;
 };
 

@@ -37,6 +37,11 @@ export const darkTheme = {
         backgroundColor: "#616161e6",
       },
     },
+    // No idea why this is necessary...
+    RaSidebar: {
+      fixed: { height: "calc(100vh - 4em)" },
+      root: { height: "calc(100vh - 4em)" },
+    },
     MuiButtonBase: {
       root: {
         "&:hover:active::after": {
@@ -102,6 +107,11 @@ export const lightTheme = {
       active: {
         borderLeft: "3px solid #4f3cc9",
       },
+    },
+    // No idea why this is necessary...
+    RaSidebar: {
+      fixed: { height: "calc(100vh - 4em)" },
+      root: { height: "calc(100vh - 4em)" },
     },
     MuiPaper: {
       elevation1: {

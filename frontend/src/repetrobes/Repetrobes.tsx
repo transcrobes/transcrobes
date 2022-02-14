@@ -88,6 +88,7 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
   }, [showAnswer]);
 
   useEffect(() => {
+    if (!proxy.loaded) return;
     (async () => {
       const conf = await getUserConfig(proxy);
       const ulws = await proxy.sendMessagePromise<{
@@ -124,7 +125,7 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
         setStateActivityConfig(activityConfigNew);
       });
     })();
-  }, []);
+  }, [proxy.loaded]);
 
   useEffect(() => {
     (async () => {
@@ -137,6 +138,7 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
   }, [daState]);
 
   useEffect(() => {
+    if (!proxy.loaded) return;
     (async () => {
       if (!configIsUsable(stateActivityConfig)) {
         dispatch(setLoading(true));
@@ -157,7 +159,7 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
       dispatch(setLoading(!(!!daState.currentCard && !!daState.definition)));
       setDaState({ ...daState, ...partial });
     })();
-  }, [stateActivityConfig]);
+  }, [proxy.loaded, stateActivityConfig]);
 
   // FIXME: seriously consider typing lookupEvents
   async function submitLookupEvents(lookupEvents: any[], userStatsMode: number) {

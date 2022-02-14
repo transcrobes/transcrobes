@@ -8,7 +8,7 @@ type Props = {
   definition: DefinitionType;
 };
 
-export default function Header({ token, definition }: Props): ReactElement {
+export default function Synonyms({ token, definition }: Props): ReactElement {
   const [synString, setSynString] = useState("");
   const fromLang = useAppSelector((state) => state.userData.user.fromLang);
   useEffect(() => {

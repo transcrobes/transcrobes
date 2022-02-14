@@ -8,6 +8,7 @@ export const REFRESH_TOKEN_PATH = "/api/v1/refresh";
 export const LOGOUT_PATH = "/api/v1/logout";
 import fetchBuilder from "fetch-retry";
 import { throttleAction } from "../../lib/funclib";
+import Cookies from "js-cookie";
 
 const modulePrefix = "user";
 
@@ -81,6 +82,8 @@ const refreshToken = createAsyncThunk(`${modulePrefix}/refreshToken`, async (_, 
       refreshToken: result.refresh_token,
       fromLang: token_data.lang_pair.split(":")[0],
     };
+    Cookies.set("refresh", ret.refreshToken);
+    Cookies.set("session", ret.accessToken);
     return ret;
   } else {
     return await doLogin(state.userData.username, state.userData.password, state.userData.baseUrl);
