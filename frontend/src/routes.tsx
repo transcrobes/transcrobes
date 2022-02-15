@@ -15,6 +15,7 @@ import Signup from "./system/Signup";
 import ResetPassword from "./system/ResetPassword";
 import RecoverPassword from "./system/RecoverPassword";
 import Textcrobes from "./contents/textcrobes/Textcrobes";
+import Stats from "./stats/Stats";
 
 export default function routes(config: ComponentsConfig): CustomRoutes {
   return [
@@ -28,12 +29,13 @@ export default function routes(config: ComponentsConfig): CustomRoutes {
     <RouteWithoutLayout exact path="/init" render={() => <Init proxy={config.proxy} />} noLayout />,
 
     // authed
+    <Route exact path="/notrobes" render={() => <Notrobes proxy={config.proxy} url={config.url} />} />,
     <Route exact path="/listrobes" render={() => <Listrobes proxy={config.proxy} />} />,
+    <Route exact path="/stats" render={() => <Stats proxy={config.proxy} />} />,
     <Route exact path="/repetrobes" render={() => <Repetrobes proxy={config.proxy} />} />,
     <Route exact path="/textcrobes" render={() => <Textcrobes proxy={config.proxy} />} />,
-    <Route exact path="/notrobes" render={() => <Notrobes proxy={config.proxy} url={config.url} />} />,
-    <Route exact path="/brocrobes" render={() => <Brocrobes />} />,
     <Route exact path="/contents/:id/watch" children={<VideoPlayerScreen proxy={config.proxy} />} />,
+    <Route exact path="/brocrobes" render={() => <Brocrobes />} />,
     <Route exact path="/system" render={() => <System proxy={config.proxy} />} />,
     <Route exact path="/help" render={() => <Help />} />,
   ];

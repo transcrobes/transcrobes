@@ -1,9 +1,8 @@
 import { makeStyles, Theme } from "@material-ui/core";
 import { ReactElement, useEffect, useState } from "react";
-import { EventCoordinates, PopupPosition, ReaderState } from "../../../lib/types";
+import { PopupPosition, ReaderState } from "../../../lib/types";
 import Extras from "./Extras";
 import Header from "./Header";
-import Messages from "./Messages";
 import { getWord, positionPopup } from "../../../lib/componentMethods";
 import Container from "./Container";
 import { bestGuess } from "../../../lib/libMethods";
@@ -73,7 +72,6 @@ export default function TokenDetails({ readerConfig }: Props): ReactElement {
   });
   const [guess, setGuess] = useState("");
   const definitions = useAppSelector((state) => state.definitions);
-  const [message, setMessage] = useState("");
   const [styles, setStyles] = useState<PopupPosition>(invisible);
   const tokenDetails = useAppSelector((state) => state.ui.tokenDetails);
   const fromLang = useAppSelector((state) => state.userData.user.fromLang);
@@ -159,8 +157,6 @@ export default function TokenDetails({ readerConfig }: Props): ReactElement {
           sentence={tokenDetails.sentence}
         />
       )}
-      {/* maybe not necessary? */}
-      <Messages message={message} />
       <Container tokenDetails={tokenDetails} definition={definitions[tokenDetails.token.id]} classes={classes} />
     </div>
   ) : (

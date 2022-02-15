@@ -203,6 +203,21 @@ function Notrobes({ proxy, url }: Props): ReactElement {
 
   async function addOrUpdateCards(wordId: string, grade: number): Promise<void> {
     // FIXME: grade should be an enum
+    if (word) {
+      proxy.sendMessagePromise({
+        source: DATA_SOURCE,
+        type: "submitUserEvents",
+        value: {
+          type: "practice_card",
+          data: {
+            target_word: word.graph,
+            grade: grade,
+            source_sentence: "",
+          },
+          source: DATA_SOURCE,
+        },
+      });
+    }
     const updatedCards = await proxy.sendMessagePromise<CardDocument[]>({
       source: DATA_SOURCE,
       type: "addOrUpdateCardsForWord",

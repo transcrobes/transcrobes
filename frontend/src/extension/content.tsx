@@ -55,7 +55,8 @@ store.dispatch(setLoading(true));
 const models: KeyedModels = {};
 let readerConfig: ReaderState;
 const getReaderConfig = () => readerConfig;
-const readObserver = new IntersectionObserver(observerFunc(getReaderConfig, models, store.getState().knownCards), {
+const getKnownCards = () => store.getState().knownCards;
+const readObserver = new IntersectionObserver(observerFunc(getReaderConfig, models, getKnownCards), {
   threshold: [1.0],
 });
 

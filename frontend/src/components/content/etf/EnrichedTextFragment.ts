@@ -52,7 +52,11 @@ export function enrichETFElements(
   element.innerHTML = html;
   const elements = element.querySelectorAll("enriched-text-fragment");
   const readObserver = new IntersectionObserver(
-    observerFunc(() => readerConfig, models, store.getState().knownCards),
+    observerFunc(
+      () => readerConfig,
+      models,
+      () => store.getState().knownCards,
+    ),
     {
       threshold: [1.0],
     },

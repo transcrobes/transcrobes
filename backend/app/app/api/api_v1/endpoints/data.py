@@ -28,7 +28,7 @@ router = APIRouter()
 
 def get_event(e: Any, user_id: int) -> BaseEvent:
     logger.debug("Got an event %s for user %s", e, user_id)
-
+    # FIXME: I am not currently using the e.get("user_stats_mode")...
     if e["type"] in ["bulk_vocab"]:
         return VocabEvent(
             data=e["data"],
@@ -37,16 +37,15 @@ def get_event(e: Any, user_id: int) -> BaseEvent:
             user_stats_mode=e.get("user_stats_mode") or stats.USER_STATS_MODE_IGNORE,
             user_id=user_id,
         )
-    elif e["type"] in ["token_details_card"]:
+    elif e["type"] in ["practice_card"]:
         return CardEvent(
             type=e["type"],
             source=e["source"],
             user_stats_mode=e.get("user_stats_mode") or stats.USER_STATS_MODE_IGNORE,
             user_id=user_id,
-            word_id=e["data"].get("word_id") or e["data"].get("wordId"),
-            target_word=e["data"].get("target_word"),
+            target_word=e["data"]["target_word"],
             grade=e["data"]["grade"],
-            pos=e["data"]["pos"],
+            pos=e["data"].get("pos") or "OTHER",
             source_sentence=e["data"].get("source_sentence"),
         )
     else:

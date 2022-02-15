@@ -22,6 +22,14 @@ content_process_topic = app.topic("content_process_topic", value_type=ProcessDat
 list_process_topic = app.topic("list_process_topic", value_type=ProcessData)
 
 
+class UserDayT(faust.Record, serializer="json"):  # pylint: disable=W0223
+    nb_seen: int = 0
+    nb_checked: int = 0
+    nb_success: int = 0
+    nb_failures: int = 0
+    updated_at: float = 0
+
+
 class UserWordT(faust.Record, serializer="json"):  # pylint: disable=W0223
     nb_seen: int = 0
     last_seen: float = 0
@@ -34,7 +42,9 @@ class UserWordT(faust.Record, serializer="json"):  # pylint: disable=W0223
 
 class UserWords(faust.Record, serializer="json", validation=True):  # pylint: disable=W0223
     words: dict[str, UserWordT] = {}
-    ordered_keys: list[str] = []  # ordered by updated_at
+    days: dict[int, UserDayT] = {}
+    ordered_keys: list[str] = []  # ordered by updated_at desc
+    ordered_day_keys: list[str] = []  # ordered by updated_at desc
 
 
 user_words = app.Table(

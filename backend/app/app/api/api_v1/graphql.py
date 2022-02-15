@@ -257,6 +257,47 @@ async def filter_cached_definitions(
 
 
 @strawberry.type
+class DayModelStats:
+    id: str
+    nb_seen: Optional[int] = 0
+    nb_checked: Optional[int] = 0
+    nb_success: Optional[int] = 0
+    nb_failures: Optional[int] = 0
+    updated_at: Optional[float] = 0
+    deleted: Optional[bool] = False
+
+    @staticmethod
+    def from_list(wmlist: list):
+        ws = DayModelStats(
+            id=wmlist[0],
+            nb_seen=wmlist[1],
+            nb_checked=wmlist[2],
+            nb_success=wmlist[3],
+            nb_failures=wmlist[4],
+            updated_at=wmlist[5],
+        )
+        return ws
+
+
+async def filter_day_model_stats_faust(
+    user_id: int,
+    limit: int,
+    updated_at: float,
+) -> List[WordModelStats]:
+    logger.debug(f"filter_day_model_stats_faust started: {user_id=}, {limit=}, {updated_at=}")
+    updated_at = updated_at or 0
+    async with aiohttp.ClientSession() as session:
+        query = f"http://{settings.FAUST_HOST}:{settings.FAUST_PORT}/user_day_updates/{user_id}/{updated_at}"
+        async with session.get(query) as resp:
+            resp.raise_for_status()
+            updates = await resp.json()
+            if limit > 0:
+                updates = updates[:limit]
+            objs = [DayModelStats.from_list(user_day) for user_day in updates if user_day[5] > updated_at]
+    return objs
+
+
+@strawberry.type
 class WordModelStats:
     id: str
     nb_seen: Optional[int] = 0
@@ -342,9 +383,9 @@ async def filter_word_model_stats_faust(
     if settings.DEBUG:
         async with async_session() as db:
             await ensure_cache_preloaded(db, lang_pair.split(":")[0], lang_pair.split(":")[1])
-
+    updated_at = updated_at or 0
     async with aiohttp.ClientSession() as session:
-        query = f"http://{settings.FAUST_HOST}:{settings.FAUST_PORT}/user_word_updates/{user_id}/{updated_at or 0}"
+        query = f"http://{settings.FAUST_HOST}:{settings.FAUST_PORT}/user_word_updates/{user_id}/{updated_at}"
         async with session.get(query) as resp:
             resp.raise_for_status()
             try:
@@ -975,6 +1016,18 @@ class Query:
             # )
 
     @strawberry.field
+    async def feed_day_model_stats(  # pylint: disable=E0213
+        info: Info[Context, Any],
+        limit: int,
+        id: Optional[str] = "",
+        updated_at: Optional[float] = -1,
+    ) -> List[DayModelStats]:
+        async with async_session() as db:
+            user = await get_user(db, info.context.request)
+            user_id = user.id
+            return await filter_day_model_stats_faust(user_id, limit, updated_at)
+
+    @strawberry.field
     async def feed_wordlists(  # pylint: disable=E0213
         info: Info[Context, Any],
         limit: int,
@@ -1318,6 +1371,20 @@ class Subscription:
                 if clean_broadcaster_string(event.message) == str(user_id):
                     logger.debug(f"Got a definitions subscription event for {user_id}")
                     yield Card(id="42")
+
+    # type Subscription {
+    #   changedDayModelStats(token: String!): DayModelStats
+    # }
+    @strawberry.subscription
+    async def changed_daymodelstats(self, info: Info[Context, Any], token: str) -> DayModelStats:
+        user_id = get_user_id_from_token(token)
+        logger.debug("Setting up day_model_stats subscription for user %s", user_id)
+
+        async with info.context.broadcast.subscribe(channel="day_model_stats") as subscriber:
+            async for event in subscriber:
+                if clean_broadcaster_string(event.message) == str(user_id):
+                    logger.debug(f"Got a day_model_stats subscription event for {user_id}")
+                    yield DayModelStats(id="42")
 
     # type Subscription {
     #   changedWordModelStats(token: String!): WordModelStats

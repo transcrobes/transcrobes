@@ -2,7 +2,7 @@ import { FC } from "react";
 import { FieldProps, ReferenceField, Show, SimpleShowLayout, TextField } from "react-admin";
 import { HelpShowActions } from "../components/HelpShowActions";
 import { Goal } from "../lib/types";
-import { UserListProgress } from "../userlists/UserListProgress";
+import { UserListProgress } from "../stats/ListProgress";
 
 const GoalShow: FC<FieldProps<Goal>> = (props) => (
   <Show actions={<HelpShowActions helpUrl="https://transcrob.es/page/software/configure/goals/" />} {...props}>

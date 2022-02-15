@@ -16,7 +16,6 @@ type GraphData = {
   wordTokens: number;
 };
 
-// FIXME: any
 export function ImportProgress({ stats }: { stats?: ImportFirstSuccessStats }): ReactElement {
   const [data, setData] = useState<GraphData[]>([]);
   // FIXME: currently the word tokens data are only shown if
@@ -115,6 +114,6 @@ export function ImportProgress({ stats }: { stats?: ImportFirstSuccessStats }): 
       </Grid>
     </Grid>
   ) : (
-    <div>Stats are still being generated</div>
+    <div>The stats are still being generated</div>
   );
 }

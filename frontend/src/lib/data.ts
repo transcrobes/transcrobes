@@ -38,6 +38,7 @@ import {
   ContentConfigType,
   DailyReviewables,
   DayCardWords,
+  DayModelStatsType,
   DefinitionType,
   FirstSuccess,
   GraderConfig,
@@ -163,27 +164,27 @@ async function getKnownWordIds(db: TranscrobesDatabase): Promise<Set<string>> {
 
 async function getKnownCards(db: TranscrobesDatabase): Promise<Map<string, CardType>> {
   const knownCards = new Map<string, CardType>();
-  (
-    await db.cards
-      .find({
-        selector: { firstSuccessDate: { $gt: 0 } },
-      })
-      .exec()
-  ).map((card) => {
+  const cards = await db.cards
+    .find({
+      selector: { firstSuccessDate: { $gt: 0 } },
+    })
+    .exec();
+  for (const card of cards) {
     const wordId = card.wordId();
     const first = knownCards.get(wordId);
     if (!first || first.firstSuccessDate > card.firstSuccessDate) {
       knownCards.set(wordId, card.toJSON());
     }
-  });
+  }
   return knownCards;
 }
 
 async function getGraphs(db: TranscrobesDatabase, wordIds: string[]): Promise<Map<string, string>> {
   const graphs = new Map<string, string>();
-  [...(await db.definitions.findByIds(wordIds)).values()].map((def) => {
+  const defs = [...(await db.definitions.findByIds(wordIds)).values()];
+  for (const def of defs) {
     graphs.set(def.id, def.graph);
-  });
+  }
   return graphs;
 }
 
@@ -206,6 +207,7 @@ async function getFirstSuccessStatsForImport(
   const knownGraphs = await getGraphs(db, [...knownCards.keys()]);
   const knownChars = getKnownChars(knownCards, knownGraphs);
 
+  // FIXME: hard-coded fromLang
   const buckets = cleanAnalysis(analysis, "zh-Hans");
   const allWords: [string, number][] = [];
   let nbUniqueWords = 0;
@@ -246,22 +248,30 @@ async function getFirstSuccessStatsForImport(
 
 async function getFirstSuccessStatsForList(
   db: TranscrobesDatabase,
-  listId: string,
+  listId?: string,
 ): Promise<ListFirstSuccessStats | null> {
   const knownCards = await getKnownCards(db);
-  const goalWordList = (await db.wordlists.findByIds([listId])).get(listId);
+  let allListGraphs: Map<string, string>;
+  let knownGraphs = new Map<string, string>();
+  if (listId) {
+    const goalWordList = (await db.wordlists.findByIds([listId])).get(listId);
+    if (!goalWordList) throw new Error("Invalid goal, no userList found");
+    allListGraphs = await getGraphs(db, goalWordList.wordIds);
+    for (const [wordId, graph] of allListGraphs) {
+      if (knownCards.has(wordId)) {
+        knownGraphs.set(wordId, graph);
+      }
+    }
+  } else {
+    allListGraphs = await getGraphs(db, [...knownCards.keys()]);
+    knownGraphs = allListGraphs;
+  }
 
-  if (!goalWordList) throw new Error("Invalid goal, no userList found");
-  if (!goalWordList.wordIds || goalWordList.wordIds.length === 0) return null;
-
-  const allListGraphs = await getGraphs(db, goalWordList.wordIds);
   let allChars = "";
-
-  const knownGraphs = await getGraphs(db, [...knownCards.keys()]);
   for (const graph of allListGraphs.values()) {
     allChars += graph;
   }
-  const nbUniqueWords = goalWordList.wordIds.length;
+  const nbUniqueWords = allListGraphs.size;
   const uniqueListChars = new Set([...allChars]);
   const nbUniqueCharacters = uniqueListChars.size;
   const allWordsMap = new Map([...allListGraphs.values()].map((graph) => [graph, 1]));
@@ -584,6 +594,7 @@ async function addOrUpdateCardsForWord(
   { wordId, grade }: { wordId: string; grade: number },
 ): Promise<CardType[]> {
   const cards = [];
+
   for (const cardType of $enum(CARD_TYPES).getValues()) {
     const cardId = getCardId(wordId, cardType);
     const existing = await db.cards.findOne(cardId).exec();
@@ -937,6 +948,10 @@ async function getSRSReviews(
   };
 }
 
+async function getDayStats(db: TranscrobesDatabase): Promise<DayModelStatsType[]> {
+  return [...(await db.day_model_stats.find().exec())].map((stat) => stat.toJSON());
+}
+
 export {
   getByIds,
   getRecentSentences,
@@ -971,4 +986,5 @@ export {
   getSRSReviews,
   updateCard,
   recentSentencesFromLZ,
+  getDayStats,
 };

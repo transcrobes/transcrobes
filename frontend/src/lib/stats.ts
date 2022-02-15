@@ -1,5 +1,6 @@
 import dayjs from "dayjs";
 import levenshtein from "js-levenshtein-esm";
+import { AdminStore } from "../app/createStore";
 import { platformHelper } from "./proxies";
 import {
   KeyedModels,
@@ -158,7 +159,7 @@ function vocabCountersFromETF(model: ModelType, glossing: number, knownCards: Se
 export function observerFunc(
   readerConfig: () => ReaderState,
   models: KeyedModels,
-  knownCards: SerialisableDayCardWords,
+  knownCards: () => SerialisableDayCardWords,
 ) {
   return function onScreen(entries: IntersectionObserverEntry[], observer: IntersectionObserver): void {
     for (const entry of entries) {
@@ -175,14 +176,17 @@ export function observerFunc(
         // eslint-disable-next-line no-loop-func
         timeouts[entry.target.id] = window.setTimeout(() => {
           observer.unobserve(entry.target);
-          const tstats = vocabCountersFromETF(models[entry.target.id], readerConfig().glossing, knownCards);
+          const tstats = vocabCountersFromETF(models[entry.target.id], readerConfig().glossing, knownCards());
           if (Object.entries(tstats).length === 0) {
             console.debug("An empty model - how can this happen?", entry.target.id, models[entry.target.id]);
           } else {
+            // TODO: WARNING:!!! the tstats consider that if it has been glossed, it has been looked up!!!
+            // TODO: WARNING:!!! if you turn off/on glossing for a word temporarily, it considers only the
+            // actual known state, not what was onscreen!!!
             const userEvent = {
               type: "bulk_vocab",
               source: DATA_SOURCE,
-              data: tstats, // WARNING!!! the tstats consider that if it has been glossed, it has been looked up!!!
+              data: tstats,
               userStatsMode: readerConfig().glossing,
             };
             platformHelper.sendMessage({

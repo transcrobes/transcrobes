@@ -5,6 +5,7 @@ import LZString from "lz-string";
 import { HslColor } from "react-colorful";
 import {
   CardType,
+  DayStat,
   DefinitionsState,
   FirstSuccess,
   HistoData,
@@ -230,29 +231,54 @@ export function parseJwt(token: string): any {
   // return JSON.parse(Buffer.from(base64, "base64"));
 }
 
+export function binnedDayData(
+  binFunc: HistogramGeneratorNumber<number, number>,
+  thresholds: number[],
+  dayStats: DayStat[],
+): HistoData[] {
+  const dayTotals: Map<number, number> = new Map<number, number>();
+  for (const dayStat of dayStats) {
+    dayTotals.set(dayStat.day, (dayTotals.get(dayStat.day) || 0) + dayStat.nbOccurrences);
+  }
+  const rawBins = binFunc([...dayTotals.keys()].map((c) => c));
+  const binned = rawBins.map((v: number[]) => v.reduce((prev, next) => prev + (dayTotals.get(next) || 0), 0));
+
+  const data: HistoData[] = Array<HistoData>(thresholds.length);
+  for (let i = 0; i < thresholds.length; i++) {
+    data[i] = {
+      name: dayjs(thresholds[i] * 1000).format("YYYY-MM-DD"),
+      value: binned[i],
+    };
+  }
+  return data;
+}
+
 export function binnedData(
   binFunc: HistogramGeneratorNumber<number, number>,
   thresholds: number[],
   successes: FirstSuccess[],
   total: number,
+  yIsNumber = false,
 ): HistoData[] {
-  const data: HistoData[] = [];
   const successTotals: Map<number, number> = new Map<number, number>();
   for (const success of successes) {
     successTotals.set(success.firstSuccess, (successTotals.get(success.firstSuccess) || 0) + success.nbOccurrences);
   }
   const rawBins = binFunc([...successTotals.keys()].map((c) => c));
   let temp = 0;
-  const binnedRaw = rawBins.map(
+  let binned = rawBins.map(
     (v: Array<number>) => (temp += v.reduce((prev, next) => prev + (successTotals.get(next) || 0), 0)),
   );
+  if (!yIsNumber) {
+    binned = binned.map((b: number) => (b / total) * 100);
+  }
 
-  const binnedPercents = binnedRaw.map((b: number) => (b / total) * 100);
+  const data: HistoData[] = Array<HistoData>(thresholds.length);
   for (let i = 0; i < thresholds.length; i++) {
-    data.push({
+    data[i] = {
       name: dayjs(thresholds[i] * 1000).format("YYYY-MM-DD"),
-      value: binnedPercents[i],
-    });
+      value: binned[i],
+    };
   }
   return data;
 }

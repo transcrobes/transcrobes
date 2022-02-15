@@ -1,8 +1,12 @@
-import { ReactElement } from "react";
 import { Button, Theme } from "@material-ui/core";
-
-import { CARD_TYPES, getCardType, getWordId } from "../database/Schema";
+import dayjs from "dayjs";
+import timezone from "dayjs/plugin/timezone";
+import utc from "dayjs/plugin/utc";
+import { ReactElement } from "react";
+import { useAppSelector } from "../app/hooks";
 import PracticerInput from "../components/PracticerInput";
+import { CARD_TYPES, getCardType, getWordId } from "../database/Schema";
+import { ServiceWorkerProxy } from "../lib/proxies";
 import {
   CardType,
   CharacterType,
@@ -12,19 +16,14 @@ import {
   RepetrobesActivityConfigType,
 } from "../lib/types";
 import { AnswerWrapper, CentredFlex, QuestionWrapper } from "./Common";
-import SoundQuestion from "./SoundQuestion";
-import GraphQuestion from "./GraphQuestion";
-import MeaningQuestion from "./MeaningQuestion";
-import MeaningAnswer from "./MeaningAnswer";
 import GraphAnswer from "./GraphAnswer";
-import SoundAnswer from "./SoundAnswer";
+import GraphQuestion from "./GraphQuestion";
+import MeaningAnswer from "./MeaningAnswer";
+import MeaningQuestion from "./MeaningQuestion";
 import PhraseAnswer from "./PhraseAnswer";
 import PhraseQuestion from "./PhraseQuestion";
-import dayjs from "dayjs";
-import utc from "dayjs/plugin/utc";
-import timezone from "dayjs/plugin/timezone";
-import { ServiceWorkerProxy } from "../lib/proxies";
-import { useAppSelector } from "../app/hooks";
+import SoundAnswer from "./SoundAnswer";
+import SoundQuestion from "./SoundQuestion";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);

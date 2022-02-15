@@ -39,8 +39,7 @@ const customEnglishMessages: TranslationMessages = {
     email: "Email",
     invalid_email: "Invalid email address",
     email_validated: "Email successfully validated, please log in!",
-    validate_email_error:
-      "There was an error validating the email, please try again in a few minutes",
+    validate_email_error: "There was an error validating the email, please try again in a few minutes",
     validating_email: "Please wait while the system validates your email",
     reset_password: {
       label: "Reset password",
@@ -69,6 +68,9 @@ const customEnglishMessages: TranslationMessages = {
     },
     surveys: {
       name: "Surveys",
+    },
+    stats: {
+      name: "My stats",
     },
     listrobes: {
       name: "Listrobes",

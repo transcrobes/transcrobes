@@ -473,7 +473,7 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
     setShowAnswer(true);
   }
 
-  async function handlePractice(wordIdStr: string, grade: number) {
+  async function handlePractice(wordIdStr: string, grade: number): Promise<void> {
     const { currentCard, definition } = daState;
     const { badReviewWaitSecs } = stateActivityConfig;
     dispatch(setLoading(true));
@@ -485,31 +485,33 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
       const lookupEvent = { target_word: definition.graph, target_sentence: "" };
       submitLookupEvents([lookupEvent], USER_STATS_MODE.L1);
     }
-
-    proxy.sendMessage(
-      {
-        source: DATA_SOURCE,
-        type: "practiceCard",
-        value: { currentCard, grade, badReviewWaitSecs },
+    const userEvent = {
+      type: "practice_card",
+      data: {
+        target_word: definition.graph,
+        grade: grade,
+        source_sentence: "",
       },
-      (practicedCard: CardType) => {
-        const potentialCardsMap = new Map(daState.potentialCardsMap);
-        potentialCardsMap.delete(getWordId(practicedCard));
-        const newState = {
-          ...daState,
-          potentialCardsMap,
-          existingCards: new Map(daState.existingCards).set(practicedCard.id, practicedCard),
-        };
+      source: DATA_SOURCE,
+    };
+    proxy.sendMessagePromise({ source: DATA_SOURCE, type: "submitUserEvents", value: userEvent });
 
-        nextPractice(newState, stateActivityConfig).then((nextState) => {
-          console.log("Got nextPractice, should be setting loading to false");
-          setShowAnswer(false);
-          dispatch(setLoading(undefined));
-          setDaState({ ...nextState });
-        });
-        return "success";
-      },
-    );
+    const practicedCard = await proxy.sendMessagePromise<CardType>({
+      source: DATA_SOURCE,
+      type: "practiceCard",
+      value: { currentCard, grade, badReviewWaitSecs },
+    });
+    const potentialCardsMap = new Map(daState.potentialCardsMap);
+    potentialCardsMap.delete(getWordId(practicedCard));
+    const newState = {
+      ...daState,
+      potentialCardsMap,
+      existingCards: new Map(daState.existingCards).set(practicedCard.id, practicedCard),
+    };
+    const nextState = await nextPractice(newState, stateActivityConfig);
+    setShowAnswer(false);
+    dispatch(setLoading(undefined));
+    setDaState({ ...nextState });
   }
   function posSentencesFromRecent(theState: ReviewablesInfoType): RecentSentencesType | null {
     if (theState.definition?.id) {

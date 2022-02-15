@@ -16,16 +16,16 @@ logger = logging.getLogger(__name__)
 #         stats.KAFKA_PRODUCER.send("word_model_stats", str(user_id))
 
 
-async def push_user_word_stats_update_to_clients(user_ids: list[str]) -> None:
+async def push_user_stats_update_to_clients(user_ids: list[str], channel: str) -> None:
     try:
         broadcast = await get_broadcast()
 
-        logger.info(f"Sending word_model_stats updates to kafka for {user_ids=}")
+        logger.info(f"Sending {channel} updates to kafka for {user_ids=}")
         for user_id in user_ids:
-            logger.info(f"Sending word_model_stats update to kafka for {user_id=}")
-            await broadcast.publish(channel="word_model_stats", message=str(user_id))
+            logger.info(f"Sending {channel} update to kafka for {user_id=}")
+            await broadcast.publish(channel=channel, message=str(user_id))
     except Exception:  # pylint: disable=W0703
-        logger.exception(f"Failed to publish changes to word_model_stats for {user_ids=}")
+        logger.exception(f"Failed to publish changes to {channel} for {user_ids=}")
         logger.error(broadcast)
 
 
@@ -104,7 +104,7 @@ async def update_db_userword_faust(
         logger.debug("Aggregated stats in a temptable, updating data_userword")
         await conn.execute(update_sql)
         logger.info(f"User statistics updated for {user_id=}")
-        await push_user_word_stats_update_to_clients(user_ids=[user_id])
+        await push_user_stats_update_to_clients([user_id], "word_model_stats")
 
 
 async def create_temp_table_userword(temp_table: str, conn) -> None:

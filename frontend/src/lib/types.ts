@@ -600,6 +600,15 @@ export type RepetrobesActivityConfigType = {
   activeCardTypes: SelectableListElementType[];
 };
 
+export type DayModelStatsType = {
+  id: string;
+  nbSeen?: number;
+  nbChecked?: number;
+  nbSuccess?: number;
+  nbFailures?: number;
+  updatedAt: number;
+};
+
 export type WordModelStatsType = {
   id: string;
   nbSeen?: number;
@@ -615,7 +624,7 @@ export type WordModelStatsType = {
 export type EventData = {
   source: string;
   type: string;
-  value: any;
+  value?: any;
 };
 
 export type ExtendedEventData = EventData & {
@@ -754,6 +763,7 @@ export type ImportAnalysis = {
 };
 
 export type FirstSuccess = { firstSuccess: number; nbOccurrences: number };
+export type DayStat = { day: number; nbOccurrences: number };
 
 export type HistoData = {
   name: string;

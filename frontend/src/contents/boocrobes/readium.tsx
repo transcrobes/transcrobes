@@ -29,12 +29,10 @@ const currentModels = window.transcrobesModel;
 const definitions = window.parent.transcrobesStore.getState().definitions;
 
 const getReaderConfig = () => readerConfig;
-const readObserver = new IntersectionObserver(
-  observerFunc(getReaderConfig, currentModels, window.parent.transcrobesStore.getState().knownCards),
-  {
-    threshold: [1.0],
-  },
-);
+const getKnownCards = () => window.parent.transcrobesStore.getState().knownCards;
+const readObserver = new IntersectionObserver(observerFunc(getReaderConfig, currentModels, getKnownCards), {
+  threshold: [1.0],
+});
 
 document.addEventListener("click", () => {
   window.parent.transcrobesStore.dispatch(setTokenDetails(undefined));

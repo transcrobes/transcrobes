@@ -4,6 +4,7 @@ import {
   CharacterType,
   Content,
   ContentConfigType,
+  DayModelStatsType,
   DefinitionType,
   EventQueueType,
   Goal,
@@ -341,6 +342,40 @@ const WORD_MODEL_STATS_SCHEMA: RxJsonSchema<WordModelStatsType> = {
   indexes: ["updatedAt"],
 };
 
+type DayModelStatsDocument = RxDocument<DayModelStatsType>;
+type DayModelStatsCollection = RxCollection<DayModelStatsType>;
+const DAY_MODEL_STATS_SCHEMA: RxJsonSchema<DayModelStatsType> = {
+  version: 0,
+  required: ["id"],
+  primaryKey: "id",
+  type: "object",
+  properties: {
+    id: {
+      type: "string",
+    },
+    nbSeen: {
+      type: "integer",
+      default: 0,
+    },
+    nbChecked: {
+      type: "integer",
+      default: 0,
+    },
+    nbSuccess: {
+      type: "integer",
+      default: 0,
+    },
+    nbFailures: {
+      type: "integer",
+      default: 0,
+    },
+    updatedAt: {
+      type: "number",
+    },
+  },
+  indexes: ["updatedAt"],
+};
+
 const CARD_ID_SEPARATOR = "-";
 const EFACTOR_DEFAULT = 2.5;
 const INTERVAL_DEFAULT = 0;
@@ -608,10 +643,21 @@ const DBPullCollections = {
     schema: WORD_MODEL_STATS_SCHEMA,
     feedKeys: ["id", "updatedAt"],
     deletedFlag: "deleted",
-    subscription: true,
-    subscriptionParams: {
-      token: "String!",
-    },
+    subscription: false,
+    // Doesn't require real time updates!
+    // subscriptionParams: {
+    //   token: "String!",
+    // },
+  },
+  day_model_stats: {
+    schema: DAY_MODEL_STATS_SCHEMA,
+    feedKeys: ["id", "updatedAt"],
+    deletedFlag: "deleted",
+    subscription: false,
+    // Doesn't require real time updates!
+    // subscriptionParams: {
+    //   token: "String!",
+    // },
   },
   surveys: {
     schema: SURVEYS_SCHEMA,
@@ -731,6 +777,7 @@ type TranscrobesCollections = {
   cards: CardCollection;
   definitions: DefinitionCollection;
   word_model_stats: WordModelStatsCollection;
+  day_model_stats: DayModelStatsCollection;
   surveys: SurveyCollection;
   event_queue: EventQueueCollection;
   characters: CharacterCollection;
@@ -746,6 +793,7 @@ type TranscrobesDocumentTypes =
   | CharacterDocument
   | WordlistDocument
   | WordModelStatsDocument
+  | DayModelStatsDocument
   | CardDocument
   | SurveyDocument
   | ImportDocument
@@ -797,6 +845,8 @@ export type {
   WordlistDocument,
   // WordModelStatsCollection,
   WordModelStatsDocument,
+  // DayModelStatsCollection,
+  DayModelStatsDocument,
   // CardCollection,
   CardDocument,
   // SurveyCollection,

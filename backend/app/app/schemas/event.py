@@ -24,7 +24,6 @@ class VocabEvent(BaseEvent, validation=True):  # pylint: disable=W0223  # bulk_v
 
 
 class CardEvent(BaseEvent):  # pylint: disable=W0223  # token_details_card
-    word_id: int
     target_word: str
     grade: int
     pos: str

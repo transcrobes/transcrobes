@@ -64,12 +64,10 @@ async function loadDb(callback: any, message: EventData) {
   db = dbHandle;
   self.tcb = db;
   if (!eventQueueTimer) {
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
     eventQueueTimer = setInterval(
       () => data.sendUserEvents(db, new URL(store.getState().userData.baseUrl)),
       EVENT_QUEUE_PROCESS_FREQ,
-    );
+    ) as unknown as number; // typescript considers this is a nodejs setInterval, not worker.
   }
   callback({ source: message.source, type: message.type, value: "success" });
   return db;

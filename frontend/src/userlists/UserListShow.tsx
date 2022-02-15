@@ -11,7 +11,7 @@ import {
 import { HelpShowActions } from "../components/HelpShowActions";
 import { GRADE } from "../database/Schema";
 import { ORDER_BY, PROCESSING, reverseEnum, UserList } from "../lib/types";
-import { UserListProgress } from "./UserListProgress";
+import { UserListProgress } from "../stats/ListProgress";
 
 function wordKnowledge(record: any) {
   return record.wordKnowledge ? reverseEnum(GRADE, record.wordKnowledge) : "Don't set";
