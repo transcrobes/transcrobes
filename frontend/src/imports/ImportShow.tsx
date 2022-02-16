@@ -9,16 +9,18 @@ const DATA_SOURCE = "ImportShow.tsx";
 const ImportShow: FC<FieldProps<Import>> = (props) => {
   const [stats, setStats] = useState<ImportFirstSuccessStats>();
   useEffect(() => {
-    (async function () {
-      const locStats: ImportFirstSuccessStats =
-        await window.componentsConfig.proxy.sendMessagePromise<ImportFirstSuccessStats>({
-          source: DATA_SOURCE,
-          type: "getFirstSuccessStatsForImport",
-          value: { importId: (props as any).id },
-        });
-      setStats(locStats);
-    })();
-  }, []);
+    if (window.componentsConfig.proxy.loaded) {
+      (async function () {
+        const locStats: ImportFirstSuccessStats =
+          await window.componentsConfig.proxy.sendMessagePromise<ImportFirstSuccessStats>({
+            source: DATA_SOURCE,
+            type: "getFirstSuccessStatsForImport",
+            value: { importId: (props as any).id },
+          });
+        setStats(locStats);
+      })();
+    }
+  }, [window.componentsConfig.proxy.loaded]);
 
   return (
     <Show actions={<HelpShowActions helpUrl="https://transcrob.es/page/software/configure/imports/" />} {...props}>

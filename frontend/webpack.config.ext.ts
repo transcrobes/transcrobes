@@ -38,7 +38,7 @@ const commonConfig = merge<Configuration>([
   },
   {
     output: {
-      path: path.resolve(__dirname, "./extdist"),
+      path: path.resolve(__dirname, "./extbuild"),
       filename: "[name]-bundle.js",
     },
   },

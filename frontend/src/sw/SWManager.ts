@@ -57,9 +57,9 @@ async function loadDb(
   }
 
   const user = await getUserDexie();
-  console.debug("DB NOT loaded, (re)loading with items", db, user);
+  console.debug("DB NOT loaded, (re)loading with items", user.username, user.baseUrl);
   if (!user) {
-    console.error("No user found in db, cannot load", db, user);
+    console.error("No user found in db, cannot load");
     throw new Error("No user found in db, cannot load");
   }
   store.dispatch(setUser(user));

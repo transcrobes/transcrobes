@@ -91,6 +91,8 @@ async def access_from_refresh(token: TcToken, expires_delta: timedelta = None) -
         "is_superuser": bool(token_data.is_superuser),
         "lang_pair": token_data.lang_pair,
         "translation_providers": token_data.translation_providers,
+        "tracking_key": settings.TRACKING_KEY,
+        "tracking_endpoint": settings.TRACKING_ENDPOINT,
         "jti": uuid.uuid4().hex,
     }
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=ALGORITHM)

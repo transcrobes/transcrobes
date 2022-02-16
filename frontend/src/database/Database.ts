@@ -510,9 +510,9 @@ async function getDb(
   reinitialise = false,
 ): Promise<TranscrobesDatabase> {
   const userData = await getUserDexie();
-  console.debug("Setting up the db in the database for user", userData);
+  console.debug("Setting up the db in the database for user", userData.username);
   if (!userData) {
-    console.error("No user found in db, cannot load", userData);
+    console.error("No user found in db, cannot load from dexie");
     throw new Error("No user found in db, cannot load");
   }
   store.dispatch(setUser(userData));

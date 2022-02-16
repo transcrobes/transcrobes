@@ -69,6 +69,8 @@ class Settings(BaseSettings):
     # e.g: '["http://localhost", "http://localhost:4200", "http://localhost:3000", \
     # "http://localhost:8080", "http://local.dockertoolbox.tiangolo.com"]'
     BACKEND_CORS_ORIGINS: List[AnyHttpUrl] = []
+    TRACKING_KEY: str = "akey"
+    TRACKING_ENDPOINT: AnyHttpUrl = "http://localhost/injest"
 
     @validator("BACKEND_CORS_ORIGINS", pre=True)
     @classmethod

@@ -1,9 +1,9 @@
-import * as parts from "./webpack.config.common";
+import CopyPlugin from "copy-webpack-plugin";
+import HtmlWebpackPlugin from "html-webpack-plugin";
 import * as path from "path";
 import { Configuration, DefinePlugin } from "webpack";
 import { merge } from "webpack-merge";
-import HtmlWebpackPlugin from "html-webpack-plugin";
-import CopyPlugin from "copy-webpack-plugin";
+import * as parts from "./webpack.config.common";
 
 // FIXME: why can't I do an import of this?
 const { mode } = require("webpack-nano/argv");

@@ -1,3 +1,4 @@
+import Tracker from "@openreplay/tracker";
 import { ReactElement, useEffect, useState } from "react";
 import { Admin, Resource } from "react-admin";
 import polyglotI18nProvider from "ra-i18n-polyglot";
@@ -13,32 +14,32 @@ import Logout from "./system/Logout";
 import englishMessages from "./i18n/en";
 import Dashboard from "./Dashboard";
 import { ComponentsConfig } from "./lib/complexTypes";
-import { authProvider, dataProvider, store, history as localHistory } from "./app/createStore";
+import { authProvider, dataProvider, history as localHistory, setTracker, tracker } from "./app/createStore";
 import { getUserDexie, isInitialisedAsync } from "./database/authdb";
 import { useAppDispatch, useAppSelector } from "./app/hooks";
 import { setUser } from "./features/user/userSlice";
 import { setState } from "./features/card/knownCardsSlice";
-import { SerialisableDayCardWords } from "./lib/types";
+import { IS_DEV, SerialisableDayCardWords } from "./lib/types";
 import { setMouseover, setTokenDetails } from "./features/ui/uiSlice";
 
 const i18nProvider = polyglotI18nProvider((_locale) => {
   return englishMessages;
 }, "en");
 
+const GLOBAL_TIMER_DURATION_MS = IS_DEV ? 1000 : 5000;
+
+const EVENT_SOURCE = "App.tsx";
+
 setInterval(async () => {
-  const lusername = store.getState().userData.username;
-  if (lusername && (await isInitialisedAsync(lusername))) {
-    const needsReload = await window.componentsConfig.proxy.sendMessagePromise<boolean>({
-      source: "App.tsx",
-      type: "NEEDS_RELOAD",
-      value: "",
-    });
-    if (needsReload) {
-      console.log("Reloading after NEEDS_RELOAD");
-      location.reload();
-    }
+  const needsReload = await window.componentsConfig.proxy.sendMessagePromise<boolean>({
+    source: EVENT_SOURCE,
+    type: "NEEDS_RELOAD",
+  });
+  if (needsReload) {
+    console.log("Reloading after NEEDS_RELOAD");
+    location.reload();
   }
-}, 2000);
+}, GLOBAL_TIMER_DURATION_MS);
 
 interface Props {
   componentsConfig: ComponentsConfig;
@@ -47,11 +48,13 @@ interface Props {
 function App({ componentsConfig }: Props): ReactElement {
   const [inited, setInited] = useState(false);
   const dispatch = useAppDispatch();
+
   useEffect(() => {
     (async () => {
       const user = await getUserDexie();
       dispatch(setUser(user));
     })();
+
     document.addEventListener("click", () => dispatch(setTokenDetails(undefined)));
     document.addEventListener("click", () => dispatch(setMouseover(undefined)));
     return () => {
@@ -59,10 +62,30 @@ function App({ componentsConfig }: Props): ReactElement {
       document.removeEventListener("click", () => dispatch(setMouseover(undefined)));
     };
   }, []);
-  const username = useAppSelector((state) => state.userData.username);
+  const {
+    username,
+    user: { trackingEndpoint, trackingKey },
+  } = useAppSelector((state) => state.userData);
   useEffect(() => {
     (async () => {
       if (username) {
+        if (trackingKey && trackingEndpoint) {
+          if (tracker) {
+            tracker.stop();
+          } else {
+            setTracker(
+              new Tracker({
+                projectKey: trackingKey,
+                ingestPoint: trackingEndpoint,
+                __DISABLE_SECURE_MODE: IS_DEV,
+              }),
+            );
+          }
+          tracker.start().then(() => {
+            tracker.setUserID(username);
+          });
+        }
+
         if (await isInitialisedAsync(username)) {
           await componentsConfig.proxy.asyncInit({ username: username });
           setInited(true);
@@ -80,7 +103,7 @@ function App({ componentsConfig }: Props): ReactElement {
         }
       }
     })();
-  }, [username]);
+  }, [username, trackingEndpoint, trackingKey]);
 
   function shouldRedirectUninited(url: string): boolean {
     const m = url.split("/#/")[1];

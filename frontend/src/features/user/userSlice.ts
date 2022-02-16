@@ -12,6 +12,19 @@ import Cookies from "js-cookie";
 
 const modulePrefix = "user";
 
+function userFromApiResult(result: any, username: string): UserDetails {
+  const token_data = jwtDecode(result.access_token) as any;
+  return {
+    username,
+    isAdmin: token_data.is_superuser,
+    accessToken: result.access_token,
+    refreshToken: result.refresh_token,
+    trackingKey: token_data.tracking_key,
+    trackingEndpoint: token_data.tracking_endpoint,
+    fromLang: token_data.lang_pair.split(":")[0],
+  };
+}
+
 const fetchRetry = fetchBuilder(fetch, {
   retries: DEFAULT_RETRIES,
   retryDelay: (attempt: number, error: Error | null, response: Response | null) => {
@@ -37,17 +50,7 @@ export async function doLogin(username: string, password: string, baseUrl: strin
     body: bodyFormData,
     method: "post",
   });
-
-  const result = await res.json();
-  const token_data = jwtDecode(result.access_token) as any;
-  const ret = {
-    username: username,
-    isAdmin: token_data.is_superuser,
-    accessToken: result.access_token,
-    refreshToken: result.refresh_token,
-    fromLang: token_data.lang_pair.split(":")[0],
-  };
-  return ret;
+  return userFromApiResult(await res.json(), username);
 }
 
 const login = createAsyncThunk(`${modulePrefix}/login`, async (_, { getState }) => {
@@ -73,15 +76,7 @@ const refreshToken = createAsyncThunk(`${modulePrefix}/refreshToken`, async (_, 
     },
   });
   if (res.ok) {
-    const result = await res.json();
-    const token_data = jwtDecode(result.access_token) as any;
-    const ret = {
-      username: state.userData.username,
-      isAdmin: token_data.is_superuser,
-      accessToken: result.access_token,
-      refreshToken: result.refresh_token,
-      fromLang: token_data.lang_pair.split(":")[0],
-    };
+    const ret = userFromApiResult(await res.json(), state.userData.username);
     Cookies.set("refresh", ret.refreshToken);
     Cookies.set("session", ret.accessToken);
     return ret;

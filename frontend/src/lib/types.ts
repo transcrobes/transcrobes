@@ -258,6 +258,8 @@ export interface UserDetails {
   accessToken: string;
   isAdmin: boolean;
   refreshToken: string;
+  trackingKey: string;
+  trackingEndpoint: string;
   username: string;
   fromLang: InputLanguage;
 }
@@ -274,6 +276,8 @@ export const DEFAULT_USER: UserDetails = {
   accessToken: "",
   isAdmin: false,
   refreshToken: "",
+  trackingKey: "",
+  trackingEndpoint: "",
   username: "",
   fromLang: "zh-Hans",
 };

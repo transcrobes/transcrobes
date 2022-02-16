@@ -79,8 +79,9 @@ class ServiceWorkerProxy extends AbstractWorkerProxy {
   async sendMessagePromise<Type>(eventData: ExtendedEventData, allowInstall = false): Promise<Type> {
     // FIXME: absolutely need to rationalise the messageSW vs chrome.sendMessage...
     if (
-      !this.#config.username ||
-      (!(await isInitialisedAsync(this.#config.username)) && eventData.type !== "heartbeat" && !allowInstall)
+      eventData.type !== "NEEDS_RELOAD" &&
+      (!this.#config.username ||
+        (!(await isInitialisedAsync(this.#config.username)) && eventData.type !== "heartbeat" && !allowInstall))
     ) {
       console.error(
         "Uninitialised looking for",

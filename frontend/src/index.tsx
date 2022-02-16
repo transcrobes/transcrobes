@@ -5,7 +5,6 @@ import "./index.css";
 import App from "./App";
 import { store } from "./app/createStore";
 import { Provider } from "react-redux";
-
 ReactDOM.render(
   <StrictMode>
     <CssBaseline />

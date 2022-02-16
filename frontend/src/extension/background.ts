@@ -46,9 +46,9 @@ async function loadDb(callback: any, message: EventData) {
   const user = await getUserDexie();
   store.dispatch(setUser(user));
 
-  console.debug("DB NOT loaded, (re)loading with items", db, user);
+  console.debug("DB NOT loaded, (re)loading with items", user.username, user.baseUrl);
   if (!user) {
-    console.error("No user found in db, cannot load", db, user);
+    console.error("No user found in db, cannot load");
     throw new Error("No user found in db, cannot load");
   }
   const progressCallback = (progressMessage: string, isFinished: boolean) => {

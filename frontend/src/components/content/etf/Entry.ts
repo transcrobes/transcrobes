@@ -65,9 +65,17 @@ class Entry extends Component<StatedEntryProps, LocalEntryState> {
     this.lookForDefinitionUpdate = this.lookForDefinitionUpdate.bind(this);
   }
   createTokenDetails(event: React.MouseEvent<HTMLSpanElement>): void {
+    // directly open a new popup if:
+    // - there isn't one already
+    // - there is one and it is a different one
+    // - unless on mobile, and then never directly open a new one (force closing existing one first)
+    // The rationale for the mobile exception is that there is basically nowhere to click that isn't a
+    // clickable space, so clicking outside should first get rid of the current popup, because most of
+    // the time we *don't* actually want a new popup.
     if (
       !this.context.store.getState().ui.tokenDetails ||
-      !sameCoordinates(event.currentTarget, this.context.store.getState().ui.tokenDetails.sourceRect)
+      (!sameCoordinates(event.currentTarget, this.context.store.getState().ui.tokenDetails.sourceRect) &&
+        window.screen.availWidth > 600)
     ) {
       // this.context.store.dispatch(setTokenDetails(undefined));
       this.context.store.dispatch(setMouseover(undefined));
@@ -82,6 +90,8 @@ class Entry extends Component<StatedEntryProps, LocalEntryState> {
       );
       event.stopPropagation();
       event.preventDefault();
+    } else {
+      this.context.store.dispatch(setMouseover(undefined));
     }
   }
 

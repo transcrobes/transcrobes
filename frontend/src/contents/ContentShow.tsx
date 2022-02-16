@@ -21,17 +21,19 @@ const ContentShow: FC<FieldProps<Content>> = (props) => {
   const { data, loaded } = useGetOne<Content>("contents", (props as any).id);
   const [stats, setStats] = useState<ImportFirstSuccessStats>();
   useEffect(() => {
-    (async function () {
-      if (!loaded || !data || !data.theImport) return;
-      const locStats: ImportFirstSuccessStats =
-        await window.componentsConfig.proxy.sendMessagePromise<ImportFirstSuccessStats>({
-          source: DATA_SOURCE,
-          type: "getFirstSuccessStatsForImport",
-          value: { importId: data.theImport },
-        });
-      setStats(locStats);
-    })();
-  }, [data]);
+    if (window.componentsConfig.proxy.loaded) {
+      (async function () {
+        if (!loaded || !data || !data.theImport) return;
+        const locStats: ImportFirstSuccessStats =
+          await window.componentsConfig.proxy.sendMessagePromise<ImportFirstSuccessStats>({
+            source: DATA_SOURCE,
+            type: "getFirstSuccessStatsForImport",
+            value: { importId: data.theImport },
+          });
+        setStats(locStats);
+      })();
+    }
+  }, [data, window.componentsConfig.proxy.loaded]);
   return (
     <Show actions={<HelpShowActions helpUrl="https://transcrob.es/page/software/configure/contents/" />} {...props}>
       <SimpleShowLayout>

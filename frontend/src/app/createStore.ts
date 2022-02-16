@@ -1,3 +1,4 @@
+import Tracker from "@openreplay/tracker";
 import { configureStore } from "@reduxjs/toolkit";
 import { connectRouter } from "connected-react-router";
 import { createHashHistory, History } from "history";
@@ -20,7 +21,33 @@ import { ComponentsConfig } from "../lib/complexTypes";
 import { ServiceWorkerProxy, setPlatformHelper } from "../lib/proxies";
 import { ThemeName } from "../lib/types";
 import SWDataProvider from "../ra-data-sw";
+// import trackerRedux from "@openreplay/tracker-redux";
 
+declare global {
+  interface Window {
+    // WARNING! For the momemnt this is REQUIRED for communication with D2Reader injectables
+    componentsConfig: ComponentsConfig;
+  }
+}
+
+export let tracker: Tracker;
+
+export function setTracker(newTracker: Tracker) {
+  tracker = newTracker;
+}
+
+// const openReplayMiddleware = tracker.use(
+//   trackerRedux({
+//     actionFilter: (action) => action.type !== "DRAW", // only actions which pass this test will be recorded
+//     actionTransformer: (action) => (action.type === "LOGIN" ? null : action),
+//     actionType: (action) => action.type, // action type for search, that's the default one
+//     stateTransformer: (state) => {
+//       const { jwt, ..._state } = state;
+//       console.log("would try to send", jwt, _state);
+//       return {};
+//     },
+//   }),
+// );
 export const ACCESS_TOKEN_PATH = "/api/v1/login/access-token";
 export const REFRESH_TOKEN_PATH = "/api/v1/refresh";
 
@@ -35,13 +62,6 @@ export let dataProvider: DataProvider | undefined;
 export let history: History | undefined;
 
 let theme: ThemeName = "light";
-
-declare global {
-  interface Window {
-    // WARNING! For the momemnt this is REQUIRED for communication with D2Reader injectables
-    componentsConfig: ComponentsConfig;
-  }
-}
 
 if (typeof window !== "undefined") {
   if (!(window.chrome && chrome.runtime && chrome.runtime.id)) {
@@ -96,6 +116,7 @@ function createStore({ authProvider, dataProvider, history }: CreateStoreProps) 
           // contentConfigApi.middleware,
           // usersApi.middleware,
           sagaMiddleware,
+          // openReplayMiddleware,
         ]),
       preloadedState,
       devTools: process.env.NODE_ENV !== "production",
