@@ -69,7 +69,7 @@ function App({ componentsConfig }: Props): ReactElement {
   useEffect(() => {
     (async () => {
       if (username) {
-        if (trackingKey && trackingEndpoint) {
+        if (!IS_DEV && trackingKey && trackingEndpoint) {
           if (tracker) {
             tracker.stop();
           } else {

@@ -1,125 +1,25 @@
-import { Button, Theme } from "@material-ui/core";
+import { Button, Theme, useTheme } from "@material-ui/core";
 import dayjs from "dayjs";
 import timezone from "dayjs/plugin/timezone";
 import utc from "dayjs/plugin/utc";
 import { ReactElement } from "react";
 import { useAppSelector } from "../app/hooks";
 import PracticerInput from "../components/PracticerInput";
-import { CARD_TYPES, getCardType, getWordId } from "../database/Schema";
+import { getWordId } from "../database/Schema";
 import { ServiceWorkerProxy } from "../lib/proxies";
 import {
   CardType,
   CharacterType,
   DefinitionType,
-  PosSentences,
   RecentSentencesType,
   RepetrobesActivityConfigType,
 } from "../lib/types";
-import { AnswerWrapper, CentredFlex, QuestionWrapper } from "./Common";
-import GraphAnswer from "./GraphAnswer";
-import GraphQuestion from "./GraphQuestion";
-import MeaningAnswer from "./MeaningAnswer";
-import MeaningQuestion from "./MeaningQuestion";
-import PhraseAnswer from "./PhraseAnswer";
-import PhraseQuestion from "./PhraseQuestion";
-import SoundAnswer from "./SoundAnswer";
-import SoundQuestion from "./SoundQuestion";
+import Answer from "./Answer";
+import { CentredFlex } from "./Common";
+import Question from "./Question";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
-
-function getAnswer(
-  card: CardType,
-  definition: DefinitionType,
-  recentSentences: PosSentences | null,
-  showSynonyms: boolean,
-  showRecents: boolean,
-  onCardFrontUpdate: (card: CardType) => void,
-): ReactElement {
-  switch (getCardType(card)) {
-    case CARD_TYPES.GRAPH.toString():
-      return (
-        <GraphAnswer
-          card={card}
-          definition={definition}
-          recentSentences={recentSentences}
-          showSynonyms={showSynonyms}
-          showRecents={showRecents}
-          onCardFrontUpdate={onCardFrontUpdate}
-        />
-      );
-    case CARD_TYPES.SOUND.toString():
-      return (
-        <SoundAnswer
-          card={card}
-          definition={definition}
-          recentSentences={recentSentences}
-          showSynonyms={showSynonyms}
-          showRecents={showRecents}
-          onCardFrontUpdate={onCardFrontUpdate}
-        />
-      );
-    case CARD_TYPES.MEANING.toString():
-      return (
-        <MeaningAnswer
-          recentSentences={recentSentences}
-          showRecents={showRecents}
-          card={card}
-          definition={definition}
-        />
-      );
-    case CARD_TYPES.PHRASE.toString():
-      return (
-        <PhraseAnswer
-          card={card}
-          definition={definition}
-          recentSentences={recentSentences}
-          showSynonyms={showSynonyms}
-          showRecents={showRecents}
-          onCardFrontUpdate={onCardFrontUpdate}
-        />
-      );
-    default:
-      console.error("Unsupported cardType error", card, getCardType(card));
-      throw new Error("Unsupported cardType");
-  }
-}
-
-function getQuestion(
-  card: CardType,
-  definition: DefinitionType,
-  characters: CharacterType[],
-  recentSentences: PosSentences | null,
-  showSynonyms: boolean,
-  showL2LengthHint: boolean,
-  showAnswer: boolean,
-  onCardFrontUpdate: (card: CardType) => void,
-) {
-  console.debug(`Card to show for a question`, card);
-  switch (getCardType(card)) {
-    case CARD_TYPES.GRAPH.toString():
-      return <GraphQuestion card={card} characters={characters} />;
-    case CARD_TYPES.SOUND.toString():
-      return <SoundQuestion card={card} definition={definition} characters={characters} showAnswer={showAnswer} />;
-    case CARD_TYPES.MEANING.toString():
-      return (
-        <MeaningQuestion
-          card={card}
-          definition={definition}
-          characters={characters}
-          showSynonyms={showSynonyms}
-          showL2LengthHint={showL2LengthHint}
-          showAnswer={showAnswer}
-          onCardFrontUpdate={onCardFrontUpdate}
-        />
-      );
-    case CARD_TYPES.PHRASE.toString():
-      return <PhraseQuestion recentSentences={recentSentences} showAnswer={showAnswer} characters={characters} />;
-    default:
-      console.error("Unsupported cardType error", card, getCardType(card));
-      throw new Error("Unsupported cardType");
-  }
-}
 
 interface Props {
   proxy: ServiceWorkerProxy;
@@ -151,6 +51,7 @@ export function VocabRevisor({
   }
   const { showSynonyms, showL2LengthHint, showRecents } = activityConfig;
   const premature = currentCard && currentCard?.dueDate > dayjs().unix();
+  const theme = useTheme();
   console.log(
     "prematurity",
     premature,
@@ -168,6 +69,24 @@ export function VocabRevisor({
     dayjs().tz(dayjs.tz.guess()).format("YYYY-MM-DD HH:mm:ss"),
   );
   const loading = useAppSelector((state) => state.ui.loading);
+  if (recentPosSentences && definition) {
+    Object.entries(recentPosSentences.posSentences).forEach(([pos, s]) => {
+      const lemma = definition.graph;
+      if (s) {
+        s.forEach((sent) => {
+          const now = Date.now() + Math.random();
+          sent.sentence.t.forEach((t) => {
+            if (t.l === lemma && t.pos === pos) {
+              t.style = { color: theme.palette.success.main, "font-weight": "bold" };
+              t.de = true;
+            }
+          });
+          sent.modelId = now;
+        });
+      }
+    });
+  }
+
   return (
     <>
       {!loading && !definition && <span>No review items loaded</span>}
@@ -181,43 +100,39 @@ export function VocabRevisor({
                 .format("YYYY-MM-DD HH:mm:ss")}
             </div>
           )}
-          <QuestionWrapper style={{ backgroundColor: premature ? "orange" : "inherit" }}>
-            {getQuestion(
-              currentCard,
-              definition,
-              characters,
-              recentPosSentences?.posSentences || null,
-              showSynonyms,
-              showL2LengthHint,
-              showAnswer,
-              onCardFrontUpdate,
-            )}
-          </QuestionWrapper>
-          {!showAnswer && (
-            <CentredFlex>
-              <Button onClick={onShowAnswer} variant="contained" color="primary">
-                Show Answer
-              </Button>
-            </CentredFlex>
-          )}
-          {showAnswer && (
+          <Question
+            premature={!!premature}
+            card={currentCard}
+            definition={definition}
+            characters={characters}
+            recentSentences={recentPosSentences?.posSentences || null}
+            showSynonyms={showSynonyms}
+            showL2LengthHint={showL2LengthHint}
+            showAnswer={showAnswer}
+            onCardFrontUpdate={onCardFrontUpdate}
+          />
+          {showAnswer ? (
             <div>
-              <AnswerWrapper>
-                {getAnswer(
-                  currentCard,
-                  definition,
-                  recentPosSentences?.posSentences || null,
-                  showSynonyms,
-                  showRecents,
-                  onCardFrontUpdate,
-                )}
-              </AnswerWrapper>
+              <Answer
+                card={currentCard}
+                definition={definition}
+                recentSentences={recentPosSentences?.posSentences || null}
+                showSynonyms={showSynonyms}
+                showRecents={showRecents}
+                onCardFrontUpdate={onCardFrontUpdate}
+              />
               <div style={{ display: "flex", justifyContent: "center" }}>
                 <div style={{ width: "100%", maxWidth: "800px" }}>
                   <PracticerInput wordId={getWordId(currentCard)} onPractice={handlePractice} />
                 </div>
               </div>
             </div>
+          ) : (
+            <CentredFlex>
+              <Button onClick={onShowAnswer} variant="contained" color="primary">
+                Show Answer
+              </Button>
+            </CentredFlex>
           )}
         </>
       )}

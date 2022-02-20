@@ -31,7 +31,7 @@ export default function RecentSentencesElement({ recentPosSentences, onDelete }:
                       return (
                         <RecentSentenceExample
                           readerConfig={DEFAULT_RECENTS_READER_CONFIG_STATE}
-                          key={index}
+                          key={s.modelId || index}
                           sentence={s.sentence}
                           recentSentenceId={s.modelId || 0}
                           onDelete={onDelete}

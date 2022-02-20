@@ -17,12 +17,7 @@ interface Props {
   charHeight?: number;
 }
 
-export default function DefinitionGraph({
-  characters,
-  showAnswer,
-  charHeight,
-  charWidth,
-}: Props): ReactElement {
+export default function DefinitionGraph({ characters, showAnswer, charHeight, charWidth }: Props): ReactElement {
   const [toAnimate, setToAnimate] = useState(characters.map(() => 0));
   const classes = useStyles();
   function draw() {
@@ -39,8 +34,6 @@ export default function DefinitionGraph({
     toAnimateUpdate[index + 1] = 1;
     setToAnimate(toAnimateUpdate);
   }
-
-  console.debug("Rendering DefinitionGraph with chars", characters);
   return (
     <div>
       <div className={classes.centred}>

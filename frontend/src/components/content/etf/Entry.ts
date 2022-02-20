@@ -72,6 +72,9 @@ class Entry extends Component<StatedEntryProps, LocalEntryState> {
     // The rationale for the mobile exception is that there is basically nowhere to click that isn't a
     // clickable space, so clicking outside should first get rid of the current popup, because most of
     // the time we *don't* actually want a new popup.
+    if (this.props.token.de) {
+      return;
+    }
     if (
       !this.context.store.getState().ui.tokenDetails ||
       (!sameCoordinates(event.currentTarget, this.context.store.getState().ui.tokenDetails.sourceRect) &&
@@ -177,7 +180,7 @@ class Entry extends Component<StatedEntryProps, LocalEntryState> {
   }
 
   createPopover(event: React.MouseEvent<HTMLSpanElement> | undefined): void {
-    if (this.props.mouseover) {
+    if (this.props.mouseover && !this.props.token.de) {
       if (event) {
         const coordinates = eventCoordinates(event);
         this.context.store.dispatch(
@@ -204,7 +207,7 @@ class Entry extends Component<StatedEntryProps, LocalEntryState> {
             `${this.props.classes.word} tcrobe-word`,
             this.props.token.l,
             HasTextChildren,
-            this.props.token.style,
+            { style: this.props.token.style },
             null,
             null,
           ),

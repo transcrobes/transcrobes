@@ -19,7 +19,7 @@ type ListGraphData = {
 // FIXME: any
 export function UserListProgress(props: any) {
   const [data, setData] = useState<ListGraphData[]>([]);
-  const [stats, setStats] = useState<ListFirstSuccessStats>();
+  const [stats, setStats] = useState<ListFirstSuccessStats | null>();
   const obj = useRecordContext(props);
   const listId = obj ? ("userList" in obj ? obj.userList : obj.id) : "";
   const { yIsNumber } = props;
@@ -28,19 +28,19 @@ export function UserListProgress(props: any) {
   useEffect(() => {
     (async function () {
       if (!window.componentsConfig.proxy.loaded) return;
-      const locStats: ListFirstSuccessStats =
-        await window.componentsConfig.proxy.sendMessagePromise<ListFirstSuccessStats>({
+      const locStats: ListFirstSuccessStats | null =
+        await window.componentsConfig.proxy.sendMessagePromise<ListFirstSuccessStats | null>({
           source: DATA_SOURCE,
           type: "getFirstSuccessStatsForList",
           value: listId,
         });
+      setStats(locStats);
       if (!locStats) return;
       const periods: (QUnitType | OpUnitType)[] = ["month", "week", "day"];
       let currentPeriod = periods.findIndex((value) => value === periodType);
       if (currentPeriod < 0) {
         currentPeriod = 0;
       }
-      setStats(locStats);
       const firstSuccess = locStats.successWords[0];
       const end = dayjs();
       const start = Math.max(end.add(-nbPeriods, periods[currentPeriod]).unix(), firstSuccess.firstSuccess);
@@ -100,6 +100,8 @@ export function UserListProgress(props: any) {
         </table>
       </Grid>
     </Grid>
+  ) : stats === null ? (
+    <div>There are no list stats available for this goal</div>
   ) : (
     <div>The stats are still being generated</div>
   );

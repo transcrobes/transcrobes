@@ -23,7 +23,7 @@ const ContentShow: FC<FieldProps<Content>> = (props) => {
   useEffect(() => {
     if (window.componentsConfig.proxy.loaded) {
       (async function () {
-        if (!loaded || !data || !data.theImport) return;
+        if (!loaded || !data?.theImport) return;
         const locStats: ImportFirstSuccessStats =
           await window.componentsConfig.proxy.sendMessagePromise<ImportFirstSuccessStats>({
             source: DATA_SOURCE,

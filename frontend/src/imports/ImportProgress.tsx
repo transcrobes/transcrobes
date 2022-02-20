@@ -16,7 +16,7 @@ type GraphData = {
   wordTokens: number;
 };
 
-export function ImportProgress({ stats }: { stats?: ImportFirstSuccessStats }): ReactElement {
+export function ImportProgress({ stats }: { stats?: ImportFirstSuccessStats | null }): ReactElement {
   const [data, setData] = useState<GraphData[]>([]);
   // FIXME: currently the word tokens data are only shown if
   // stats && stats.nbTotalWords !== stats.nbUniqueWords but we still calculate them
@@ -113,6 +113,8 @@ export function ImportProgress({ stats }: { stats?: ImportFirstSuccessStats }): 
         </table>
       </Grid>
     </Grid>
+  ) : stats === null ? (
+    <div>There are no import stats available for this content</div>
   ) : (
     <div>The stats are still being generated</div>
   );

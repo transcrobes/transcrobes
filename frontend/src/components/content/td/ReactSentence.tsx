@@ -22,7 +22,7 @@ export default function ReactSentence({ sentence, readerConfig }: Props): ReactE
     });
 
     render(wrappedSentence, ref.current);
-  }, []);
+  }, [sentence]);
 
   return <span ref={ref} />;
 }

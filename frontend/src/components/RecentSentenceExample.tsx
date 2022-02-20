@@ -1,6 +1,5 @@
 import { Button, makeStyles, Theme } from "@material-ui/core";
 import React, { ReactElement } from "react";
-import { DEFAULT_RECENTS_READER_CONFIG_STATE } from "../features/content/simpleReaderSlice";
 import { ReaderState, SentenceType } from "../lib/types";
 import ReactSentence from "./content/td/ReactSentence";
 
@@ -34,15 +33,15 @@ export default function RecentSentenceExample({
 }: Props): ReactElement {
   const del = onDelete ? () => onDelete(recentSentenceId) : undefined;
   const localClasses = useStyles({ hasDelete: !!del });
-  const etf = (
+  const etf = del ? (
     <div className={localClasses.sentences}>
       <ReactSentence sentence={sentence} readerConfig={readerConfig} />
-      {del && (
-        <Button variant="outlined" onClick={del}>
-          Delete
-        </Button>
-      )}
+      <Button variant="outlined" onClick={del}>
+        Delete
+      </Button>
     </div>
+  ) : (
+    <ReactSentence sentence={sentence} readerConfig={readerConfig} />
   );
   return React.createElement(isListItem ? "li" : "span", null, etf);
 }

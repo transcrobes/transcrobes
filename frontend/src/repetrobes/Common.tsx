@@ -25,30 +25,6 @@ export const CentredFlex = styled("div")(() => ({
   padding: "0.2em",
 }));
 
-export const QuestionWrapper = styled("div")(({ theme }) => ({
-  display: "flex",
-  justifyContent: "center",
-  alignItems: "center",
-  [theme.breakpoints.down("sm")]: {
-    padding: "0.3em",
-  },
-  [theme.breakpoints.up("sm")]: {
-    padding: "1em",
-  },
-}));
-
-export const AnswerWrapper = styled("div")(({ theme }) => ({
-  display: "flex",
-  justifyContent: "center",
-  alignItems: "center",
-  [theme.breakpoints.down("sm")]: {
-    padding: "0.3em",
-  },
-  [theme.breakpoints.up("sm")]: {
-    padding: "1em",
-  },
-}));
-
 export const GraphSoundQuestionStyle = styled("div")(({ theme }) => ({
   [theme.breakpoints.down("sm")]: {
     fontSize: "3em",

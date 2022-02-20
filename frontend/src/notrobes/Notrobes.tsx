@@ -1,4 +1,4 @@
-import { Container, makeStyles, TextField, Typography } from "@material-ui/core";
+import { Container, makeStyles, TextField, Typography, useTheme } from "@material-ui/core";
 import axios, { CancelTokenSource } from "axios";
 import { Converter, ConvertText } from "opencc-js";
 import { ReactElement, useEffect, useRef, useState } from "react";
@@ -60,6 +60,7 @@ function Notrobes({ proxy, url }: Props): ReactElement {
   const fromLang = useAppSelector((state) => state.userData.user.fromLang);
   const dispatch = useAppDispatch();
   const classes = useStyles();
+  const theme = useTheme();
 
   let cancel: CancelTokenSource;
 
@@ -118,6 +119,22 @@ function Notrobes({ proxy, url }: Props): ReactElement {
       setCards(details.cards ? Array.from(details.cards.values()) : []);
       setCharacters(details.characters ? Array.from(details.characters.values()) : []);
       setWordModelStats(details.wordModelStats || { id: details.word.graph, updatedAt: 0 });
+      const lemma = details.word.graph;
+      if (details.recentPosSentences) {
+        for (const [pos, rps] of Object.entries(details.recentPosSentences)) {
+          if (rps) {
+            for (const ps of rps) {
+              ps.modelId = Date.now() + Math.random();
+              for (const t of ps.sentence.t) {
+                if (t.l == lemma && t.pos === pos) {
+                  t.style = { color: theme.palette.success.main, "font-weight": "bold" };
+                }
+              }
+            }
+          }
+        }
+      }
+
       setRecentPosSentences(details.recentPosSentences);
       setMessage("");
       dispatch(setLoading(undefined));
@@ -265,14 +282,11 @@ function Notrobes({ proxy, url }: Props): ReactElement {
 
   async function handleDeleteRecent(modelId: number | BigInt) {
     if (word && recentPosSentences) {
-      console.debug("Word and record in handleDeleteRecent", word, recentPosSentences);
       const newRecents: RecentSentencesType = { id: word.id, posSentences: {} };
       for (const [k, posSentence] of Object.entries(recentPosSentences)) {
         if (posSentence) {
           for (const sent of posSentence) {
-            console.debug("Looking for modelId", sent, sent.modelId, modelId);
             if (sent.modelId != modelId) {
-              console.debug("Found the modelId", modelId, sent.modelId);
               if (!newRecents.posSentences[k]) {
                 newRecents.posSentences[k] = [];
               }
@@ -281,13 +295,11 @@ function Notrobes({ proxy, url }: Props): ReactElement {
           }
         }
       }
-      console.debug("Submitting new recents", newRecents);
       await proxy.sendMessagePromise({
         source: DATA_SOURCE,
         type: "updateRecentSentences",
         value: [newRecents],
       });
-      console.debug("Updating state with new PosSentences", newRecents.posSentences);
       setRecentPosSentences(newRecents.posSentences);
     }
   }

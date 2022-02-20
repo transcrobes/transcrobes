@@ -197,8 +197,9 @@ async function getFirstSuccessStatsForImport(
     analysis = JSON.parse(analysisString);
   } else if (importId) {
     const theImport = (await db.imports.findByIds([importId])).get(importId);
-    if (!theImport) throw new Error("Invalid, import not found");
-    if (!theImport.analysis || theImport.analysis.length === 0) return null;
+    // this is actually ok, if you have "deleted" the import but there is still a content
+    //if (!theImport) throw new Error("Invalid, import not found");
+    if (!theImport?.analysis || theImport.analysis.length === 0) return null;
     analysis = JSON.parse(theImport.analysis);
   } else {
     throw new Error("At least one of importId or analysisString must be provided");
@@ -255,7 +256,10 @@ async function getFirstSuccessStatsForList(
   let knownGraphs = new Map<string, string>();
   if (listId) {
     const goalWordList = (await db.wordlists.findByIds([listId])).get(listId);
-    if (!goalWordList) throw new Error("Invalid goal, no userList found");
+    if (!goalWordList) {
+      return null;
+    }
+
     allListGraphs = await getGraphs(db, goalWordList.wordIds);
     for (const [wordId, graph] of allListGraphs) {
       if (knownCards.has(wordId)) {

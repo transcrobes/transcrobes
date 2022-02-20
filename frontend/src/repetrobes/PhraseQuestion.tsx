@@ -1,6 +1,8 @@
 import { Button, Grid } from "@material-ui/core";
-import { ReactElement, useState } from "react";
+import _ from "lodash";
+import { ReactElement, useEffect, useState } from "react";
 import { InfoBox } from "../components/Common";
+import Mouseover from "../components/content/td/Mouseover";
 import RecentSentenceExample from "../components/RecentSentenceExample";
 import { DEFAULT_RECENTS_READER_CONFIG_STATE } from "../features/content/simpleReaderSlice";
 import { CharacterType, PosSentence, PosSentences, ZH_TB_POS_LABELS } from "../lib/types";
@@ -12,23 +14,22 @@ interface Props {
   showAnswer: boolean;
 }
 export default function PhraseQuestion({ recentSentences, showAnswer, characters }: Props): ReactElement {
-  // FIXME: I really, really tried to have it so that the current would initially get set
-  // to a random number up to the max of the available recent sentences but it just didn't work
-  // For some reason the state was not updating correctly and state from previous renders was being
-  // shown...
-  // const classes = useStyles();
   const [current, setCurrent] = useState(0);
-  const sentences: [string, PosSentence][] = [];
+  const [sentences, setSentences] = useState<[string, PosSentence][]>([]);
   if (recentSentences) {
-    for (const [k, v] of [...Object.entries(recentSentences)]) {
-      if (v) {
-        for (const s of v) sentences.push([k, s]);
+    const sents: [string, PosSentence][] = [];
+    useEffect(() => {
+      for (const [k, v] of [...Object.entries(recentSentences)]) {
+        if (v) {
+          for (const s of v) sents.push([k, s]);
+        }
       }
-    }
+      setSentences(_.shuffle(sents));
+    }, [recentSentences]);
   }
   return (
     <div>
-      {(sentences && sentences[current] && sentences[current][1].modelId && (
+      {(sentences && sentences[current] && (
         <Grid container justifyContent="center" alignItems="center">
           <Grid item>
             <InfoBox>
@@ -50,7 +51,8 @@ export default function PhraseQuestion({ recentSentences, showAnswer, characters
           )}
         </Grid>
       )) || <div>Nothing found</div>}
-      <QuestionDefinitionGraph characters={characters} showAnswer={showAnswer} />
+      {showAnswer && <QuestionDefinitionGraph characters={characters} showAnswer={showAnswer} />}
+      <Mouseover readerConfig={DEFAULT_RECENTS_READER_CONFIG_STATE} />
     </div>
   );
 }
