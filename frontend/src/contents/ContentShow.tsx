@@ -19,13 +19,13 @@ const DATA_SOURCE = "ContentShow.tsx";
 
 const ContentShow: FC<FieldProps<Content>> = (props) => {
   const { data, loaded } = useGetOne<Content>("contents", (props as any).id);
-  const [stats, setStats] = useState<ImportFirstSuccessStats>();
+  const [stats, setStats] = useState<ImportFirstSuccessStats | null>();
   useEffect(() => {
     if (window.componentsConfig.proxy.loaded) {
       (async function () {
         if (!loaded || !data?.theImport) return;
-        const locStats: ImportFirstSuccessStats =
-          await window.componentsConfig.proxy.sendMessagePromise<ImportFirstSuccessStats>({
+        const locStats: ImportFirstSuccessStats | null =
+          await window.componentsConfig.proxy.sendMessagePromise<ImportFirstSuccessStats | null>({
             source: DATA_SOURCE,
             type: "getFirstSuccessStatsForImport",
             value: { importId: data.theImport },
