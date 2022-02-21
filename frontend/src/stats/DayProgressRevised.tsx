@@ -29,10 +29,14 @@ interface Props {
   nbPeriods?: number;
   periodType?: PeriodType;
 }
-
+type Totals = {
+  nbSuccess: number;
+  nbFailures: number;
+};
 export function DayProgressRevised({ nbPeriods = 8, periodType = 2 }: Props) {
   const [data, setData] = useState<DayRevisedGraphData[]>([]);
   const [stats, setStats] = useState<DayModelStatsType[]>();
+  const [totals, setTotals] = useState<Totals>({ nbSuccess: 0, nbFailures: 0 });
 
   useEffect(() => {
     (async function () {
@@ -43,6 +47,12 @@ export function DayProgressRevised({ nbPeriods = 8, periodType = 2 }: Props) {
       });
       if (!locStats) return;
       locStats.sort((a, b) => parseInt(a.id) - parseInt(b.id));
+      const t = { nbSuccess: 0, nbFailures: 0 };
+      for (const stat of locStats) {
+        t.nbSuccess += stat.nbSuccess || 0;
+        t.nbFailures += stat.nbFailures || 0;
+      }
+      setTotals(t);
 
       let currentPeriod = periodType;
 
@@ -112,10 +122,16 @@ export function DayProgressRevised({ nbPeriods = 8, periodType = 2 }: Props) {
               <td>
                 <span style={{ color: blue }}>Nb Successes</span>
               </td>
+              <td>
+                <span style={{ color: blue }}>{totals.nbSuccess}</span>
+              </td>
             </tr>
             <tr>
               <td>
                 <span style={{ color: green }}>Nb Re-revisions</span>
+              </td>
+              <td>
+                <span style={{ color: green }}>{totals.nbFailures}</span>
               </td>
             </tr>
           </tbody>

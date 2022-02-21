@@ -1,21 +1,21 @@
-import { Route } from "react-router-dom";
 import { CustomRoutes, RouteWithoutLayout } from "react-admin";
-
-import System from "./system/System";
-import Help from "./help/Help";
-import Init from "./system/Init";
-import Listrobes from "./listrobes/Listrobes";
-import Repetrobes from "./repetrobes/Repetrobes";
-import Notrobes from "./notrobes/Notrobes";
+import { Route } from "react-router-dom";
 import Brocrobes from "./Brocrobes";
-import VideoPlayerScreen from "./contents/moocrobes/VideoPlayerScreen";
 import Reader from "./contents/boocrobes/BookReader";
-import { ComponentsConfig } from "./lib/complexTypes";
-import Signup from "./system/Signup";
-import ResetPassword from "./system/ResetPassword";
-import RecoverPassword from "./system/RecoverPassword";
+import VideoPlayerScreen from "./contents/moocrobes/VideoPlayerScreen";
 import Textcrobes from "./contents/textcrobes/Textcrobes";
+import Exports from "./exports/Exports";
+import Help from "./help/Help";
+import { ComponentsConfig } from "./lib/complexTypes";
+import Listrobes from "./listrobes/Listrobes";
+import Notrobes from "./notrobes/Notrobes";
+import Repetrobes from "./repetrobes/Repetrobes";
 import Stats from "./stats/Stats";
+import Init from "./system/Init";
+import RecoverPassword from "./system/RecoverPassword";
+import ResetPassword from "./system/ResetPassword";
+import Signup from "./system/Signup";
+import System from "./system/System";
 
 export default function routes(config: ComponentsConfig): CustomRoutes {
   return [
@@ -31,7 +31,8 @@ export default function routes(config: ComponentsConfig): CustomRoutes {
     // authed
     <Route exact path="/notrobes" render={() => <Notrobes proxy={config.proxy} url={config.url} />} />,
     <Route exact path="/listrobes" render={() => <Listrobes proxy={config.proxy} />} />,
-    <Route exact path="/stats" render={() => <Stats proxy={config.proxy} />} />,
+    <Route exact path="/stats" render={() => <Stats />} />,
+    <Route exact path="/exports" render={() => <Exports proxy={config.proxy} />} />,
     <Route exact path="/repetrobes" render={() => <Repetrobes proxy={config.proxy} />} />,
     <Route exact path="/textcrobes" render={() => <Textcrobes proxy={config.proxy} />} />,
     <Route exact path="/contents/:id/watch" children={<VideoPlayerScreen proxy={config.proxy} />} />,

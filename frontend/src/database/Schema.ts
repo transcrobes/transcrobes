@@ -35,9 +35,13 @@ function getWordId(card: CardType | string): string {
   }
 }
 
+function getCardTypeAsInt(card: string | CardType): number {
+  return parseInt(getCardType(card));
+}
+
 // FIXME: make a proper type not string
-function getCardType(card: CardType): string {
-  return card.id.split(CARD_ID_SEPARATOR)[1];
+function getCardType(card: string | CardType): string {
+  return (typeof card === "string" ? card : card.id).split(CARD_ID_SEPARATOR)[1];
 }
 
 // FIXME: make revisionType a proper type not string
@@ -821,6 +825,7 @@ export {
   getCardType,
   getWordId,
   getCardId,
+  getCardTypeAsInt,
 };
 export type {
   DBCollectionKeys,

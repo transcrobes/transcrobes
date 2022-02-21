@@ -29,10 +29,14 @@ interface Props {
   nbPeriods?: number;
   periodType?: PeriodType;
 }
-
+type Totals = {
+  nbSeen: number;
+  nbChecked: number;
+};
 export function DayProgressRead({ nbPeriods = 8, periodType = 2 }: Props) {
   const [data, setData] = useState<DayGraphData[]>([]);
   const [stats, setStats] = useState<DayModelStatsType[]>();
+  const [totals, setTotals] = useState<Totals>({ nbSeen: 0, nbChecked: 0 });
 
   useEffect(() => {
     (async function () {
@@ -43,7 +47,12 @@ export function DayProgressRead({ nbPeriods = 8, periodType = 2 }: Props) {
       });
       if (!locStats) return;
       locStats.sort((a, b) => parseInt(a.id) - parseInt(b.id));
-
+      const t = { nbSeen: 0, nbChecked: 0 };
+      for (const stat of locStats) {
+        t.nbSeen += stat.nbSeen || 0;
+        t.nbChecked += stat.nbChecked || 0;
+      }
+      setTotals(t);
       let currentPeriod = periodType;
 
       if (currentPeriod < 0) {
@@ -112,10 +121,16 @@ export function DayProgressRead({ nbPeriods = 8, periodType = 2 }: Props) {
               <td>
                 <span style={{ color: blue }}>Nb Seen</span>
               </td>
+              <td>
+                <span style={{ color: blue }}>{totals.nbSeen}</span>
+              </td>
             </tr>
             <tr>
               <td>
                 <span style={{ color: green }}>Nb Checked</span>
+              </td>
+              <td>
+                <span style={{ color: green }}>{totals.nbChecked}</span>
               </td>
             </tr>
           </tbody>

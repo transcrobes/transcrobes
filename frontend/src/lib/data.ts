@@ -1,4 +1,5 @@
 import dayjs from "dayjs";
+import draftToHtml from "draftjs-to-html";
 import LZString from "lz-string";
 import { clone } from "rxdb";
 import { MangoQuery } from "rxdb/dist/types/core";
@@ -13,6 +14,7 @@ import {
   CharacterDocument,
   DefinitionDocument,
   getCardId,
+  getCardTypeAsInt,
   getWordId,
   RecentSentencesDocument,
   TranscrobesCollectionsKeys,
@@ -39,7 +41,9 @@ import {
   DailyReviewables,
   DayCardWords,
   DayModelStatsType,
+  DefaultExportDetails,
   DefinitionType,
+  ExportDetails,
   FirstSuccess,
   GraderConfig,
   ImportAnalysis,
@@ -433,6 +437,105 @@ async function getWordDetails(db: TranscrobesDatabase, graph: string): Promise<W
     wordModelStats: details.wordModelStats ? clone(details.wordModelStats.toJSON()) : null,
   };
   return safe;
+}
+
+async function getCardsForExport(db: TranscrobesDatabase) {
+  const allCards = await db.cards
+    .find({ selector: { $or: [{ known: { $eq: true } }, { firstSuccessDate: { $gt: 0 } }] } })
+    .exec();
+  const definitions = await db.definitions.findByIds(allCards.map((card) => getWordId(card)));
+
+  const output = allCards
+    .map((card) => card.toJSON())
+    .map(
+      ({
+        id,
+        front,
+        updatedAt,
+        suspended,
+        back,
+        known,
+        dueDate,
+        firstRevisionDate,
+        firstSuccessDate,
+        lastRevisionDate,
+        ...card
+      }) => {
+        return {
+          graph: definitions.get(getWordId(id))?.graph,
+          cardType: $enum(CARD_TYPES).getKeyOrDefault(getCardTypeAsInt(id)),
+          front: front ? draftToHtml(JSON.parse(front)) : "",
+          lastRevisionDate: lastRevisionDate ? dayjs(lastRevisionDate * 1000).format("YYYY-MM-DD HH:mm") : "",
+          firstRevisionDate: firstRevisionDate ? dayjs(firstRevisionDate * 1000).format("YYYY-MM-DD HH:mm") : "",
+          firstSuccessDate: firstSuccessDate ? dayjs(firstSuccessDate * 1000).format("YYYY-MM-DD HH:mm") : "",
+          dueDate: dueDate ? dayjs(dueDate * 1000).format("YYYY-MM-DD HH:mm") : "",
+          ...card,
+        };
+      },
+    );
+  return output;
+}
+
+async function getWordStatsForExport(db: TranscrobesDatabase) {
+  const allCards = await db.cards
+    .find({ selector: { $or: [{ known: { $eq: true } }, { firstSuccessDate: { $gt: 0 } }] } })
+    .exec();
+  const wordModelStats = await db.word_model_stats.find().exec();
+  const definitions = await db.definitions.findByIds(
+    wordModelStats.map((wms) => wms.id).concat(allCards.map((card) => getWordId(card))),
+  );
+  const exportStats: Record<string, ExportDetails> = {};
+  for (const wms of wordModelStats) {
+    const word = definitions.get(wms.id);
+    if (!word) continue; // shouldn't be possible...
+    exportStats[word.graph] = {
+      firstRevisionDate: 0,
+      firstSuccessDate: 0,
+      lastRevisionDate: 0,
+      dueDate: 0,
+      lastChecked: wms.lastChecked || 0,
+      lastSeen: wms.lastSeen || 0,
+      nbChecked: wms.nbChecked || 0,
+      nbSeen: wms.nbSeen || 0,
+      nbSeenSinceLastCheck: wms.nbSeenSinceLastCheck || 0,
+    };
+  }
+  for (const card of allCards) {
+    if (!card.firstRevisionDate) continue;
+
+    const word = definitions.get(getWordId(card));
+    if (!word) continue; // shouldn't be possible...
+    const stat = exportStats[word.graph] || { ...DefaultExportDetails };
+
+    if (card.firstRevisionDate && (!stat.firstRevisionDate || stat.firstRevisionDate > card.firstRevisionDate)) {
+      stat.firstRevisionDate = card.firstRevisionDate;
+    }
+    if (card.firstSuccessDate && (!stat.firstSuccessDate || stat.firstSuccessDate > card.firstSuccessDate)) {
+      stat.firstSuccessDate = card.firstSuccessDate;
+    }
+    if (card.lastRevisionDate && (!stat.lastRevisionDate || stat.lastRevisionDate > card.lastRevisionDate)) {
+      stat.lastRevisionDate = card.lastRevisionDate;
+    }
+    if (card.dueDate && (!stat.dueDate || stat.dueDate > card.dueDate)) {
+      stat.dueDate = card.dueDate;
+    }
+    exportStats[word.graph] = stat;
+  }
+  const output = Object.entries(exportStats).map(([graph, stat]) => {
+    return {
+      graph,
+      nbChecked: stat.nbChecked,
+      nbSeenSinceLastCheck: stat.nbSeenSinceLastCheck,
+      nbSeen: stat.nbSeen,
+      lastChecked: stat.lastChecked ? dayjs(stat.lastChecked * 1000).format("YYYY-MM-DD HH:mm") : "",
+      lastSeen: stat.lastSeen ? dayjs(stat.lastSeen * 1000).format("YYYY-MM-DD HH:mm") : "",
+      lastRevisionDate: stat.lastRevisionDate ? dayjs(stat.lastRevisionDate * 1000).format("YYYY-MM-DD HH:mm") : "",
+      firstRevisionDate: stat.firstRevisionDate ? dayjs(stat.firstRevisionDate * 1000).format("YYYY-MM-DD HH:mm") : "",
+      firstSuccessDate: stat.firstSuccessDate ? dayjs(stat.firstSuccessDate * 1000).format("YYYY-MM-DD HH:mm") : "",
+      dueDate: stat.dueDate ? dayjs(stat.dueDate * 1000).format("YYYY-MM-DD HH:mm") : "",
+    };
+  });
+  return output;
 }
 
 async function getWordDetailsUnsafe(db: TranscrobesDatabase, graph: string): Promise<WordDetailsRxType> {
@@ -991,4 +1094,6 @@ export {
   updateCard,
   recentSentencesFromLZ,
   getDayStats,
+  getWordStatsForExport,
+  getCardsForExport,
 };

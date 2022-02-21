@@ -2,14 +2,10 @@ import { Container, makeStyles, Typography } from "@material-ui/core";
 import { ReactElement } from "react";
 import { TopToolbar } from "react-admin";
 import HelpButton from "../components/HelpButton";
-import { AbstractWorkerProxy } from "../lib/proxies";
 import { DayProgressRead } from "./DayProgressRead";
 import { DayProgressRevised } from "./DayProgressRevised";
 import { UserListProgress } from "./ListProgress";
 
-type Props = {
-  proxy: AbstractWorkerProxy;
-};
 const useStyles = makeStyles((theme) => ({
   root: { margin: theme.spacing(1), maxWidth: "800px" },
   header: { margin: theme.spacing(1), alignContent: "center" },
@@ -18,7 +14,7 @@ const useStyles = makeStyles((theme) => ({
   message: { color: "red", fontWeight: "bold", fontSize: "2em" },
 }));
 
-export default function Stats({ proxy }: Props): ReactElement {
+export default function Stats(): ReactElement {
   const classes = useStyles();
   const helpUrl = "https://transcrob.es/page/software/learn/stats/";
   return (

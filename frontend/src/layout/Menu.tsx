@@ -14,6 +14,7 @@ import listrobes from "../listrobes";
 import notrobes from "../notrobes";
 import repetrobes from "../repetrobes";
 import stats from "../stats";
+import statsExports from "../exports";
 import surveys from "../surveys";
 import system from "../system";
 import userlists from "../userlists";
@@ -112,6 +113,14 @@ function Menu({ dense = false }: MenuProps): ReactElement {
                     smart_count: 2,
                   })}
                   leftIcon={<stats.icon />}
+                  dense={dense}
+                />
+                <MenuItemLink
+                  to={`/exports`}
+                  primaryText={translate(`resources.exports.name`, {
+                    smart_count: 2,
+                  })}
+                  leftIcon={<statsExports.icon />}
                   dense={dense}
                 />
                 <MenuItemLink

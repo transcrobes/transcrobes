@@ -69,6 +69,9 @@ const customEnglishMessages: TranslationMessages = {
     surveys: {
       name: "Surveys",
     },
+    exports: {
+      name: "Exports",
+    },
     stats: {
       name: "My stats",
     },

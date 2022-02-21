@@ -485,6 +485,29 @@ export interface CardType extends SuperMemoType {
   updatedAt: number;
 }
 
+export type ExportDetails = {
+  nbSeen: number;
+  nbSeenSinceLastCheck: number;
+  lastSeen: number;
+  dueDate: number;
+  nbChecked: number;
+  lastChecked: number;
+  firstRevisionDate: number;
+  lastRevisionDate: number;
+  firstSuccessDate: number;
+};
+
+export const DefaultExportDetails: ExportDetails = {
+  firstRevisionDate: 0,
+  firstSuccessDate: 0,
+  lastChecked: 0,
+  lastRevisionDate: 0,
+  lastSeen: 0,
+  dueDate: 0,
+  nbChecked: 0,
+  nbSeen: 0,
+  nbSeenSinceLastCheck: 0,
+};
 export const EMPTY_CARD: CardType = {
   id: "",
   interval: 0,

@@ -140,6 +140,8 @@ async def vocab_event(user_events):
                 vord.nb_seen_since_last_check = 0
                 vord.nb_checked += v[1]
                 day.nb_checked += v[1]
+            else:
+                vord.nb_seen_since_last_check += v[0]
             # vord.is_known: int
             vord.updated_at = now
             user_data.words[k] = vord

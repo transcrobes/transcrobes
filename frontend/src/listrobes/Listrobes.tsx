@@ -1,27 +1,26 @@
-import { useState, useEffect, ReactElement } from "react";
+import { Container, makeStyles } from "@material-ui/core";
 import _ from "lodash";
+import { ReactElement, useEffect, useState } from "react";
+import { TopToolbar } from "react-admin";
 import { $enum } from "ts-enum-util";
-
+import { useAppDispatch } from "../app/hooks";
+import HelpButton from "../components/HelpButton";
+import Loading from "../components/Loading";
 import { CARD_TYPES, getCardId } from "../database/Schema";
-import { practice, GRADES } from "../lib/review";
-import ListrobesConfigLauncher from "./ListrobesConfigLauncher";
-import { VocabList } from "./VocabList";
-import { USER_STATS_MODE } from "../lib/types";
+import { setLoading } from "../features/ui/uiSlice";
+import { AbstractWorkerProxy } from "../lib/proxies";
+import { GRADES, practice } from "../lib/review";
 import {
   EMPTY_CARD,
   GraderConfig,
   GradesType,
   SelectableListElementType,
+  USER_STATS_MODE,
   VocabReview,
   WordOrdering,
 } from "../lib/types";
-import { AbstractWorkerProxy } from "../lib/proxies";
-import { TopToolbar } from "react-admin";
-import { Container, makeStyles } from "@material-ui/core";
-import HelpButton from "../components/HelpButton";
-import Loading from "../components/Loading";
-import { useAppDispatch } from "../app/hooks";
-import { setLoading } from "../features/ui/uiSlice";
+import ListrobesConfigLauncher from "./ListrobesConfigLauncher";
+import { VocabList } from "./VocabList";
 
 const DATA_SOURCE = "listrobes.jsx";
 const DEFAULT_ITEMS_PER_PAGE = 50;
