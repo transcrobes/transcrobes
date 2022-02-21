@@ -46,7 +46,7 @@ const transcroberObserver: IntersectionObserver = new IntersectionObserver(onEnt
 
 ReactDOM.render(
   <Provider store={store}>
-    <Loading />
+    <Loading position="fixed" />
   </Provider>,
   document.body.appendChild(document.createElement("div")),
 );

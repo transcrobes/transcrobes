@@ -1,8 +1,12 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { ThemeName } from "../../lib/types";
 
-const initialState = ((typeof localStorage !== "undefined" && localStorage.getItem("mode")) || "light") as ThemeName;
-
+let initialState = "light" as ThemeName;
+try {
+  initialState = ((typeof localStorage !== "undefined" && localStorage.getItem("mode")) || "light") as ThemeName;
+} catch (err) {
+  console.log("Looks like we can't access localStorage after all");
+}
 const themeSlice = createSlice({
   name: "theme",
   initialState,

@@ -154,7 +154,7 @@ export default function Options(): JSX.Element {
     dispatch(updateBaseUrl(baseUrl));
     dispatch(throttledLogin());
 
-    setMessage("Options saved.");
+    setMessage("Saving the options, please wait and keep this window open...");
   }
 
   async function handleSubmit(forceReinit: boolean) {
@@ -215,7 +215,7 @@ export default function Options(): JSX.Element {
           <Intro inited={!!inited} />
           {running && (
             <>
-              <Loading disableShrink />
+              <Loading position="fixed" disableShrink />
               <Initialisation />
             </>
           )}

@@ -13,7 +13,9 @@ import { bookReaderActions } from "../../features/content/bookReaderSlice";
 import { ContentConfigPayload } from "../../features/content/contentSlice";
 import { simpleReaderActions } from "../../features/content/simpleReaderSlice";
 import { videoReaderActions } from "../../features/content/videoReaderSlice";
-import { FontFamily, FontFamilyChinese, GlossPosition, ReaderState, USER_STATS_MODE } from "../../lib/types";
+import { GlossPosition, ReaderState, USER_STATS_MODE } from "../../lib/types";
+import GlossFontOverrideConfig from "./GlossFontOverrideConfig";
+import MainTextOverrideConfig from "./MainTextOverrideConfig";
 
 export interface ContentConfigProps {
   containerRef?: React.RefObject<HTMLDivElement>;
@@ -60,12 +62,6 @@ export default function ContentConfig({
   ) {
     dispatch(stateSetter({ id, value: checked ? DEFAULT_FONT_COLOUR : null }));
   }
-  const changeFontColour = useCallback(
-    _.debounce((value: HslColor) => {
-      dispatch(actions.setFontColour({ id, value }));
-    }, 250),
-    [],
-  );
   const changeGlossFontColour = useCallback(
     _.debounce((value: HslColor) => {
       dispatch(actions.setGlossFontColour({ id, value }));
@@ -75,109 +71,21 @@ export default function ContentConfig({
 
   return (
     <div className={classes.configContainer}>
-      {allowMainTextOverride && (
-        <>
-          <Conftainer label="Font family" id="ff">
-            <FormControl component="fieldset" className={classes.fontSelection || localClasses.fontSelection}>
-              <FormControlLabel
-                control={<Switch checked={readerConfig.fontFamily !== "Original"} />}
-                label="Manual Font Selection"
-                onChange={() =>
-                  dispatch(
-                    actions.setFontFamily({
-                      id,
-                      value: readerConfig.fontFamily === "Original" ? "sans-serif" : "Original",
-                    }),
-                  )
-                }
-              />
-              {readerConfig.fontFamily !== "Original" && (
-                <>
-                  <Conftainer label="English Font family" id="ffe">
-                    <ToggleButtonGroup
-                      className={classes.buttonGroup || localClasses.buttonGroup}
-                      value={readerConfig.fontFamily}
-                      exclusive
-                      onChange={(event: React.MouseEvent<HTMLElement>, value: FontFamily) => {
-                        dispatch(actions.setFontFamily({ id, value }));
-                      }}
-                    >
-                      <ToggleButton className={classes.button || localClasses.button} value="sans-serif">
-                        Sans-Serif
-                      </ToggleButton>
-                      <ToggleButton className={classes.button || localClasses.button} value="serif">
-                        Serif
-                      </ToggleButton>
-                      <ToggleButton className={classes.button || localClasses.button} value="monospace">
-                        Monospace
-                      </ToggleButton>
-                      <ToggleButton className={classes.button || localClasses.button} value="opendyslexic">
-                        Dyslexia-Friendly
-                      </ToggleButton>
-                    </ToggleButtonGroup>
-                  </Conftainer>
-                  <Conftainer label="Chinese Font family" id="ffc">
-                    <ToggleButtonGroup
-                      className={classes.buttonGroup || localClasses.buttonGroup}
-                      value={readerConfig.fontFamilyChinese}
-                      exclusive
-                      onChange={(event: React.MouseEvent<HTMLElement>, value: FontFamilyChinese) => {
-                        dispatch(actions.setFontFamilyChinese({ id, value }));
-                      }}
-                    >
-                      <ToggleButton className={classes.button || localClasses.button} value="notasanslight">
-                        Nota Sans
-                      </ToggleButton>
-                      <ToggleButton className={classes.button || localClasses.button} value="notaserifextralight">
-                        Nota Serif light
-                      </ToggleButton>
-                      <ToggleButton className={classes.button || localClasses.button} value="notaserifregular">
-                        Nota Serif Normal
-                      </ToggleButton>
-                      <ToggleButton className={classes.button || localClasses.button} value="mashanzheng">
-                        Ma Shan Zheng
-                      </ToggleButton>
-                    </ToggleButtonGroup>
-                  </Conftainer>
-                </>
-              )}
-            </FormControl>
-          </Conftainer>
-          <Conftainer label="Font Size" id="fontSize">
-            <FivePercentFineControl
-              onValueChange={(value) => dispatch(actions.setFontSize({ id, value: value || 1 }))}
-              value={readerConfig.fontSize}
-              className={localClasses.fineControlIcons}
-            />
-          </Conftainer>
-          <Conftainer label="Text Colour" id="otc">
-            <FormControl component="fieldset" className={classes.fontColour || localClasses.fontColour}>
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={!!readerConfig.fontColour}
-                    onChange={(event: React.ChangeEvent<HTMLInputElement>, checked: boolean) =>
-                      fontColourSelectedChange(checked, actions.setFontColour)
-                    }
-                  />
-                }
-                label="Override text colour"
-              />
-              {!!readerConfig.fontColour && (
-                <BasicConftainer>
-                  <FontColour
-                    value={readerConfig.fontColour}
-                    label=""
-                    className={localClasses.fineControlIcons}
-                    onValueChange={changeFontColour}
-                  />
-                </BasicConftainer>
-              )}
-            </FormControl>
-          </Conftainer>
-        </>
+      {allowMainTextOverride ? (
+        <MainTextOverrideConfig
+          classes={classes}
+          readerConfig={readerConfig}
+          actions={actions}
+          localClasses={localClasses}
+        />
+      ) : (
+        <GlossFontOverrideConfig
+          classes={classes}
+          readerConfig={readerConfig}
+          actions={actions}
+          localClasses={localClasses}
+        />
       )}
-
       <Conftainer label="Glossing" id="glossing">
         <ToggleButtonGroup
           className={classes.buttonGroup || localClasses.buttonGroup}

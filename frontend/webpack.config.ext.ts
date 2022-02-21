@@ -46,11 +46,7 @@ const commonConfig = merge<Configuration>([
   loadStaticResources("", ""),
   parts.loadCSS(),
   parts.loadTypescript(),
-  // parts.loadImages(),
-  // parts.loadSVGR(),
-  // parts.loadSVG(),
   parts.clean(),
-  // parts.attachRevision(),
 ]);
 
 function loadStaticResources(sourceBase: string, outputDir: string) {
@@ -66,10 +62,6 @@ function loadStaticResources(sourceBase: string, outputDir: string) {
             from: path.join(sourceBase, "public/*.png"),
             to: path.join(outputDir, "img/[name][ext]"),
           },
-          // {
-          //   from: "node_modules/@webcomponents/webcomponentsjs/bundles/webcomponents-sd-ce.js",
-          //   to: path.join(outputDir, "[name][ext]"),
-          // },
         ],
       }),
     ],
