@@ -513,7 +513,7 @@ async function getWordStatsForExport(db: TranscrobesDatabase) {
     if (card.firstSuccessDate && (!stat.firstSuccessDate || stat.firstSuccessDate > card.firstSuccessDate)) {
       stat.firstSuccessDate = card.firstSuccessDate;
     }
-    if (card.lastRevisionDate && (!stat.lastRevisionDate || stat.lastRevisionDate > card.lastRevisionDate)) {
+    if (card.lastRevisionDate && (!stat.lastRevisionDate || stat.lastRevisionDate < card.lastRevisionDate)) {
       stat.lastRevisionDate = card.lastRevisionDate;
     }
     if (card.dueDate && (!stat.dueDate || stat.dueDate > card.dueDate)) {

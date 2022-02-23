@@ -32,7 +32,7 @@ const jsonexportPromise = (wordStats: any) => {
 
 export default function Exports({ proxy }: Props): ReactElement {
   const classes = useStyles();
-  const helpUrl = "https://transcrob.es/page/software/export/exports/";
+  const helpUrl = "https://transcrob.es/page/software/configure/exports/";
   const [loading, setLoading] = useState(false);
 
   async function runCardsExport() {

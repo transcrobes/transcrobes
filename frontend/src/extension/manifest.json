@@ -1,6 +1,6 @@
 {
   "name": "brocrobes",
-  "version": "0.9.5",
+  "version": "0.9.6",
   "description": "Browser plugin for https://transcrob.es",
   "homepage_url": "https://transcrob.es",
   "permissions": ["activeTab", "scripting"],
