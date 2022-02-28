@@ -9,12 +9,12 @@ import { GRADE, EFACTOR_DEFAULT } from "../database/Schema";
 import { CardType, GradesType } from "./types";
 
 const GRADES: GradesType[] = [
+  { id: GRADE.HARD.toString(), content: "Add as known (poorly)", icon: <SentimentSatisfiedIcon /> },
   {
     id: GRADE.UNKNOWN.toString(),
     content: "Add as unknown",
     icon: <SentimentVeryDissatisfiedIcon />,
   },
-  { id: GRADE.HARD.toString(), content: "Add as known (poorly)", icon: <SentimentSatisfiedIcon /> },
   {
     id: GRADE.GOOD.toString(),
     content: "Add as known (to revise)",
@@ -76,8 +76,7 @@ function supermemo(item: CardType, grade: GRADE) {
     nextRepetition = 0;
   }
 
-  nextEfactor =
-    (item.efactor || EFACTOR_DEFAULT) + (0.1 - (5 - grade) * (0.08 + (5 - grade) * 0.02));
+  nextEfactor = (item.efactor || EFACTOR_DEFAULT) + (0.1 - (5 - grade) * (0.08 + (5 - grade) * 0.02));
 
   if (nextEfactor < 1.3) {
     nextEfactor = 1.3;
@@ -93,10 +92,7 @@ function supermemo(item: CardType, grade: GRADE) {
 function practice(flashcard: CardType, grade: GRADE, failureSeconds: number): CardType {
   const { interval, repetition, efactor } = supermemo(flashcard, grade);
   const known = grade === GRADE.KNOWN;
-  const dueDate =
-    interval > 0
-      ? dayjs().add(interval, "day").unix()
-      : dayjs().add(failureSeconds, "seconds").unix();
+  const dueDate = interval > 0 ? dayjs().add(interval, "day").unix() : dayjs().add(failureSeconds, "seconds").unix();
 
   const firstSuccessDate = flashcard.firstSuccessDate || (grade >= GRADE.HARD ? dayjs().unix() : 0);
   return { ...flashcard, interval, repetition, efactor, dueDate, known, firstSuccessDate };
