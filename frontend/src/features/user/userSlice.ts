@@ -21,6 +21,7 @@ function userFromApiResult(result: any, username: string): UserDetails {
     refreshToken: result.refresh_token,
     trackingKey: token_data.tracking_key,
     trackingEndpoint: token_data.tracking_endpoint,
+    translationProviders: token_data.translation_providers,
     fromLang: token_data.lang_pair.split(":")[0],
   };
 }

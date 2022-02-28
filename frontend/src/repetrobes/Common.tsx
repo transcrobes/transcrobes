@@ -2,7 +2,7 @@ import { styled } from "@material-ui/core";
 import { ReactElement } from "react";
 import DefinitionGraph from "../components/DefinitionGraph";
 import useWindowDimensions from "../hooks/WindowDimensions";
-import { CardType, CharacterType, DefinitionType, PosSentences } from "../lib/types";
+import { CardType, CharacterType, DefinitionType, DictProvider, PosSentences } from "../lib/types";
 
 interface QuestionDefinitionGraphProps {
   characters: (CharacterType | null)[];
@@ -81,6 +81,7 @@ export interface CommonAnswerProps {
   recentSentences: PosSentences | null;
   showSynonyms: boolean;
   showRecents: boolean;
+  translationProviderOrder: DictProvider[];
   onCardFrontUpdate: (card: CardType) => void;
 }
 

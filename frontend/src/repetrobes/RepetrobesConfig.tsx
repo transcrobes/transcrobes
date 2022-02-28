@@ -4,18 +4,11 @@ import _ from "lodash";
 import dayjs from "dayjs";
 
 import TCCheckbox from "../components/TCCheckbox";
-import { RepetrobesActivityConfigType, WordOrdering } from "../lib/types";
-import {
-  FormControl,
-  FormControlLabel,
-  makeStyles,
-  Switch,
-  TextField,
-  Typography,
-  useTheme,
-} from "@material-ui/core";
+import { RepetrobesActivityConfigType, WordOrdering, ZHHANS_EN_DICT_PROVIDERS } from "../lib/types";
+import { FormControl, FormControlLabel, makeStyles, Switch, TextField, Typography, useTheme } from "@material-ui/core";
 import { validInt } from "../lib/funclib";
 import WordOrderSelector from "../components/WordOrderSelector";
+import { DragDropContext, Draggable, Droppable, DropResult } from "react-beautiful-dnd";
 
 interface Props {
   activityConfig: RepetrobesActivityConfigType;
@@ -34,7 +27,24 @@ const useStyles = makeStyles(() => ({
   },
   textbox: { display: "flex", justifyContent: "space-between", padding: "0.4em" },
   wordSelection: { display: "flex", justifyContent: "flex-start", padding: "0.4em" },
+  rowItem: { paddingRight: "8px" },
+  row: {
+    border: "solid",
+    display: "flex",
+    justifyContent: "space-between",
+    padding: "4px",
+    margin: "4px",
+  },
 }));
+
+// a little function to help us with reordering the result
+const reorder = (list: any[], startIndex: number, endIndex: number) => {
+  const result = Array.from(list);
+  const [removed] = result.splice(startIndex, 1);
+  result.splice(endIndex, 0, removed);
+
+  return result;
+};
 
 export default function RepetrobesConfig({ activityConfig, onConfigChange }: Props): ReactElement {
   const classes = useStyles();
@@ -43,6 +53,21 @@ export default function RepetrobesConfig({ activityConfig, onConfigChange }: Pro
     control: (styles) => ({ ...styles, backgroundColor: theme.palette.background.default }),
     menu: (styles) => ({ ...styles, backgroundColor: theme.palette.background.default, zIndex: 2 }),
   };
+
+  function handleDragEnd(result: DropResult) {
+    // dropped outside the list
+    if (!result.destination) {
+      return;
+    }
+
+    const translationProviderOrder = reorder(
+      activityConfig.translationProviderOrder,
+      result.source.index,
+      result.destination.index,
+    );
+
+    onConfigChange({ ...activityConfig, translationProviderOrder });
+  }
 
   function handleWordListsChange(sls: any) {
     // FIXME: this is SUPER nasty but see
@@ -77,9 +102,7 @@ export default function RepetrobesConfig({ activityConfig, onConfigChange }: Pro
   function handleDayStartsHourChange(e: React.ChangeEvent<HTMLInputElement>) {
     const dayStartsHour = parseInt(e.target.value);
     const todayStarts = (
-      new Date().getHours() < dayStartsHour
-        ? dayjs().startOf("day").subtract(1, "day")
-        : dayjs().startOf("day")
+      new Date().getHours() < dayStartsHour ? dayjs().startOf("day").subtract(1, "day") : dayjs().startOf("day")
     )
       .add(dayStartsHour, "hour")
       .unix();
@@ -109,10 +132,7 @@ export default function RepetrobesConfig({ activityConfig, onConfigChange }: Pro
       { ...activityConfig, badReviewWaitSecs: parseInt(e.target.value) * 60 },
     );
   }
-  function handleSystemWordSelectionChange(
-    event: ChangeEvent<HTMLInputElement>,
-    checked: boolean,
-  ): void {
+  function handleSystemWordSelectionChange(event: ChangeEvent<HTMLInputElement>, checked: boolean): void {
     onConfigChange({ ...activityConfig, systemWordSelection: !checked });
   }
   return (
@@ -177,9 +197,7 @@ export default function RepetrobesConfig({ activityConfig, onConfigChange }: Pro
           type="number"
           error={!validInt(Math.round(activityConfig.badReviewWaitSecs / 60), 1, 300)}
           helperText={
-            !validInt(Math.round(activityConfig.badReviewWaitSecs / 60), 1, 300)
-              ? "Invalid number"
-              : undefined
+            !validInt(Math.round(activityConfig.badReviewWaitSecs / 60), 1, 300) ? "Invalid number" : undefined
           }
           defaultValue={Math.round(activityConfig.badReviewWaitSecs / 60)}
           onChange={handleBadReviewWaitMinutesChange}
@@ -206,9 +224,7 @@ export default function RepetrobesConfig({ activityConfig, onConfigChange }: Pro
           title="Max revisions p/d (0 to 10000)"
           type="number"
           error={!validInt(activityConfig.maxRevisions, 0, 10000)}
-          helperText={
-            !validInt(activityConfig.maxRevisions, 0, 10000) ? "Invalid number" : undefined
-          }
+          helperText={!validInt(activityConfig.maxRevisions, 0, 10000) ? "Invalid number" : undefined}
           defaultValue={activityConfig.maxRevisions}
           onChange={handleSimpleChange}
           name="maxRevisions"
@@ -217,12 +233,7 @@ export default function RepetrobesConfig({ activityConfig, onConfigChange }: Pro
       </div>
       <FormControl component="fieldset" className={classes.wordSelection}>
         <FormControlLabel
-          control={
-            <Switch
-              checked={!activityConfig.systemWordSelection}
-              onChange={handleSystemWordSelectionChange}
-            />
-          }
+          control={<Switch checked={!activityConfig.systemWordSelection} onChange={handleSystemWordSelectionChange} />}
           label="Manual Review Selection"
         />
         {!activityConfig.systemWordSelection && (
@@ -258,6 +269,35 @@ export default function RepetrobesConfig({ activityConfig, onConfigChange }: Pro
           </>
         )}
       </FormControl>
+      <div>
+        <div className={classes.multiselect}>
+          <Typography>Preferred meaning provider</Typography>
+          <DragDropContext onDragEnd={handleDragEnd}>
+            <Droppable droppableId="droppable">
+              {(provided) => (
+                <div {...provided.droppableProps} ref={provided.innerRef}>
+                  {activityConfig.translationProviderOrder.map((item, index) => (
+                    <Draggable key={item} draggableId={item} index={index}>
+                      {(provided) => (
+                        <div
+                          className={classes.row}
+                          ref={provided.innerRef}
+                          {...provided.draggableProps}
+                          {...provided.dragHandleProps}
+                        >
+                          <div className={classes.rowItem}>{index}</div>
+                          <div>{ZHHANS_EN_DICT_PROVIDERS[item]}</div>
+                        </div>
+                      )}
+                    </Draggable>
+                  ))}
+                  {provided.placeholder}
+                </div>
+              )}
+            </Droppable>
+          </DragDropContext>
+        </div>
+      </div>
     </div>
   );
 }

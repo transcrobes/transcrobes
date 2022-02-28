@@ -83,15 +83,19 @@ function WordInfo({ definition, characters, meaningCard, onCardFrontUpdate }: Wo
             </div>
           </div>
         </div>
+        {/*
+          FIXME: Put this back, with proper editing and showing what the cards would actually look like
+
         <div className={classes.meaningBox}>
           <Meaning
+            translationProviderOrder={???}
             editable={false}
             showSynonyms={false}
             definition={definition}
             card={meaningCard}
             onCardFrontUpdate={onCardFrontUpdate}
           />
-        </div>
+        </div> */}
       </div>
     </>
   );

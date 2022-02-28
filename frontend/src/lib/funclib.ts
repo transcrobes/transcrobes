@@ -7,10 +7,12 @@ import {
   CardType,
   DayStat,
   DefinitionsState,
+  DictProvider,
   FirstSuccess,
   HistoData,
   KeyedModels,
   PosSentences,
+  ProviderTranslationType,
   PythonCounter,
   RecentSentencesType,
   RepetrobesActivityConfigType,
@@ -229,6 +231,13 @@ export function parseJwt(token: string): any {
 
   return JSON.parse(atob(base64));
   // return JSON.parse(Buffer.from(base64, "base64"));
+}
+
+export function orderDefinitions(
+  providerTranslations: ProviderTranslationType[],
+  translationProviderOrder: DictProvider[],
+) {
+  return translationProviderOrder.map((i) => providerTranslations.find((j) => j.provider === i));
 }
 
 export function binnedDayData(

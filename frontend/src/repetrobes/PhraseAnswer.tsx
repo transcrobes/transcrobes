@@ -11,6 +11,7 @@ export default function PhraseAnswer({
   recentSentences,
   showSynonyms,
   showRecents,
+  translationProviderOrder,
   onCardFrontUpdate,
 }: CommonAnswerProps): ReactElement {
   return (
@@ -25,6 +26,7 @@ export default function PhraseAnswer({
       </CentredFlex>
       <MeaningWrapper>
         <Meaning
+          translationProviderOrder={translationProviderOrder}
           editable={false}
           showSynonyms={showSynonyms}
           definition={definition}

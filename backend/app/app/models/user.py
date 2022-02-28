@@ -18,6 +18,10 @@ class ZHHANS_EN_CCCedictTranslator:
     SHORT_NAME = "ccc"
 
 
+# Support dropped, at least temporarily
+# class ZHHANS_EN_ABCdictTranslator:
+#     SHORT_NAME = "abc"
+
 ds = f"{BingTranslator.SHORT_NAME},{ZHHANS_EN_CCCedictTranslator.SHORT_NAME},{BingTranslator.FALLBACK_SHORT_NAME}"
 
 

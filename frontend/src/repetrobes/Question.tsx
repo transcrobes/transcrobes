@@ -1,7 +1,7 @@
 import { makeStyles, Theme } from "@material-ui/core";
 import { ReactElement } from "react";
 import { CARD_TYPES, getCardType } from "../database/Schema";
-import { CardType, CharacterType, DefinitionType, PosSentences } from "../lib/types";
+import { CardType, CharacterType, DefinitionType, DictProvider, PosSentences } from "../lib/types";
 import GraphQuestion from "./GraphQuestion";
 import MeaningQuestion from "./MeaningQuestion";
 import PhraseQuestion from "./PhraseQuestion";
@@ -35,6 +35,7 @@ interface QuestionProps {
   showL2LengthHint: boolean;
   showAnswer: boolean;
   premature: boolean;
+  translationProviderOrder: DictProvider[];
   onCardFrontUpdate: (card: CardType) => void;
 }
 
@@ -47,6 +48,7 @@ export default function Question({
   showL2LengthHint,
   showAnswer,
   premature,
+  translationProviderOrder,
   onCardFrontUpdate,
 }: QuestionProps): ReactElement {
   const classes = useStyles({ premature });
@@ -59,6 +61,7 @@ export default function Question({
         )) ||
         (cardType === CARD_TYPES.MEANING.toString() && (
           <MeaningQuestion
+            translationProviderOrder={translationProviderOrder}
             card={card}
             definition={definition}
             characters={characters}

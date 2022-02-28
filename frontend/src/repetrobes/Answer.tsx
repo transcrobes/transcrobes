@@ -1,7 +1,7 @@
 import { makeStyles } from "@material-ui/core";
 import { ReactElement } from "react";
 import { CARD_TYPES, getCardType } from "../database/Schema";
-import { CardType, DefinitionType, PosSentences } from "../lib/types";
+import { CardType, DefinitionType, DictProvider, PosSentences } from "../lib/types";
 import GraphAnswer from "./GraphAnswer";
 import MeaningAnswer from "./MeaningAnswer";
 import PhraseAnswer from "./PhraseAnswer";
@@ -27,6 +27,7 @@ interface AnswerProps {
   recentSentences: PosSentences | null;
   showSynonyms: boolean;
   showRecents: boolean;
+  translationProviderOrder: DictProvider[];
   onCardFrontUpdate: (card: CardType) => void;
 }
 
@@ -36,6 +37,7 @@ export default function Answer({
   recentSentences,
   showSynonyms,
   showRecents,
+  translationProviderOrder,
   onCardFrontUpdate,
 }: AnswerProps): ReactElement {
   const classes = useStyles();
@@ -45,6 +47,7 @@ export default function Answer({
     <div className={classes.answer}>
       {(cardType === CARD_TYPES.GRAPH.toString() && (
         <GraphAnswer
+          translationProviderOrder={translationProviderOrder}
           card={card}
           definition={definition}
           recentSentences={recentSentences}
@@ -55,6 +58,7 @@ export default function Answer({
       )) ||
         (cardType === CARD_TYPES.SOUND.toString() && (
           <SoundAnswer
+            translationProviderOrder={translationProviderOrder}
             card={card}
             definition={definition}
             recentSentences={recentSentences}
@@ -73,6 +77,7 @@ export default function Answer({
         )) ||
         (cardType === CARD_TYPES.PHRASE.toString() && (
           <PhraseAnswer
+            translationProviderOrder={translationProviderOrder}
             card={card}
             definition={definition}
             recentSentences={recentSentences}

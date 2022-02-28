@@ -9,6 +9,7 @@ export default function SoundAnswer({
   recentSentences,
   showSynonyms,
   showRecents,
+  translationProviderOrder,
   onCardFrontUpdate,
 }: CommonAnswerProps): ReactElement {
   return (
@@ -19,6 +20,7 @@ export default function SoundAnswer({
         <>
           <MeaningWrapper>
             <Meaning
+              translationProviderOrder={translationProviderOrder}
               editable={false}
               showSynonyms={showSynonyms}
               definition={definition}

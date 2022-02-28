@@ -3,7 +3,7 @@ import dayjs from "dayjs";
 import _ from "lodash";
 import { ReactElement, useEffect, useRef, useState } from "react";
 import { TopToolbar } from "react-admin";
-import { useAppDispatch } from "../app/hooks";
+import { useAppDispatch, useAppSelector } from "../app/hooks";
 import HelpButton from "../components/HelpButton";
 import Loading from "../components/Loading";
 import { getCardId, getCardType, getWordId, GRADE } from "../database/Schema";
@@ -76,6 +76,8 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
   const [daState, setDaState] = useState<ReviewablesInfoType>(EMPTY_STATE);
   const [stateActivityConfig, setStateActivityConfig] = useState<RepetrobesActivityConfigType>(EMPTY_ACTIVITY);
 
+  const defaultProviderOrder = useAppSelector((state) => state.userData.user.translationProviders);
+
   const windowEndRef = useRef<HTMLDivElement>(null);
   const windowBeginRef = useRef<HTMLDivElement>(null);
   const dispatch = useAppDispatch();
@@ -103,7 +105,8 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
       const activityConfigNew = {
         ...stateActivityConfig,
         ...conf,
-      };
+        translationProviderOrder: conf.translationProviderOrder || defaultProviderOrder,
+      } as RepetrobesActivityConfigType;
       const reviewLists = await proxy.sendMessagePromise<DailyReviewables>({
         source: DATA_SOURCE,
         type: "getSRSReviews",
@@ -525,16 +528,15 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
   const classes = useStyles();
   const theme = useTheme();
   const helpUrl = "https://transcrob.es/page/software/learn/repetrobes/";
-  const ac = stateActivityConfig;
   return (
     <div>
       <div ref={windowBeginRef} />
       <TopToolbar className={classes.toolbar}>
-        <RepetrobesConfigLauncher activityConfig={ac} onConfigChange={handleConfigChange} />
+        <RepetrobesConfigLauncher activityConfig={stateActivityConfig} onConfigChange={handleConfigChange} />
         <div className={classes.progress}>
-          {ac.showProgress && (
+          {stateActivityConfig.showProgress && (
             <Progress
-              activityConfig={ac}
+              activityConfig={stateActivityConfig}
               newToday={daState.newToday}
               completedNewToday={daState.completedNewToday}
               availableNewToday={daState.availableNewToday}

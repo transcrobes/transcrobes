@@ -101,6 +101,7 @@ export function VocabRevisor({
             </div>
           )}
           <Question
+            translationProviderOrder={activityConfig.translationProviderOrder}
             premature={!!premature}
             card={currentCard}
             definition={definition}
@@ -114,6 +115,7 @@ export function VocabRevisor({
           {showAnswer ? (
             <div>
               <Answer
+                translationProviderOrder={activityConfig.translationProviderOrder}
                 card={currentCard}
                 definition={definition}
                 recentSentences={recentPosSentences?.posSentences || null}

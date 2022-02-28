@@ -3,7 +3,7 @@ import { createStyles, makeStyles, Theme } from "@material-ui/core/styles";
 import { ReactElement, useState } from "react";
 import { useAppSelector } from "../app/hooks";
 import { filterFakeL1Definitions, toSimplePosLabels } from "../lib/libMethods";
-import { CardType, DefinitionType, SIMPLE_POS_TYPES } from "../lib/types";
+import { CardType, DefinitionType, DictProvider, SIMPLE_POS_TYPES } from "../lib/types";
 import DefinitionTranslations from "./DefinitionTranslations";
 import EditableDefinitionTranslations from "./EditableDefinitionTranslations";
 import MeaningText from "./MeaningText";
@@ -27,6 +27,7 @@ interface MeaningProps {
   definition: DefinitionType;
   showSynonyms: boolean;
   card: CardType;
+  translationProviderOrder: DictProvider[];
   onCardFrontUpdate: (card: CardType) => void;
 }
 
@@ -35,6 +36,7 @@ export default function Meaning({
   definition,
   showSynonyms,
   card,
+  translationProviderOrder,
   onCardFrontUpdate,
 }: MeaningProps): ReactElement {
   const classes = useStyles();
@@ -65,7 +67,9 @@ export default function Meaning({
   const posTrans: ReactElement[] = [];
   let defaultProvider = "";
   if (!card.front) {
-    for (const provider of definition.providerTranslations) {
+    for (const provider of translationProviderOrder.flatMap(
+      (i) => definition.providerTranslations.find((j) => j.provider === i) || [],
+    )) {
       if (provider.posTranslations.length > 0) {
         let hasValidDefinitions = false;
         for (const posTranslation of provider.posTranslations) {

@@ -1,7 +1,7 @@
 import { ReactElement } from "react";
 import QuestionDefinitionGraph from "./Common";
 import Meaning from "../components/Meaning";
-import { CardType, CharacterType, DefinitionType } from "../lib/types";
+import { CardType, CharacterType, DefinitionType, DictProvider } from "../lib/types";
 import { MeaningWrapper, StyledQuestion } from "./Common";
 
 interface MeaningQuestionProps {
@@ -11,6 +11,7 @@ interface MeaningQuestionProps {
   showL2LengthHint: boolean;
   characters: CharacterType[];
   showAnswer: boolean;
+  translationProviderOrder: DictProvider[];
   onCardFrontUpdate: (card: CardType) => void;
 }
 
@@ -21,6 +22,7 @@ export default function MeaningQuestion({
   showL2LengthHint,
   characters,
   showAnswer,
+  translationProviderOrder,
   onCardFrontUpdate,
 }: MeaningQuestionProps): ReactElement {
   return (
@@ -28,6 +30,7 @@ export default function MeaningQuestion({
       <StyledQuestion>
         <MeaningWrapper>
           <Meaning
+            translationProviderOrder={translationProviderOrder}
             editable={true}
             showSynonyms={showSynonyms}
             definition={definition}

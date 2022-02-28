@@ -3,11 +3,7 @@ import { $enum } from "ts-enum-util";
 import { CARD_TYPES } from "../database/Schema";
 import { getSettingsValue, setSettingsValue } from "../lib/appSettings";
 import { ServiceWorkerProxy } from "../lib/proxies";
-import {
-  RepetrobesActivityConfigType,
-  SelectableListElementType,
-  WordOrdering,
-} from "../lib/types";
+import { RepetrobesActivityConfigType, SelectableListElementType, WordOrdering } from "../lib/types";
 
 const DATA_SOURCE = "repetrobes/funclib.ts";
 
@@ -37,11 +33,10 @@ export const EMPTY_ACTIVITY = {
   showL2LengthHint: DEFAULT_QUESTION_SHOW_L2_LENGTH_HINT,
   activeCardTypes: [],
   todayStarts: 0,
-};
+  translationProviderOrder: [],
+} as RepetrobesActivityConfigType;
 
-export async function getUserConfig(
-  proxy: ServiceWorkerProxy,
-): Promise<RepetrobesActivityConfigType> {
+export async function getUserConfig(proxy: ServiceWorkerProxy): Promise<RepetrobesActivityConfigType> {
   const savedConf = await getSettingsValue("repetrobes", "config");
   let conf: RepetrobesActivityConfigType;
   if (savedConf) {
@@ -62,15 +57,11 @@ export async function getUserConfig(
         return {
           label: label,
           value: value.toString(),
-          selected:
-            conf.activeCardTypes.filter((ct) => ct.value === value.toString() && ct.selected)
-              .length > 0,
+          selected: conf.activeCardTypes.filter((ct) => ct.value === value.toString() && ct.selected).length > 0,
         };
       });
     conf.todayStarts = (
-      new Date().getHours() < conf.dayStartsHour
-        ? dayjs().startOf("day").subtract(1, "day")
-        : dayjs().startOf("day")
+      new Date().getHours() < conf.dayStartsHour ? dayjs().startOf("day").subtract(1, "day") : dayjs().startOf("day")
     )
       .add(conf.dayStartsHour, "hour")
       .unix();

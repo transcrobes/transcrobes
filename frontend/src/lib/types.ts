@@ -150,6 +150,15 @@ export const SIMPLE_POS_ENGLISH_NAMES: { [key in SIMPLE_POS_TYPES]: string } = {
   OTHER: "Other",
 };
 
+export const ZHHANS_EN_DICT_PROVIDERS = {
+  mst: "Bing",
+  ccc: "CC Cedict",
+  fbk: "Bing fallback",
+};
+export type ZHHansEnDictProvider = keyof typeof ZHHANS_EN_DICT_PROVIDERS;
+
+export type DictProvider = ZHHansEnDictProvider;
+
 // FIXME: This shouldn't be here...
 export const ZH_TB_POS_LABELS: { [key in TREEBANK_POS_TYPES]: string } = {
   AD: "Adverb", // adverb
@@ -260,6 +269,7 @@ export interface UserDetails {
   refreshToken: string;
   trackingKey: string;
   trackingEndpoint: string;
+  translationProviders: string[];
   username: string;
   fromLang: InputLanguage;
 }
@@ -278,6 +288,7 @@ export const DEFAULT_USER: UserDetails = {
   refreshToken: "",
   trackingKey: "",
   trackingEndpoint: "",
+  translationProviders: [],
   username: "",
   fromLang: "zh-Hans",
 };
@@ -625,6 +636,7 @@ export type RepetrobesActivityConfigType = {
   showSynonyms: boolean;
   showL2LengthHint: boolean;
   activeCardTypes: SelectableListElementType[];
+  translationProviderOrder: DictProvider[];
 };
 
 export type DayModelStatsType = {
@@ -669,7 +681,6 @@ export type DayCardWords = {
 };
 
 export type SerialisableStringSet = {
-  // [key: string]: undefined;
   [key: string]: null;
 };
 

@@ -11,6 +11,7 @@ export default function GraphAnswer({
   recentSentences,
   showSynonyms,
   showRecents,
+  translationProviderOrder,
   onCardFrontUpdate,
 }: CommonAnswerProps): ReactElement {
   return (
@@ -27,6 +28,7 @@ export default function GraphAnswer({
           </CentredFlex>
           <MeaningWrapper>
             <Meaning
+              translationProviderOrder={translationProviderOrder}
               editable={false}
               showSynonyms={showSynonyms}
               definition={definition}

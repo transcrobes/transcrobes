@@ -11,7 +11,6 @@ const useStyles = makeStyles((theme: Theme) => ({
   typography: {
     padding: theme.spacing(2),
   },
-  rowItem: { paddingRight: "8px" },
   itemsPerPage: { display: "flex", justifyContent: "space-between", padding: "0.4em" },
   itemsPerPageInput: { width: "30%" },
   checkbox: { padding: "0.4em" },
@@ -22,7 +21,7 @@ const useStyles = makeStyles((theme: Theme) => ({
     marginBottom: "0.4em",
     justifyContent: "space-between",
   },
-
+  rowItem: { paddingRight: "8px" },
   row: {
     border: "solid",
     display: "flex",
@@ -88,7 +87,6 @@ export function ListrobesConfig({ graderConfig, onConfigChange }: Props): ReactE
     });
   }
   const classes = useStyles();
-  const gradeOrder = graderConfig.gradeOrder;
   return (
     <div>
       <div>Taps for state</div>
@@ -97,7 +95,7 @@ export function ListrobesConfig({ graderConfig, onConfigChange }: Props): ReactE
           <Droppable droppableId="droppable">
             {(provided) => (
               <div {...provided.droppableProps} ref={provided.innerRef}>
-                {gradeOrder.map((item, index) => (
+                {graderConfig.gradeOrder.map((item, index) => (
                   <Draggable key={item.id} draggableId={item.id} index={index}>
                     {(provided) => (
                       <div
