@@ -11,7 +11,6 @@ from app.enrich.translate import Translator
 from app.models.migrated import ZhhansEnCCCLookup
 from app.ndutils import lemma
 from app.zhhans import ZH_TB_POS_TO_SIMPLE_POS
-from app.zhhans_en.translate import decode_phone
 from sqlalchemy.ext.asyncio.session import AsyncSession
 
 logger = logging.getLogger(__name__)
@@ -23,6 +22,37 @@ class WordDefinition:
 
 
 WordDictionary = dict[str, list[WordDefinition]]
+
+pinyinToneMarks = {
+    "a": "āáǎà",
+    "e": "ēéěè",
+    "i": "īíǐì",
+    "o": "ōóǒò",
+    "u": "ūúǔù",
+    "ü": "ǖǘǚǜ",
+    "A": "ĀÁǍÀ",
+    "E": "ĒÉĚÈ",
+    "I": "ĪÍǏÌ",
+    "O": "ŌÓǑÒ",
+    "U": "ŪÚǓÙ",
+    "Ü": "ǕǗǙǛ",
+}
+
+
+def convertPinyinCallback(m):
+    tone = int(m.group(3)) % 5
+    r = m.group(1).replace("v", "ü").replace("V", "Ü")
+    # for multple vowels, use first one if it is a/e/o, otherwise use second one
+    pos = 0
+    if len(r) > 1 and not r[0] in "aeoAEO":
+        pos = 1
+    if tone != 0:
+        r = r[0:pos] + pinyinToneMarks[r[pos]][tone - 1] + r[pos + 1 :]  # noqa: E203
+    return r + m.group(2)
+
+
+def convertPinyin(s):
+    return re.sub(r"([aeiouüvÜ]{1,3})(n?g?r?)([012345])", convertPinyinCallback, s, flags=re.IGNORECASE)
 
 
 class ZHHANS_EN_CCCedictTranslator(PersistenceProvider, Translator):
@@ -76,8 +106,7 @@ class ZHHANS_EN_CCCedictTranslator(PersistenceProvider, Translator):
 
     @staticmethod
     def _decode_phone(s: str) -> str:
-        # TODO: don't use the generic method here
-        return decode_phone(s)
+        return convertPinyin(s)
 
     def _def_from_entry(self, token: Token, cccl) -> EntryDefinition:
         std_format = EntryDefinition()
@@ -144,11 +173,7 @@ class ZHHANS_EN_CCCedictTranslator(PersistenceProvider, Translator):
         cccl = await self._get_def(db, lemma(token))
         if cccl:
             for cc in cccl:
-                logger.debug(
-                    "Iterating on '%s''s different forms in cccedict cache",
-                    lemma(token),
-                )
-                for sound in cc["phone"]:
-                    if sound:
-                        return self._decode_phone(sound)
+                sound = cc.get("phone") or cc.get("pinyin")
+                if sound:
+                    return self._decode_phone(sound.replace("[", "").replace("]", ""))
         return ""

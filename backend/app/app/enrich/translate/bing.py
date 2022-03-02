@@ -275,5 +275,5 @@ class BingTranslator(DefaultTranslator, BingAPI):
         return val
 
     # override Translator
-    async def sound_for(self, db: AsyncSession, token):
-        return await self._transliterator.transliterate(db, token)
+    async def sound_for(self, db: AsyncSession, token: Token):
+        return await self._transliterator.transliterate(db, lemma(token))

@@ -5,6 +5,7 @@ import logging
 import os
 import re
 
+import unidecode
 from app.enrich.data import PersistenceProvider
 from app.enrich.etypes import EntryDefinition
 from app.enrich.models import Token
@@ -12,6 +13,7 @@ from app.enrich.translate import Translator
 from app.models.migrated import ZhhansEnABCLookup
 from app.ndutils import lemma
 from app.zhhans_en.translate import decode_phone
+from pinyinsplit import PinyinSplit
 from sqlalchemy.ext.asyncio.session import AsyncSession
 
 logger = logging.getLogger(__name__)
@@ -159,8 +161,21 @@ class ZHHANS_EN_ABCDictTranslator(PersistenceProvider, Translator):
 
     @staticmethod
     def _decode_pinyin(s: str) -> str:
-        # TODO: don't use the generic method here
-        return decode_phone(s)
+        accented_array = []
+        for ses in s.split():
+            joined = decode_phone(ses.removesuffix("*").removesuffix("(r)"))
+            er_huared = joined.split("/")[0]
+            er_huared = unidecode.unidecode(er_huared).lower()
+            if er_huared.endswith("r") and not er_huared.endswith("er"):
+                er_huared = er_huared.removesuffix("r") + "er"
+            if not PinyinSplit().split(er_huared):
+                continue
+            unaccented_splited = PinyinSplit().split(er_huared)[0]
+            cur = 0
+            for word in unaccented_splited:
+                accented_array.append(joined[cur : cur + len(word)])  # noqa: E203
+                cur += len(word)
+        return " ".join(accented_array)
 
     def _def_from_entry(self, token: Token, entry) -> EntryDefinition:
         std_format = EntryDefinition()
@@ -215,9 +230,5 @@ class ZHHANS_EN_ABCDictTranslator(PersistenceProvider, Translator):
         if entry:
             logger.debug("'%s' is in abcdict cache", lemma(token))
             for abc in entry:
-                logger.debug(
-                    "Iterating on '%s''s different definitions in abcdict cache",
-                    lemma(token),
-                )
-                return self._decode_pinyin(abc["pinyin"])
+                return self._decode_pinyin(abc.get("pinyin") or abc.get("phone"))
         return ""

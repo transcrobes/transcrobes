@@ -4,6 +4,7 @@ from __future__ import annotations
 import datetime
 import json  # import orjson as json
 import logging
+import re
 from typing import TYPE_CHECKING
 
 import sqlalchemy
@@ -14,11 +15,13 @@ from app.models.migrated import BingApiLookup, CachedDefinition
 from app.ndutils import clean_definitions, lemma
 from sqlalchemy.ext.asyncio.session import AsyncSession
 from sqlalchemy.future import select
+from zhon import hanzi
 
 if TYPE_CHECKING:
     from app.enrich.data import EnrichmentManager
 
 logger = logging.getLogger(__name__)
+hanzi_chars = re.compile("[{}]".format(hanzi.characters))
 
 
 async def reload_definitions_cache(db: AsyncSession, from_lang: str, to_lang: str) -> TimestampedDict:
@@ -120,11 +123,11 @@ async def definition(  # pylint: disable=R0914
 
         sound = await manager.transliterator().transliterate(db, word)
         for x in manager.secondary():
-            if not sound:
+            if not sound or len(hanzi_chars.findall(sound)) != 0:
                 sound = await x.sound_for(token)
             json_definition["defs"][x.name()] = clean_definitions(await x.get_standardised_defs(db, token))
 
-        json_definition["p"] = sound
+        json_definition["p"] = " ".join("?", len(word)) if len(hanzi_chars.findall(sound)) != 0 else sound
 
         json_definition["metadata"] = {}
         for meta in manager.metadata():

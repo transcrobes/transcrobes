@@ -46,6 +46,8 @@ pylint = "2.12.2"
 faust-streaming = {extras = ["rocksdb"], version = "^0.8.2"}
 lzstring = "^1.0.4"
 textile = "^4.0.2"
+zhon = "^1.1.5"
+pinyinsplit = "^0.1.4"
 
 [tool.poetry.dev-dependencies]
 mypy = "0.931"
