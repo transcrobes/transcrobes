@@ -2,7 +2,6 @@ import { createComponentVNode, render } from "inferno";
 import { Provider as InfernoProvider } from "inferno-redux";
 import jss from "jss";
 import preset from "jss-preset-default";
-import _ from "lodash";
 import ReactDOM from "react-dom";
 import { Provider } from "react-redux";
 import { AdminStore, store } from "../app/createStore";
@@ -11,26 +10,24 @@ import EnrichedTextFragment from "../components/content/etf/EnrichedTextFragment
 import Mouseover from "../components/content/td/Mouseover";
 import TokenDetails from "../components/content/td/TokenDetails";
 import Loading from "../components/Loading";
-import { observerFunc } from "../lib/stats";
 import { setState } from "../features/card/knownCardsSlice";
+import { getRefreshedState } from "../features/content/contentSlice";
 import {
   DEFAULT_WEB_READER_CONFIG_STATE,
   simpleReaderActions,
   SimpleReaderState,
   WEB_READER_ID,
 } from "../features/content/simpleReaderSlice";
-import { addDefinitions } from "../features/definition/definitionsSlice";
 import { setLoading, setTokenDetails } from "../features/ui/uiSlice";
 import { setUser } from "../features/user/userSlice";
+import { ensureDefinitionsLoaded, refreshDictionaries } from "../lib/dictionary";
 import { missingWordIdsFromModels } from "../lib/funclib";
 import { enrichChildren, toEnrich } from "../lib/libMethods";
 import { AbstractWorkerProxy, BackgroundWorkerProxy, setPlatformHelper } from "../lib/proxies";
+import { observerFunc } from "../lib/stats";
 import {
   ComponentClass,
   ComponentFunction,
-  ContentConfigType,
-  DefinitionState,
-  DefinitionType,
   KeyedModels,
   ModelType,
   ReaderState,
@@ -39,6 +36,7 @@ import {
 } from "../lib/types";
 
 const DATA_SOURCE = "content.ts";
+const KEEPALIVE_QUERY_FREQUENCY_MS = 5000;
 
 const transcroberObserver: IntersectionObserver = new IntersectionObserver(onEntryId, {
   threshold: [0.9],
@@ -60,22 +58,14 @@ const readObserver = new IntersectionObserver(observerFunc(getReaderConfig, mode
   threshold: [1.0],
 });
 
-const platformHelper = new BackgroundWorkerProxy();
-setPlatformHelper(platformHelper);
+const proxy = new BackgroundWorkerProxy();
+setPlatformHelper(proxy);
 
 let classes: ETFStylesProps["classes"] | null = null;
 const id = WEB_READER_ID;
 
 async function ensureAllLoaded(platformHelper: AbstractWorkerProxy, store: AdminStore) {
-  const config = await platformHelper.sendMessagePromise<ContentConfigType>({
-    source: "ContentConfig.ts",
-    type: "getContentConfigFromStore",
-    value: id,
-  });
-  const conf: SimpleReaderState = _.merge(
-    _.cloneDeep({ ...DEFAULT_WEB_READER_CONFIG_STATE, id }),
-    config?.configString ? JSON.parse(config.configString).readerState : null,
-  );
+  const conf = await getRefreshedState<SimpleReaderState>(proxy, DEFAULT_WEB_READER_CONFIG_STATE, id);
   store.dispatch(simpleReaderActions.setState({ id, value: conf }));
 
   const value = await platformHelper.sendMessagePromise<SerialisableDayCardWords>({
@@ -84,9 +74,11 @@ async function ensureAllLoaded(platformHelper: AbstractWorkerProxy, store: Admin
     value: "",
   });
   store.dispatch(setState(value));
+
+  await refreshDictionaries(store, platformHelper);
 }
 
-platformHelper.sendMessagePromise<UserState>({ source: DATA_SOURCE, type: "getUser", value: "" }).then((userData) => {
+proxy.sendMessagePromise<UserState>({ source: DATA_SOURCE, type: "getUser", value: "" }).then((userData) => {
   if (!userData.username || !userData.password || !userData.baseUrl) {
     store.dispatch(setLoading(undefined));
     alert(
@@ -97,8 +89,8 @@ platformHelper.sendMessagePromise<UserState>({ source: DATA_SOURCE, type: "getUs
   // FIXME: it is DANGEROUS to use this here, as the async thunks do get and set dexie!!!
   store.dispatch(setUser(userData));
 
-  platformHelper.asyncInit({ username: userData.username }).then(() => {
-    ensureAllLoaded(platformHelper, store).then(() => {
+  proxy.asyncInit({ username: userData.username }).then(() => {
+    ensureAllLoaded(proxy, store).then(() => {
       readerConfig = store.getState().simpleReader[id];
       enrichChildren(document.body, transcroberObserver, userData.user.fromLang || "zh-Hans");
       document.addEventListener("click", () => {
@@ -120,8 +112,8 @@ platformHelper.sendMessagePromise<UserState>({ source: DATA_SOURCE, type: "getUs
   // This ensures that when the transcrobed tab has focus, the background script will
   // be active or reactivated if unloaded (which happens regularly)
   setInterval(() => {
-    platformHelper.sendMessagePromise({ source: DATA_SOURCE, type: "getWordFromDBs", value: "的" });
-  }, 5000);
+    proxy.sendMessagePromise({ source: DATA_SOURCE, type: "getWordFromDBs", value: "的" });
+  }, KEEPALIVE_QUERY_FREQUENCY_MS);
 });
 
 export function onEntryId(entries: IntersectionObserverEntry[]): void {
@@ -135,7 +127,7 @@ export function onEntryId(entries: IntersectionObserverEntry[]): void {
     if (element.dataset && element.dataset.tced) return;
     change.target.childNodes.forEach(async (item) => {
       if (item.nodeType === 3 && item.nodeValue?.trim() && toEnrich(item.nodeValue, fromLang || "zh-Hans")) {
-        const [data] = await platformHelper.sendMessagePromise<[ModelType, string]>({
+        const [data] = await proxy.sendMessagePromise<[ModelType, string]>({
           source: DATA_SOURCE,
           type: "enrichText",
           value: item.nodeValue,
@@ -148,21 +140,7 @@ export function onEntryId(entries: IntersectionObserverEntry[]): void {
         if (uniqueIds.size > 0) {
           // FIXME: how much does a setLoading cost?
           if (loading) store.dispatch(setLoading(undefined));
-
-          const newDefinitions = await platformHelper.sendMessagePromise<DefinitionType[]>({
-            source: DATA_SOURCE,
-            type: "getByIds",
-            value: { collection: "definitions", ids: [...uniqueIds] },
-          });
-          const defStates = new Map<string, DefinitionState>();
-          const l = newDefinitions.length;
-          for (let i = 0; i < l; i++) {
-            defStates.set(newDefinitions[i].id.toString(), {
-              ...newDefinitions[i],
-              glossToggled: false,
-            });
-          }
-          store.dispatch(addDefinitions([...defStates.values()]));
+          await ensureDefinitionsLoaded(proxy, [...uniqueIds], store);
         }
         const etf = document.createElement("span");
         etf.id = data.id.toString();

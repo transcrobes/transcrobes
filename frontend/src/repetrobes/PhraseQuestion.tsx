@@ -5,7 +5,8 @@ import { InfoBox } from "../components/Common";
 import Mouseover from "../components/content/td/Mouseover";
 import RecentSentenceExample from "../components/RecentSentenceExample";
 import { DEFAULT_RECENTS_READER_CONFIG_STATE } from "../features/content/simpleReaderSlice";
-import { CharacterType, PosSentence, PosSentences, ZH_TB_POS_LABELS } from "../lib/types";
+import { toPosLabels } from "../lib/libMethods";
+import { CharacterType, PosSentence, PosSentences, TreebankPosType, ZH_TB_POS_LABELS } from "../lib/types";
 import QuestionDefinitionGraph from "./Common";
 
 interface Props {
@@ -15,11 +16,11 @@ interface Props {
 }
 export default function PhraseQuestion({ recentSentences, showAnswer, characters }: Props): ReactElement {
   const [current, setCurrent] = useState(0);
-  const [sentences, setSentences] = useState<[string, PosSentence][]>([]);
+  const [sentences, setSentences] = useState<[TreebankPosType, PosSentence][]>([]);
   if (recentSentences) {
-    const sents: [string, PosSentence][] = [];
+    const sents: [TreebankPosType, PosSentence][] = [];
     useEffect(() => {
-      for (const [k, v] of [...Object.entries(recentSentences)]) {
+      for (const [k, v] of Object.entries(recentSentences) as [TreebankPosType, PosSentence[]][]) {
         if (v) {
           for (const s of v) sents.push([k, s]);
         }
@@ -33,7 +34,7 @@ export default function PhraseQuestion({ recentSentences, showAnswer, characters
         <Grid container justifyContent="center" alignItems="center">
           <Grid item>
             <InfoBox>
-              ({ZH_TB_POS_LABELS[sentences[current][0]]}){" "}
+              ({toPosLabels(sentences[current][0])}){" "}
               <RecentSentenceExample
                 readerConfig={DEFAULT_RECENTS_READER_CONFIG_STATE}
                 isListItem={true}

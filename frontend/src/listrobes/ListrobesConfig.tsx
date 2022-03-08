@@ -4,7 +4,7 @@ import { ReactElement } from "react";
 import { DragDropContext, Draggable, Droppable, DropResult } from "react-beautiful-dnd";
 import Select, { StylesConfig } from "react-select";
 import WordOrderSelector from "../components/WordOrderSelector";
-import { validInt } from "../lib/funclib";
+import { reorderArray, validInt } from "../lib/funclib";
 import { GraderConfig, WordOrdering } from "../lib/types";
 
 const useStyles = makeStyles((theme: Theme) => ({
@@ -31,15 +31,6 @@ const useStyles = makeStyles((theme: Theme) => ({
   },
 }));
 
-// a little function to help us with reordering the result
-const reorder = (list: any[], startIndex: number, endIndex: number) => {
-  const result = Array.from(list);
-  const [removed] = result.splice(startIndex, 1);
-  result.splice(endIndex, 0, removed);
-
-  return result;
-};
-
 interface Props {
   graderConfig: GraderConfig;
   onConfigChange: (graderConfig: GraderConfig) => void;
@@ -58,7 +49,7 @@ export function ListrobesConfig({ graderConfig, onConfigChange }: Props): ReactE
       return;
     }
 
-    const gradeOrder = reorder(graderConfig.gradeOrder, result.source.index, result.destination.index);
+    const gradeOrder = reorderArray(graderConfig.gradeOrder, result.source.index, result.destination.index);
 
     onConfigChange({ ...graderConfig, gradeOrder: gradeOrder });
   }

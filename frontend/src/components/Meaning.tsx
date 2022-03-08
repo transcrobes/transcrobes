@@ -2,8 +2,8 @@ import Popover from "@material-ui/core/Popover";
 import { createStyles, makeStyles, Theme } from "@material-ui/core/styles";
 import { ReactElement, useState } from "react";
 import { useAppSelector } from "../app/hooks";
-import { filterFakeL1Definitions, toSimplePosLabels } from "../lib/libMethods";
-import { CardType, DefinitionType, DictProvider, SIMPLE_POS_TYPES } from "../lib/types";
+import { filterFakeL1Definitions, orderTranslations, toPosLabels } from "../lib/libMethods";
+import { CardType, DefinitionType } from "../lib/types";
 import DefinitionTranslations from "./DefinitionTranslations";
 import EditableDefinitionTranslations from "./EditableDefinitionTranslations";
 import MeaningText from "./MeaningText";
@@ -27,7 +27,7 @@ interface MeaningProps {
   definition: DefinitionType;
   showSynonyms: boolean;
   card: CardType;
-  translationProviderOrder: DictProvider[];
+  translationProviderOrder: Record<string, number>;
   onCardFrontUpdate: (card: CardType) => void;
 }
 
@@ -67,9 +67,8 @@ export default function Meaning({
   const posTrans: ReactElement[] = [];
   let defaultProvider = "";
   if (!card.front) {
-    for (const provider of translationProviderOrder.flatMap(
-      (i) => definition.providerTranslations.find((j) => j.provider === i) || [],
-    )) {
+    const translations = orderTranslations(definition.providerTranslations, translationProviderOrder);
+    for (const provider of translations.length ? translations : definition.providerTranslations) {
       if (provider.posTranslations.length > 0) {
         let hasValidDefinitions = false;
         for (const posTranslation of provider.posTranslations) {
@@ -81,7 +80,7 @@ export default function Meaning({
             hasValidDefinitions = true;
             posTrans.push(
               <div key={"mean" + posTranslation.posTag}>
-                {toSimplePosLabels(posTranslation.posTag as SIMPLE_POS_TYPES, fromLang)}: {finalList.join(", ")}
+                {toPosLabels(posTranslation.posTag, fromLang)}: {finalList.join(", ")}
               </div>,
             );
           }
@@ -124,7 +123,11 @@ export default function Meaning({
         onClose={() => setAnchorEl(null)}
         disableRestoreFocus
       >
-        <DefinitionTranslations definition={definition} />
+        <DefinitionTranslations
+          cleanMeanings
+          definition={definition}
+          translationProviderOrder={translationProviderOrder}
+        />
       </Popover>
       <Popover
         id={id}

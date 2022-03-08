@@ -52,6 +52,7 @@ addRxPlugin(RxDBUpdatePlugin);
 addRxPlugin(RxDBReplicationGraphQLPlugin);
 
 let dbPromise: Promise<TranscrobesDatabase> | null;
+
 const LOADED_DEF_QUERY_ENTRY = "代码库"; // const LOADED_QUERY_ENTRY = '写进';
 const LOADED_CHAR_QUERY_ENTRY = "代";
 const EXPORTS_LIST_PATH = API_PREFIX + "/enrich/exports.json";

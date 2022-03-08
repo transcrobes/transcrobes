@@ -70,13 +70,6 @@ def phone_rep(token: AnyToken) -> str:
     return token.get("p") or token["pinyin"]
 
 
-# def do_response(response):
-#     response["Access-Control-Allow-Origin"] = "*"
-#     response["Access-Control-Allow-Methods"] = "POST, OPTIONS"
-#     response["Access-Control-Allow-Headers"] = "X-Requested-With, Content-Type, Authorization"
-#     return response
-
-
 def clean_definitions(definitions):
     for k in definitions.keys():
         for definition in definitions[k]:

@@ -101,11 +101,15 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
         value: {},
       });
       setUserListWords(ulws.userListWords);
-
       const activityConfigNew = {
         ...stateActivityConfig,
         ...conf,
-        translationProviderOrder: conf.translationProviderOrder || defaultProviderOrder,
+        translationProviderOrder:
+          conf.translationProviderOrder ||
+          Object.keys(defaultProviderOrder).reduce(
+            (acc, next, ind) => ({ ...acc, [next]: ind }),
+            {} as Record<string, number>,
+          ),
       } as RepetrobesActivityConfigType;
       const reviewLists = await proxy.sendMessagePromise<DailyReviewables>({
         source: DATA_SOURCE,

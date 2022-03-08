@@ -10,6 +10,7 @@ import { useAppSelector } from "../../../app/hooks";
 import useResizeObserver from "use-resize-observer";
 import { originalSentenceFromTokens } from "../../../lib/funclib";
 import { platformHelper } from "../../../lib/proxies";
+import ReaderConfigProvider from "../../ReaderConfigProvider";
 
 export type Props = {
   readerConfig: ReaderState;
@@ -30,7 +31,7 @@ const useStyles = makeStyles<Theme, StyleProps>((theme: Theme) => ({
     maxWidth: "350px",
     minWidth: "180px",
     opacity: 1,
-    fontSize: `${props.fontSize * (props.glossFontSize / 100)}%`,
+    fontSize: `${Math.min(150, props.fontSize * (props.glossFontSize / 100))}%`,
     position: "absolute",
     display: "block",
     // FIXME: added for testing, get from the theme!
@@ -40,7 +41,7 @@ const useStyles = makeStyles<Theme, StyleProps>((theme: Theme) => ({
   }),
   icons: { color: "white", padding: "6px" },
   container: { textAlign: "left" },
-  synonymList: (props) => ({ fontSize: `${props.fontSize}%` }),
+  synonymList: (props) => ({ fontSize: `${Math.min(150, props.fontSize)}%` }),
   source: { marginLeft: "6px", padding: "5px 0" },
   sourceName: { boxSizing: "border-box", textAlign: "left" },
   sourcePos: { marginLeft: "12px" },
@@ -56,7 +57,7 @@ const useStyles = makeStyles<Theme, StyleProps>((theme: Theme) => ({
   best: { boxSizing: "border-box", padding: "2px" },
   sentenceButton: { boxSizing: "border-box", padding: "2px" },
   // FIXME: this needs to get put down there somewhere...
-  recentSentences: (props) => ({ textAlign: "left", fontSize: `${props.fontSize}%` }),
+  recentSentences: (props) => ({ textAlign: "left", fontSize: `${Math.min(150, props.fontSize)}%` }),
 }));
 
 export default function TokenDetails({ readerConfig }: Props): ReactElement {
@@ -67,8 +68,8 @@ export default function TokenDetails({ readerConfig }: Props): ReactElement {
     visibility: "hidden",
   } as PopupPosition;
   const classes = useStyles({
-    fontSize: readerConfig.fontSize * 100,
-    glossFontSize: readerConfig.glossFontSize * 100,
+    fontSize: Math.min(150, readerConfig.fontSize * 100),
+    glossFontSize: Math.min(150, readerConfig.glossFontSize * 100),
   });
   const [guess, setGuess] = useState("");
   const definitions = useAppSelector((state) => state.definitions);
@@ -83,7 +84,7 @@ export default function TokenDetails({ readerConfig }: Props): ReactElement {
       if (tokenDetails) {
         const def =
           (tokenDetails.token.id && definitions[tokenDetails.token.id]) || (await getWord(tokenDetails.token.l));
-        setGuess(bestGuess(tokenDetails.token, def, fromLang));
+        setGuess(bestGuess(tokenDetails.token, def, fromLang, readerConfig));
       }
     })();
   }, [tokenDetails]);
@@ -141,24 +142,26 @@ export default function TokenDetails({ readerConfig }: Props): ReactElement {
   }, [tokenDetails]);
 
   return tokenDetails && tokenDetails.token.id && definitions[tokenDetails.token.id] ? (
-    <div ref={ref} className={classes.popup} style={styles} onClick={(event) => preventDefault(event)}>
-      <Header
-        classes={classes}
-        token={tokenDetails.token}
-        bestGuess={guess}
-        extrasOpen={extrasOpen}
-        onToggleExtras={() => setExtrasOpen(!extrasOpen)}
-      />
-      {extrasOpen && (
-        <Extras
-          token={tokenDetails.token}
+    <ReaderConfigProvider readerConfig={readerConfig}>
+      <div ref={ref} className={classes.popup} style={styles} onClick={(event) => preventDefault(event)}>
+        <Header
           classes={classes}
-          definition={definitions[tokenDetails.token.id]}
-          sentence={tokenDetails.sentence}
+          token={tokenDetails.token}
+          bestGuess={guess}
+          extrasOpen={extrasOpen}
+          onToggleExtras={() => setExtrasOpen(!extrasOpen)}
         />
-      )}
-      <Container tokenDetails={tokenDetails} definition={definitions[tokenDetails.token.id]} classes={classes} />
-    </div>
+        {extrasOpen && (
+          <Extras
+            token={tokenDetails.token}
+            classes={classes}
+            definition={definitions[tokenDetails.token.id]}
+            sentence={tokenDetails.sentence}
+          />
+        )}
+        <Container tokenDetails={tokenDetails} definition={definitions[tokenDetails.token.id]} classes={classes} />
+      </div>
+    </ReaderConfigProvider>
   ) : (
     <></>
   );

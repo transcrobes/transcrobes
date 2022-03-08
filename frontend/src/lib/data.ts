@@ -56,6 +56,7 @@ import {
   RecentSentencesType,
   RepetrobesActivityConfigType,
   SelectableListElementType,
+  UserDefinitionType,
   UserListWordType,
   VocabReview,
   WordDetailsRxType,
@@ -148,6 +149,7 @@ async function getByIds(
   { collection, ids }: { collection: TranscrobesCollectionsKeys; ids: string[] },
 ): // TODO: see whether this could be properly typed
 Promise<any[]> {
+  if (ids.length === 0) return [];
   const values = await db[collection].findByIds(ids);
   return [...values.values()].map((def) => def.toJSON());
 }
@@ -424,8 +426,8 @@ async function getWordDetails(db: TranscrobesDatabase, graph: string): Promise<W
   let chars: (CharacterType | null)[] = [];
   if (details.word) {
     chars = details.word.graph.split("").map((w) => {
-      const word = details.characters.get(w);
-      if (word) return clone(word.toJSON());
+      const achar = details.characters.get(w);
+      if (achar) return clone(achar.toJSON());
       else return null;
     });
   }
@@ -1059,6 +1061,26 @@ async function getDayStats(db: TranscrobesDatabase): Promise<DayModelStatsType[]
   return [...(await db.day_model_stats.find().exec())].map((stat) => stat.toJSON());
 }
 
+async function saveDictionaryEntries(
+  db: TranscrobesDatabase,
+  { entries, dictionaryId }: { entries: Record<string, UserDefinitionType>; dictionaryId: string },
+): Promise<void> {
+  const dictionary = (await db.userdictionaries.findByIds([dictionaryId])).get(dictionaryId);
+  await dictionary?.atomicPatch({ lzContent: LZString.compressToUTF16(JSON.stringify(entries)) });
+}
+
+async function getDictionaryEntries(
+  db: TranscrobesDatabase,
+  { dictionaryId }: { dictionaryId: string },
+): Promise<Record<string, UserDefinitionType>> {
+  const entry = (await db.userdictionaries.findByIds([dictionaryId])).get(dictionaryId);
+  return (
+    (entry?.lzContent &&
+      (JSON.parse(LZString.decompressFromUTF16(entry?.lzContent) || "{}") as Record<string, UserDefinitionType>)) ||
+    {}
+  );
+}
+
 export {
   getByIds,
   getRecentSentences,
@@ -1096,4 +1118,6 @@ export {
   getDayStats,
   getWordStatsForExport,
   getCardsForExport,
+  saveDictionaryEntries,
+  getDictionaryEntries,
 };

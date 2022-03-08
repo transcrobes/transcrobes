@@ -12,9 +12,7 @@ import {
   TextInput,
 } from "react-admin";
 import { HelpCreateActions } from "../components/HelpCreateActions";
-import { Import, PROCESS_TYPE } from "../lib/types";
-
-const MAX_IMPORT_SIZE_BYTES = 15000000;
+import { Import, MAX_IMPORT_SIZE_BYTES, PROCESS_TYPE } from "../lib/types";
 
 const ImportCreate: FC<FieldProps<Import>> = (props) => (
   <Create actions={<HelpCreateActions helpUrl="https://transcrob.es/page/software/configure/imports/" />} {...props}>

@@ -60,6 +60,9 @@ const customEnglishMessages: TranslationMessages = {
     userlists: {
       name: "Lists",
     },
+    dictionaries: {
+      name: "Dictionaries",
+    },
     goals: {
       name: "Goals",
     },

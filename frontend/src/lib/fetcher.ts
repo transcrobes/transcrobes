@@ -1,4 +1,4 @@
-import fetchBuilder from "fetch-retry";
+import fetchBuilder, { RequestInitWithRetry } from "fetch-retry";
 import { AdminStore, store } from "../app/createStore";
 import { throttledRefreshToken } from "../features/user/userSlice";
 import { DEFAULT_RETRIES } from "./types";
@@ -46,7 +46,7 @@ export class Fetcher {
   ): Promise<T> {
     const lurl = typeof url === "string" ? url : url.href;
     // TODO: properly determine whether the retries here actually works...
-    const opts: fetchBuilder.RequestInitWithRetry = retries ? { retries: retries } : {};
+    const opts: RequestInitWithRetry = retries ? { retries: retries } : {};
     if (forcePost || body) {
       opts.method = "POST";
       opts.body = typeof body === "string" || body instanceof FormData ? body : JSON.stringify(body);

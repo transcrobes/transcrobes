@@ -19,6 +19,7 @@ import surveys from "../surveys";
 import system from "../system";
 import userlists from "../userlists";
 import SubMenu from "./SubMenu";
+import dictionaries from "../dictionaries";
 
 type MenuName = "menuInput" | "menuOrganisation" | "menuLearning" | "menuSurveys";
 
@@ -97,6 +98,14 @@ function Menu({ dense = false }: MenuProps): ReactElement {
                     smart_count: 2,
                   })}
                   leftIcon={<listrobes.icon />}
+                  dense={dense}
+                />
+                <MenuItemLink
+                  to={`/userdictionaries`}
+                  primaryText={translate(`resources.dictionaries.name`, {
+                    smart_count: 2,
+                  })}
+                  leftIcon={<dictionaries.icon />}
                   dense={dense}
                 />
               </SubMenu>

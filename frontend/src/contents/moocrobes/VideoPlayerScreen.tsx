@@ -1,28 +1,21 @@
 import { Container, makeStyles } from "@material-ui/core";
 import Button from "@material-ui/core/Button";
-import _ from "lodash";
 import { ReactElement, useEffect, useRef, useState } from "react";
 import { TopToolbar, useGetOne } from "react-admin";
 import { useParams } from "react-router-dom";
+import { store } from "../../app/createStore";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import HelpButton from "../../components/HelpButton";
+import { getRefreshedState } from "../../features/content/contentSlice";
 import {
   DEFAULT_VIDEO_READER_CONFIG_STATE,
   videoReaderActions,
   VideoReaderState,
 } from "../../features/content/videoReaderSlice";
-import { addDefinitions } from "../../features/definition/definitionsSlice";
+import { ensureDefinitionsLoaded } from "../../lib/dictionary";
 import { getSubsURL, missingWordIdsFromModels } from "../../lib/funclib";
 import { fetchPlus } from "../../lib/libMethods";
-import {
-  Content,
-  ContentConfigType,
-  ContentParams,
-  ContentProps,
-  DefinitionType,
-  KeyedModels,
-  SUBS_DATA_SUFFIX,
-} from "../../lib/types";
+import { Content, ContentParams, ContentProps, KeyedModels, SUBS_DATA_SUFFIX } from "../../lib/types";
 import VideoPlayer, { VideoPlayerHandle } from "./VideoPlayer";
 import VideoReaderConfigLauncher from "./VideoReaderConfigLauncher";
 
@@ -58,37 +51,15 @@ export default function VideoPlayerScreen({ proxy }: ContentProps): ReactElement
   useEffect(() => {
     if (!proxy.loaded) return;
     (async () => {
-      const config = await proxy.sendMessagePromise<ContentConfigType>({
-        source: "VideoPlayerScreen.tsx",
-        type: "getContentConfigFromStore",
-        value: id,
-      });
-      const conf: VideoReaderState = _.merge(
-        _.cloneDeep({ ...DEFAULT_VIDEO_READER_CONFIG_STATE, id }),
-        config?.configString ? JSON.parse(config.configString).readerState : null,
-      );
-
+      const conf = await getRefreshedState<VideoReaderState>(proxy, DEFAULT_VIDEO_READER_CONFIG_STATE, id);
       dispatch(videoReaderActions.setState({ id, value: conf }));
 
       const currentModels = await fetchPlus(`${getSubsURL(id)}${SUBS_DATA_SUFFIX}`);
       setModels(currentModels);
 
       const uniqueIds = missingWordIdsFromModels(currentModels, definitions);
-      proxy
-        .sendMessagePromise<DefinitionType[]>({
-          source: DATA_SOURCE,
-          type: "getByIds",
-          value: { collection: "definitions", ids: [...uniqueIds] },
-        })
-        .then((definitions) => {
-          dispatch(
-            addDefinitions(
-              definitions.map((def) => {
-                return { ...def, glossToggled: false };
-              }),
-            ),
-          );
-        });
+
+      ensureDefinitionsLoaded(proxy, [...uniqueIds], store);
     })();
   }, [proxy.loaded]);
 

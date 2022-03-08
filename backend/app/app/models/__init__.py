@@ -8,6 +8,7 @@ from .migrated import (  # noqa: F401
     Goal,
     Import,
     Survey,
+    UserDictionary,
     UserList,
     UserListWord,
     UserRecentSentences,

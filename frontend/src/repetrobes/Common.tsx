@@ -81,7 +81,7 @@ export interface CommonAnswerProps {
   recentSentences: PosSentences | null;
   showSynonyms: boolean;
   showRecents: boolean;
-  translationProviderOrder: DictProvider[];
+  translationProviderOrder: Record<string, number>;
   onCardFrontUpdate: (card: CardType) => void;
 }
 

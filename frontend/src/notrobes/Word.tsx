@@ -1,12 +1,12 @@
-import { Button, makeStyles, useTheme } from "@material-ui/core";
+import { Button, makeStyles } from "@material-ui/core";
 import dayjs from "dayjs";
 import { ReactElement } from "react";
 import { $enum } from "ts-enum-util";
+import { useAppSelector } from "../app/hooks";
 import { ThinHR } from "../components/Common";
 import DefinitionGraph from "../components/DefinitionGraph";
 import DefinitionTranslations from "../components/DefinitionTranslations";
 import Header from "../components/Header";
-import Meaning from "../components/Meaning";
 import PosItem from "../components/PosItem";
 import PracticerInput from "../components/PracticerInput";
 import RecentSentencesElement from "../components/RecentSentencesElement";
@@ -254,12 +254,18 @@ function WordModelStats({ wordModelStats }: { wordModelStats: WordModelStatsType
   );
 }
 
-function ProviderTranslations({ definition }: { definition: DefinitionType }): ReactElement {
+function ProviderTranslations({
+  definition,
+  translationProviderOrder,
+}: {
+  definition: DefinitionType;
+  translationProviderOrder: Record<string, number>;
+}): ReactElement {
   return (
     <>
       <ThinHR />
       <Header text="Entry Definitions" />
-      <DefinitionTranslations definition={definition} />
+      <DefinitionTranslations definition={definition} translationProviderOrder={translationProviderOrder} />
     </>
   );
 }
@@ -299,6 +305,7 @@ interface WordProps {
   recentPosSentences: PosSentences | null;
   lists: SortableListElementType[];
   characters: (CharacterType | null)[];
+  translationProviderOrder: Record<string, number>;
   onPractice: (wordId: string, grade: number) => void;
   onDeleteRecent: (modelId: number | BigInt) => void;
   onCardFrontUpdate: (card: CardType) => void;
@@ -311,6 +318,7 @@ function Word({
   recentPosSentences,
   lists,
   characters,
+  translationProviderOrder,
   onDeleteRecent,
   onPractice,
   onCardFrontUpdate,
@@ -334,7 +342,7 @@ function Word({
         <WordLists lists={lists} />
         <RecentSentencesElement recentPosSentences={recentPosSentences} onDelete={onDeleteRecent} />
         <WordMetadata definition={definition} />
-        <ProviderTranslations definition={definition} />
+        <ProviderTranslations definition={definition} translationProviderOrder={translationProviderOrder} />
         <Synonyms definition={definition} />
         <WordModelStats wordModelStats={wordModelStats} />
       </div>

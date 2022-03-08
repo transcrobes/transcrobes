@@ -1,6 +1,7 @@
 import { ReactElement } from "react";
 import { DEFAULT_RECENTS_READER_CONFIG_STATE } from "../features/content/simpleReaderSlice";
-import { PosSentences, TREEBANK_POS_TYPES, ZH_TB_POS_LABELS } from "../lib/types";
+import { toPosLabels } from "../lib/libMethods";
+import { PosSentence, PosSentences, TreebankPosType } from "../lib/types";
 import { InfoBox, ThinHR } from "./Common";
 import Mouseover from "./content/td/Mouseover";
 import Header from "./Header";
@@ -19,12 +20,10 @@ export default function RecentSentencesElement({ recentPosSentences, onDelete }:
       <div>
         {recentPosSentences &&
           Object.entries(recentPosSentences).length > 0 &&
-          Object.entries(recentPosSentences).map(([pos, entry]) => {
-            const typedPos = pos as TREEBANK_POS_TYPES;
-            const simpleName = ZH_TB_POS_LABELS[typedPos];
+          (Object.entries(recentPosSentences) as [TreebankPosType, PosSentence[]][]).map(([pos, entry]) => {
             return (
               <InfoBox key={pos}>
-                <div>{simpleName}:</div>
+                <div>{toPosLabels(pos)}:</div>
                 <ul>
                   {entry &&
                     entry.map((s, index) => {

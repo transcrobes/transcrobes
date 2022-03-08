@@ -13,6 +13,7 @@ import {
   PROCESS_TYPE,
   RecentSentencesStoredType,
   SurveyType,
+  UserDictionary,
   UserList,
   UserSurvey,
   WordlistType,
@@ -24,6 +25,19 @@ const INITIALISATION_CACHE_NAME = `${CACHE_NAME}.initialisation`;
 const LIVE_INTERVAL = 60;
 const BATCH_SIZE_PULL = 10000;
 const BATCH_SIZE_PUSH = 10000;
+
+const COMMON_INFO = {
+  id: { type: "string" },
+  title: { type: "string" },
+  description: { type: ["string", "null"] },
+  createdBy: { type: "string" },
+  createdAt: { type: "number" },
+  updatedBy: { type: ["string", "null"] },
+  updatedAt: { type: "number" },
+  status: { type: "number" },
+  activateDate: { type: "number" },
+  deactivateDate: { type: "number" },
+};
 
 export const reloadRequired = new Set<string>();
 
@@ -88,6 +102,26 @@ const pullDefsQueryBuilder = (doc: { id: any; updatedAt: any }) => {
     query,
     variables: {},
   };
+};
+
+type UserDictionaryDocument = RxDocument<UserDictionary>;
+type UserDictionaryCollection = RxCollection<UserDictionary>;
+const USER_DICTIONARIES_SCHEMA: RxJsonSchema<UserDictionary> = {
+  version: 0,
+  required: ["id"],
+  primaryKey: "id",
+  type: "object",
+  properties: {
+    ...COMMON_INFO,
+    ...{
+      processing: { type: "number", default: PROCESSING.REQUESTED },
+      lzContent: { type: "string" },
+      fromLang: { type: "string" },
+      toLang: { type: "string" },
+      shared: { type: "boolean", default: false },
+    },
+  },
+  indexes: ["title", "updatedAt"],
 };
 
 type EventQueueDocument = RxDocument<EventQueueType>;
@@ -501,19 +535,6 @@ const RECENTSENTENCES_SCHEMA: RxJsonSchema<RecentSentencesStoredType> = {
   indexes: ["updatedAt"],
 };
 
-const COMMON_INFO = {
-  id: { type: "string" },
-  title: { type: "string" },
-  description: { type: ["string", "null"] },
-  createdBy: { type: "string" },
-  createdAt: { type: "number" },
-  updatedBy: { type: ["string", "null"] },
-  updatedAt: { type: "number" },
-  status: { type: "number" },
-  activateDate: { type: "number" },
-  deactivateDate: { type: "number" },
-};
-
 type SurveyDocument = RxDocument<SurveyType>;
 type SurveyCollection = RxCollection<SurveyType>;
 const SURVEYS_SCHEMA: RxJsonSchema<SurveyType> = {
@@ -751,6 +772,15 @@ const DBTwoWayCollections = {
       token: "String!",
     },
   },
+  userdictionaries: {
+    schema: USER_DICTIONARIES_SCHEMA,
+    feedKeys: ["id", "updatedAt"],
+    deletedFlag: "deleted",
+    subscription: true,
+    subscriptionParams: {
+      token: "String!",
+    },
+  },
 };
 
 type DBTwoWayCollectionsType = typeof DBTwoWayCollections;
@@ -786,6 +816,7 @@ type TranscrobesCollections = {
   event_queue: EventQueueCollection;
   characters: CharacterCollection;
   content_config: ContentConfigsCollection;
+  userdictionaries: UserDictionaryCollection;
 };
 type TranscrobesCollectionsKeys = keyof TranscrobesCollections;
 type TranscrobesDatabase = RxDatabase<TranscrobesCollections>;
@@ -805,7 +836,8 @@ type TranscrobesDocumentTypes =
   | UserListDocument
   | UserSurveyDocument
   | GoalDocument
-  | RecentSentencesDocument;
+  | RecentSentencesDocument
+  | UserDictionaryDocument;
 
 export {
   DBLocalCollections,

@@ -33,7 +33,7 @@ export const EMPTY_ACTIVITY = {
   showL2LengthHint: DEFAULT_QUESTION_SHOW_L2_LENGTH_HINT,
   activeCardTypes: [],
   todayStarts: 0,
-  translationProviderOrder: [],
+  translationProviderOrder: {},
 } as RepetrobesActivityConfigType;
 
 export async function getUserConfig(proxy: ServiceWorkerProxy): Promise<RepetrobesActivityConfigType> {

@@ -3,7 +3,6 @@ import { Box, createTheme, ThemeProvider } from "@material-ui/core";
 import KeyboardArrowLeftIcon from "@material-ui/icons/KeyboardArrowLeft";
 import KeyboardArrowRightIcon from "@material-ui/icons/KeyboardArrowRight";
 import debounce from "debounce";
-import _ from "lodash";
 import { ReactElement, useCallback, useEffect, useRef, useState } from "react";
 import { Button, useAuthenticated } from "react-admin";
 import { useParams } from "react-router-dom";
@@ -17,8 +16,9 @@ import {
   BookReaderState,
   DEFAULT_BOOK_READER_CONFIG_STATE,
 } from "../../features/content/bookReaderSlice";
+import { getRefreshedState } from "../../features/content/contentSlice";
 import { fetcher } from "../../lib/fetcher";
-import { ContentConfigType, ContentParams, ContentProps } from "../../lib/types";
+import { ContentParams, ContentProps } from "../../lib/types";
 import {
   ColorMode,
   D2ColorMode,
@@ -120,15 +120,9 @@ export default function BookReader({ proxy }: ContentProps): ReactElement {
       return;
     }
     (async () => {
-      const config = await proxy.sendMessagePromise<ContentConfigType>({
-        source: "ContentConfig.ts",
-        type: "getContentConfigFromStore",
-        value: id,
-      });
-      const conf: BookReaderState = _.merge(
-        _.cloneDeep({ ...DEFAULT_BOOK_READER_CONFIG_STATE, id }),
-        config?.configString ? JSON.parse(config.configString).readerState : null,
-      );
+      const conf = await getRefreshedState<BookReaderState>(proxy, DEFAULT_BOOK_READER_CONFIG_STATE, id);
+      dispatch(bookReaderActions.setState({ id, value: conf }));
+
       const userSettings = {
         verticalScroll: !!conf.isScrolling,
         appearance: getColorMode(themeName),
@@ -138,7 +132,7 @@ export default function BookReader({ proxy }: ContentProps): ReactElement {
         atStart: conf.atStart,
         atEnd: conf.atEnd,
       };
-      dispatch(bookReaderActions.setState({ id, value: conf }));
+
       window.transcrobesStore = store;
       const reader = await D2Reader.load({
         url,

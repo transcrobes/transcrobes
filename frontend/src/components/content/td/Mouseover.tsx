@@ -64,7 +64,7 @@ export default function Mouseover({ readerConfig }: Props): ReactElement {
   });
   useEffect(() => {
     if (mouseover) {
-      getPopoverText(mouseover.token, knownWords, definitions, fromLang).then((lText) => {
+      getPopoverText(mouseover.token, knownWords, definitions, fromLang, readerConfig).then((lText) => {
         setText(lText);
         setTimeoutId(
           window.setTimeout(() => {

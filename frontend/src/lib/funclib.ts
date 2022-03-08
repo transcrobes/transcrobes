@@ -7,18 +7,29 @@ import {
   CardType,
   DayStat,
   DefinitionsState,
-  DictProvider,
   FirstSuccess,
   HistoData,
   KeyedModels,
   PosSentences,
-  ProviderTranslationType,
   PythonCounter,
   RecentSentencesType,
   RepetrobesActivityConfigType,
   SentenceType,
   TokenType,
 } from "./types";
+
+const typeSizes = {
+  undefined: () => 0,
+  boolean: () => 4,
+  number: () => 8,
+  string: (item: string) => 2 * item.length,
+  object: (item: any): number =>
+    !item ? 0 : Object.keys(item).reduce((total, key) => sizeOf(key) + sizeOf(item[key]) + total, 0),
+};
+
+export function sizeOf(value: any) {
+  return (typeSizes as any)[typeof value](value);
+}
 
 export function getKnownChars(
   knownCards: Map<string, CardType>,
@@ -233,13 +244,6 @@ export function parseJwt(token: string): any {
   // return JSON.parse(Buffer.from(base64, "base64"));
 }
 
-export function orderDefinitions(
-  providerTranslations: ProviderTranslationType[],
-  translationProviderOrder: DictProvider[],
-) {
-  return translationProviderOrder.map((i) => providerTranslations.find((j) => j.provider === i));
-}
-
 export function binnedDayData(
   binFunc: HistogramGeneratorNumber<number, number>,
   thresholds: number[],
@@ -320,4 +324,11 @@ export function throttleAction(action: any, wait: number, options: any) {
 export function originalSentenceFromTokens(tokens: TokenType[]): string {
   // currently just use
   return tokens.map((x) => x.l).join("");
+}
+
+export function reorderArray(list: any[], startIndex: number, endIndex: number): any[] {
+  const result = Array.from(list);
+  const [removed] = result.splice(startIndex, 1);
+  result.splice(endIndex, 0, removed);
+  return result;
 }

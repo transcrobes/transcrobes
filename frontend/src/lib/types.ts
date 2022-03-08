@@ -1,4 +1,4 @@
-import { Record, Identifier } from "react-admin";
+import { Record as RARecord, Identifier } from "react-admin";
 import { HslColor } from "react-colorful";
 
 import { CardDocument, CharacterDocument, DefinitionDocument, WordModelStatsDocument } from "../database/Schema";
@@ -6,6 +6,11 @@ import type { ProgressCallbackMessage, ServiceWorkerProxy } from "./proxies";
 
 // eslint-disable-next-line @typescript-eslint/no-empty-function
 export function noop(): void {}
+
+export type DNDItemType = {
+  id: string;
+  name: string;
+};
 
 export interface StyleProps {
   segmentationPadding: string;
@@ -72,14 +77,72 @@ export const ONSCREEN_DELAY_IS_CONSIDERED_READ = 5000; // milliseconds
 export const IDEAL_GLOSS_STRING_LENGTH = 5; // pretty random but https://arxiv.org/pdf/1208.6109.pdf
 export const POPOVER_MIN_LOOKED_AT_EVENT_DURATION = 1500; // milliseconds
 
+export const MAX_IMPORT_SIZE_BYTES = 15000000;
+
 export type KnownLanguage = "en" | "zh-Hans";
 export type InputLanguage = "zh-Hans";
 
-export type SIMPLE_POS_TYPES = "ADV" | "OTHER" | "CONJ" | "DET" | "NOUN" | "VERB" | "PREP" | "PRON" | "ADJ" | "MODAL";
+const SIMPLE_POS_VALUES = ["ADV", "OTHER", "CONJ", "DET", "NOUN", "VERB", "PREP", "PRON", "ADJ", "MODAL"] as const;
+const SIMPLE_POS_VALUES_OBJ = SIMPLE_POS_VALUES.reduce(
+  (acc, next) => ({ ...acc, [next]: null }),
+  {} as Record<string, null>,
+);
+export type SimplePosType = typeof SIMPLE_POS_VALUES[number];
 
+export function isSimplePOS(value: string): value is SimplePosType {
+  return value in SIMPLE_POS_VALUES_OBJ;
+}
+
+const TREEBANK_POS_VALUES = [
+  "AD",
+  "AS",
+  "BA",
+  "CC",
+  "CD",
+  "CS",
+  "DEC",
+  "DEG",
+  "DER",
+  "DEV",
+  "DT",
+  "ETC",
+  "FW",
+  "IJ",
+  "JJ",
+  "LB",
+  "LC",
+  "M",
+  "MSP",
+  "NN",
+  "NR",
+  "NT",
+  "OD",
+  "ON",
+  "P",
+  "PN",
+  "PU",
+  "SB",
+  "SP",
+  "VA",
+  "VC",
+  "VE",
+  "VV",
+  "URL",
+] as const;
+const TREEBANK_POS_VALUES_OBJ = TREEBANK_POS_VALUES.reduce(
+  (acc, next) => ({ ...acc, [next]: null }),
+  {} as Record<string, null>,
+);
+export type TreebankPosType = typeof TREEBANK_POS_VALUES[number];
+
+export function isTreebankPOS(value: string): value is TreebankPosType {
+  return value in TREEBANK_POS_VALUES_OBJ;
+}
 export type WordOrdering = "Natural" | "WCPM" | "Personal";
 
-export const ZH_TB_POS_TO_SIMPLE_POS: { [key: string]: SIMPLE_POS_TYPES } = {
+export const USER_DEFINITION_SOUND_SEPARATOR = " ";
+
+export const ZH_TB_POS_TO_SIMPLE_POS: { [key in TreebankPosType]: SimplePosType } = {
   // see src/app/zhhans/__init__.py for more details, if that is updated, then this should be too
   // TODO: consider getting/updating this via the API, to guarantee python and js always agree
   AD: "ADV", // adverb
@@ -135,9 +198,7 @@ export type USER_STATS_MODE_KEY = keyof typeof USER_STATS_MODE;
 
 export type USER_STATS_MODE_KEY_VALUES = typeof USER_STATS_MODE[USER_STATS_MODE_KEY];
 
-export type TREEBANK_POS_TYPES = keyof typeof ZH_TB_POS_TO_SIMPLE_POS;
-
-export const SIMPLE_POS_ENGLISH_NAMES: { [key in SIMPLE_POS_TYPES]: string } = {
+export const SIMPLE_POS_ENGLISH_NAMES: { [key in SimplePosType]: string } = {
   NOUN: "Noun",
   VERB: "Verb",
   ADJ: "Adjective",
@@ -160,7 +221,7 @@ export type ZHHansEnDictProvider = keyof typeof ZHHANS_EN_DICT_PROVIDERS;
 export type DictProvider = ZHHansEnDictProvider;
 
 // FIXME: This shouldn't be here...
-export const ZH_TB_POS_LABELS: { [key in TREEBANK_POS_TYPES]: string } = {
+export const ZH_TB_POS_LABELS: { [key in TreebankPosType]: string } = {
   AD: "Adverb", // adverb
   AS: "Aspect Marker", // aspect marker
   BA: "BA-construction", // in ba-construction ,
@@ -238,6 +299,8 @@ export interface ReaderState {
   collectRecents: boolean;
   mouseover: boolean;
   clickable: boolean;
+  translationProviderOrder: Record<string, number>;
+  strictProviderOrdering: boolean;
 }
 
 export const DEFAULT_READER_CONFIG_STATE: ReaderState = {
@@ -255,6 +318,11 @@ export const DEFAULT_READER_CONFIG_STATE: ReaderState = {
   collectRecents: true,
   mouseover: true,
   clickable: true,
+  translationProviderOrder: Object.keys(ZHHANS_EN_DICT_PROVIDERS).reduce(
+    (acc, next, ind) => ({ ...acc, [next]: ind }),
+    {} as Record<string, number>,
+  ),
+  strictProviderOrdering: false,
 };
 
 export interface ComponentsAppConfig extends ReaderState {
@@ -407,7 +475,7 @@ export type EventQueueType = {
   eventString: string;
 };
 
-interface CommonRecord extends Record {
+interface CommonRecord extends RARecord {
   title: string;
   description?: string;
 
@@ -464,6 +532,13 @@ export interface Content extends CommonRecord {
   author: string;
   cover: string;
   lang: string;
+  shared: boolean;
+}
+
+export interface UserDictionary extends CommonRecord {
+  lzContent: string; // LZ-String content, see https://github.com/pieroxy/lz-string
+  processing: number; //???
+  langPair: string;
   shared: boolean;
 }
 
@@ -533,19 +608,20 @@ export const EMPTY_CARD: CardType = {
   updatedAt: 0,
 };
 
-export type PosTranslationsType = {
-  posTag: string;
+type PosValuesType = {
+  posTag: SimplePosType | TreebankPosType;
   values: string[];
+};
+
+export type SynonymType = PosValuesType;
+
+export type PosTranslationsType = PosValuesType & {
+  sounds?: string;
 };
 
 export type ProviderTranslationType = {
   provider: string;
   posTranslations: PosTranslationsType[];
-};
-
-export type SynonymType = {
-  posTag: string;
-  values: string[];
 };
 
 export type DefinitionState = DefinitionType & {
@@ -555,6 +631,12 @@ export type DefinitionState = DefinitionType & {
 export interface DefinitionsState {
   [key: string]: DefinitionState;
 }
+
+export type UserDefinitionType = {
+  id: string; // this is the graph, we use this so it is compatible with react-admin infra
+  translations: PosTranslationsType[];
+  sounds?: string;
+};
 
 export type DefinitionType = {
   id: string;
@@ -636,7 +718,7 @@ export type RepetrobesActivityConfigType = {
   showSynonyms: boolean;
   showL2LengthHint: boolean;
   activeCardTypes: SelectableListElementType[];
-  translationProviderOrder: DictProvider[];
+  translationProviderOrder: Record<string, number>;
 };
 
 export type DayModelStatsType = {
@@ -708,7 +790,7 @@ export type TokenType = {
   /**
    * CoreNLP pos, if absent then the word can't have a meaning == punctuation
    */
-  pos?: TREEBANK_POS_TYPES;
+  pos?: TreebankPosType;
   /**
    * "Best Guess" at what the word means in context, in the L1 of the learner
    */
@@ -787,7 +869,7 @@ export type PosSentence = {
 };
 
 export type PosSentences = {
-  [key in TREEBANK_POS_TYPES]?: PosSentence[];
+  [key in TreebankPosType]?: PosSentence[];
 };
 
 export type RecentSentencesType = {

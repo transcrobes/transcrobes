@@ -1,7 +1,8 @@
 // they call this the DUCKS pattern...
 import { AnyAction, createSlice, PayloadAction, SliceCaseReducers, ValidateSliceCaseReducers } from "@reduxjs/toolkit";
+import _ from "lodash";
 import { HslColor } from "react-colorful";
-import { AbstractWorkerProxy, platformHelper } from "../../lib/proxies";
+import { AbstractWorkerProxy, platformHelper, ServiceWorkerProxy } from "../../lib/proxies";
 import {
   ContentConfigType,
   FontFamily,
@@ -30,6 +31,26 @@ export type ContentConfigPayload<T> = {
   id: string;
   value: T;
 };
+
+export async function getRefreshedState<T extends ReaderState>(
+  proxy: AbstractWorkerProxy,
+  defaultConfig: T,
+  id: string,
+): Promise<T> {
+  const config = await proxy.sendMessagePromise<ContentConfigType>({
+    source: "ContentConfig.ts",
+    type: "getContentConfigFromStore",
+    value: id,
+  });
+
+  const conf: T = !config?.configString
+    ? _.cloneDeep({ ...defaultConfig, id })
+    : {
+        ..._.cloneDeep({ ...defaultConfig, id }),
+        ...JSON.parse(config.configString).readerState,
+      };
+  return conf;
+}
 
 export const createGenericSlice = <T extends ReaderState, Reducers extends SliceCaseReducers<GenericState<T>>>({
   name = "",
@@ -89,6 +110,17 @@ export const createGenericSlice = <T extends ReaderState, Reducers extends Slice
       setMouseover(state: GenericState<T>, action: PayloadAction<ContentConfigPayload<boolean>>) {
         state[action.payload.id] = state[action.payload.id] || defaultValue;
         state[action.payload.id].mouseover = action.payload.value;
+      },
+      setStrictProviderOrdering(state: GenericState<T>, action: PayloadAction<ContentConfigPayload<boolean>>) {
+        state[action.payload.id] = state[action.payload.id] || defaultValue;
+        state[action.payload.id].strictProviderOrdering = action.payload.value;
+      },
+      setTranslationProviderOrder(
+        state: GenericState<T>,
+        action: PayloadAction<ContentConfigPayload<Record<string, number>>>,
+      ) {
+        state[action.payload.id] = state[action.payload.id] || defaultValue;
+        state[action.payload.id].translationProviderOrder = action.payload.value;
       },
       setState<T extends ReaderState>(state: GenericState<T>, action: PayloadAction<ContentConfigPayload<T>>) {
         state[action.payload.id] = action.payload.value;

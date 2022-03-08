@@ -13,8 +13,9 @@ export default function Synonyms({ token, definition }: Props): ReactElement {
   const fromLang = useAppSelector((state) => state.userData.user.fromLang);
   useEffect(() => {
     if (token.pos) {
-      const pos = toSimplePos(token.pos, fromLang);
-      const syns = definition.synonyms.filter((x) => x.posTag === pos);
+      const syns = definition.synonyms.filter(
+        (x) => toSimplePos(x.posTag, fromLang) === toSimplePos(token.pos!, fromLang),
+      );
       setSynString(syns[0]?.values.join(", "));
     }
   }, [token]);

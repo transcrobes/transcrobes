@@ -6,19 +6,20 @@ import {
   DefinitionType,
   EventCoordinates,
   InputLanguage,
+  isSimplePOS,
   PopupPosition,
+  ReaderState,
   RecentSentencesType,
   SentenceType,
   SerialisableDayCardWords,
   TokenType,
-  TREEBANK_POS_TYPES,
+  TreebankPosType,
   USER_STATS_MODE,
-  USER_STATS_MODE_KEY_VALUES,
 } from "./types";
 
 const DEFINITION_LOADING = "loading...";
 const DATA_SOURCE = "componentMethods.ts";
-const NUMBER_POS = new Set<TREEBANK_POS_TYPES>(["OD", "NT", "CD"]);
+const NUMBER_POS = new Set<TreebankPosType>(["OD", "NT", "CD"]);
 
 export async function getWord(lemma: string): Promise<DefinitionType> {
   return platformHelper.sendMessagePromise<DefinitionType>({
@@ -28,20 +29,25 @@ export async function getWord(lemma: string): Promise<DefinitionType> {
   });
 }
 
-export async function getL1(token: TokenType, definitions: DefinitionsState, fromLang: InputLanguage): Promise<string> {
-  let gloss = token.bg ? token.bg.split(",")[0].split(";")[0] : "";
-  if (gloss) return gloss;
-
+export async function getL1(
+  token: TokenType,
+  definitions: DefinitionsState,
+  fromLang: InputLanguage,
+  readerConfig: ReaderState,
+  defaultL1: string,
+): Promise<string> {
+  if (defaultL1 && !readerConfig.strictProviderOrdering) return defaultL1;
+  let gloss = defaultL1;
   const dictDefinition = (token.id && definitions[token.id]) || (await getWord(token.l));
   // FIXME: need to add a timer or something to the dom element to keep
   // looking for the actual definition when it arrives
   if (dictDefinition && dictDefinition.providerTranslations) {
-    gloss = bestGuess(token, dictDefinition, fromLang);
+    gloss = bestGuess(token, dictDefinition, fromLang, readerConfig);
   } else {
     gloss = DEFINITION_LOADING;
   }
 
-  return gloss;
+  return gloss || defaultL1;
 }
 export async function getSound(token: TokenType, definitions: DefinitionsState): Promise<string> {
   let gloss = "";
@@ -55,22 +61,22 @@ export async function getSound(token: TokenType, definitions: DefinitionsState):
 
 export async function getNormalGloss(
   token: TokenType,
-  glossing: USER_STATS_MODE_KEY_VALUES,
+  readerConfig: ReaderState,
   uCardWords: SerialisableDayCardWords,
   definitions: DefinitionsState,
   fromLang: InputLanguage,
 ): Promise<string> {
   // Default L1, context-aware, "best guess" gloss
+  const { glossing } = readerConfig;
   let gloss = token.bg ? token.bg.split(",")[0].split(";")[0] : "";
-
-  if (glossing == USER_STATS_MODE.L1 && !gloss) {
-    gloss = await getL1(token, definitions, fromLang);
+  if (glossing == USER_STATS_MODE.L1) {
+    gloss = await getL1(token, definitions, fromLang, readerConfig, gloss);
   } else if (glossing == USER_STATS_MODE.L2_SIMPLIFIED) {
-    gloss = await getL2Simplified(token, gloss, uCardWords, definitions, fromLang);
+    gloss = await getL2Simplified(token, gloss, uCardWords, definitions, fromLang, readerConfig);
   } else if (glossing == USER_STATS_MODE.TRANSLITERATION) {
     gloss = await getSound(token, definitions);
   } else if (glossing == USER_STATS_MODE.TRANSLITERATION_L1) {
-    gloss = `${await getSound(token, definitions)}: ${await getL1(token, definitions, fromLang)}`;
+    gloss = `${await getSound(token, definitions)}: ${await getL1(token, definitions, fromLang, readerConfig, gloss)}`;
   }
   return gloss;
 }
@@ -122,6 +128,7 @@ async function getL2Simplified(
   uCardWords: SerialisableDayCardWords,
   definitions: DefinitionsState,
   fromLang: InputLanguage,
+  readerConfig: ReaderState,
 ): Promise<string> {
   let gloss = previousGloss;
   // server-side set user known synonym
@@ -131,7 +138,9 @@ async function getL2Simplified(
     // try and get a local user known synonym
     const dictDefinition = (token.id && definitions[token.id]) || (await getWord(token.l));
     if (!dictDefinition) return DEFINITION_LOADING;
-    const syns = dictDefinition.synonyms.filter((x) => x.posTag === toSimplePos(token.pos!, fromLang));
+    const syns = dictDefinition.synonyms.filter(
+      (x) => toSimplePos(x.posTag, fromLang) === toSimplePos(token.pos!, fromLang),
+    );
 
     let innerGloss;
     if (syns && syns.length > 0) {
@@ -140,7 +149,7 @@ async function getL2Simplified(
         innerGloss = userSynonyms[0];
       }
     }
-    gloss = innerGloss || gloss || bestGuess(token, dictDefinition, fromLang);
+    gloss = innerGloss || gloss || bestGuess(token, dictDefinition, fromLang, readerConfig);
   }
   return gloss;
 }
@@ -153,10 +162,12 @@ export async function getPopoverText(
   uCardWords: SerialisableDayCardWords,
   definitions: DefinitionsState,
   fromLang: InputLanguage,
+  readerConfig: ReaderState,
 ): Promise<string> {
-  const l1 = await getL1(token, definitions, fromLang);
+  const gloss = token.bg ? token.bg.split(",")[0].split(";")[0] : "";
+  const l1 = await getL1(token, definitions, fromLang, readerConfig, gloss);
   if (l1 === DEFINITION_LOADING) return DEFINITION_LOADING;
-  const l2 = await getL2Simplified(token, l1, uCardWords, definitions, fromLang);
+  const l2 = await getL2Simplified(token, l1, uCardWords, definitions, fromLang, readerConfig);
   const sound = await getSound(token, definitions);
   return `${complexPosToSimplePosLabels(token.pos!, fromLang)}: ${l1} ${l2 != l1 ? `: ${l2}` : ""}: ${sound}`;
 }

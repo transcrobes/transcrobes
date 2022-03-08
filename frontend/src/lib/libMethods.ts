@@ -8,36 +8,32 @@ import {
   PosTranslationsType,
   ProviderTranslationType,
   PythonCounter,
+  ReaderState,
   SerialisableStringSet,
   SIMPLE_POS_ENGLISH_NAMES,
-  SIMPLE_POS_TYPES,
+  SimplePosType,
   TokenType,
-  TREEBANK_POS_TYPES,
+  TreebankPosType,
   ZH_TB_POS_LABELS,
   ZH_TB_POS_TO_SIMPLE_POS,
+  isTreebankPOS,
+  isSimplePOS,
 } from "./types";
 import { DefinitionDocument } from "../database/Schema";
 import { fetcher } from "./fetcher";
 
-export function toSimplePos(complexPos: TREEBANK_POS_TYPES, fromLang: InputLanguage): SIMPLE_POS_TYPES {
+export function toSimplePos(pos: SimplePosType | TreebankPosType, fromLang: InputLanguage) {
   if (fromLang === "zh-Hans") {
-    return ZH_TB_POS_TO_SIMPLE_POS[complexPos];
+    return isSimplePOS(pos) ? pos : ZH_TB_POS_TO_SIMPLE_POS[pos];
   }
   throw new Error(`Unknown from language "${fromLang}", can't find standard/simple POS`);
 }
 
-export function toPosLabels(complexPos: TREEBANK_POS_TYPES, fromLang: InputLanguage): string {
+export function toPosLabels(pos: SimplePosType | TreebankPosType, fromLang: InputLanguage = "zh-Hans"): string {
   if (fromLang === "zh-Hans") {
-    return ZH_TB_POS_LABELS[complexPos];
+    return isTreebankPOS(pos) ? ZH_TB_POS_LABELS[pos] : SIMPLE_POS_ENGLISH_NAMES[pos];
   }
   throw new Error(`Unknown from language "${fromLang}", can't find POS label`);
-}
-
-export function toSimplePosLabels(pos: SIMPLE_POS_TYPES, fromLang: InputLanguage): string {
-  if (fromLang === "zh-Hans") {
-    return SIMPLE_POS_ENGLISH_NAMES[pos];
-  }
-  throw new Error(`Unknown from language "${fromLang}", can't find simple POS label`);
 }
 
 export function filterKnown(
@@ -76,20 +72,46 @@ export function filterKnown(
   return wholeKnownWords.concat(known);
 }
 
-export function bestGuess(token: TokenType, definition: DefinitionType, fromLang: InputLanguage): string {
+function getFilteredBestGuess(others: string[], definition: DefinitionType, allDefs: PosTranslationsType[]) {
+  let filteredDefs = filterFakeL1Definitions(others, definition.sound);
+  if (filteredDefs.length) {
+    return filteredDefs.sort(
+      (a, b) => Math.abs(IDEAL_GLOSS_STRING_LENGTH - a.length) - Math.abs(IDEAL_GLOSS_STRING_LENGTH - b.length),
+    )[0];
+  }
+  filteredDefs = filterFakeL1Definitions(
+    allDefs.flatMap((p) => p.values),
+    definition.sound,
+  );
+  if (filteredDefs.length) {
+    return filteredDefs.sort(
+      (a, b) => Math.abs(IDEAL_GLOSS_STRING_LENGTH - a.length) - Math.abs(IDEAL_GLOSS_STRING_LENGTH - b.length),
+    )[0];
+  }
+  return allDefs
+    .flatMap((p) => p.values)
+    .sort((a, b) => Math.abs(IDEAL_GLOSS_STRING_LENGTH - a.length) - Math.abs(IDEAL_GLOSS_STRING_LENGTH - b.length))[0];
+}
+
+export function bestGuess(
+  token: TokenType,
+  definition: DefinitionType,
+  fromLang: InputLanguage,
+  readerConfig: ReaderState,
+): string {
   // FIXME: this is a ZH-HANS -> EN only hack, and needs to be architected eventually
   // something like what the Python has with distinct managers for each L2 -> L1. Later.
   let best = "";
   const others: string[] = [];
   const allDefs: PosTranslationsType[] = [];
-  const dictEntries = definition.providerTranslations;
+  const dictEntries = orderTranslations(definition.providerTranslations, readerConfig.translationProviderOrder);
   for (const providerEntry of dictEntries) {
     if (!providerEntry.posTranslations) continue;
 
     for (const posEntry of providerEntry.posTranslations) {
-      if (posEntry.values.length === 0) continue;
+      if (!posEntry.values.length) continue;
       allDefs.push(posEntry);
-      if (token.pos && toSimplePos(token.pos, fromLang) === posEntry.posTag) {
+      if (token.pos && toSimplePos(token.pos, fromLang) === toSimplePos(posEntry.posTag, fromLang)) {
         // sorted_defs = sorted(defs, key=lambda i: i["cf"], reverse=True)  # original python
         // const sortedDefs = defs.sort((a: any, b: any) => a.cf - b.cf);  // possible js, if we had cf
         const filteredDefs = filterFakeL1Definitions(posEntry.values, definition.sound);
@@ -111,28 +133,12 @@ export function bestGuess(token: TokenType, definition: DefinitionType, fromLang
       }
     }
     if (best) {
-      break;
+      return best;
+    } else if (readerConfig.strictProviderOrdering && allDefs.length) {
+      return getFilteredBestGuess(others, definition, allDefs);
     }
   }
-  if (!best && others.length > 0) {
-    const filteredDefs = filterFakeL1Definitions(others, definition.sound);
-    if (filteredDefs) {
-      // prefer one that is closer to our ideal length, particularly useful when there very long entries
-      // but also shorter Ok ones
-      filteredDefs.sort(
-        (a, b) => Math.abs(IDEAL_GLOSS_STRING_LENGTH - a.length) - Math.abs(IDEAL_GLOSS_STRING_LENGTH - b.length),
-      );
-      best = filteredDefs[0];
-    }
-  }
-  if (!best && allDefs.length > 0) {
-    best = allDefs
-      .flatMap((p) => p.values)
-      .sort(
-        (a, b) => Math.abs(IDEAL_GLOSS_STRING_LENGTH - a.length) - Math.abs(IDEAL_GLOSS_STRING_LENGTH - b.length),
-      )[0];
-  }
-  return best;
+  return getFilteredBestGuess(others, definition, allDefs);
 }
 
 export function filterFakeL1Definitions(entries: string[], phone: string[]): string[] {
@@ -217,7 +223,7 @@ type TreeWalkerMethods = {
   collect: (n: Node) => boolean;
 };
 
-export function complexPosToSimplePosLabels(pos: TREEBANK_POS_TYPES, fromLang: InputLanguage): string {
+export function complexPosToSimplePosLabels(pos: TreebankPosType, fromLang: InputLanguage): string {
   if (fromLang === "zh-Hans") {
     return SIMPLE_POS_ENGLISH_NAMES[ZH_TB_POS_TO_SIMPLE_POS[pos]];
   }
@@ -281,6 +287,18 @@ export function cleanAnalysis(
   }
   return buckets;
 }
+
 export async function fetchPlus(url: string | URL, body?: BodyInit, retries?: number, forcePost = false): Promise<any> {
   return fetcher.fetchPlus(url, body, retries, forcePost);
+}
+
+export function orderTranslations(translations: ProviderTranslationType[], orders: Record<string, number>) {
+  return translations
+    .filter((provider) => provider.posTranslations.length > 0 && provider.provider in orders)
+    .slice()
+    .sort((a, b) =>
+      typeof orders[a.provider] === "undefined" || typeof orders[b.provider] === "undefined"
+        ? 0
+        : orders[a.provider] - orders[b.provider],
+    );
 }

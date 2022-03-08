@@ -1,22 +1,23 @@
-import * as utils from "../lib/libMethods";
-import * as data from "../lib/data";
-import { GRADE, TranscrobesDatabase } from "../database/Schema";
-import { getDb } from "../database/Database";
 import dayjs from "dayjs";
+import { store } from "../app/createStore";
+import { getUserDexie } from "../database/authdb";
+import { getDb } from "../database/Database";
+import { GRADE, TranscrobesDatabase } from "../database/Schema";
+import { setUser, throttledRefreshToken } from "../features/user/userSlice";
+import * as data from "../lib/data";
+import * as utils from "../lib/libMethods";
 import {
   DayCardWords,
   DEFAULT_RETRIES,
   EventData,
   EVENT_QUEUE_PROCESS_FREQ,
   SerialisableStringSet,
+  UserDefinitionType,
 } from "../lib/types";
-import { store } from "../app/createStore";
-import { getUserDexie } from "../database/authdb";
-import { throttledRefreshToken } from "../features/user/userSlice";
-import { setUser } from "../features/user/userSlice";
 
 let db: TranscrobesDatabase;
 let dayCardWords: DayCardWords | null;
+const dictionaries: Record<string, Record<string, UserDefinitionType>> = {};
 let eventQueueTimer: number | undefined;
 
 // function stopEventsSender(): void {
@@ -34,6 +35,14 @@ async function getLocalCardWords(message: EventData) {
     dayCardWords = val;
     return Promise.resolve(dayCardWords);
   }
+}
+
+async function getUserDictionary(ldb: TranscrobesDatabase, dictionaryId: string) {
+  if (!dictionaries[dictionaryId]) {
+    console.log("Trying to get", dictionaryId, dictionaries);
+    dictionaries[dictionaryId] = await data.getDictionaryEntries(ldb, { dictionaryId });
+  }
+  return dictionaries[dictionaryId];
 }
 
 // FIXME: any
@@ -248,6 +257,28 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
   } else if (message.type === "setContentConfigToStore") {
     loadDb(console.debug, message).then((ldb) => {
       data.setContentConfigToStore(ldb, message.value).then((result) => {
+        sendResponse({ source: message.source, type: message.type, value: result });
+      });
+    });
+  } else if (message.type === "getDictionaryEntries") {
+    loadDb(console.debug, message).then((ldb) => {
+      getUserDictionary(ldb, message.value.dictionaryId).then((entries) => {
+        sendResponse({ source: message.source, type: message.type, value: entries });
+      });
+    });
+  } else if (message.type === "getDictionaryEntriesByGraph") {
+    loadDb(console.debug, message).then((ldb) => {
+      const outputEntries: Record<string, UserDefinitionType> = {};
+      getUserDictionary(ldb, message.value.dictionaryId).then((entries) => {
+        for (const graph of message.value.graphs) {
+          outputEntries[graph] = entries[graph];
+        }
+        sendResponse({ source: message.source, type: message.type, value: outputEntries });
+      });
+    });
+  } else if (message.type === "getAllFromDB") {
+    loadDb(console.debug, message).then((ldb) => {
+      data.getAllFromDB(ldb, message.value).then((result) => {
         sendResponse({ source: message.source, type: message.type, value: result });
       });
     });

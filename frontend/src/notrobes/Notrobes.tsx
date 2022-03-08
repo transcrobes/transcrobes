@@ -16,9 +16,11 @@ import {
   CardType,
   CharacterType,
   DefinitionType,
+  PosSentence,
   PosSentences,
   RecentSentencesType,
   SortableListElementType,
+  TreebankPosType,
   UserListWordType,
   USER_STATS_MODE,
   WordDetailsType,
@@ -61,6 +63,12 @@ function Notrobes({ proxy, url }: Props): ReactElement {
   const dispatch = useAppDispatch();
   const classes = useStyles();
   const theme = useTheme();
+
+  const dictionaries = useAppSelector((state) => state.dictionary);
+  const translationProviderOrder = Object.keys(dictionaries).reduce(
+    (acc, next, ind) => ({ ...acc, [next]: ind }),
+    {} as Record<string, number>,
+  );
 
   let cancel: CancelTokenSource;
 
@@ -110,7 +118,7 @@ function Notrobes({ proxy, url }: Props): ReactElement {
     const details = await proxy.sendMessagePromise<WordDetailsType>({
       source: DATA_SOURCE,
       type: "getWordDetails",
-      value: query,
+      value: { dictionaryIds: Object.keys(dictionaries), graph: query },
     });
 
     console.debug(`Attempted to getWordDetails, response is`, details);
@@ -283,7 +291,7 @@ function Notrobes({ proxy, url }: Props): ReactElement {
   async function handleDeleteRecent(modelId: number | BigInt) {
     if (word && recentPosSentences) {
       const newRecents: RecentSentencesType = { id: word.id, posSentences: {} };
-      for (const [k, posSentence] of Object.entries(recentPosSentences)) {
+      for (const [k, posSentence] of Object.entries(recentPosSentences) as [TreebankPosType, PosSentence[]][]) {
         if (posSentence) {
           for (const sent of posSentence) {
             if (sent.modelId != modelId) {
@@ -315,6 +323,7 @@ function Notrobes({ proxy, url }: Props): ReactElement {
             wordModelStats={wordModelStats}
             recentPosSentences={recentPosSentences}
             lists={lists}
+            translationProviderOrder={translationProviderOrder}
             onDeleteRecent={handleDeleteRecent}
             onPractice={addOrUpdateCards}
             onCardFrontUpdate={handleCardFrontUpdate}

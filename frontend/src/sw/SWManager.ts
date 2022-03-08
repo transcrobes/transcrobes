@@ -1,31 +1,37 @@
-import { RxDatabase } from "rxdb/dist/types/core";
 import dayjs from "dayjs";
-
-import { getDb, unloadDatabaseFromMemory } from "../database/Database";
-import { EVENT_QUEUE_PROCESS_FREQ, PUSH_FILES_PROCESS_FREQ, DEFAULT_RETRIES } from "../lib/types";
-import { fetchPlus } from "../lib/libMethods";
-
-import * as data from "../lib/data";
-import { DayCardWords, EventData, IS_DEV, SerialisableStringSet } from "../lib/types";
-import { TranscrobesCollections, TranscrobesDatabase } from "../database/Schema";
-
-import { CacheFirst, StaleWhileRevalidate } from "workbox-strategies";
-import { WebpubManifest } from "../contents/boocrobes/WebpubManifestTypes/WebpubManifest";
-import { ReadiumLink } from "../contents/boocrobes/WebpubManifestTypes/ReadiumLink";
-import { PublicationConfig } from "../contents/common/types";
-import { ONE_YEAR_IN_SECS, WEBPUB_CACHE_NAME } from "../lib/types";
-import { registerRoute } from "workbox-routing";
 import { ExpirationPlugin } from "workbox-expiration";
+import { registerRoute } from "workbox-routing";
+import { CacheFirst, StaleWhileRevalidate } from "workbox-strategies";
 import { store } from "../app/createStore";
-import { setUser } from "../features/user/userSlice";
+import { ReadiumLink } from "../contents/boocrobes/WebpubManifestTypes/ReadiumLink";
+import { WebpubManifest } from "../contents/boocrobes/WebpubManifestTypes/WebpubManifest";
+import { PublicationConfig } from "../contents/common/types";
 import { getUserDexie } from "../database/authdb";
+import { getDb, unloadDatabaseFromMemory } from "../database/Database";
+import { TranscrobesDatabase } from "../database/Schema";
+import { setUser } from "../features/user/userSlice";
+import * as data from "../lib/data";
+import { fetchPlus } from "../lib/libMethods";
+import {
+  DayCardWords,
+  DEFAULT_RETRIES,
+  EventData,
+  EVENT_QUEUE_PROCESS_FREQ,
+  IS_DEV,
+  ONE_YEAR_IN_SECS,
+  PUSH_FILES_PROCESS_FREQ,
+  SerialisableStringSet,
+  UserDefinitionType,
+  WEBPUB_CACHE_NAME,
+} from "../lib/types";
 
 const VERSION = "v2";
 
 // FIXME: move to redux!!! or something less nasty!!!
 let dayCardWords: DayCardWords | null;
+const dictionaries: Record<string, Record<string, UserDefinitionType>> = {};
 
-let db: RxDatabase<TranscrobesCollections> | null;
+let db: TranscrobesDatabase | null;
 
 let url: URL;
 // FIXME: find some way to be able to stop the timer if required/desired
@@ -82,7 +88,7 @@ async function loadDb(
   };
   return getDb({ url, username: user.username }, progressCallback).then((dbObj) => {
     db = dbObj;
-    if (!sw.tcb) sw.tcb = new Promise<TranscrobesDatabase>((resolve, _reject) => resolve(dbObj));
+    if (!sw.tcb) sw.tcb = Promise.resolve(dbObj);
     if (!eventQueueTimer && db) {
       eventQueueTimer = setInterval(() => data.sendUserEvents(dbObj, url), EVENT_QUEUE_PROCESS_FREQ);
     }
@@ -103,6 +109,13 @@ async function getLocalCardWords(message: EventData, sw: ServiceWorkerGlobalScop
     dayCardWords = val;
   }
   return dayCardWords;
+}
+
+async function getUserDictionary(ldb: TranscrobesDatabase, dictionaryId: string) {
+  if (!dictionaries[dictionaryId]) {
+    dictionaries[dictionaryId] = await data.getDictionaryEntries(ldb, { dictionaryId });
+  }
+  return dictionaries[dictionaryId];
 }
 
 export async function resetDBConnections(): Promise<void> {
@@ -255,6 +268,7 @@ export function manageEvent(sw: ServiceWorkerGlobalScope, event: ExtendableMessa
   }
   const message = event.data as EventData;
 
+  console.log(message.type, message.value);
   switch (message.type) {
     case "syncDB":
       loadDb(message, sw, event);
@@ -324,6 +338,52 @@ export function manageEvent(sw: ServiceWorkerGlobalScope, event: ExtendableMessa
         },
       );
       break;
+    case "getDictionaryEntries":
+      loadDb(message, sw).then(([ldb, msg]) => {
+        getUserDictionary(ldb, msg.value.dictionaryId).then((entries) => {
+          postIt(event, { source: msg.source, type: msg.type, value: entries });
+        });
+      });
+      break;
+    case "getDictionaryEntriesByGraph":
+      loadDb(message, sw).then(([ldb, msg]) => {
+        const outputEntries: Record<string, UserDefinitionType> = {};
+        getUserDictionary(ldb, msg.value.dictionaryId).then((entries) => {
+          for (const graph of msg.value.graphs) {
+            outputEntries[graph] = entries[graph];
+          }
+          postIt(event, { source: msg.source, type: msg.type, value: outputEntries });
+        });
+      });
+      break;
+    case "saveDictionaryEntries":
+      delete dictionaries[message.value.dictionaryId];
+      loadDb(message, sw).then(([ldb, msg]) => {
+        data.saveDictionaryEntries(ldb, message.value).then((result) => {
+          postIt(event, { source: msg.source, type: msg.type, value: result });
+        });
+      });
+      break;
+    case "getWordDetails":
+      loadDb(message, sw).then(([ldb, msg]) => {
+        Promise.all(message.value.dictionaryIds.map(async (d: string) => [d, await getUserDictionary(ldb, d)])).then(
+          (dictionaries: [string, Record<string, UserDefinitionType>][]) => {
+            data.getWordDetails(ldb, message.value.graph).then((result) => {
+              for (const [dictionaryId, dictionary] of dictionaries) {
+                const entry = dictionary[message.value.graph];
+                if (entry) {
+                  result.word?.providerTranslations.push({
+                    provider: dictionaryId,
+                    posTranslations: entry.translations,
+                  });
+                }
+              }
+              postIt(event, { source: msg.source, type: msg.type, value: result });
+            });
+          },
+        );
+      });
+      break;
     // The following devalidate the dayCardWords "cache", so setting to null
     case "practiceCardsForWord":
     case "addOrUpdateCardsForWord":
@@ -334,7 +394,6 @@ export function manageEvent(sw: ServiceWorkerGlobalScope, event: ExtendableMessa
     case "getCharacterDetails":
     case "getAllFromDB":
     case "getByIds":
-    case "getWordDetails":
     case "practiceCard":
     case "getWordFromDBs":
     case "getKnownWordIds":

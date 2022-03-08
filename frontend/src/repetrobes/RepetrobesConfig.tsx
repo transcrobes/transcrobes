@@ -6,9 +6,10 @@ import dayjs from "dayjs";
 import TCCheckbox from "../components/TCCheckbox";
 import { RepetrobesActivityConfigType, WordOrdering, ZHHANS_EN_DICT_PROVIDERS } from "../lib/types";
 import { FormControl, FormControlLabel, makeStyles, Switch, TextField, Typography, useTheme } from "@material-ui/core";
-import { validInt } from "../lib/funclib";
+import { reorderArray, validInt } from "../lib/funclib";
 import WordOrderSelector from "../components/WordOrderSelector";
 import { DragDropContext, Draggable, Droppable, DropResult } from "react-beautiful-dnd";
+import DictionaryChooser from "../components/DictionaryChooser";
 
 interface Props {
   activityConfig: RepetrobesActivityConfigType;
@@ -37,15 +38,6 @@ const useStyles = makeStyles(() => ({
   },
 }));
 
-// a little function to help us with reordering the result
-const reorder = (list: any[], startIndex: number, endIndex: number) => {
-  const result = Array.from(list);
-  const [removed] = result.splice(startIndex, 1);
-  result.splice(endIndex, 0, removed);
-
-  return result;
-};
-
 export default function RepetrobesConfig({ activityConfig, onConfigChange }: Props): ReactElement {
   const classes = useStyles();
   const theme = useTheme();
@@ -54,20 +46,20 @@ export default function RepetrobesConfig({ activityConfig, onConfigChange }: Pro
     menu: (styles) => ({ ...styles, backgroundColor: theme.palette.background.default, zIndex: 2 }),
   };
 
-  function handleDragEnd(result: DropResult) {
-    // dropped outside the list
-    if (!result.destination) {
-      return;
-    }
+  // function handleDragEnd(result: DropResult) {
+  //   // dropped outside the list
+  //   if (!result.destination) {
+  //     return;
+  //   }
 
-    const translationProviderOrder = reorder(
-      activityConfig.translationProviderOrder,
-      result.source.index,
-      result.destination.index,
-    );
+  //   const translationProviderOrder = reorderArray(
+  //     activityConfig.translationProviderOrder,
+  //     result.source.index,
+  //     result.destination.index,
+  //   );
 
-    onConfigChange({ ...activityConfig, translationProviderOrder });
-  }
+  //   onConfigChange({ ...activityConfig, translationProviderOrder });
+  // }
 
   function handleWordListsChange(sls: any) {
     // FIXME: this is SUPER nasty but see
@@ -272,7 +264,13 @@ export default function RepetrobesConfig({ activityConfig, onConfigChange }: Pro
       <div>
         <div className={classes.multiselect}>
           <Typography>Preferred meaning provider</Typography>
-          <DragDropContext onDragEnd={handleDragEnd}>
+          <DictionaryChooser
+            selected={activityConfig.translationProviderOrder}
+            onSelectionChange={(value) => {
+              onConfigChange({ ...activityConfig, translationProviderOrder: value });
+            }}
+          />
+          {/* <DragDropContext onDragEnd={handleDragEnd}>
             <Droppable droppableId="droppable">
               {(provided) => (
                 <div {...provided.droppableProps} ref={provided.innerRef}>
@@ -295,7 +293,7 @@ export default function RepetrobesConfig({ activityConfig, onConfigChange }: Pro
                 </div>
               )}
             </Droppable>
-          </DragDropContext>
+          </DragDropContext> */}
         </div>
       </div>
     </div>

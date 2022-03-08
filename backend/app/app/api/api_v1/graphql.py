@@ -721,6 +721,25 @@ class UserSurvey(CommonType):  # FIXME: this isn't really a common_type, it does
 
 
 @strawberry.type
+class UserDictionary(CommonType):
+    lz_content: Optional[str] = ""
+    processing: Optional[int] = 0
+    from_lang: Optional[str] = ""
+    to_lang: Optional[str] = ""
+    shared: Optional[bool] = False
+
+    @staticmethod
+    def from_model(obj: models.UserDictionary):
+        out = CommonType.from_model_base(obj, UserDictionary)
+        out.lz_content = obj.lz_content
+        out.processing = obj.processing
+        out.from_lang = obj.from_lang
+        out.to_lang = obj.to_lang
+        out.shared = obj.shared
+        return out
+
+
+@strawberry.type
 class Goal(CommonType):
     parent: Optional[str] = ""
     priority: Optional[int] = 0
@@ -830,6 +849,15 @@ class UserlistsInput(CommonTypeInput):
     words_are_known: Optional[bool] = False
     word_knowledge: Optional[int] = KNOWLEDGE_UNSET
     only_dictionary_words: Optional[bool] = False
+
+
+@strawberry.input
+class UserdictionariesInput(CommonTypeInput):
+    lz_content: Optional[str] = ""
+    processing: Optional[int] = 0
+    from_lang: Optional[str] = ""
+    to_lang: Optional[str] = ""
+    shared: Optional[bool] = False
 
 
 @strawberry.input
@@ -962,6 +990,17 @@ class Query:
         async with async_session() as db:
             user = await get_user(db, info.context.request)
             return await filter_standard(db, user.id, limit, UserList, models.UserList, id, updated_at)
+
+    @strawberry.field
+    async def feed_userdictionaries(  # pylint: disable=E0213
+        info: Info[Context, Any],
+        limit: int,
+        id: Optional[str] = "",
+        updated_at: Optional[float] = -1,
+    ) -> List[UserDictionary]:
+        async with async_session() as db:
+            user = await get_user(db, info.context.request)
+            return await filter_standard(db, user.id, limit, UserDictionary, models.UserDictionary, id, updated_at)
 
     @strawberry.field
     async def feed_contents(  # pylint: disable=E0213
@@ -1135,6 +1174,14 @@ def fill_user_list(dj_obj: models.UserList, obj: UserlistsInput):
     dj_obj.words_are_known = obj.words_are_known
     dj_obj.word_knowledge = obj.word_knowledge
     dj_obj.only_dictionary_words = obj.only_dictionary_words
+
+
+def fill_userdictionary(dj_obj: models.UserDictionary, obj: UserdictionariesInput):
+    dj_obj.lz_content = obj.lz_content
+    dj_obj.processing = obj.processing
+    dj_obj.from_lang = obj.from_lang
+    dj_obj.to_lang = obj.to_lang
+    dj_obj.shared = obj.shared
 
 
 def fill_content(dj_obj: models.Content, obj: ContentsInput):
@@ -1329,6 +1376,18 @@ class Mutation:
             return RecentSentenceSet.from_model(dj_obj)
 
     @strawberry.mutation
+    async def set_userdictionaries(
+        self, info: Info[Context, Any], userdictionaries: UserdictionariesInput = None
+    ) -> UserDictionary:
+        channel = "userdictionaries"
+        obj = userdictionaries
+        logger.debug(f"The info is: {info=}, and the {channel=} is: {obj=}")
+        userdictionary: UserDictionary = await set_object(
+            obj, models.UserDictionary, info, channel, UserDictionary, fill_userdictionary
+        )
+        return userdictionary
+
+    @strawberry.mutation
     async def set_goals(self, info: Info[Context, Any], goals: GoalsInput = None) -> Goal:
         channel = "goals"
         obj = goals
@@ -1449,6 +1508,10 @@ class Subscription:
     @strawberry.subscription
     async def changed_usersurveys(self, info: Info[Context, Any], token: str) -> UserSurvey:
         return changed_standard(info, token, UserSurvey)
+
+    @strawberry.subscription
+    async def changed_userdictionaries(self, info: Info[Context, Any], token: str) -> UserDictionary:
+        return changed_standard(info, token, UserDictionary)
 
 
 schema = strawberry.Schema(query=Query, mutation=Mutation, subscription=Subscription)

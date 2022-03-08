@@ -1,26 +1,28 @@
 import Tracker from "@openreplay/tracker";
+import polyglotI18nProvider from "ra-i18n-polyglot";
 import { ReactElement, useEffect, useState } from "react";
 import { Admin, Resource } from "react-admin";
-import polyglotI18nProvider from "ra-i18n-polyglot";
-import customRoutes from "./routes";
-import imports from "./imports";
+import { authProvider, dataProvider, history as localHistory, setTracker, store, tracker } from "./app/createStore";
+import { useAppDispatch, useAppSelector } from "./app/hooks";
 import contents from "./contents";
+import Dashboard from "./Dashboard";
+import { getUserDexie, isInitialisedAsync } from "./database/authdb";
+import dictionaries from "./dictionaries";
+import { setState } from "./features/card/knownCardsSlice";
+import { setMouseover, setTokenDetails } from "./features/ui/uiSlice";
+import { setUser } from "./features/user/userSlice";
 import goals from "./goals";
-import userlists from "./userlists";
-import surveys from "./surveys";
+import englishMessages from "./i18n/en";
+import imports from "./imports";
 import { Layout } from "./layout";
+import { ComponentsConfig } from "./lib/complexTypes";
+import { refreshDictionaries } from "./lib/dictionary";
+import { IS_DEV, SerialisableDayCardWords } from "./lib/types";
+import customRoutes from "./routes";
+import surveys from "./surveys";
 import Login from "./system/Login";
 import Logout from "./system/Logout";
-import englishMessages from "./i18n/en";
-import Dashboard from "./Dashboard";
-import { ComponentsConfig } from "./lib/complexTypes";
-import { authProvider, dataProvider, history as localHistory, setTracker, tracker } from "./app/createStore";
-import { getUserDexie, isInitialisedAsync } from "./database/authdb";
-import { useAppDispatch, useAppSelector } from "./app/hooks";
-import { setUser } from "./features/user/userSlice";
-import { setState } from "./features/card/knownCardsSlice";
-import { IS_DEV, SerialisableDayCardWords } from "./lib/types";
-import { setMouseover, setTokenDetails } from "./features/ui/uiSlice";
+import userlists from "./userlists";
 
 const i18nProvider = polyglotI18nProvider((_locale) => {
   return englishMessages;
@@ -29,6 +31,7 @@ const i18nProvider = polyglotI18nProvider((_locale) => {
 const GLOBAL_TIMER_DURATION_MS = IS_DEV ? 1000 : 5000;
 
 const EVENT_SOURCE = "App.tsx";
+const DATA_SOURCE = "App.tsx";
 
 setInterval(async () => {
   const needsReload = await window.componentsConfig.proxy.sendMessagePromise<boolean>({
@@ -51,8 +54,7 @@ function App({ componentsConfig }: Props): ReactElement {
 
   useEffect(() => {
     (async () => {
-      const user = await getUserDexie();
-      dispatch(setUser(user));
+      dispatch(setUser(await getUserDexie()));
     })();
 
     document.addEventListener("click", () => dispatch(setTokenDetails(undefined)));
@@ -92,12 +94,12 @@ function App({ componentsConfig }: Props): ReactElement {
           dispatch(
             setState(
               await componentsConfig.proxy.sendMessagePromise<SerialisableDayCardWords>({
-                source: "App.tsx",
+                source: DATA_SOURCE,
                 type: "getSerialisableCardWords",
-                value: "",
               }),
             ),
           );
+          await refreshDictionaries(store, componentsConfig.proxy);
         } else if (shouldRedirectUninited(window.location.href)) {
           window.location.href = "/#/init";
         }
@@ -139,6 +141,7 @@ function App({ componentsConfig }: Props): ReactElement {
         {(_permissions) => [
           <Resource name="imports" {...imports} />,
           <Resource name="contents" {...contents} />,
+          <Resource name="userdictionaries" {...dictionaries} />,
           <Resource name="goals" {...goals} />,
           <Resource name="userlists" {...userlists} />,
           <Resource name="surveys" {...surveys} />,

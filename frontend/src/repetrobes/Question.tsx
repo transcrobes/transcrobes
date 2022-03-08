@@ -35,7 +35,7 @@ interface QuestionProps {
   showL2LengthHint: boolean;
   showAnswer: boolean;
   premature: boolean;
-  translationProviderOrder: DictProvider[];
+  translationProviderOrder: Record<string, number>;
   onCardFrontUpdate: (card: CardType) => void;
 }
 

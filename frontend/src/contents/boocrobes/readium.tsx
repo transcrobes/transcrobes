@@ -1,18 +1,18 @@
-import jss from "jss";
-import EnrichedTextFragment from "../../components/content/etf/EnrichedTextFragment";
-import { addDefinitions } from "../../features/definition/definitionsSlice";
-import { missingWordIdsFromModels, tokensInModel } from "../../lib/funclib";
-import { DefinitionType, ComponentClass, ComponentFunction, KeyedModels } from "../../lib/types";
-import preset from "jss-preset-default";
 import { createComponentVNode, render } from "inferno";
 import { Provider as InfernoProvider } from "inferno-redux";
+import jss from "jss";
+import preset from "jss-preset-default";
 import ReactDOM from "react-dom";
 import { Provider } from "react-redux";
-import { setLoading, setTokenDetails } from "../../features/ui/uiSlice";
-import { setPlatformHelper } from "../../lib/proxies";
 import { ETFStyles } from "../../components/Common";
+import EnrichedTextFragment from "../../components/content/etf/EnrichedTextFragment";
 import ETFStyleUpdater from "../../components/content/td/ETFStyleUpdater";
+import { setLoading, setTokenDetails } from "../../features/ui/uiSlice";
+import { ensureDefinitionsLoaded } from "../../lib/dictionary";
+import { missingWordIdsFromModels, tokensInModel } from "../../lib/funclib";
+import { setPlatformHelper } from "../../lib/proxies";
 import { observerFunc } from "../../lib/stats";
+import { ComponentClass, ComponentFunction, KeyedModels } from "../../lib/types";
 
 declare global {
   interface Window {
@@ -20,25 +20,26 @@ declare global {
   }
 }
 
-const DATA_SOURCE = "readium.tsx";
 const MAX_TOKENS_FOR_PRE_ENRICHMENT = 30000;
 
+const proxy = window.parent.componentsConfig.proxy;
+const store = window.parent.transcrobesStore;
 const bookId = window.parent.bookId;
-const readerConfig = window.parent.transcrobesStore.getState().bookReader[bookId];
+const readerConfig = store.getState().bookReader[bookId];
 const currentModels = window.transcrobesModel;
-const definitions = window.parent.transcrobesStore.getState().definitions;
+const definitions = store.getState().definitions;
 
 const getReaderConfig = () => readerConfig;
-const getKnownCards = () => window.parent.transcrobesStore.getState().knownCards;
+const getKnownCards = () => store.getState().knownCards;
 const readObserver = new IntersectionObserver(observerFunc(getReaderConfig, currentModels, getKnownCards), {
   threshold: [1.0],
 });
 
 document.addEventListener("click", () => {
-  window.parent.transcrobesStore.dispatch(setTokenDetails(undefined));
+  store.dispatch(setTokenDetails(undefined));
 });
 
-window.parent.transcrobesStore.dispatch(setLoading(true));
+store.dispatch(setLoading(true));
 
 // this can't be done with a hook, so just doing it like this
 jss.setup(preset());
@@ -47,8 +48,8 @@ sheet.update(readerConfig);
 const classes = sheet.classes;
 
 export function onEntryId(entries: IntersectionObserverEntry[]): void {
-  if (window.parent.transcrobesStore.getState().ui.loading) {
-    window.parent.transcrobesStore.dispatch(setLoading(undefined));
+  if (store.getState().ui.loading) {
+    store.dispatch(setLoading(undefined));
   }
   entries.forEach((change) => {
     const etf = change.target as HTMLElement;
@@ -57,7 +58,7 @@ export function onEntryId(entries: IntersectionObserverEntry[]): void {
     readObserver.observe(etf);
     render(
       createComponentVNode(ComponentClass, InfernoProvider, {
-        store: window.parent.transcrobesStore,
+        store,
         children: [
           createComponentVNode(
             ComponentFunction,
@@ -89,7 +90,7 @@ const transcroberObserver: IntersectionObserver = new IntersectionObserver(onEnt
 });
 
 function loadSettingsFromParentFrame() {
-  setPlatformHelper(window.parent.componentsConfig.proxy);
+  setPlatformHelper(proxy);
 
   if (window.parent.etfLoaded) {
     window.parent.etfLoaded.add("loaded");
@@ -99,61 +100,49 @@ function loadSettingsFromParentFrame() {
 loadSettingsFromParentFrame();
 
 const uniqueIds = missingWordIdsFromModels(currentModels, definitions);
-window.parent.componentsConfig.proxy
-  .sendMessagePromise<DefinitionType[]>({
-    source: DATA_SOURCE,
-    type: "getByIds",
-    value: { collection: "definitions", ids: [...uniqueIds] },
-  })
-  .then((definitions) => {
-    window.parent.transcrobesStore.dispatch(
-      addDefinitions(
-        definitions.map((def) => {
-          return { ...def, glossToggled: false };
-        }),
-      ),
-    );
-    ReactDOM.render(
-      <Provider store={window.parent.transcrobesStore}>
-        <ETFStyleUpdater sheet={sheet} id={bookId} />
-      </Provider>,
-      document.body.appendChild(document.createElement("div")),
-    );
-    if (tokensInModel(currentModels) > MAX_TOKENS_FOR_PRE_ENRICHMENT) {
-      for (const etf of document.getElementsByTagName("enriched-text-fragment")) {
-        if (!etf.id) continue;
-        transcroberObserver.observe(etf);
-      }
-    } else {
-      for (const etf of document.getElementsByTagName("enriched-text-fragment")) {
-        if (!etf.id) continue;
-        etf.innerHTML = "";
-        readObserver.observe(etf);
-        render(
-          createComponentVNode(ComponentClass, InfernoProvider, {
-            store: window.parent.transcrobesStore,
-            children: [
-              createComponentVNode(
-                ComponentFunction,
-                EnrichedTextFragment,
-                {
-                  readerConfig: readerConfig,
-                  model: currentModels[etf.id],
-                  classes: classes,
-                },
-                null,
-                {
-                  onComponentWillUnmount() {
-                    readObserver.unobserve(etf);
-                  },
-                },
-              ),
-            ],
-          }),
-          etf,
-        );
-      }
+
+ensureDefinitionsLoaded(proxy, [...uniqueIds], store).then(() => {
+  ReactDOM.render(
+    <Provider store={store}>
+      <ETFStyleUpdater sheet={sheet} id={bookId} />
+    </Provider>,
+    document.body.appendChild(document.createElement("div")),
+  );
+  if (tokensInModel(currentModels) > MAX_TOKENS_FOR_PRE_ENRICHMENT) {
+    for (const etf of document.getElementsByTagName("enriched-text-fragment")) {
+      if (!etf.id) continue;
+      transcroberObserver.observe(etf);
     }
-    window.parent.transcrobesStore.dispatch(setLoading(undefined));
-    console.debug("Finished setting up elements for readium");
-  });
+  } else {
+    for (const etf of document.getElementsByTagName("enriched-text-fragment")) {
+      if (!etf.id) continue;
+      etf.innerHTML = "";
+      readObserver.observe(etf);
+      render(
+        createComponentVNode(ComponentClass, InfernoProvider, {
+          store: store,
+          children: [
+            createComponentVNode(
+              ComponentFunction,
+              EnrichedTextFragment,
+              {
+                readerConfig: readerConfig,
+                model: currentModels[etf.id],
+                classes: classes,
+              },
+              null,
+              {
+                onComponentWillUnmount() {
+                  readObserver.unobserve(etf);
+                },
+              },
+            ),
+          ],
+        }),
+        etf,
+      );
+    }
+  }
+  store.dispatch(setLoading(undefined));
+  console.debug("Finished setting up elements for readium");
+});

@@ -10,7 +10,7 @@ import {
   RecentSentencesType,
   SentenceType,
   SerialisableDayCardWords,
-  TREEBANK_POS_TYPES,
+  TreebankPosType,
   USER_STATS_MODE,
 } from "./types";
 
@@ -47,7 +47,7 @@ async function addToRecentSentences(model: ModelType, minTokens = 5, maxTokens =
     (a, b) => Math.abs(IDEAL_RECENT_SENTS_LENGTH - a.t.length) - Math.abs(IDEAL_RECENT_SENTS_LENGTH - b.t.length),
   );
 
-  const bestNewSentsForWord = new Map<string, { pos: TREEBANK_POS_TYPES; sent: SentenceType }[]>(); // string =bbi
+  const bestNewSentsForWord = new Map<string, { pos: TreebankPosType; sent: SentenceType }[]>(); // string =bbi
   const newWordCombos = new Set<string>(); // wordId + # + pos
   for (const sent of usableSentences) {
     for (const token of sent.t) {

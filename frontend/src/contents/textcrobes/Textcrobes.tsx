@@ -2,7 +2,6 @@ import { createTheme, makeStyles, ThemeProvider } from "@material-ui/core";
 import { EditorState } from "draft-js";
 import { stateToHTML } from "draft-js-export-html";
 import "draft-js/dist/Draft.css";
-import _ from "lodash";
 import MUIRichTextEditor from "mui-rte";
 import { ReactElement, useEffect, useRef, useState } from "react";
 import { TopToolbar } from "react-admin";
@@ -14,25 +13,19 @@ import Mouseover from "../../components/content/td/Mouseover";
 import TokenDetails from "../../components/content/td/TokenDetails";
 import HelpButton from "../../components/HelpButton";
 import Loading from "../../components/Loading";
+import { getRefreshedState } from "../../features/content/contentSlice";
 import {
   DEFAULT_TEXT_READER_CONFIG_STATE,
   simpleReaderActions,
   SimpleReaderState,
   TEXT_READER_ID,
 } from "../../features/content/simpleReaderSlice";
-import { addDefinitions } from "../../features/definition/definitionsSlice";
 import { setLoading } from "../../features/ui/uiSlice";
 import { ImportProgress } from "../../imports/ImportProgress";
+import { ensureDefinitionsLoaded } from "../../lib/dictionary";
 import { wordIdsFromModels } from "../../lib/funclib";
 import { ServiceWorkerProxy } from "../../lib/proxies";
-import {
-  ContentConfigType,
-  DefinitionType,
-  EnrichedHtmlModels,
-  ImportFirstSuccessStats,
-  KeyedModels,
-  noop,
-} from "../../lib/types";
+import { EnrichedHtmlModels, ImportFirstSuccessStats, KeyedModels, noop } from "../../lib/types";
 import ContentConfigLauncherDrawer from "./TextReaderConfigLauncher";
 
 type Props = {
@@ -89,16 +82,7 @@ export default function Textcrobes({ proxy }: Props): ReactElement {
   useEffect(() => {
     (async () => {
       if (proxy.loaded) {
-        const config = await proxy.sendMessagePromise<ContentConfigType>({
-          source: "ContentConfig.ts",
-          type: "getContentConfigFromStore",
-          value: id,
-        });
-        const conf: SimpleReaderState = _.merge(
-          _.cloneDeep({ ...DEFAULT_TEXT_READER_CONFIG_STATE, id }),
-          config?.configString ? JSON.parse(config.configString).readerState : null,
-        );
-
+        const conf = await getRefreshedState<SimpleReaderState>(proxy, DEFAULT_TEXT_READER_CONFIG_STATE, id);
         dispatch(simpleReaderActions.setState({ id, value: conf }));
       }
     })();
@@ -124,24 +108,10 @@ export default function Textcrobes({ proxy }: Props): ReactElement {
       .then((value) => {
         setModels(value.models);
         const uniqueIds = wordIdsFromModels(value.models);
-        proxy
-          .sendMessagePromise<DefinitionType[]>({
-            source: DATA_SOURCE,
-            type: "getByIds",
-            value: { collection: "definitions", ids: [...uniqueIds] },
-          })
-          .then((definitions) => {
-            dispatch(
-              addDefinitions(
-                definitions.map((def) => {
-                  return { ...def, glossToggled: false };
-                }),
-              ),
-            );
-
-            setHtml(value.html);
-            dispatch(setLoading(undefined));
-          });
+        ensureDefinitionsLoaded(proxy, [...uniqueIds], store).then(() => {
+          setHtml(value.html);
+          dispatch(setLoading(undefined));
+        });
         proxy
           .sendMessagePromise<ImportFirstSuccessStats>({
             source: DATA_SOURCE,

@@ -16,6 +16,7 @@ import videoReaderReducer from "../features/content/videoReaderSlice";
 import definitionsReducer from "../features/definition/definitionsSlice";
 import themeReducer from "../features/themes/themeReducer";
 import uiReducer from "../features/ui/uiSlice";
+import dictionaryReducer from "../features/dictionary/dictionarySlice";
 import userSliceReducer, { doLogin, setAndSaveUser, throttledLogout } from "../features/user/userSlice";
 import { ComponentsConfig } from "../lib/complexTypes";
 import { ServiceWorkerProxy, setPlatformHelper } from "../lib/proxies";
@@ -91,6 +92,7 @@ function createStore({ authProvider, dataProvider, history }: CreateStoreProps) 
     knownCards: knownCardsReducer,
     definitions: definitionsReducer,
     ui: uiReducer,
+    dictionary: dictionaryReducer,
     userData: userSliceReducer,
     ...(history && { admin: adminReducer, router: connectRouter(history) }),
   });

@@ -1,8 +1,9 @@
 import { ClassNameMap } from "@material-ui/core/styles/withStyles";
-import { Fragment, ReactElement } from "react";
+import { Fragment, ReactElement, useContext, useEffect, useState } from "react";
 import { useAppSelector } from "../../../app/hooks";
-import { toSimplePosLabels } from "../../../lib/libMethods";
-import { DefinitionType, SIMPLE_POS_TYPES } from "../../../lib/types";
+import { orderTranslations, toPosLabels } from "../../../lib/libMethods";
+import { DefinitionType, ProviderTranslationType } from "../../../lib/types";
+import { ReaderConfigContext } from "../../ReaderConfigProvider";
 
 type Props = {
   definition: DefinitionType;
@@ -11,32 +12,38 @@ type Props = {
 
 export default function Definitions({ definition, classes }: Props): ReactElement {
   const fromLang = useAppSelector((state) => state.userData.user.fromLang);
+  const dictionaries = useAppSelector((state) => state.dictionary);
+  const { readerConfig } = useContext(ReaderConfigContext);
+  const [orderedTranslations, setOrderedTranslations] = useState<ProviderTranslationType[]>([]);
+
+  useEffect(() => {
+    setOrderedTranslations(orderTranslations(definition.providerTranslations, readerConfig.translationProviderOrder));
+  }, [readerConfig.translationProviderOrder, definition]);
+
   return (
     <>
-      {definition.providerTranslations
-        .filter((provider) => provider.posTranslations.length > 0)
-        .map((provider) => {
-          return (
-            <Fragment key={provider.provider}>
-              <hr />
-              <div className={classes.source} key={provider.provider}>
-                <div className={classes.sourceName}>{provider.provider}</div>
-                {provider.posTranslations.map((translation) => {
-                  return (
-                    <Fragment key={provider.provider + translation.posTag}>
-                      <div className={classes.sourcePos}>
-                        {toSimplePosLabels(translation.posTag as SIMPLE_POS_TYPES, fromLang)}
-                      </div>
-                      <div className={classes.sourcePosDefs}>
-                        <span>{translation.values.join(", ")}</span>
-                      </div>
-                    </Fragment>
-                  );
-                })}
-              </div>
-            </Fragment>
-          );
-        })}
+      {orderedTranslations.map((provider) => {
+        return (
+          <Fragment key={provider.provider}>
+            <hr />
+            <div className={classes.source} key={provider.provider}>
+              <div className={classes.sourceName}>{dictionaries[provider.provider] || provider.provider}</div>
+              {provider.posTranslations.map((translation) => {
+                return (
+                  <Fragment key={provider.provider + translation.posTag + translation.sounds}>
+                    <div className={classes.sourcePos}>
+                      {toPosLabels(translation.posTag, fromLang)} {translation.sounds}
+                    </div>
+                    <div className={classes.sourcePosDefs}>
+                      <span>{translation.values.join(", ")}</span>
+                    </div>
+                  </Fragment>
+                );
+              })}
+            </div>
+          </Fragment>
+        );
+      })}
     </>
   );
 }

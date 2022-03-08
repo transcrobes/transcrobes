@@ -598,6 +598,15 @@ class Goal(DetailedMixin, Base):
     user_list = relationship("UserList")
 
 
+class UserDictionary(DetailedMixin, Base):
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    lz_content = Column(Text)
+    processing = Column(Integer, nullable=False, default=REQUESTED)
+    shared = Column(Boolean, nullable=False, default=False)
+    from_lang = Column(String(20), nullable=False, default="zh-Hans")
+    to_lang = Column(String(20), nullable=False, default="en")
+
+
 class UserlistGrammarRule(Base):
     __table_args__ = (UniqueConstraint("user_list_id", "grammar_rule_id"),)
 

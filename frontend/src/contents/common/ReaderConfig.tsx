@@ -2,11 +2,12 @@ import { FormControl, FormControlLabel, makeStyles, Switch, Theme } from "@mater
 import { ClassNameMap } from "@material-ui/core/styles/withStyles";
 import { ToggleButton, ToggleButtonGroup } from "@material-ui/lab";
 import _ from "lodash";
-import React, { ReactElement, useCallback } from "react";
+import React, { ReactElement, useCallback, useEffect, useState } from "react";
 import { HslColor } from "react-colorful";
-import { useAppDispatch } from "../../app/hooks";
+import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import { Conftainer as BasicConftainer, DEFAULT_FONT_COLOUR } from "../../components/Common";
 import Conftainer from "../../components/Conftainer";
+import DictionaryChooser from "../../components/DictionaryChooser";
 import FivePercentFineControl from "../../components/FivePercentFineControl";
 import FontColour from "../../components/FontColour";
 import { bookReaderActions } from "../../features/content/bookReaderSlice";
@@ -54,7 +55,6 @@ export default function ContentConfig({
 }: ContentConfigProps): ReactElement {
   const dispatch = useAppDispatch();
   const id = readerConfig.id;
-
   const localClasses = useStyles();
   function fontColourSelectedChange(
     checked: boolean,
@@ -220,6 +220,33 @@ export default function ContentConfig({
             On
           </ToggleButton>
         </ToggleButtonGroup>
+      </Conftainer>
+
+      <Conftainer label="Strict Provider Ordering" id="strictProvider">
+        <ToggleButtonGroup
+          className={classes.button || localClasses.button}
+          exclusive
+          value={readerConfig.strictProviderOrdering}
+          onChange={(event: React.MouseEvent<HTMLElement>, value: boolean) => {
+            dispatch(actions.setStrictProviderOrdering({ id, value }));
+          }}
+        >
+          <ToggleButton className={classes.button || localClasses.button} value={false}>
+            Off
+          </ToggleButton>
+          <ToggleButton className={classes.button || localClasses.button} value={true}>
+            On
+          </ToggleButton>
+        </ToggleButtonGroup>
+      </Conftainer>
+
+      <Conftainer label="Dictionary Providers" id="dictProviders">
+        <DictionaryChooser
+          selected={readerConfig.translationProviderOrder}
+          onSelectionChange={(value) => {
+            dispatch(actions.setTranslationProviderOrder({ id, value }));
+          }}
+        />
       </Conftainer>
     </div>
   );

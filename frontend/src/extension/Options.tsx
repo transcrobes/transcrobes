@@ -1,6 +1,5 @@
 import { Box, Container, FormGroup, makeStyles, Typography } from "@material-ui/core";
 import Button from "@material-ui/core/Button";
-import _ from "lodash";
 import { useEffect, useState } from "react";
 import { store } from "../app/createStore";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
@@ -10,6 +9,7 @@ import ReaderConfig from "../contents/common/ReaderConfig";
 import { getUserDexie, isInitialisedAsync, setInitialisedAsync } from "../database/authdb";
 import { getDb } from "../database/Database";
 import { TranscrobesDatabase } from "../database/Schema";
+import { getRefreshedState } from "../features/content/contentSlice";
 import {
   DEFAULT_WEB_READER_CONFIG_STATE,
   simpleReaderActions,
@@ -17,10 +17,10 @@ import {
   WEB_READER_ID,
 } from "../features/content/simpleReaderSlice";
 import { setLoading } from "../features/ui/uiSlice";
-import { throttledLogin, setUser, updateBaseUrl, updatePassword, updateUsername } from "../features/user/userSlice";
+import { setUser, throttledLogin, updateBaseUrl, updatePassword, updateUsername } from "../features/user/userSlice";
+import { refreshDictionaries } from "../lib/dictionary";
 import { onError } from "../lib/funclib";
 import { BackgroundWorkerProxy, setPlatformHelper } from "../lib/proxies";
-import { ContentConfigType } from "../lib/types";
 import { RxDBDataProviderParams } from "../ra-data-rxdb";
 import ConnectionSettings from "./components/ConnectionSettings";
 import Initialisation from "./components/Initialisation";
@@ -88,16 +88,11 @@ export default function Options(): JSX.Element {
       let conf: SimpleReaderState = { ...DEFAULT_WEB_READER_CONFIG_STATE, id };
       if (userData.username && linit) {
         await proxy.asyncInit({ username: userData.username });
-        const config = await proxy.sendMessagePromise<ContentConfigType>({
-          source: "ContentConfig.ts",
-          type: "getContentConfigFromStore",
-          value: id,
-        });
-        conf = _.merge(_.cloneDeep(conf), config?.configString ? JSON.parse(config.configString).readerState : null);
+        await refreshDictionaries(store, proxy);
+        conf = await getRefreshedState<SimpleReaderState>(proxy, DEFAULT_WEB_READER_CONFIG_STATE, id);
       }
       dispatch(simpleReaderActions.setState({ id, value: conf }));
       setLoaded(true);
-
       dispatch(setLoading(false));
     })();
   }, []);

@@ -1,8 +1,7 @@
 import { ReactElement } from "react";
-import QuestionDefinitionGraph from "./Common";
 import Meaning from "../components/Meaning";
-import { CardType, CharacterType, DefinitionType, DictProvider } from "../lib/types";
-import { MeaningWrapper, StyledQuestion } from "./Common";
+import { CardType, CharacterType, DefinitionType } from "../lib/types";
+import QuestionDefinitionGraph, { MeaningWrapper, StyledQuestion } from "./Common";
 
 interface MeaningQuestionProps {
   card: CardType;
@@ -11,7 +10,7 @@ interface MeaningQuestionProps {
   showL2LengthHint: boolean;
   characters: CharacterType[];
   showAnswer: boolean;
-  translationProviderOrder: DictProvider[];
+  translationProviderOrder: Record<string, number>;
   onCardFrontUpdate: (card: CardType) => void;
 }
 

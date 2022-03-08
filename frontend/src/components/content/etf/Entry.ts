@@ -36,6 +36,8 @@ type StatedEntryProps = EntryProps & {
   isKnown?: boolean;
   glossing?: number; // FIXME: type this!
   mouseover?: boolean;
+  translationProviderOrder?: Record<string, number>;
+  strictProviderOrdering?: boolean;
 };
 
 const DEFINITION_LOADING = "loading...";
@@ -80,7 +82,6 @@ class Entry extends Component<StatedEntryProps, LocalEntryState> {
       (!sameCoordinates(event.currentTarget, this.context.store.getState().ui.tokenDetails.sourceRect) &&
         window.screen.availWidth > 600)
     ) {
-      // this.context.store.dispatch(setTokenDetails(undefined));
       this.context.store.dispatch(setMouseover(undefined));
       this.context.store.dispatch(
         setTokenDetails({
@@ -98,7 +99,7 @@ class Entry extends Component<StatedEntryProps, LocalEntryState> {
     }
   }
 
-  async updates(glossing: number): Promise<void> {
+  async updates(readerConfig: ReaderState): Promise<void> {
     const rootState: RootState = this.context.store.getState();
     const knownCards = rootState.knownCards;
     const definitions = rootState.definitions;
@@ -106,7 +107,7 @@ class Entry extends Component<StatedEntryProps, LocalEntryState> {
     const fromLang = rootState.userData.user.fromLang;
     const token = this.props.token;
     const needsGloss =
-      glossing > USER_STATS_MODE.NO_GLOSS &&
+      readerConfig.glossing > USER_STATS_MODE.NO_GLOSS &&
       !(token.l in knownCards.knownCardWordGraphs) &&
       !!token.pos &&
       (!isNumberToken(token) || GLOSS_NUMBER_NOUNS);
@@ -115,7 +116,7 @@ class Entry extends Component<StatedEntryProps, LocalEntryState> {
 
     let localGloss = "";
     if ((needsGloss && (!def || !def.glossToggled)) || (!needsGloss && def && def.glossToggled)) {
-      localGloss = await getNormalGloss(token, glossing, knownCards, definitions, fromLang || "zh-Hans");
+      localGloss = await getNormalGloss(token, readerConfig, knownCards, definitions, fromLang || "zh-Hans");
     } else {
       localGloss = "";
     }
@@ -125,13 +126,19 @@ class Entry extends Component<StatedEntryProps, LocalEntryState> {
     }
     if (localGloss.startsWith(DEFINITION_LOADING)) {
       window.setTimeout(this.lookForDefinitionUpdate, RETRY_DEFINITION_MS, {
-        glossing,
+        readerConfig: readerConfig,
         attemptsRemaining: RETRY_DEFINITION_MAX_TRIES,
       });
     }
   }
 
-  lookForDefinitionUpdate({ glossing, attemptsRemaining }: { glossing: number; attemptsRemaining: number }): void {
+  lookForDefinitionUpdate({
+    readerConfig,
+    attemptsRemaining,
+  }: {
+    readerConfig: ReaderState;
+    attemptsRemaining: number;
+  }): void {
     const token = this.props.token;
     const {
       knownCards,
@@ -153,12 +160,12 @@ class Entry extends Component<StatedEntryProps, LocalEntryState> {
     promise.then((def) => {
       if (!def) {
         window.setTimeout(this.lookForDefinitionUpdate, RETRY_DEFINITION_MS, {
-          glossing,
+          glossing: readerConfig.glossing,
           attemptsRemaining: attemptsRemaining - 1,
         });
       } else {
         this.context.store.dispatch(addDefinitions([{ ...def, glossToggled: false }]));
-        getNormalGloss(token, glossing, knownCards, definitions, fromLang || "zh-Hans").then((gloss) => {
+        getNormalGloss(token, readerConfig, knownCards, definitions, fromLang || "zh-Hans").then((gloss) => {
           this.setState({ gloss });
         });
       }
@@ -166,17 +173,30 @@ class Entry extends Component<StatedEntryProps, LocalEntryState> {
   }
 
   async componentWillUpdate(nextProps: StatedEntryProps, nextState: LocalEntryState, context: any): Promise<void> {
-    if (
-      nextProps.glossToggled !== this.props.glossToggled ||
-      nextProps.isKnown !== this.props.isKnown ||
-      nextProps.glossing !== this.props.glossing
-    ) {
-      await this.updates(nextProps.glossing || this.props.readerConfig.glossing);
+    if (this.props.token.pos || this.props.token.bg) {
+      if (
+        nextProps.glossToggled !== this.props.glossToggled ||
+        nextProps.isKnown !== this.props.isKnown ||
+        nextProps.strictProviderOrdering !== this.props.strictProviderOrdering ||
+        Object.keys(nextProps.translationProviderOrder || {}).join("") !==
+          Object.keys(this.props.translationProviderOrder || {}).join("") ||
+        nextProps.glossing !== this.props.glossing
+      ) {
+        await this.updates({
+          ...this.props.readerConfig,
+          glossing: nextProps.glossing || this.props.readerConfig.glossing,
+          translationProviderOrder:
+            nextProps.translationProviderOrder || this.props.readerConfig.translationProviderOrder,
+          strictProviderOrdering: nextProps.strictProviderOrdering || this.props.readerConfig.strictProviderOrdering,
+        });
+      }
     }
   }
 
   async componentWillMount(): Promise<void> {
-    await this.updates(this.props.readerConfig.glossing);
+    if (this.props.token.pos || this.props.token.bg) {
+      await this.updates(this.props.readerConfig);
+    }
   }
 
   createPopover(event: React.MouseEvent<HTMLSpanElement> | undefined): void {
@@ -265,6 +285,8 @@ function mapStateToProps(state: RootState, props: EntryProps) {
     isKnown: props.token.l in state.knownCards.knownCardWordGraphs,
     glossing: readerConfig.glossing,
     mouseover: readerConfig.mouseover,
+    translationProviderOrder: readerConfig.translationProviderOrder,
+    strictProviderOrdering: readerConfig.strictProviderOrdering,
   };
 }
 
