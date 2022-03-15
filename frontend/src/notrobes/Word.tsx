@@ -1,11 +1,11 @@
 import { Button, makeStyles } from "@material-ui/core";
 import dayjs from "dayjs";
-import { ReactElement } from "react";
+import { Fragment, ReactElement } from "react";
 import { $enum } from "ts-enum-util";
-import { useAppSelector } from "../app/hooks";
 import { ThinHR } from "../components/Common";
 import DefinitionGraph from "../components/DefinitionGraph";
 import DefinitionTranslations from "../components/DefinitionTranslations";
+import DW from "../components/DiscoverableWord";
 import Header from "../components/Header";
 import PosItem from "../components/PosItem";
 import PracticerInput from "../components/PracticerInput";
@@ -23,6 +23,11 @@ import {
 } from "../lib/types";
 
 const useStyles = makeStyles(() => ({
+  characterDetails: {
+    margin: ".5em",
+    fontSize: "2em",
+    verticalAlign: "middle",
+  },
   soundBoxInner: {
     marginLeft: ".5em",
     display: "flex",
@@ -120,8 +125,8 @@ function Practicer({ wordId, onPractice }: PracticerProps): ReactElement {
   );
 }
 
-function ExistingCards({ cards }: { cards: CardType[] }): ReactElement {
-  const classes = useStyles();
+function ExistingCards({ cards, classes }: { cards: CardType[]; classes: any }): ReactElement {
+  // const classes = useStyles();
   const cardsArray = [...cards.values()];
   const cardsRows = cardsArray.map((card) => {
     return (
@@ -185,6 +190,47 @@ function WordLists({ lists }: { lists: SortableListElementType[] }): ReactElemen
   );
 }
 
+function CharacterDetails({
+  characters,
+  classes,
+}: {
+  characters: (CharacterType | null)[];
+  classes: any;
+}): ReactElement {
+  return (
+    <>
+      <ThinHR />
+      <div>
+        <Header text="Radicals and composition" />
+        {(characters.length > 0 && (
+          <div>
+            {characters
+              .filter((x) => x)
+              .map((char, ind) => {
+                return (
+                  <div key={ind}>
+                    <span className={classes.characterDetails}>
+                      <DW graph={char?.id} /> : <DW graph={char?.radical} /> : {char?.decomposition}
+                    </span>
+                    <span>
+                      {char?.etymology?.type
+                        ? ` => Type: ${char?.etymology?.type}${
+                            char?.etymology?.phonetic ? ", Phonetic: " + char?.etymology?.phonetic : ""
+                          }${char?.etymology?.semantic ? ", Semantic: " + char?.etymology?.semantic : ""} ${
+                            char?.etymology?.hint ? "(" + char?.etymology?.hint + ")" : ""
+                          }`
+                        : ""}
+                    </span>
+                  </div>
+                );
+              })}
+          </div>
+        )) || <div className={classes.infoBox}>No character details found</div>}
+      </div>
+    </>
+  );
+}
+
 function Synonyms({ definition }: { definition: DefinitionType }): ReactElement {
   const classes = useStyles();
   return (
@@ -195,10 +241,7 @@ function Synonyms({ definition }: { definition: DefinitionType }): ReactElement 
         {(definition.synonyms.length > 0 && (
           <div>
             {definition.synonyms.map((result, ind) => {
-              return (
-                // probably don't need the key, right?
-                <PosItem key={ind} item={result} />
-              );
+              return <PosItem key={ind} item={result} discoverableWords />;
             })}
           </div>
         )) || <div className={classes.infoBox}>No synonyms found</div>}
@@ -323,6 +366,7 @@ function Word({
   onPractice,
   onCardFrontUpdate,
 }: WordProps): ReactElement {
+  const classes = useStyles();
   return (
     definition && (
       <div>
@@ -338,9 +382,10 @@ function Word({
           onCardFrontUpdate={onCardFrontUpdate}
         />
         <Practicer wordId={definition.id} onPractice={onPractice} />
-        <ExistingCards cards={cards} />
+        <ExistingCards cards={cards} classes={classes} />
+        <CharacterDetails characters={characters} classes={classes} />
         <WordLists lists={lists} />
-        <RecentSentencesElement recentPosSentences={recentPosSentences} onDelete={onDeleteRecent} />
+        <RecentSentencesElement recentPosSentences={recentPosSentences} onDelete={onDeleteRecent} sameTab />
         <WordMetadata definition={definition} />
         <ProviderTranslations definition={definition} translationProviderOrder={translationProviderOrder} />
         <Synonyms definition={definition} />

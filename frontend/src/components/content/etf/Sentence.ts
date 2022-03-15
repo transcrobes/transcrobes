@@ -8,9 +8,10 @@ type Props = {
   readerConfig: ReaderState;
   classes: ETFStylesProps["classes"];
   clickable?: boolean;
+  sameTab?: boolean;
 };
 
-export default function Sentence({ sentence, readerConfig, classes }: Props): VNode[] {
+export default function Sentence({ sentence, readerConfig, classes, clickable, sameTab }: Props): VNode[] {
   const l = sentence.t.length;
   if (l) {
     const tokens: VNode[] = [];
@@ -21,6 +22,8 @@ export default function Sentence({ sentence, readerConfig, classes }: Props): VN
           token: sentence.t[i],
           sentence,
           classes,
+          clickable,
+          sameTab,
         }),
       );
     }

@@ -11,9 +11,10 @@ type Props = {
   model: ModelType;
   readerConfig: ReaderState;
   classes: ETFStylesProps["classes"];
+  clickable?: boolean;
 };
 
-export default function EnrichedTextFragment({ model, readerConfig, classes }: Props): VNode[] {
+export default function EnrichedTextFragment({ model, readerConfig, classes, clickable }: Props): VNode[] {
   if (model?.s) {
     const ls = model.s.length;
     const sents: VNode[] = [];
@@ -28,7 +29,7 @@ export default function EnrichedTextFragment({ model, readerConfig, classes }: P
               token: model.s[i].t[j],
               sentence: model.s[i],
               classes,
-              clickable: true,
+              clickable,
             }),
           );
         }

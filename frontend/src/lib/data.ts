@@ -29,6 +29,7 @@ import {
   getSuccessWords,
   pythonCounter,
   recentSentencesFromLZ,
+  sizeOf,
   UUID,
 } from "./funclib";
 import { getFileStorage, IDBFileStorage } from "./IDBFileStorage";
@@ -56,6 +57,8 @@ import {
   RecentSentencesType,
   RepetrobesActivityConfigType,
   SelectableListElementType,
+  ShortChar,
+  ShortWord,
   UserDefinitionType,
   UserListWordType,
   VocabReview,
@@ -1069,6 +1072,29 @@ async function saveDictionaryEntries(
   await dictionary?.atomicPatch({ lzContent: LZString.compressToUTF16(JSON.stringify(entries)) });
 }
 
+async function getAllShortChars(db: TranscrobesDatabase): Promise<Record<string, ShortChar>> {
+  const entries = await db.characters.find().exec();
+  const chars: Record<string, ShortChar> = {};
+  for (const char of entries) {
+    chars[char.id] = { id: char.id, radical: char.radical };
+  }
+  return chars;
+}
+
+async function getAllShortWords(db: TranscrobesDatabase): Promise<Record<string, ShortWord>> {
+  const entries = await db.definitions.find().exec();
+  const words: Record<string, ShortWord> = {};
+  for (const word of entries) {
+    words[word.graph] = {
+      id: word.graph,
+      sounds: word.sound,
+      // FIXME: ugly hack!
+      isDict: word.providerTranslations.filter((x) => x.provider !== "fbk" && x.posTranslations.length > 0).length > 0,
+    };
+  }
+  return words;
+}
+
 async function getDictionaryEntries(
   db: TranscrobesDatabase,
   { dictionaryId }: { dictionaryId: string },
@@ -1079,6 +1105,20 @@ async function getDictionaryEntries(
       (JSON.parse(LZString.decompressFromUTF16(entry?.lzContent) || "{}") as Record<string, UserDefinitionType>)) ||
     {}
   );
+}
+
+async function getAllUserDictionaryEntries(db: TranscrobesDatabase): Promise<Record<string, null>> {
+  const dicts = await db.userdictionaries.find().exec();
+  const allEntries: Record<string, null> = {};
+  for (const dict of dicts) {
+    if (dict.lzContent) {
+      const dictEntries = JSON.parse(LZString.decompressFromUTF16(dict.lzContent) || "{}");
+      for (const key of Object.keys(dictEntries)) {
+        allEntries[key] = null;
+      }
+    }
+  }
+  return allEntries;
 }
 
 export {
@@ -1120,4 +1160,7 @@ export {
   getCardsForExport,
   saveDictionaryEntries,
   getDictionaryEntries,
+  getAllShortWords,
+  getAllShortChars,
+  getAllUserDictionaryEntries,
 };

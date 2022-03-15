@@ -31,6 +31,8 @@ logger = logging.getLogger(__name__)
 DEFINITIONS_JSON_CACHE_FILE_PREFIX_REGEX = r"definitions-\d{10}\.\d{1,8}-\d{1,8}-"
 DEFINITIONS_JSON_CACHE_FILE_SUFFIX_REGEX = r"\.json"
 DEFINITIONS_JSON_CACHE_DIR_SUFFIX_REGEX = r"\_json"
+
+HANZI_JSON_CACHE_DIRECTORY_REGEX = r"\d{10}"
 HANZI_JSON_CACHE_FILE_REGEX = r"hanzi-\d{3}\.json"
 
 
@@ -56,6 +58,21 @@ def latest_definitions_json_dir_path(user: AuthUser) -> str:
             "Unable to find a definitions file for user %s using %s with re %s",
             user,
             user.dictionary_ordering,
+            find_re,
+        )
+    return ""
+
+
+def latest_character_json_dir_path() -> str:
+    find_re = HANZI_JSON_CACHE_DIRECTORY_REGEX
+    logger.debug(f"Looking for the latest hanzi dir using regex: {find_re=}")
+    try:
+        return sorted(
+            [f.path for f in os.scandir(settings.HANZI_CACHE_DIR) if f.is_dir() and re.match(find_re, f.name)]
+        )[-1]
+    except IndexError:
+        logger.error(
+            "Unable to find a hanzi path with re %s",
             find_re,
         )
     return ""
@@ -90,16 +107,21 @@ def definitions_path_json_as_string(path: str) -> str:
         return fh.read()
 
 
-def hanzi_json_paths(user_id: int, router: APIRouter) -> dict:
-    exports_base = settings.API_V1_STR + "/enrich"
+def hanzi_json_paths(router: APIRouter) -> dict:
+    jsons_path = latest_character_json_dir_path()
+    exports_base = (
+        settings.API_V1_STR
+        + "/enrich"
+        + router.url_path_for("hzexports_json", resource_path=os.path.basename(jsons_path))
+    )
     files = sorted(
         [
-            exports_base + router.url_path_for("hzexports_json", resource_path=os.path.basename(f.path))
-            for f in os.scandir(settings.HANZI_CACHE_DIR)
+            os.path.join(exports_base, os.path.basename(f.path))
+            for f in os.scandir(jsons_path)
             if f.is_file() and re.match(HANZI_JSON_CACHE_FILE_REGEX, f.name)
         ]
     )
-    logger.debug("The latest hanzi export files for user %s are %s", user_id, files)
+    logger.debug("The latest hanzi export files for are %s", files)
 
     return files
 

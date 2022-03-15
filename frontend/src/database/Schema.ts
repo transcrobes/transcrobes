@@ -63,6 +63,41 @@ function getCardId(wordId: string | number, cardType: string | number): string {
   return `${wordId}${CARD_ID_SEPARATOR}${cardType}`;
 }
 
+const pullCharsQueryBuilder = (doc: { id: any; updatedAt: any }) => {
+  if (!doc) {
+    // the first pull does not have a start-document
+    doc = {
+      id: "",
+      updatedAt: 0,
+    };
+  }
+  const query = `{
+    feedCharacters(id: "${doc.id}", updatedAt: ${doc.updatedAt}, limit: ${BATCH_SIZE_PULL}) {
+      decomposition
+      deleted
+      etymology {
+        hint
+        phonetic
+        semantic
+        type
+      }
+      id
+      pinyin
+      radical
+      updatedAt
+      structure {
+        medians
+        radStrokes
+        strokes
+      }
+    }
+  }`;
+  return {
+    query,
+    variables: {},
+  };
+};
+
 const pullDefsQueryBuilder = (doc: { id: any; updatedAt: any }) => {
   if (!doc) {
     // the first pull does not have a start-document
@@ -261,6 +296,7 @@ const DEFINITIONS_SCHEMA: RxJsonSchema<DefinitionType> = {
   // required: ['graph', 'sound', 'definition', 'updatedAt']
 };
 
+// from https://github.com/skishore/makemeahanzi and chanind/hanzi-writer
 type CharacterDocument = RxDocument<CharacterType>;
 type CharacterCollection = RxCollection<CharacterType>;
 const CHARACTERS_SCHEMA: RxJsonSchema<CharacterType> = {
@@ -270,8 +306,26 @@ const CHARACTERS_SCHEMA: RxJsonSchema<CharacterType> = {
   type: "object",
   properties: {
     // id == the graph/character but we MUST have a unique id column with react-admin
-    id: {
-      type: "string",
+    id: { type: "string" },
+    updatedAt: {
+      type: "number",
+    },
+    pinyin: {
+      type: "array",
+      items: {
+        type: "string",
+      },
+    },
+    decomposition: { type: "string" },
+    radical: { type: "string" },
+    etymology: {
+      type: "object",
+      properties: {
+        type: { type: "string" },
+        hint: { type: "string" },
+        phonetic: { type: "string" },
+        semantic: { type: "string" },
+      },
     },
     structure: {
       // from https://github.com/chanind/hanzi-writer
@@ -694,6 +748,14 @@ const DBPullCollections = {
     //   token: "String!",
     // },
   },
+  characters: {
+    schema: CHARACTERS_SCHEMA,
+    feedKeys: ["id", "updatedAt"],
+    deletedFlag: "deleted",
+    subscription: false,
+    pullQueryBuilder: pullCharsQueryBuilder,
+    liveInterval: 10000, // actually this could be much more, but this is already inconsequential
+  },
 };
 type DBPullCollectionsType = typeof DBPullCollections;
 type DBPullCollectionKeys = keyof DBPullCollectionsType;
@@ -788,7 +850,6 @@ type DBTwoWayCollectionKeys = keyof typeof DBTwoWayCollections;
 
 const DBLocalCollections = {
   event_queue: { schema: EVENT_QUEUE_SCHEMA, subscription: false },
-  characters: { schema: CHARACTERS_SCHEMA, subscription: false },
   content_config: { schema: CONTENT_CONFIGS_SCHEMA, subscription: false },
 };
 type DBLocalCollectionKeys = keyof typeof DBLocalCollections;

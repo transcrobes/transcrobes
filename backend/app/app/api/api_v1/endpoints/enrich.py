@@ -51,6 +51,12 @@ async def api_regenerate_all(_current_user: models.AuthUser = Depends(deps.get_c
     return {"result": "success"}
 
 
+@router.get("/regenerate_hanzi")
+async def api_regenerate_hanzi(_current_user: models.AuthUser = Depends(deps.get_current_active_superuser)):
+    await regenerate(RegenerationType(data_type=DataType.characters))
+    return {"result": "success"}
+
+
 @router.get("/load_definitions_cache")
 async def load_definitions_cache(db: AsyncSession = Depends(deps.get_db), force_reload: bool = False):
     for lang_pair in managers:
@@ -94,16 +100,15 @@ def definitions_export_json(
 
 @router.get("/hzexports.json", name="hzexports_json_urls")
 def hanzi_export_urls(
-    # current_user: models.AuthUser = Depends(deps.get_current_good_user),
     current_user: schemas.TokenPayload = Depends(deps.get_current_good_tokenpayload),
 ):
-    inmem_file = hanzi_json_paths(current_user.id, router)
+    inmem_file = hanzi_json_paths(router)
     if inmem_file:
         return inmem_file
 
     raise HTTPException(
         status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        detail=f"Server does not support user dictionaries for {current_user}",
+        detail=f"Server does not support hanzi for {current_user}",
     )
 
 

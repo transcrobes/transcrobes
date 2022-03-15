@@ -171,11 +171,13 @@ class Settings(BaseSettings):
         return os.path.join(self.MEDIA_ROOT, "hanzi_json")
 
     HANZI_PER_CACHE_FILE: int = 1000
-    HANZI_WRITER_DATA_URL: str = "https://raw.githubusercontent.com/chanind/hanzi-writer-data/master/data/all.json"
+    HANZI_WRITER_DATA_FILE: str = "data/all.json"
+    HANZI_WRITER_DATA_REPO: str = "chanind/hanzi-writer-data"
+    MAKE_ME_A_HANZI_DATA_FILE: str = "dictionary.txt"
+    MAKE_ME_A_HANZI_DATA_REPO: str = "skishore/makemeahanzi"
 
     # User list import max file size in KB
     IMPORT_MAX_UPLOAD_SIZE_KB: int = 5120
-
     IMPORT_UPLOAD_SAFETY_MARGIN: int = 10000
 
     # Django-internal, for uploads, the default is 2.5MB, so if not set put to 5MB

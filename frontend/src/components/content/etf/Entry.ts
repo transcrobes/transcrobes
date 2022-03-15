@@ -24,6 +24,8 @@ type EntryProps = {
   readerConfig: ReaderState;
   sentence: SentenceType;
   classes: ETFStylesProps["classes"];
+  clickable?: boolean;
+  sameTab?: boolean;
 };
 
 type LocalEntryState = {
@@ -82,18 +84,28 @@ class Entry extends Component<StatedEntryProps, LocalEntryState> {
       (!sameCoordinates(event.currentTarget, this.context.store.getState().ui.tokenDetails.sourceRect) &&
         window.screen.availWidth > 600)
     ) {
-      this.context.store.dispatch(setMouseover(undefined));
-      this.context.store.dispatch(
-        setTokenDetails({
-          coordinates: eventCoordinates(event),
-          token: this.props.token,
-          sentence: this.props.sentence,
-          gloss: !!this.state?.gloss,
-          sourceRect: getBoundingClientRect(event.currentTarget),
-        }),
-      );
-      event.stopPropagation();
-      event.preventDefault();
+      if (this.props.clickable) {
+        const destUrl = `${this.context.store.getState().userData.baseUrl}/#/notrobes?q=${this.props.token.l}`;
+        if (this.props.sameTab) {
+          // window.history.pushState(null, "", url); // this doesn't seem to get picked up by useLocation or useHistory
+          window.location.href = destUrl;
+        } else {
+          window.open(destUrl);
+        }
+      } else {
+        this.context.store.dispatch(setMouseover(undefined));
+        this.context.store.dispatch(
+          setTokenDetails({
+            coordinates: eventCoordinates(event),
+            token: this.props.token,
+            sentence: this.props.sentence,
+            gloss: !!this.state?.gloss,
+            sourceRect: getBoundingClientRect(event.currentTarget),
+          }),
+        );
+        event.stopPropagation();
+        event.preventDefault();
+      }
     } else {
       this.context.store.dispatch(setMouseover(undefined));
     }

@@ -287,6 +287,10 @@ function setupPullReplication(
   const headers = getHeaders(jwtAccessToken);
   // WARNING! pullQueryBuilderFromRxSchema modifies the input paramater object in place!
   const col = clone(DBPullCollections[colName]) as any;
+
+  // liveInterval is in ms, so seconds * 1000
+  const liveInterval = "liveInterval" in col ? col.liveInterval : 1000 * LIVE_INTERVAL;
+
   const pullQueryBuilder =
     "pullQueryBuilder" in col
       ? col.pullQueryBuilder
@@ -299,7 +303,7 @@ function setupPullReplication(
       queryBuilder: pullQueryBuilder,
     },
     live: true,
-    liveInterval: 1000 * LIVE_INTERVAL, // liveInterval is in ms, so seconds * 1000
+    liveInterval,
     deletedFlag: "deleted",
   });
   // show replication-errors in logs
@@ -332,7 +336,7 @@ async function createCollections(db: TranscrobesDatabase) {
       await db.addCollections({ [colName]: col });
     } catch (error) {
       console.error(`Error adding collection ${colName}, removing and re-adding`, error);
-      if (["characters", "definitions", "word_model_stats"].includes(colName)) {
+      if (["definitions", "word_model_stats"].includes(colName)) {
         throw new Error(`Can't remove collection ${colName}, bailing`);
       }
       await db.removeCollection(colName);

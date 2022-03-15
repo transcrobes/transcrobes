@@ -415,7 +415,10 @@ export function manageEvent(sw: ServiceWorkerGlobalScope, event: ExtendableMessa
     case "submitContentEnrichRequest":
     case "getDayStats":
     case "getWordStatsForExport":
+    case "getAllShortWords":
+    case "getAllShortChars":
     case "getCardsForExport":
+    case "getAllUserDictionaryEntries":
       loadDb(message, sw).then(([ldb, msg]) => {
         // @ts-ignore FIXME: can I properly type this somehow and it actually be clean/useful?
         data[message.type](ldb, message.value).then((result) => {

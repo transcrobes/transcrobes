@@ -9,6 +9,7 @@ interface Props {
   readerConfig: ReaderState;
   isListItem?: boolean;
   onDelete?: (modelId: number | BigInt) => void;
+  sameTab?: boolean;
 }
 
 export interface StyleProps {
@@ -29,19 +30,20 @@ export default function RecentSentenceExample({
   sentence,
   readerConfig,
   onDelete,
+  sameTab,
   isListItem = true,
 }: Props): ReactElement {
   const del = onDelete ? () => onDelete(recentSentenceId) : undefined;
   const localClasses = useStyles({ hasDelete: !!del });
   const etf = del ? (
     <div className={localClasses.sentences}>
-      <ReactSentence sentence={sentence} readerConfig={readerConfig} />
+      <ReactSentence sentence={sentence} readerConfig={readerConfig} sameTab={sameTab} />
       <Button variant="outlined" onClick={del}>
         Delete
       </Button>
     </div>
   ) : (
-    <ReactSentence sentence={sentence} readerConfig={readerConfig} />
+    <ReactSentence sentence={sentence} readerConfig={readerConfig} sameTab={sameTab} />
   );
   return React.createElement(isListItem ? "li" : "span", null, etf);
 }

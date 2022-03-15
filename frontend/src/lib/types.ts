@@ -658,9 +658,28 @@ export type WordlistType = {
   updatedAt: number;
 };
 
+export type HanziWriterStructure = {
+  medians: number[][][];
+  radStrokes: number[];
+  strokes: string[];
+};
+
+export type ShortWord = { id: string; sounds: string[]; isDict: boolean };
+export type ShortChar = { id: string; radical: string };
+
 export type CharacterType = {
   id: string;
-  structure: any; // FIXME: but not really _that_ important to type this, I don't control it
+  updatedAt: number;
+  pinyin: string[];
+  decomposition: string;
+  radical: string;
+  etymology?: {
+    type: "ideographic" | "pictographic" | "pictophonetic";
+    hint?: string;
+    phonetic?: string;
+    semantic?: string;
+  };
+  structure: HanziWriterStructure;
 };
 
 // FIXME: these types should never be seen outside data.ts...

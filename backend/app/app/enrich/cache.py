@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import annotations
 
+import base64
 import datetime
 import gc
 import json  # import orjson as json
@@ -8,17 +9,17 @@ import logging
 import os
 import pathlib
 import shutil
-import time
 from tempfile import mkdtemp
 from typing import List
 
-import requests
 from app.core.config import settings
 from app.db.session import async_session
+from app.enrich import latest_character_json_dir_path
 from app.enrich.data import managers
 from app.enrich.models import definition
 from app.models.migrated import CachedDefinition
 from app.models.user import AuthUser
+from github import Github
 from sqlalchemy.ext.asyncio.session import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.sql.expression import distinct
@@ -116,42 +117,77 @@ async def regenerate_definitions_jsons_multi(  # pylint: disable=R0914
     return True
 
 
+def get_blob_content(repo, path_name, branch="master"):
+    # first get the branch reference
+    ref = repo.get_git_ref(f"heads/{branch}")
+    # then get the tree
+    tree = repo.get_git_tree(ref.object.sha, recursive="/" in path_name).tree
+    # look for path in tree
+    sha = [x.sha for x in tree if x.path == path_name]
+    if not sha:
+        # well, not found..
+        return None
+    # we have sha
+    return repo.get_git_blob(sha[0])
+
+
 def regenerate_character_jsons_multi() -> bool:
-    pathlib.Path(settings.HANZI_CACHE_DIR).mkdir(parents=True, exist_ok=True)
+    logger.info("Generating character jsons")
 
-    logger.info(f"Generating character jsons, trying to download if a URL {settings.HANZI_WRITER_DATA_URL=}")
+    last_updated = int(os.path.basename(latest_character_json_dir_path()) or 0)
 
-    for _i in range(0, 3):
-        try:
-            strokes = requests.get(settings.HANZI_WRITER_DATA_URL).json()
-            break
-        except Exception:  # pylint: disable=W0703  # FIXME: do better
-            logger.info(f"Looks like it isn't a valid url, trying as a file path {settings.HANZI_WRITER_DATA_URL=}")
-            try:
-                with open(settings.HANZI_WRITER_DATA_URL, encoding="utf8") as fstrokes:
-                    strokes = json.load(fstrokes)
-                    break
-            except Exception:  # pylint: disable=W0703  # FIXME: do better
-                time.sleep(30)
-                pass
+    g = Github()
+    makemeahanzi = g.get_repo(settings.MAKE_ME_A_HANZI_DATA_REPO)
+    hanzi_writer = g.get_repo(settings.HANZI_WRITER_DATA_REPO)
+    makemeahanzi_commits = makemeahanzi.get_commits(path=settings.MAKE_ME_A_HANZI_DATA_FILE)
+    hanzi_writer_commits = hanzi_writer.get_commits(path=settings.HANZI_WRITER_DATA_FILE)
+    max_repo_updated = int(
+        max(
+            makemeahanzi_commits[0].commit.committer.date.timestamp(),
+            hanzi_writer_commits[0].commit.committer.date.timestamp(),
+        )
+    )
+    if max_repo_updated <= last_updated:
+        return True
+
+    update_directory = os.path.join(settings.HANZI_CACHE_DIR, str(int(max_repo_updated)))
+    # FIXME: can actually be exist_ok=False
+    pathlib.Path(update_directory).mkdir(parents=True, exist_ok=True)
+
+    hanzi_writer_blob = get_blob_content(hanzi_writer, settings.HANZI_WRITER_DATA_FILE).content
+    b64 = base64.b64decode(hanzi_writer_blob)
+    hanzi_writer_data = json.loads(b64.decode("utf8"))
+
+    makemeahanzi_blob = get_blob_content(makemeahanzi, settings.MAKE_ME_A_HANZI_DATA_FILE).content
+    b64 = base64.b64decode(makemeahanzi_blob)
+    makemeahanzi_file = b64.decode("utf8")
 
     cur = 0
     entries = []
     logger.info("Saving character chunks to files")
-    for i, (k, v) in enumerate(strokes.items()):
+    for i, line in enumerate(makemeahanzi_file.splitlines()):
         if int(i / settings.HANZI_PER_CACHE_FILE) != cur:
-            chunkpath = os.path.join(settings.HANZI_CACHE_DIR, f"hanzi-{cur:03d}.json")
+            chunkpath = os.path.join(update_directory, f"hanzi-{cur:03d}.json")
             logger.info("Saving chunk to file %s", chunkpath)
             with open(chunkpath, "w", encoding="utf8") as chunk:
                 json.dump(entries, chunk)
             cur = int(i / settings.HANZI_PER_CACHE_FILE)
             entries = []
-        entries.append(
-            {
-                "id": k,
-                "structure": v,
-            }
-        )
-    with open(os.path.join(settings.HANZI_CACHE_DIR, f"hanzi-{cur:03d}.json"), "w", encoding="utf8") as hzf:
+
+        hanzi = json.loads(line)
+        entry = {
+            "id": hanzi["character"],
+            "pinyin": hanzi["pinyin"],
+            "radical": hanzi["radical"],
+            "decomposition": hanzi["decomposition"],
+        }
+        if hanzi_writer_data.get(hanzi["character"]):
+            entry["structure"] = hanzi_writer_data[hanzi["character"]]
+        if hanzi.get("etymology"):
+            entry["etymology"] = hanzi["etymology"]
+
+        entries.append(entry)
+
+    with open(os.path.join(update_directory, f"hanzi-{cur:03d}.json"), "w", encoding="utf8") as hzf:
         json.dump(entries, hzf)
     return True

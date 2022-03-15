@@ -10,9 +10,10 @@ import RecentSentenceExample from "./RecentSentenceExample";
 interface Props {
   recentPosSentences: PosSentences | null;
   onDelete?: (modelId: number | BigInt) => void;
+  sameTab?: boolean;
 }
 
-export default function RecentSentencesElement({ recentPosSentences, onDelete }: Props): ReactElement {
+export default function RecentSentencesElement({ recentPosSentences, onDelete, sameTab }: Props): ReactElement {
   return (
     <>
       <ThinHR />
@@ -29,6 +30,7 @@ export default function RecentSentencesElement({ recentPosSentences, onDelete }:
                     entry.map((s, index) => {
                       return (
                         <RecentSentenceExample
+                          sameTab={sameTab}
                           readerConfig={DEFAULT_RECENTS_READER_CONFIG_STATE}
                           key={s.modelId || index}
                           sentence={s.sentence}

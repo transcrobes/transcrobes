@@ -8,6 +8,7 @@ import dataclasses
 import json  # import orjson as json
 import logging
 import os
+import re
 from collections.abc import Callable
 from dataclasses import field
 from datetime import datetime
@@ -25,7 +26,7 @@ from app.data.context import Context
 from app.data.models import REQUESTED
 from app.db.base_class import Base
 from app.db.session import async_session
-from app.enrich import latest_definitions_json_dir_path
+from app.enrich import HANZI_JSON_CACHE_FILE_REGEX, latest_character_json_dir_path, latest_definitions_json_dir_path
 from app.enrich.data import managers
 from app.enrich.models import ensure_cache_preloaded, update_cache
 from app.models.migrated import KNOWLEDGE_UNSET
@@ -87,6 +88,22 @@ class HSKEntry:
 
 
 @strawberry.type
+class Etymology:
+    type: str
+    hint: Optional[str]
+    phonetic: Optional[str]
+    semantic: Optional[str]
+
+    @staticmethod
+    def from_dict(obj):
+        if not obj:
+            return None
+        return Etymology(
+            type=obj["type"], hint=obj.get("hint"), phonetic=obj.get("phonetic"), semantic=obj.get("semantic")
+        )
+
+
+@strawberry.type
 class FrequencyEntry:
     wcpm: str  # word count per million
     wcdp: str  # word count ??? percent -> basically the percentage of all subtitles that contain the word
@@ -122,6 +139,68 @@ class POSValuesSet:
 class ProviderTranslations:
     provider: str
     pos_translations: List[POSValuesSet] = field(default_factory=list)
+
+
+@strawberry.type
+class CharacterStrokes:
+    medians: list[list[list[float]]]
+    strokes: list[str]
+    rad_strokes: Optional[list[int]]
+
+    @staticmethod
+    def from_dict(obj):
+        if not obj:
+            return None
+        return CharacterStrokes(medians=obj["medians"], strokes=obj["strokes"], rad_strokes=obj.get("radStrokes"))
+
+
+@strawberry.type
+class Character:
+    id: str
+    pinyin: List[str]
+    decomposition: str
+    radical: str
+    etymology: Optional[Etymology] = None
+    structure: Optional[CharacterStrokes] = None
+    deleted: Optional[bool] = False  # for the moment, let's just assume it's not deleted :-)
+    updated_at: Optional[float] = 0
+
+    @staticmethod
+    def from_dict(objects, updated_at) -> List[Character]:
+        chars = []
+        for obj in objects:
+            char = Character(
+                id=obj["id"],
+                pinyin=obj["pinyin"],
+                decomposition=obj["decomposition"],
+                radical=obj["radical"],
+                updated_at=updated_at,
+            )
+            if obj.get("structure"):
+                char.structure = CharacterStrokes.from_dict(obj["structure"])
+            if obj.get("etymology"):
+                char.etymology = Etymology.from_dict(obj["etymology"])
+
+            chars.append(char)
+        return chars
+
+    @staticmethod
+    def from_import_strings(hanzi_writer, make_me_a_hanzi, updated_at) -> List[Character]:
+        characters = []
+        strokes = json.loads(hanzi_writer)
+        for line in make_me_a_hanzi:
+            mmah = json.loads(line)
+            character = Character(
+                id=mmah["character"],
+                structure=strokes.get(mmah["character"]),
+                decomposition=mmah["decomposition"],
+                radical=mmah["radical"],
+                updated_at=updated_at,
+            )
+            if mmah.get("etymology"):
+                character.etymology = mmah.get("etymology")
+            characters.append(character)
+        return characters
 
 
 @strawberry.type
@@ -1034,6 +1113,25 @@ class Query:
         async with async_session() as db:
             user = await get_user(db, info.context.request)
             return await filter_standard(db, user.id, limit, UserSurvey, models.UserSurvey, id, updated_at)
+
+    @strawberry.field
+    async def feed_characters(  # pylint: disable=E0213
+        info: Info[Context, Any],
+        limit: int,
+        id: Optional[str] = "",
+        updated_at: Optional[float] = -1,
+    ) -> List[Character]:
+        json_path = latest_character_json_dir_path()
+        last_updated = int(os.path.basename(json_path) or 0)
+        characters = []
+        if last_updated > updated_at:
+            for f in os.scandir(latest_character_json_dir_path()):
+                if f.is_file() and re.match(HANZI_JSON_CACHE_FILE_REGEX, f.name):
+                    with open(f.path) as f:
+                        characters += Character.from_dict(json.load(f), last_updated)
+            return characters
+        else:
+            return []
 
     @strawberry.field
     async def feed_word_model_stats(  # pylint: disable=E0213

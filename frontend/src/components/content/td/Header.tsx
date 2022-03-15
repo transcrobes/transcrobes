@@ -8,6 +8,7 @@ import { getSound } from "../../../lib/componentMethods";
 import { TokenType } from "../../../lib/types";
 import CloseIcon from "@material-ui/icons/Close";
 import { setTokenDetails } from "../../../features/ui/uiSlice";
+import DiscoverableWord from "../../DiscoverableWord";
 
 type Props = {
   classes: ClassNameMap<"header" | "sound" | "best" | "icons">;
@@ -44,6 +45,7 @@ export default function Header({ classes, token, bestGuess, extrasOpen, onToggle
     <div className={classes.header}>
       <div className={classes.sound}>{sound}</div>
       <div className={classes.best}>{bestGuess}</div>
+      <DiscoverableWord graph={token.l} newTab />
       <div>
         <IconButton className={classes.icons} onClick={toggleSentence} aria-label="Extras">
           {extrasOpen ? <FullscreenExit /> : <Fullscreen />}

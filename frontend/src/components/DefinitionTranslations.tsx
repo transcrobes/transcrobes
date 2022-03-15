@@ -66,7 +66,7 @@ export default function DefinitionTranslations({
                   <Typography>{dictionaries[providerEntry.provider] || providerEntry.provider}</Typography>
                   <div className={styles.translations}>
                     {providerEntry.posTranslations.map((posItem) => {
-                      return <PosItem key={posItem.posTag} item={posItem} />;
+                      return <PosItem key={posItem.posTag + posItem.sounds} item={posItem} />;
                     })}
                   </div>
                 </InfoBox>

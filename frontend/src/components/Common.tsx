@@ -27,7 +27,8 @@ export const ETFStyles = {
     alignItems: "center",
     display: "inline-flex",
     position: "relative",
-    cursor: (props: ReaderState) => (props.clickable ? "pointer" : "auto"),
+    // cursor: (props: ReaderState) => (props.clickable ? "pointer" : "auto"),
+    cursor: "pointer",
     textIndent: 0,
     paddingLeft: (props: ReaderState) =>
       props.segmentation ? (SEGMENTED_BASE_PADDING * props.fontSize * 100) / 100 + "px" : "",
