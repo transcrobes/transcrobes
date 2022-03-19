@@ -51,7 +51,7 @@
   "devDependencies": {
     "@babel/core": "^7.15.5",
     "@babel/preset-react": "^7.14.5",
-    "@types/chrome": "^0.0.179",
+    "@types/chrome": "^0.0.180",
     "@types/d3-array": "^3.0.2",
     "@types/debounce": "^1.2.1",
     "@types/draftjs-to-html": "^0.8.1",

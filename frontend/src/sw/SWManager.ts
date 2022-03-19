@@ -11,6 +11,7 @@ import { getDb, unloadDatabaseFromMemory } from "../database/Database";
 import { TranscrobesDatabase } from "../database/Schema";
 import { setUser } from "../features/user/userSlice";
 import * as data from "../lib/data";
+import { intervalCollection, NAME_PREFIX } from "../lib/interval/interval-decorator";
 import { fetchPlus } from "../lib/libMethods";
 import {
   DayCardWords,
@@ -34,9 +35,6 @@ const dictionaries: Record<string, Record<string, UserDefinitionType>> = {};
 let db: TranscrobesDatabase | null;
 
 let url: URL;
-// FIXME: find some way to be able to stop the timer if required/desired
-let eventQueueTimer: null | ReturnType<typeof setTimeout> = null;
-let pushFileTimer: null | ReturnType<typeof setTimeout> = null;
 
 export function postIt(event: ExtendableMessageEvent, newMessage: EventData): void {
   if (event.ports && event.ports[0]) {
@@ -69,12 +67,7 @@ async function loadDb(
     throw new Error("No user found in db, cannot load");
   }
   store.dispatch(setUser(user));
-  if (eventQueueTimer) {
-    clearInterval(eventQueueTimer);
-  }
-  if (pushFileTimer) {
-    clearInterval(pushFileTimer);
-  }
+  intervalCollection.removeAll();
 
   const progressCallback = (progressMessage: string, isFinished: boolean) => {
     const progress = { message: progressMessage, isFinished };
@@ -88,13 +81,9 @@ async function loadDb(
   };
   return getDb({ url, username: user.username }, progressCallback).then((dbObj) => {
     db = dbObj;
-    if (!sw.tcb) sw.tcb = Promise.resolve(dbObj);
-    if (!eventQueueTimer && db) {
-      eventQueueTimer = setInterval(() => data.sendUserEvents(dbObj, url), EVENT_QUEUE_PROCESS_FREQ);
-    }
-    if (!pushFileTimer) {
-      pushFileTimer = setInterval(() => data.pushFiles(url, user.username), PUSH_FILES_PROCESS_FREQ);
-    }
+    sw.tcb = Promise.resolve(dbObj);
+    setInterval(() => data.sendUserEvents(dbObj, url), EVENT_QUEUE_PROCESS_FREQ, NAME_PREFIX + "sendUserEvents");
+    setInterval(() => data.pushFiles(url, user.username), PUSH_FILES_PROCESS_FREQ, NAME_PREFIX + "pushFiles");
     if (event) {
       postIt(event, { source: message.source, type: message.type, value: "loadDb success" });
     }
@@ -121,12 +110,7 @@ async function getUserDictionary(ldb: TranscrobesDatabase, dictionaryId: string)
 export async function resetDBConnections(): Promise<void> {
   db = null;
   dayCardWords = null;
-  if (eventQueueTimer) {
-    clearInterval(eventQueueTimer);
-  }
-  if (pushFileTimer) {
-    clearInterval(pushFileTimer);
-  }
+  intervalCollection.removeAll();
   await unloadDatabaseFromMemory();
 }
 /**
@@ -267,8 +251,6 @@ export function manageEvent(sw: ServiceWorkerGlobalScope, event: ExtendableMessa
     return;
   }
   const message = event.data as EventData;
-
-  console.log(message.type, message.value);
   switch (message.type) {
     case "syncDB":
       loadDb(message, sw, event);

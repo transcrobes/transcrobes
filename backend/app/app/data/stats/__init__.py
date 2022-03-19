@@ -20,9 +20,9 @@ async def push_user_stats_update_to_clients(user_ids: list[str], channel: str) -
     try:
         broadcast = await get_broadcast()
 
-        logger.info(f"Sending {channel} updates to kafka for {user_ids=}")
+        logger.info(f"Sending {channel} updates to client for {user_ids=}")
         for user_id in user_ids:
-            logger.info(f"Sending {channel} update to kafka for {user_id=}")
+            logger.info(f"Sending {channel} update to client for {user_id=}")
             await broadcast.publish(channel=channel, message=str(user_id))
     except Exception:  # pylint: disable=W0703
         logger.exception(f"Failed to publish changes to {channel} for {user_ids=}")

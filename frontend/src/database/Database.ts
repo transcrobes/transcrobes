@@ -11,7 +11,7 @@ import {
 } from "rxdb/plugins/replication-graphql";
 import { RxDBUpdatePlugin } from "rxdb/plugins/update";
 // TODO import these only in non-production build
-// import { RxDBDevModePlugin } from "rxdb/plugins/dev-mode";
+import { RxDBDevModePlugin } from "rxdb/plugins/dev-mode";
 // FIXME: only validate in dev and for not web extension (has `eval`)
 import { RxDBValidatePlugin } from "rxdb/plugins/validate";
 import { SubscriptionClient } from "subscriptions-transport-ws";
@@ -19,7 +19,7 @@ import { store } from "../app/createStore";
 import { throttledRefreshToken, setUser } from "../features/user/userSlice";
 import { getFileStorage, IDBFileStorage } from "../lib/IDBFileStorage";
 import { fetchPlus } from "../lib/libMethods";
-import { API_PREFIX } from "../lib/types";
+import { API_PREFIX, IS_DEV } from "../lib/types";
 import { RxDBDataProviderParams } from "../ra-data-rxdb";
 import { getUserDexie } from "./authdb";
 import {
@@ -43,9 +43,9 @@ addPouchPlugin(require("pouchdb-adapter-idb"));
 
 addRxPlugin(RxDBQueryBuilderPlugin);
 
-// FIXME: I'm not sure this works, I still get errors in the ext
-if (process?.env?.NODE_ENV?.trim() === "development" && process?.env?.PLATFORM === "site") {
+if (IS_DEV) {
   addRxPlugin(RxDBValidatePlugin);
+  addRxPlugin(RxDBDevModePlugin);
 }
 addRxPlugin(RxDBMigrationPlugin);
 addRxPlugin(RxDBUpdatePlugin);

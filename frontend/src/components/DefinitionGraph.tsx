@@ -47,7 +47,11 @@ export default function DefinitionGraph({
           .filter((x) => !!x)
           .map((character, index) => {
             return (
-              <DiscoverableWord graph={showAnswer ? character?.id : ""} newTab={newTab}>
+              <DiscoverableWord
+                key={`${character ? character.id : "nochar"}-${index}`}
+                graph={showAnswer ? character?.id : ""}
+                newTab={newTab}
+              >
                 <CharacterGraph
                   width={charWidth}
                   height={charHeight}
