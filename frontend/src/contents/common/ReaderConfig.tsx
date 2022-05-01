@@ -2,9 +2,9 @@ import { FormControl, FormControlLabel, makeStyles, Switch, Theme } from "@mater
 import { ClassNameMap } from "@material-ui/core/styles/withStyles";
 import { ToggleButton, ToggleButtonGroup } from "@material-ui/lab";
 import _ from "lodash";
-import React, { ReactElement, useCallback, useEffect, useState } from "react";
+import React, { ReactElement, useCallback } from "react";
 import { HslColor } from "react-colorful";
-import { useAppDispatch, useAppSelector } from "../../app/hooks";
+import { useAppDispatch } from "../../app/hooks";
 import { Conftainer as BasicConftainer, DEFAULT_FONT_COLOUR } from "../../components/Common";
 import Conftainer from "../../components/Conftainer";
 import DictionaryChooser from "../../components/DictionaryChooser";
