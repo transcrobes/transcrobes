@@ -1,17 +1,17 @@
 import { ReactElement } from "react";
-import { Card, CardContent, CardHeader, Typography } from "@material-ui/core";
-import { makeStyles } from "@material-ui/core/styles";
+import { Card, CardContent, CardHeader, Typography } from "@mui/material";
+import { makeStyles } from "tss-react/mui";
 import { TopToolbar } from "react-admin";
 import HelpButton from "./components/HelpButton";
 
-const useStyles = makeStyles({
+const useStyles = makeStyles()({
   toolbar: {
     justifyContent: "space-between",
     alignItems: "center",
   },
 });
 export default function Brocrobes(): ReactElement {
-  const classes = useStyles();
+  const { classes } = useStyles();
   const helpUrl = "https://transcrob.es/page/software/install/clients/brocrobes/";
   return (
     <>
@@ -22,8 +22,8 @@ export default function Brocrobes(): ReactElement {
       <Card>
         <CardContent>
           <Typography paragraph={true}>
-            Brocrobes is a browser extension, compatible with Google Chrome, Microsoft Edge, and
-            other Chromium-derived browsers.
+            Brocrobes is a browser extension, compatible with Google Chrome, Microsoft Edge, and other Chromium-derived
+            browsers.
           </Typography>
           <Typography paragraph={true}>
             You can download Brocrobes on the{" "}
@@ -36,12 +36,11 @@ export default function Brocrobes(): ReactElement {
             </a>
           </Typography>
           <Typography paragraph={true}>
-            Brocrobes brings the power of Transcrobes to every page on the web, giving you the same
-            comfort you get inside this application everywhere.
+            Brocrobes brings the power of Transcrobes to every page on the web, giving you the same comfort you get
+            inside this application everywhere.
           </Typography>
           <Typography paragraph={true}>
-            The main browser vendors don't support extentions on mobile (yet?) but you <b>can</b>{" "}
-            use the{" "}
+            The main browser vendors don't support extentions on mobile (yet?) but you <b>can</b> use the{" "}
             <a
               target="_blank"
               rel="noopener noreferrer"
@@ -49,8 +48,8 @@ export default function Brocrobes(): ReactElement {
             >
               Kiwi Browser
             </a>{" "}
-            on Android (though it will likely be a little slower than on the desktop). We are
-            working with Yandex support to allow for support of Yandex Mobile at a future date.
+            on Android (though it will likely be a little slower than on the desktop). We are working with Yandex
+            support to allow for support of Yandex Mobile at a future date.
           </Typography>
         </CardContent>
       </Card>

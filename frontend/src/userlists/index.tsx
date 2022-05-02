@@ -2,7 +2,7 @@ import UserListCreate from "./UserListCreate";
 import UserListList from "./UserListList";
 import UserListShow from "./UserListShow";
 import UserListEdit from "./UserListEdit";
-import UserListIcon from "@material-ui/icons/List";
+import UserListIcon from "@mui/icons-material/List";
 
 export default {
   create: UserListCreate,

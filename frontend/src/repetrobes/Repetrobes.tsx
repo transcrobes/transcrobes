@@ -1,4 +1,5 @@
-import { makeStyles, useTheme } from "@material-ui/core";
+import { useTheme } from "@mui/material";
+import { makeStyles } from "tss-react/mui";
 import dayjs from "dayjs";
 import _ from "lodash";
 import { ReactElement, useEffect, useRef, useState } from "react";
@@ -51,7 +52,7 @@ const EMPTY_STATE = {
   possibleRevisionsToday: 0,
 };
 
-const useStyles = makeStyles(() => ({
+const useStyles = makeStyles()({
   toolbar: {
     justifyContent: "space-between",
     alignItems: "center",
@@ -63,7 +64,7 @@ const useStyles = makeStyles(() => ({
     display: "flex",
     alignItems: "center",
   },
-}));
+});
 
 interface RepetrobesProps {
   proxy: ServiceWorkerProxy;
@@ -529,7 +530,7 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
     }
     return null;
   }
-  const classes = useStyles();
+  const { classes } = useStyles();
   const theme = useTheme();
   const helpUrl = "https://transcrob.es/page/software/learn/repetrobes/";
   return (

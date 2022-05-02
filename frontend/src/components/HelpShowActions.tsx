@@ -10,12 +10,12 @@ export const HelpShowActions = ({
   helpLabel,
   ...rest
 }: ShowActionsProps & { helpUrl: string; helpLabel?: string }): ReactElement => {
-  const { basePath, record } = useEditContext(rest);
-  const { hasEdit } = useResourceDefinition(rest);
+  // const { basePath, record } = useEditContext(rest);
+  // const { hasEdit } = useResourceDefinition(rest);
 
   return (
     <TopToolbar className={className} {...sanitizeRestProps(rest)}>
-      {hasEdit && <EditButton basePath={basePath} record={record} />}
+      {/* {hasEdit && <EditButton basePath={basePath} record={record} />} */}
       <HelpButton url={helpUrl} text={helpLabel} />
     </TopToolbar>
   );

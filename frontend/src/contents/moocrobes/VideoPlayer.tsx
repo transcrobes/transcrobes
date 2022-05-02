@@ -1,11 +1,11 @@
-import Container from "@material-ui/core/Container";
-import Grid from "@material-ui/core/Grid";
-import { ValueLabelProps } from "@material-ui/core/Slider";
-import { makeStyles, Theme } from "@material-ui/core/styles";
+import Container from "@mui/material/Container";
+import Grid from "@mui/material/Grid";
 import useEventListener from "@use-it/event-listener";
-import { ChangeEvent, forwardRef, ReactElement, useEffect, useImperativeHandle, useRef, useState } from "react";
+import { forwardRef, ReactElement, useEffect, useImperativeHandle, useRef, useState } from "react";
 import ReactPlayer from "react-player";
 import { useParams } from "react-router-dom";
+// import { ValueLabelProps } from "@mui/material/Slider";
+import { makeStyles } from "tss-react/mui";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import Mouseover from "../../components/content/td/Mouseover";
 import TokenDetails from "../../components/content/td/TokenDetails";
@@ -29,18 +29,18 @@ let timeoutId = 0;
 const TIMER_CLEAR_PREVIOUS_MS = 5000;
 const SEEK_SECONDS = 5;
 
-const useStyles = makeStyles((theme: Theme) => ({
+const useStyles = makeStyles()((theme) => ({
   playerContainer: {
     overflow: "auto",
   },
   playerWrapper: {
     width: "100%",
     position: "relative",
-    [theme.breakpoints.down("sm").toString() + " and (display-mode: !fullscreen)"]: {
-      margin: `${theme.spacing(1)}px 0`,
+    [theme.breakpoints.down("md").toString() + " and (display-mode: !fullscreen)"]: {
+      margin: `${theme.spacing(1)} 0`,
     },
     [theme.breakpoints.up("sm").toString() + " and (display-mode: !fullscreen)"]: {
-      margin: `${theme.spacing(2)}px 0`,
+      margin: `${theme.spacing(2)} 0`,
     },
   },
   controlsWrapper: {
@@ -55,8 +55,8 @@ const useStyles = makeStyles((theme: Theme) => ({
     justifyContent: "space-between",
   },
   middleControls: {
-    [theme.breakpoints.down("sm")]: {
-      padding: `0 ${theme.spacing(1)}px ${theme.spacing(1)}px`,
+    [theme.breakpoints.down("md")]: {
+      padding: `0 ${theme.spacing(1)} ${theme.spacing(1)}`,
     },
     [theme.breakpoints.up("sm")]: {
       padding: theme.spacing(2),
@@ -65,7 +65,7 @@ const useStyles = makeStyles((theme: Theme) => ({
   bottomWrapper: {
     display: "flex",
     flexDirection: "column",
-    [theme.breakpoints.down("sm")]: {
+    [theme.breakpoints.down("md")]: {
       padding: theme.spacing(1),
     },
     [theme.breakpoints.up("sm")]: {
@@ -83,7 +83,7 @@ const useStyles = makeStyles((theme: Theme) => ({
   select: {
     justifyContent: "center",
     color: "#777",
-    [theme.breakpoints.down("sm")]: {
+    [theme.breakpoints.down("md")]: {
       fontSize: 15,
     },
     [theme.breakpoints.up("sm")]: {
@@ -98,7 +98,7 @@ const useStyles = makeStyles((theme: Theme) => ({
   switch: {
     justifyContent: "center",
     color: "#777",
-    [theme.breakpoints.down("sm")]: {
+    [theme.breakpoints.down("md")]: {
       fontSize: 15,
     },
     [theme.breakpoints.up("sm")]: {
@@ -140,7 +140,7 @@ export type VideoPlayerHandle = {
 };
 const VideoPlayer = forwardRef<VideoPlayerHandle, Props>(
   ({ models, subsUrl, videoUrl, contentLabel, srcLang }, ref) => {
-    const classes = useStyles();
+    const { classes } = useStyles();
 
     const playerRef = useRef<ReactPlayer>(null);
     const playerContainerRef = useRef<HTMLDivElement>(null);
@@ -152,7 +152,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, Props>(
     const [currentPlaybackRate, setCurrentPlaybackRate] = useState(1.0);
     const dispatch = useAppDispatch();
 
-    const { id } = useParams<ContentParams>();
+    const { id = "" } = useParams<ContentParams>();
     const readerConfig = useAppSelector((state) => state.videoReader[id] || DEFAULT_VIDEO_READER_CONFIG_STATE);
 
     useImperativeHandle(ref, () => ({
@@ -322,19 +322,21 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, Props>(
         if (readerConfig.played > 0) playerRef?.current?.seekTo(readerConfig.played, "fraction");
       }
     }
-
-    function handleSeekMouseUp(_e: ChangeEvent<unknown>, value: number | number[]): void {
+    function handleSeekMouseUp(_e: Event | React.SyntheticEvent<Element, Event>, value: number | number[]): void {
       const newValue = Array.isArray(value) ? value[0] : value;
       setSeeking(false);
       playerRef?.current?.seekTo(newValue / 100, "fraction");
     }
 
-    function handleVolumeSeekDown(_event: ChangeEvent<unknown>, value: number | number[]): void {
+    function handleVolumeSeekDown(
+      _event: Event | React.SyntheticEvent<Element, Event>,
+      value: number | number[],
+    ): void {
       const newValue = Array.isArray(value) ? value[0] : value;
       setSeeking(false);
       dispatch(videoReaderActions.setVolume({ id, value: newValue / 100 }));
     }
-    function handleVolumeChange(_event: ChangeEvent<unknown>, value: number | number[]): void {
+    function handleVolumeChange(_event: Event, value: number | number[]): void {
       const newValue = Array.isArray(value) ? value[0] : value;
       dispatch(videoReaderActions.setVolume({ id, value: newValue / 100 }));
       dispatch(videoReaderActions.setMuted({ id, value: newValue === 0 ? true : false }));
@@ -489,9 +491,12 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, Props>(
                         <PrettoSlider
                           min={0}
                           max={100}
-                          ValueLabelComponent={(props: ValueLabelProps) => (
-                            <ValueLabelComponent {...props} value={parseFloat(elapsedTime)} />
-                          )}
+                          components={{
+                            ValueLabel: ValueLabelComponent,
+                          }}
+                          // ValueLabelComponent={(props: ValueLabelProps) => (
+                          //   <ValueLabelComponent {...props} value={parseFloat(elapsedTime)} />
+                          // )}
                           value={readerConfig.played * 100}
                           onChange={(_e: any, newValue: any) => {
                             const newPlayed = Array.isArray(newValue) ? newValue[0] : newValue / 100;

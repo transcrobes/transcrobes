@@ -1,7 +1,7 @@
 import ContentEdit from "./ContentEdit";
 import ContentList from "./ContentList";
 import ContentShow from "./ContentShow";
-import ContentIcon from "@material-ui/icons/LibraryBooks";
+import ContentIcon from "@mui/icons-material/LibraryBooks";
 
 export default {
   edit: ContentEdit,

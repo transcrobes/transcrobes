@@ -31,9 +31,7 @@ const VERSION = "v2";
 // FIXME: move to redux!!! or something less nasty!!!
 let dayCardWords: DayCardWords | null;
 const dictionaries: Record<string, Record<string, UserDefinitionType>> = {};
-
 let db: TranscrobesDatabase | null;
-
 let url: URL;
 
 export function postIt(event: ExtendableMessageEvent, newMessage: EventData): void {
@@ -79,7 +77,7 @@ async function loadDb(
       });
     }
   };
-  return getDb({ url, username: user.username }, progressCallback).then((dbObj) => {
+  return getDb({ url, username: user.username }, progressCallback, sw).then((dbObj) => {
     db = dbObj;
     sw.tcb = Promise.resolve(dbObj);
     setInterval(() => data.sendUserEvents(dbObj, url), EVENT_QUEUE_PROCESS_FREQ, NAME_PREFIX + "sendUserEvents");
@@ -93,7 +91,7 @@ async function loadDb(
 
 async function getLocalCardWords(message: EventData, sw: ServiceWorkerGlobalScope) {
   if (!dayCardWords) {
-    const [ldb, _msg] = await loadDb(message, sw);
+    const [ldb] = await loadDb(message, sw);
     const val = await data.getCardWords(ldb);
     dayCardWords = val;
   }

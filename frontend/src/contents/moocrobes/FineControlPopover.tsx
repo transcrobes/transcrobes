@@ -1,10 +1,11 @@
-import Grid from "@material-ui/core/Grid";
-import IconButton from "@material-ui/core/IconButton";
-import Typography from "@material-ui/core/Typography";
-import AddIcon from "@material-ui/icons/Add";
-import RemoveIcon from "@material-ui/icons/Remove";
+import Grid from "@mui/material/Grid";
+import IconButton from "@mui/material/IconButton";
+import Typography from "@mui/material/Typography";
+import AddIcon from "@mui/icons-material/Add";
+import RemoveIcon from "@mui/icons-material/Remove";
 import { Properties } from "csstype";
 import { ReactElement } from "react";
+import { ClassNameMap } from "@mui/material";
 
 export interface FineControlImplProps {
   classes: Properties;
@@ -18,7 +19,7 @@ interface Props {
   isPercent: boolean;
   labelLess: string;
   labelMore: string;
-  cssClasses: any; // FIXME: any
+  cssClasses: ClassNameMap<"fineControlIcons">;
   onMore: () => void;
   onLess: () => void;
 }
@@ -37,13 +38,25 @@ function FineControl({
     return (
       <div title={title} className={cssClasses.fineControlIcons}>
         <Grid container direction="row" alignItems="center" justifyContent="center">
-          <IconButton onClick={onLess} className={cssClasses.fineControlIcons} aria-label={labelLess} title={labelLess}>
+          <IconButton
+            onClick={onLess}
+            className={cssClasses.fineControlIcons}
+            aria-label={labelLess}
+            title={labelLess}
+            size="large"
+          >
             <RemoveIcon className={cssClasses.fineControlIcons} fontSize="small" />
           </IconButton>
           <Typography className={cssClasses.fineControlIcons}>
             {isPercent ? (value * 100).toFixed(2) + "%" : value.toFixed(2)}
           </Typography>
-          <IconButton onClick={onMore} className={cssClasses.fineControlIcons} aria-label={labelMore} title={labelMore}>
+          <IconButton
+            onClick={onMore}
+            className={cssClasses.fineControlIcons}
+            aria-label={labelMore}
+            title={labelMore}
+            size="large"
+          >
             <AddIcon className={cssClasses.fineControlIcons} fontSize="small" />
           </IconButton>
         </Grid>

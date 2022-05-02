@@ -1,4 +1,5 @@
-import { Button, makeStyles, Theme } from "@material-ui/core";
+import { Button } from "@mui/material";
+import { makeStyles } from "tss-react/mui";
 import React, { ReactElement } from "react";
 import { ReaderState, SentenceType } from "../lib/types";
 import ReactSentence from "./content/td/ReactSentence";
@@ -16,13 +17,15 @@ export interface StyleProps {
   hasDelete: boolean;
 }
 
-const useStyles = makeStyles<Theme, StyleProps>({
-  sentences: (props) => ({
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    margin: props.hasDelete ? ".4em" : ".1em",
-  }),
+const useStyles = makeStyles<StyleProps>()((_theme, params) => {
+  return {
+    sentences: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      margin: params.hasDelete ? ".4em" : ".1em",
+    },
+  };
 });
 
 export default function RecentSentenceExample({
@@ -34,7 +37,7 @@ export default function RecentSentenceExample({
   isListItem = true,
 }: Props): ReactElement {
   const del = onDelete ? () => onDelete(recentSentenceId) : undefined;
-  const localClasses = useStyles({ hasDelete: !!del });
+  const { classes: localClasses } = useStyles({ hasDelete: !!del });
   const etf = del ? (
     <div className={localClasses.sentences}>
       <ReactSentence sentence={sentence} readerConfig={readerConfig} sameTab={sameTab} />

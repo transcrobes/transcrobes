@@ -1,4 +1,5 @@
-import { Container, makeStyles, Typography } from "@material-ui/core";
+import { Container, Typography } from "@mui/material";
+import { makeStyles } from "tss-react/mui";
 import { ReactElement } from "react";
 import { TopToolbar } from "react-admin";
 import HelpButton from "../components/HelpButton";
@@ -6,16 +7,15 @@ import { DayProgressRead } from "./DayProgressRead";
 import { DayProgressRevised } from "./DayProgressRevised";
 import { UserListProgress } from "./ListProgress";
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles()((theme) => ({
   root: { margin: theme.spacing(1), maxWidth: "800px" },
   header: { margin: theme.spacing(1), alignContent: "center" },
   toolbar: { alignItems: "center" },
-
   message: { color: "red", fontWeight: "bold", fontSize: "2em" },
 }));
 
 export default function Stats(): ReactElement {
-  const classes = useStyles();
+  const { classes } = useStyles();
   const helpUrl = "https://transcrob.es/page/software/learn/stats/";
   return (
     <>

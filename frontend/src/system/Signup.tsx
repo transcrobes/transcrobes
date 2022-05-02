@@ -1,23 +1,23 @@
 import { ReactElement, useState } from "react";
 import { Notification, useTranslate, useNotify, TopToolbar } from "react-admin";
 import { Field, withTypes } from "react-final-form";
-import AddIcon from "@material-ui/icons/Add";
-import { makeStyles } from "@material-ui/core/styles";
-import Card from "@material-ui/core/Card";
-import Avatar from "@material-ui/core/Avatar";
-import CardActions from "@material-ui/core/CardActions";
-import Button from "@material-ui/core/Button";
-import Typography from "@material-ui/core/Typography";
+import AddIcon from "@mui/icons-material/Add";
+import { makeStyles } from "tss-react/mui";
+import Card from "@mui/material/Card";
+import Avatar from "@mui/material/Avatar";
+import CardActions from "@mui/material/CardActions";
+import Button from "@mui/material/Button";
+import Typography from "@mui/material/Typography";
 import { Link } from "react-router-dom";
-import CircularProgress from "@material-ui/core/CircularProgress";
-import TextField from "@material-ui/core/TextField";
+import CircularProgress from "@mui/material/CircularProgress";
+import TextField from "@mui/material/TextField";
 import { OnChange } from "react-final-form-listeners";
 import PasswordStrengthBar from "react-password-strength-bar";
 
 const emailRegex =
   /[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?/;
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles()((theme) => ({
   help: {},
   main: {
     display: "flex",
@@ -90,7 +90,7 @@ export default function Signup(): ReactElement {
   const [emailValid, setEmailValid] = useState(false);
 
   const translate = useTranslate();
-  const classes = useStyles();
+  const { classes } = useStyles();
   const notify = useNotify();
 
   function handleSubmit(form: FormValues) {
@@ -110,7 +110,7 @@ export default function Signup(): ReactElement {
     })
       .then((res) => {
         if (res.ok) {
-          notify("user.signup.email_success", "success");
+          notify("user.signup.email_success", { type: "success" });
           setCreationSent(true);
         } else {
           throw new Error("Error creating the user.");
@@ -124,10 +124,11 @@ export default function Signup(): ReactElement {
             : typeof error === "undefined" || !error.message
             ? "user.signup.error"
             : error.message,
-          "warning",
-          {
-            _: typeof error === "string" ? error : error && error.message ? error.message : undefined,
-          },
+          { type: "warning" },
+          // "warning",
+          // {
+          //   _: typeof error === "string" ? error : error && error.message ? error.message : undefined,
+          // },
         );
       });
   }

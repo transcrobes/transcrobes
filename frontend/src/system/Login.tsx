@@ -1,24 +1,16 @@
-import { ReactElement, useEffect, useState } from "react";
+import LockIcon from "@mui/icons-material/Lock";
+import { Avatar, Button, Card, CardActions, CircularProgress, TextField, Typography } from "@mui/material";
+import { createTheme, StyledEngineProvider, ThemeProvider } from "@mui/material/styles";
 import PropTypes from "prop-types";
+import { ReactElement, useEffect, useState } from "react";
+import { Notification, useLogin, useNotify, useTranslate } from "react-admin";
 import { Field, withTypes } from "react-final-form";
 import { Link, useLocation } from "react-router-dom";
-import {
-  Avatar,
-  Button,
-  Card,
-  CardActions,
-  CircularProgress,
-  TextField,
-  Typography,
-} from "@material-ui/core";
-import { createTheme, makeStyles } from "@material-ui/core/styles";
-import { ThemeProvider } from "@material-ui/styles";
-import LockIcon from "@material-ui/icons/Lock";
-import { Notification, useTranslate, useLogin, useNotify } from "react-admin";
-import { lightTheme } from "../layout/themes";
+import { makeStyles } from "tss-react/mui";
 import { isInitialisedAsync } from "../database/authdb";
+import { lightTheme } from "../layout/themes";
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles()((theme) => ({
   main: {
     display: "flex",
     flexDirection: "column",
@@ -77,19 +69,19 @@ const messages = {
 function Login(): ReactElement {
   const [loading, setLoading] = useState(false);
   const translate = useTranslate();
-  const classes = useStyles();
+  const { classes } = useStyles();
   const notify = useNotify();
   const login = useLogin();
-  const location = useLocation<{ nextPathname: string } | null>();
+  // const location = useLocation<{ nextPathname: string } | null>();
+  const location = useLocation();
 
   const incomingMessageId = new URLSearchParams(location.search).get("msg");
 
   useEffect(() => {
     if (incomingMessageId) {
-      notify(
-        messages[incomingMessageId as keyof typeof messages],
-        incomingMessageId === "001" ? "success" : "error",
-      );
+      notify(messages[incomingMessageId as keyof typeof messages], {
+        type: incomingMessageId === "001" ? "success" : "error",
+      });
     }
   }, []);
 
@@ -99,7 +91,7 @@ function Login(): ReactElement {
     if (!username) throw new Error("A username is required here"); // should be impossible
     const nextPath = (await isInitialisedAsync(username))
       ? location.state
-        ? location.state.nextPathname
+        ? (location.state as any).nextPathname
         : "/"
       : "/init";
     login(auth, nextPath).catch((error: Error) => {
@@ -110,10 +102,10 @@ function Login(): ReactElement {
           : typeof error === "undefined" || !error.message
           ? "ra.auth.sign_in_error"
           : error.message,
-        "warning",
-        {
-          _: typeof error === "string" ? error : error && error.message ? error.message : undefined,
-        },
+        { type: "warning" },
+        // {
+        //   _: typeof error === "string" ? error : error && error.message ? error.message : undefined,
+        // },
       );
     });
   }
@@ -200,13 +192,7 @@ function Login(): ReactElement {
                 </div>
               </div>
               <CardActions className={classes.actions}>
-                <Button
-                  variant="contained"
-                  type="submit"
-                  color="primary"
-                  disabled={loading}
-                  fullWidth
-                >
+                <Button variant="contained" type="submit" color="primary" disabled={loading} fullWidth>
                   {loading && <CircularProgress size={25} thickness={2} />}
                   {translate("ra.auth.sign_in")}
                 </Button>
@@ -249,9 +235,11 @@ Login.propTypes = {
 // the right theme
 function LoginWithTheme(props: any): ReactElement {
   return (
-    <ThemeProvider theme={createTheme(lightTheme)}>
-      <Login {...props} />
-    </ThemeProvider>
+    <StyledEngineProvider injectFirst>
+      <ThemeProvider theme={createTheme(lightTheme)}>
+        <Login {...props} />
+      </ThemeProvider>
+    </StyledEngineProvider>
   );
 }
 

@@ -1,10 +1,10 @@
-import InputLabel from "@material-ui/core/InputLabel";
-import NotchedOutline from "@material-ui/core/OutlinedInput/NotchedOutline";
-import { makeStyles, Theme } from "@material-ui/core/styles";
-import clsx from "clsx";
+import InputLabel from "@mui/material/InputLabel";
+import NotchedOutline from "@mui/material/OutlinedInput/NotchedOutline";
+import { Theme } from "@mui/material/styles";
+import { makeStyles } from "tss-react/mui";
 import React, { ReactElement, ReactNode } from "react";
 
-const useStyles = makeStyles((theme: Theme) => ({
+const useStyles = makeStyles()((theme: Theme) => ({
   root: {
     position: "relative",
     margin: theme.spacing(2),
@@ -21,7 +21,7 @@ const useStyles = makeStyles((theme: Theme) => ({
     left: 0,
     top: 0,
     // slight alteration to spec spacing to match visual spec result
-    transform: "translate(0, 24px) scale(1)",
+    // transform: "translate(0, 24px) scale(1)",
   },
   notchedOutline: { borderRadius: theme.shape.borderRadius },
 }));
@@ -41,16 +41,17 @@ export default function Conftainer({ id, label, children, className }: Props): R
       setLabelWidth((labelRef.current as any).offsetWidth);
     }
   }, [label]);
-  const classes = useStyles();
+  const { classes, cx } = useStyles();
   return (
-    <div className={clsx(className, classes.root)}>
+    <div className={cx(className, classes.root)}>
       <InputLabel ref={labelRef} htmlFor={id} variant="outlined" className={classes.inputLabel} shrink>
         {label}
       </InputLabel>
       <div className={classes.contentWrapper}>
         <div id={id} className={classes.content}>
           {children}
-          <NotchedOutline className={classes.notchedOutline} notched labelWidth={labelWidth} />
+          {/* <NotchedOutline className={classes.notchedOutline} notched labelWidth={labelWidth} /> */}
+          <NotchedOutline className={classes.notchedOutline} notched label={label} />
         </div>
       </div>
     </div>

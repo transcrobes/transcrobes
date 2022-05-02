@@ -1,5 +1,13 @@
 import { useEffect, useState } from "react";
-import { DragDropContext, Droppable, Draggable, DropResult, DraggableLocation } from "react-beautiful-dnd";
+import {
+  DragDropContext,
+  Droppable,
+  Draggable,
+  DropResult,
+  DraggableLocation,
+  NotDraggingStyle,
+  DraggingStyle,
+} from "react-beautiful-dnd";
 import { useAppSelector } from "../app/hooks";
 import { reorderArray } from "../lib/funclib";
 import { DNDItemType } from "../lib/types";
@@ -28,11 +36,10 @@ function move(
 
 const grid = 8;
 
-// FIXME: any
-function getItemStyle(isDragging: boolean, draggableStyle: any) {
+function getItemStyle(isDragging: boolean, draggableStyle: DraggingStyle | NotDraggingStyle | undefined) {
   return {
     // some basic styles to make the items look a bit nicer
-    userSelect: "none",
+    userSelect: "none" as const,
     padding: grid * 2,
     margin: `0 0 ${grid}px 0`,
 

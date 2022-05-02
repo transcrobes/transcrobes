@@ -3,8 +3,8 @@ import { useRecordContext } from "react-admin";
 import { UserList } from "../lib/types";
 
 const DATA_SOURCE = "UserListDetails.tsx";
-export default function UserListDetails(props: any): ReactElement {
-  const userList = useRecordContext(props) as UserList;
+export default function UserListDetails(): ReactElement {
+  const userList = useRecordContext<UserList>();
   const [wordIds, setWordIds] = useState([] as string[]);
 
   useEffect(() => {

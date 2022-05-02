@@ -1,5 +1,5 @@
-import { makeStyles } from "@material-ui/core";
-import { ToggleButton, ToggleButtonGroup } from "@material-ui/lab";
+import { makeStyles } from "tss-react/mui";
+import { ToggleButton, ToggleButtonGroup } from "@mui/material";
 import { useParams } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import Conftainer from "../../components/Conftainer";
@@ -7,19 +7,21 @@ import { bookReaderActions, DEFAULT_BOOK_READER_CONFIG_STATE } from "../../featu
 import { ContentParams } from "../../lib/types";
 import ReaderConfig from "../common/ReaderConfig";
 
-const useStyles = makeStyles((theme) => ({
-  [theme.breakpoints.up("sm")]: {
-    buttonGroup: { padding: "0.3em", width: "100%" },
-  },
-  [theme.breakpoints.down("sm")]: {
-    buttonGroup: { flexWrap: "wrap", padding: "0.3em", width: "100%" },
-  },
-  button: { width: "100%" },
-}));
+const useStyles = makeStyles()((theme) => {
+  return {
+    [theme.breakpoints.up("sm")]: {
+      buttonGroup: { padding: "0.3em", width: "100%" },
+    },
+    [theme.breakpoints.down("md")]: {
+      buttonGroup: { flexWrap: "wrap" as const, padding: "0.3em", width: "100%" },
+    },
+    button: { width: "100%" },
+  };
+});
 
 export default function BookReaderConfig(): React.ReactElement {
-  const classes = useStyles();
-  const { id } = useParams<ContentParams>();
+  const { classes } = useStyles();
+  const { id = "" } = useParams<ContentParams>();
   const readerConfig = useAppSelector((state) => state.bookReader[id] || { ...DEFAULT_BOOK_READER_CONFIG_STATE, id });
   const dispatch = useAppDispatch();
 

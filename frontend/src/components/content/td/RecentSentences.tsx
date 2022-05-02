@@ -1,4 +1,4 @@
-import { ClassNameMap } from "@material-ui/styles";
+import { ClassNameMap } from "@mui/material";
 import { ReactElement, useEffect, useState } from "react";
 import { DEFAULT_RECENTS_READER_CONFIG_STATE } from "../../../features/content/simpleReaderSlice";
 import { getRecentSentences } from "../../../lib/componentMethods";

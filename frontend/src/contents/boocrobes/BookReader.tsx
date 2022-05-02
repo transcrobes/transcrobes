@@ -1,7 +1,7 @@
 import D2Reader from "@d-i-t-a/reader";
-import { Box, createTheme, ThemeProvider } from "@material-ui/core";
-import KeyboardArrowLeftIcon from "@material-ui/icons/KeyboardArrowLeft";
-import KeyboardArrowRightIcon from "@material-ui/icons/KeyboardArrowRight";
+import KeyboardArrowLeftIcon from "@mui/icons-material/KeyboardArrowLeft";
+import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
+import { Box, createTheme, StyledEngineProvider, ThemeProvider } from "@mui/material";
 import debounce from "debounce";
 import { ReactElement, useCallback, useEffect, useRef, useState } from "react";
 import { Button, useAuthenticated } from "react-admin";
@@ -83,7 +83,7 @@ function enableResizeEvent(reader: any, dispatch: AppDispatch, id: string) {
 
 export default function BookReader({ proxy }: ContentProps): ReactElement {
   useAuthenticated(); // redirects to login if not authenticated, required because shown as RouteWithoutLayout
-  const { id } = useParams<ContentParams>();
+  const { id = "" } = useParams<ContentParams>();
   window.bookId = id;
 
   const url = new URL(`/api/v1/data/content/${id}/manifest.json`, window.location.href);
@@ -98,7 +98,7 @@ export default function BookReader({ proxy }: ContentProps): ReactElement {
   const themeName = useAppSelector((state) => state.theme);
   const theme = createTheme({
     palette: {
-      type: themeName || "light", // Switching the dark mode on is a single property value change.
+      mode: themeName || "light", // Switching the dark mode on is a single property value change.
     },
   });
   useEffect(() => {
@@ -251,80 +251,82 @@ export default function BookReader({ proxy }: ContentProps): ReactElement {
   const shouldGrow = readerConfig.isScrolling && growWhenScrolling;
 
   return (
-    <ThemeProvider theme={theme}>
-      <Box>
-        {manifest && <Header manifest={manifest} />}
+    <StyledEngineProvider injectFirst>
+      <ThemeProvider theme={theme}>
+        <Box>
+          {manifest && <Header manifest={manifest} />}
 
-        <Box
-          flex={"1"}
-          alignItems={"stretch"}
-          display="flex"
-          flexDirection="column"
-          position={"relative"}
-          sx={{
-            // color: theme.palette.getContrastText(theme.palette.background.default),
-            // FIXME: this should be declared somewhere less nasty
-            bgcolor: themeName === "dark" ? "#000000" : "#fff",
-          }}
-        >
-          <div ref={containerRef} id="D2Reader-Container">
-            <main
-              tabIndex={-1}
-              id="iframe-wrapper"
-              style={{
-                /**
-                 * This determines the height of the iframe.
-                 *
-                 * If we remove this, then in scrolling mode it simply grows to fit
-                 * content. In paginated mode, however, we must have this set because
-                 * we have to decide how big the content should be.
-                 */
-                height: shouldGrow ? "initial" : height,
-                /**
-                 * We always want the height to be at least the defined height
-                 */
-                minHeight: height,
-                overflow: "hidden",
-              }}
-            >
-              <div id="reader-loading" className="loading"></div>
-              <div id="reader-error" className="error"></div>
-            </main>
-          </div>
+          <Box
+            flex={"1"}
+            alignItems={"stretch"}
+            display="flex"
+            flexDirection="column"
+            position={"relative"}
+            sx={{
+              // color: theme.palette.getContrastText(theme.palette.background.default),
+              // FIXME: this should be declared somewhere less nasty
+              bgcolor: themeName === "dark" ? "#000000" : "#fff",
+            }}
+          >
+            <div ref={containerRef} id="D2Reader-Container">
+              <main
+                tabIndex={-1}
+                id="iframe-wrapper"
+                style={{
+                  /**
+                   * This determines the height of the iframe.
+                   *
+                   * If we remove this, then in scrolling mode it simply grows to fit
+                   * content. In paginated mode, however, we must have this set because
+                   * we have to decide how big the content should be.
+                   */
+                  height: shouldGrow ? "initial" : height,
+                  /**
+                   * We always want the height to be at least the defined height
+                   */
+                  minHeight: height,
+                  overflow: "hidden",
+                }}
+              >
+                <div id="reader-loading" className="loading"></div>
+                <div id="reader-error" className="error"></div>
+              </main>
+            </div>
+          </Box>
+          <Box
+            component="footer"
+            display="flex"
+            sx={{
+              bottom: 0,
+              width: "100%",
+              justifyContent: "space-between",
+              position: "sticky",
+              height: `${FOOTER_HEIGHT}px`,
+              color: theme.palette.getContrastText(theme.palette.background.default),
+              bgcolor: theme.palette.background.default,
+            }}
+          >
+            <Button
+              size="large"
+              children={<KeyboardArrowLeftIcon />}
+              label="Previous"
+              onClick={goBackward}
+              disabled={readerConfig.atStart}
+            />
+            <Button
+              alignIcon="right"
+              size="large"
+              children={<KeyboardArrowRightIcon />}
+              label="Next"
+              onClick={goForward}
+              disabled={readerConfig.atEnd}
+            />
+          </Box>
+          <TokenDetails readerConfig={readerConfig} />
+          <Mouseover readerConfig={readerConfig} />
+          <Loading />
         </Box>
-        <Box
-          component="footer"
-          display="flex"
-          sx={{
-            bottom: 0,
-            width: "100%",
-            justifyContent: "space-between",
-            position: "sticky",
-            height: `${FOOTER_HEIGHT}px`,
-            color: theme.palette.getContrastText(theme.palette.background.default),
-            bgcolor: theme.palette.background.default,
-          }}
-        >
-          <Button
-            size="large"
-            children={<KeyboardArrowLeftIcon />}
-            label="Previous"
-            onClick={goBackward}
-            disabled={readerConfig.atStart}
-          />
-          <Button
-            alignIcon="right"
-            size="large"
-            children={<KeyboardArrowRightIcon />}
-            label="Next"
-            onClick={goForward}
-            disabled={readerConfig.atEnd}
-          />
-        </Box>
-        <TokenDetails readerConfig={readerConfig} />
-        <Mouseover readerConfig={readerConfig} />
-        <Loading />
-      </Box>
-    </ThemeProvider>
+      </ThemeProvider>
+    </StyledEngineProvider>
   );
 }

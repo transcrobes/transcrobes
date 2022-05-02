@@ -1,14 +1,6 @@
-import {
-  Button,
-  Checkbox,
-  FormControlLabel,
-  FormGroup,
-  makeStyles,
-  TextField,
-  Typography,
-  useTheme,
-} from "@material-ui/core";
-import SaveIcon from "@material-ui/icons/Save";
+import { Button, Checkbox, FormControlLabel, FormGroup, TextField, Typography, useTheme } from "@mui/material";
+import { makeStyles } from "tss-react/mui";
+import SaveIcon from "@mui/icons-material/Save";
 import convertPinyinTones from "pinyin-tone-converter";
 import React, { ReactElement, useEffect, useState } from "react";
 import { Loading } from "../components/Loading";
@@ -24,7 +16,7 @@ import {
 import CustomList from "./CustomList";
 import Papa from "papaparse";
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles()((theme) => ({
   error: {
     color: theme.palette.error.main,
   },
@@ -76,7 +68,7 @@ export default function Import({ dictionaryId, proxy }: Props): ReactElement {
   const [loading, setLoading] = useState(true);
   const [loadingMessage, setLoadingMessage] = useState("");
   const [saving, setSaving] = useState(false);
-  const classes = useStyles();
+  const { classes } = useStyles();
   const theme = useTheme();
 
   async function loadDictionary(event: React.ChangeEvent<HTMLInputElement>) {

@@ -1,16 +1,25 @@
-import { StrictMode } from "react";
-import ReactDOM from "react-dom";
-import { CssBaseline } from "@material-ui/core";
-import "./index.css";
+import createCache from "@emotion/cache";
+import { CacheProvider } from "@emotion/react";
+import { CssBaseline } from "@mui/material";
+import { createRoot } from "react-dom/client";
+import { Provider } from "react-redux";
 import App from "./App";
 import { store } from "./app/createStore";
-import { Provider } from "react-redux";
-ReactDOM.render(
-  <StrictMode>
+import "./index.css";
+
+export const muiCache = createCache({
+  key: "mui",
+  prepend: true,
+});
+
+createRoot(document.getElementById("root")!).render(
+  // FIXME: turn on StrictMode when the new react-beautiful-dnd is released
+  // <StrictMode>
+  <Provider store={store}>
     <CssBaseline />
-    <Provider store={store}>
-      <App componentsConfig={window.componentsConfig} />
-    </Provider>
-  </StrictMode>,
-  document.getElementById("root"),
+    <CacheProvider value={muiCache}>
+      <App config={window.componentsConfig} />
+    </CacheProvider>
+  </Provider>,
+  //   </StrictMode>,
 );

@@ -1,4 +1,3 @@
-/* eslint-disable eqeqeq */
 import { CreateParams, DataProvider, GetListParams, GetManyParams, GetOneParams } from "ra-core";
 import { DeleteManyParams, DeleteParams, UpdateManyParams, UpdateParams } from "react-admin";
 import { Workbox } from "workbox-window";

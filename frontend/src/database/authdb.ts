@@ -39,3 +39,7 @@ export async function isInitialisedAsync(username: string): Promise<boolean> {
 export async function setInitialisedAsync(username: string, value = true): Promise<void> {
   await setValue("initialised:" + username, value ? "true" : "false");
 }
+
+export async function clearAuthDatabase(): Promise<void> {
+  await db.table(COLLECTION_NAME).clear();
+}

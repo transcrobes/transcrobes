@@ -1,4 +1,4 @@
-import { Grid } from "@material-ui/core";
+import { Box, Grid, Link } from "@mui/material";
 import { ReactElement, useEffect, useState } from "react";
 import { GoalDocument } from "../database/Schema";
 import { ComponentsConfig } from "../lib/complexTypes";
@@ -77,34 +77,32 @@ export default function GoalsWidget({ config, inited }: Props): ReactElement {
     return (
       <>
         <Grid item>
-          <a href={`#/goals/${goalId}/show`} style={{ textDecoration: "none" }}>
-            <div>{name}</div>
-          </a>
+          <Link href={`#/goals/${goalId}/show`} sx={{ textDecoration: "none" }}>
+            {name}
+          </Link>
         </Grid>
         <Grid item>
-          <a href={`#/goals/${goalId}/show`}>
-            <div>
-              <progress id={goalId} value={percent} max="100">
-                {percent}%
-              </progress>
-            </div>
-          </a>
+          <Link href={`#/goals/${goalId}/show`}>
+            <progress id={goalId} value={percent} max="100">
+              {percent}%
+            </progress>
+          </Link>
         </Grid>
         <Grid item>
-          <a href={`#/goals/${goalId}/show`} style={{ textDecoration: "none" }}>
-            <div>{percent}%</div>
-          </a>
+          <Link href={`#/goals/${goalId}/show`} sx={{ textDecoration: "none" }}>
+            {percent}%
+          </Link>
         </Grid>
       </>
     );
   }
   return (
-    <div style={{ padding: 20 }}>
+    <Box sx={{ padding: "20px" }}>
       {goals.map((x) => (
         <Grid key={x.goalId} container justifyContent="flex-start" spacing={2}>
           <FormRow name={x.name} goalId={x.goalId} percent={x.percent.toFixed(2)} />
         </Grid>
       ))}
-    </div>
+    </Box>
   );
 }

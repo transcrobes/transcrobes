@@ -1,3 +1,4 @@
+import { Link } from "@mui/material";
 import { ReactElement } from "react";
 import { useAppSelector } from "../app/hooks";
 
@@ -10,15 +11,18 @@ function DiscoverableWord({ graph, children, newTab }: React.PropsWithChildren<P
   const baseUrl = useAppSelector((state) => state.userData.baseUrl);
   const destUrl = `${baseUrl}/#/notrobes?q=${graph}`;
 
-  function manageClick() {
+  function manageClick(
+    event: React.MouseEvent<HTMLSpanElement, MouseEvent> | React.MouseEvent<HTMLAnchorElement, MouseEvent>,
+  ) {
     if (newTab) {
+      event.preventDefault();
       window.open(destUrl);
     }
   }
   return graph ? (
-    <a onClick={manageClick} href={destUrl}>
+    <Link onClick={manageClick} href={destUrl}>
       {children || graph}
-    </a>
+    </Link>
   ) : (
     <>{children}</>
   );

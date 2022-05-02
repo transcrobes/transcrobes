@@ -1,6 +1,6 @@
 import React, { ReactElement } from "react";
-import SettingsIcon from "@material-ui/icons/Settings";
-import { Box, Drawer } from "@material-ui/core";
+import SettingsIcon from "@mui/icons-material/Settings";
+import { Box, Drawer } from "@mui/material";
 import BookReaderConfig from "./BookReaderConfig";
 import useWindowDimensions from "../../hooks/WindowDimensions";
 import { Button } from "react-admin";

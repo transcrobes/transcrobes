@@ -1,18 +1,18 @@
-import { makeStyles } from "@material-ui/core";
 import { ReactElement } from "react";
+import { makeStyles } from "tss-react/mui";
 import { CARD_TYPES, getCardType } from "../database/Schema";
-import { CardType, DefinitionType, DictProvider, PosSentences } from "../lib/types";
+import { CardType, DefinitionType, PosSentences } from "../lib/types";
 import GraphAnswer from "./GraphAnswer";
 import MeaningAnswer from "./MeaningAnswer";
 import PhraseAnswer from "./PhraseAnswer";
 import SoundAnswer from "./SoundAnswer";
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles()((theme) => ({
   answer: {
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
-    [theme.breakpoints.down("sm")]: {
+    [theme.breakpoints.down("md")]: {
       padding: "0.3em",
     },
     [theme.breakpoints.up("sm")]: {
@@ -40,7 +40,7 @@ export default function Answer({
   translationProviderOrder,
   onCardFrontUpdate,
 }: AnswerProps): ReactElement {
-  const classes = useStyles();
+  const { classes } = useStyles();
 
   const cardType = getCardType(card);
   return (

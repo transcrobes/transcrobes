@@ -1,11 +1,11 @@
-import { Typography } from "@material-ui/core";
-import Button from "@material-ui/core/Button";
-import Card from "@material-ui/core/Card";
-import CardContent from "@material-ui/core/CardContent";
-import { makeStyles } from "@material-ui/core/styles";
+import { Typography } from "@mui/material";
+import Button from "@mui/material/Button";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
 import NoSleep from "nosleep.js";
 import { ReactElement, useState } from "react";
 import { Title, useAuthenticated, useTranslate } from "react-admin";
+import { makeStyles } from "tss-react/mui";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
 import Loading from "../components/Loading";
 import { isInitialisedAsync, setInitialisedAsync } from "../database/authdb";
@@ -14,7 +14,7 @@ import { AbstractWorkerProxy, ProgressCallbackMessage } from "../lib/proxies";
 
 const noSleep = new NoSleep();
 
-const useStyles = makeStyles({
+const useStyles = makeStyles()({
   label: { width: "10em", display: "inline-block" },
   button: { margin: "1em" },
 });
@@ -25,7 +25,7 @@ function Intro() {
   return (
     <>
       <h1>Welcome to Transcrobes!</h1>
-      <h2>It's initialisation time (10-20 minutes)!</h2>
+      <h2>It's initialisation time (3-10 minutes)!</h2>
       <div>
         <Typography>
           <a target={"_blank"} href={helpUrl}>
@@ -91,14 +91,13 @@ interface Props {
 function Init({ proxy }: Props): ReactElement {
   useAuthenticated(); // redirects to login if not authenticated, required because shown as RouteWithoutLayout
   const translate = useTranslate();
-  const classes = useStyles();
+  const { classes } = useStyles();
   const [runStarted, setRunStarted] = useState<boolean | null>(null);
   const [message, setMessage] = useState<string>("");
 
   if (progress === 0) progress = window.setTimeout(progressUpdate, 5000);
 
   const username = useAppSelector((state) => state.userData.username);
-  const loading = useAppSelector((state) => state.ui.loading);
   const dispatch = useAppDispatch();
 
   // WARNING! DO NOT DELETE THIS!
@@ -141,7 +140,13 @@ function Init({ proxy }: Props): ReactElement {
       if (username) {
         setInitialisedAsync(username).then(() => {
           dispatch(setLoading(undefined));
-          window.location.href = "/#/";
+          // clear the caches so that the existing user data is loaded
+          navigator.serviceWorker.getRegistration().then((reg) => {
+            reg?.unregister().then((res) => {
+              console.log("Unregistering SW after install", res);
+              window.location.href = "/";
+            });
+          });
         });
       } else {
         throw new Error("Unable to find username");

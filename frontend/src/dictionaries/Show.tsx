@@ -1,21 +1,17 @@
-import { FC } from "react";
-import { FieldProps, Show, SimpleShowLayout, TextField } from "react-admin";
+import { Show, SimpleShowLayout, TextField, useRecordContext } from "react-admin";
 import { HelpShowActions } from "../components/HelpShowActions";
-import { UserDictionary } from "../lib/types";
-import Import from "./Import";
+import ImportNew from "./Import";
 
-const AShow: FC<FieldProps<UserDictionary>> = (props) => (
-  <Show
-    actions={<HelpShowActions helpUrl="https://transcrob.es/page/software/configure/userdictionaries/" />}
-    {...props}
-  >
-    <SimpleShowLayout>
-      <TextField source="id" />
-      <TextField source="title" />
-      <TextField source="description" />
-      <Import dictionaryId={(props as any).id} proxy={window.componentsConfig.proxy} />
-    </SimpleShowLayout>
-  </Show>
-);
-
-export default AShow;
+export default function AShow() {
+  const record = useRecordContext();
+  return (
+    <Show actions={<HelpShowActions helpUrl="https://transcrob.es/page/software/configure/userdictionaries/" />}>
+      <SimpleShowLayout>
+        <TextField source="id" />
+        <TextField source="title" />
+        <TextField source="description" />
+        <ImportNew dictionaryId={record.id.toString()} proxy={window.componentsConfig.proxy} />
+      </SimpleShowLayout>
+    </Show>
+  );
+}

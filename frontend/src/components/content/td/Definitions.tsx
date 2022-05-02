@@ -1,4 +1,4 @@
-import { ClassNameMap } from "@material-ui/core/styles/withStyles";
+import { ClassNameMap } from "@mui/material";
 import { Fragment, ReactElement, useContext, useEffect, useState } from "react";
 import { useAppSelector } from "../../../app/hooks";
 import { orderTranslations, toPosLabels } from "../../../lib/libMethods";

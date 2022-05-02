@@ -1,27 +1,6 @@
-import SentimentVerySatisfiedIcon from "@material-ui/icons/SentimentVerySatisfied";
-import SentimentVeryDissatisfiedIcon from "@material-ui/icons/SentimentVeryDissatisfied";
-import SentimentSatisfiedIcon from "@material-ui/icons/SentimentSatisfied";
-import CheckIcon from "@material-ui/icons/Check";
-
 import dayjs from "dayjs";
-
-import { GRADE, EFACTOR_DEFAULT } from "../database/Schema";
-import { CardType, GradesType } from "./types";
-
-const GRADES: GradesType[] = [
-  { id: GRADE.HARD.toString(), content: "Add as known (poorly)", icon: <SentimentSatisfiedIcon /> },
-  {
-    id: GRADE.UNKNOWN.toString(),
-    content: "Add as unknown",
-    icon: <SentimentVeryDissatisfiedIcon />,
-  },
-  {
-    id: GRADE.GOOD.toString(),
-    content: "Add as known (to revise)",
-    icon: <SentimentVerySatisfiedIcon />,
-  },
-  { id: GRADE.KNOWN.toString(), content: "Add as known (no revision)", icon: <CheckIcon /> },
-];
+import { EFACTOR_DEFAULT, GRADE } from "../database/Schema";
+import { CardType } from "./types";
 
 function shuffleArray(array: any[]): any[] {
   for (let i = array.length - 1; i > 0; i--) {
@@ -98,4 +77,4 @@ function practice(flashcard: CardType, grade: GRADE, failureSeconds: number): Ca
   return { ...flashcard, interval, repetition, efactor, dueDate, known, firstSuccessDate };
 }
 
-export { GRADES, shuffleArray, practice };
+export { shuffleArray, practice };

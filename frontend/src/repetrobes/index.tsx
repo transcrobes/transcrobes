@@ -1,4 +1,4 @@
-import Icon from "@material-ui/icons/Repeat";
+import Icon from "@mui/icons-material/Repeat";
 
 export default {
   icon: Icon,

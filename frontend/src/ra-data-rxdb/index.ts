@@ -18,6 +18,7 @@ export default function RxDBProvider(params: RxDBDataProviderParams): DbDataProv
         () => {
           return;
         },
+        undefined,
         false,
       );
     }
@@ -59,12 +60,15 @@ export default function RxDBProvider(params: RxDBDataProviderParams): DbDataProv
     },
     getOne: async (resource: TranscrobesCollectionsKeys, params: GetOneParams) => {
       const db = await dbProm();
-      const query = { id: { $eq: params.id.toString() } };
-      const res = await db[resource].findOne({ selector: query }).exec();
+      const res = await db[resource].findOne({ selector: { id: { $eq: params.id.toString() } } }).exec();
       const data = res?.toJSON();
 
       if (resource === "surveys") {
-        const usres = await db.usersurveys.findOne().where("surveyId").eq(params.id.toString()).exec();
+        const usres = await db.usersurveys
+          .findOne({
+            selector: { surveyId: { $eq: params.id.toString() } },
+          })
+          .exec();
         if (usres) {
           const specialData = { data: { ...data, data: usres.data } };
           return specialData;
@@ -80,7 +84,12 @@ export default function RxDBProvider(params: RxDBDataProviderParams): DbDataProv
     },
     getManyReference: async (resource: TranscrobesCollectionsKeys, params: GetManyReferenceParams) => {
       const db = await dbProm();
-      const res = await db[resource].find().where(params.target).eq(params.id).exec();
+      // const res = await db[resource].find().where(params.target).eq(params.id).exec();
+      const res = await db[resource]
+        .find({
+          selector: { [params.target]: { $eq: params.id.toString() } },
+        })
+        .exec();
       const resArr = [...res.values()].map((val) => val.toJSON());
       return { data: resArr, total: resArr.length };
     },

@@ -1,5 +1,5 @@
-import { makeStyles } from "@material-ui/core";
-import { ToggleButton, ToggleButtonGroup } from "@material-ui/lab";
+import { makeStyles } from "tss-react/mui";
+import { ToggleButton, ToggleButtonGroup } from "@mui/material";
 import React, { ReactElement } from "react";
 import { useParams } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
@@ -19,7 +19,7 @@ export interface VideoReaderConfigProps {
   onSubDelayChange: (delay: number) => void;
 }
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles()((theme) => ({
   fineControlIcons: {
     color: "#777",
     fontSize: 20,
@@ -32,16 +32,16 @@ const useStyles = makeStyles((theme) => ({
   [theme.breakpoints.up("sm")]: {
     buttonGroup: { padding: "0.3em", width: "100%" },
   },
-  [theme.breakpoints.down("sm")]: {
-    buttonGroup: { flexWrap: "wrap", padding: "0.3em", width: "100%" },
+  [theme.breakpoints.down("md")]: {
+    buttonGroup: { flexWrap: "wrap" as const, padding: "0.3em", width: "100%" },
   },
   button: { width: "100%" },
 }));
 
 export default function VideoConfig({ containerRef, onSubDelayChange }: VideoReaderConfigProps): ReactElement {
-  const localClasses = useStyles();
+  const { classes: localClasses } = useStyles();
 
-  const { id } = useParams<ContentParams>();
+  const { id = "" } = useParams<ContentParams>();
   const readerConfig = useAppSelector((state) => state.videoReader[id] || { ...DEFAULT_VIDEO_READER_CONFIG_STATE, id });
 
   const dispatch = useAppDispatch();

@@ -1,8 +1,9 @@
-import { IconButton, makeStyles, Theme } from "@material-ui/core";
-import FlashOffIcon from "@material-ui/icons/FlashOff";
-import FlashOnIcon from "@material-ui/icons/FlashOn";
+import FlashOffIcon from "@mui/icons-material/FlashOff";
+import FlashOnIcon from "@mui/icons-material/FlashOn";
+import { IconButton } from "@mui/material";
 import * as CSS from "csstype";
 import { ReactElement, useEffect, useState } from "react";
+import { makeStyles } from "tss-react/mui";
 import { useAppDispatch } from "../../../app/hooks";
 import { addKnownCards } from "../../../features/card/knownCardsSlice";
 import { updateDefinition } from "../../../features/definition/definitionsSlice";
@@ -22,24 +23,26 @@ type Props = {
 const DATA_SOURCE = "Actions.jsx";
 
 interface IconProps {
-  iconColour?: CSS.Color;
+  iconColour?: CSS.Property.Color;
 }
 
-const useStyles = makeStyles<Theme, IconProps>({
-  message: {
-    fontSize: "1em",
-  },
-  loading: { textAlign: "center" },
-  iconStyle: {
-    "& svg": {
-      fontSize: 32,
-      color: (props) => props.iconColour || "white",
+const useStyles = makeStyles<IconProps>()((_theme, params) => {
+  return {
+    message: {
+      fontSize: "1em",
     },
-    padding: "2px",
-  },
-  toggle: {
-    padding: "0.5em",
-  },
+    loading: { textAlign: "center" },
+    iconStyle: {
+      "& svg": {
+        fontSize: 32,
+        color: params.iconColour || "white",
+      },
+      padding: "2px",
+    },
+    toggle: {
+      padding: "0.5em",
+    },
+  };
 });
 
 export default function Actions({ className, tokenDetails, definition }: Props): ReactElement {
@@ -84,20 +87,20 @@ export default function Actions({ className, tokenDetails, definition }: Props):
     setMessage("");
   }, [tokenDetails.token.l]);
 
-  const classes = useStyles({ iconColour: "white" });
+  const { classes } = useStyles({ iconColour: "white" });
 
   return tokenDetails.token.id ? (
     <>
-      {saving && <Loading classes={classes} position="relative" size={50} top="0px" message="Saving Cards..." />}
+      <Loading classes={classes} position="relative" size={50} top="0px" message="Saving Cards..." show={saving} />
       {message && <div>{message}</div>}
       <div className={className}>
         <div className={classes.toggle}>
           {!tokenDetails.gloss ? (
-            <IconButton className={classes.iconStyle} title="Gloss right now" onClick={toggleGloss}>
+            <IconButton className={classes.iconStyle} title="Gloss right now" onClick={toggleGloss} size="large">
               <FlashOnIcon />
             </IconButton>
           ) : (
-            <IconButton className={classes.iconStyle} title="Don't gloss right now" onClick={toggleGloss}>
+            <IconButton className={classes.iconStyle} title="Don't gloss right now" onClick={toggleGloss} size="large">
               <FlashOffIcon />
             </IconButton>
           )}

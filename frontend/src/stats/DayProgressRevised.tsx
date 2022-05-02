@@ -1,6 +1,6 @@
-import { Grid } from "@material-ui/core";
+import { Grid } from "@mui/material";
 import { bin } from "d3-array";
-import dayjs, { OpUnitType, QUnitType } from "dayjs";
+import dayjs, { ManipulateType } from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat";
 import { useEffect, useState } from "react";
 import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
@@ -24,7 +24,7 @@ enum PeriodType {
   week,
   day,
 }
-const PERIODS: (QUnitType | OpUnitType)[] = ["year", "month", "week", "day"];
+const PERIODS: ManipulateType[] = ["year", "month", "week", "day"];
 interface Props {
   nbPeriods?: number;
   periodType?: PeriodType;

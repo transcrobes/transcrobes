@@ -11,7 +11,7 @@ const cardsSlice = createSlice({
   name: "knownCards",
   initialState,
   reducers: {
-    setState(state, action: PayloadAction<SerialisableDayCardWords>) {
+    setCardWordsState(state, action: PayloadAction<SerialisableDayCardWords>) {
       return action.payload;
     },
     addKnownCards(state, action: PayloadAction<SerialisableStringSet>) {
@@ -24,5 +24,5 @@ const cardsSlice = createSlice({
   },
 });
 
-export const { setState, addKnownCards } = cardsSlice.actions;
+export const { setCardWordsState, addKnownCards } = cardsSlice.actions;
 export default cardsSlice.reducer;

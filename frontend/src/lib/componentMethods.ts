@@ -6,7 +6,6 @@ import {
   DefinitionType,
   EventCoordinates,
   InputLanguage,
-  isSimplePOS,
   PopupPosition,
   ReaderState,
   RecentSentencesType,

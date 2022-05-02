@@ -1,5 +1,6 @@
-import { Container, makeStyles } from "@material-ui/core";
-import Button from "@material-ui/core/Button";
+import { Container } from "@mui/material";
+import { makeStyles } from "tss-react/mui";
+import Button from "@mui/material/Button";
 import { ReactElement, useEffect, useRef, useState } from "react";
 import { TopToolbar, useGetOne } from "react-admin";
 import { useParams } from "react-router-dom";
@@ -19,23 +20,22 @@ import { Content, ContentParams, ContentProps, KeyedModels, SUBS_DATA_SUFFIX } f
 import VideoPlayer, { VideoPlayerHandle } from "./VideoPlayer";
 import VideoReaderConfigLauncher from "./VideoReaderConfigLauncher";
 
-const useStyles = makeStyles(() => ({
+const useStyles = makeStyles()({
   button: { padding: "2em" },
   input: { display: "none" },
   toolbar: {
     justifyContent: "space-between",
     alignItems: "center",
   },
-}));
+});
 
-const DATA_SOURCE = "VideoPlayerScreen.tsx";
 export default function VideoPlayerScreen({ proxy }: ContentProps): ReactElement {
-  const { id } = useParams<ContentParams>();
+  const { id = "" } = useParams<ContentParams>();
   const [fileURL, setFileURL] = useState<string>("");
   const [models, setModels] = useState<KeyedModels>({});
-  const { data: content } = useGetOne<Content>("contents", id);
+  const { data: content } = useGetOne<Content>("contents", { id });
 
-  const classes = useStyles();
+  const { classes } = useStyles();
   function handleFileSelect(files: FileList | null): void {
     if (files && files.length > 0) {
       const url = URL.createObjectURL(files[0]);

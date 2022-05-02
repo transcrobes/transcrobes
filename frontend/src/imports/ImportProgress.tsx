@@ -1,4 +1,4 @@
-import { Grid } from "@material-ui/core";
+import { Grid } from "@mui/material";
 import { bin } from "d3-array";
 import dayjs from "dayjs";
 import { ReactElement, useEffect, useState } from "react";

@@ -1,4 +1,4 @@
-import { Button, Theme, useTheme } from "@material-ui/core";
+import { Button, Theme, useTheme } from "@mui/material";
 import dayjs from "dayjs";
 import timezone from "dayjs/plugin/timezone";
 import utc from "dayjs/plugin/utc";

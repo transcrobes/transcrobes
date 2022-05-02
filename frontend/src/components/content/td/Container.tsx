@@ -1,4 +1,4 @@
-import { ClassNameMap } from "@material-ui/core/styles/withStyles";
+import { ClassNameMap } from "@mui/material";
 import { ReactElement } from "react";
 import { TokenDetailsState } from "../../../features/ui/uiSlice";
 import { DefinitionState } from "../../../lib/types";

@@ -1,22 +1,21 @@
+import { FormControl, FormControlLabel, Switch, TextField, Typography, useTheme } from "@mui/material";
+import dayjs from "dayjs";
+import _ from "lodash";
 import { ChangeEvent, ReactElement } from "react";
 import Select, { StylesConfig } from "react-select";
-import _ from "lodash";
-import dayjs from "dayjs";
-
-import TCCheckbox from "../components/TCCheckbox";
-import { RepetrobesActivityConfigType, WordOrdering, ZHHANS_EN_DICT_PROVIDERS } from "../lib/types";
-import { FormControl, FormControlLabel, makeStyles, Switch, TextField, Typography, useTheme } from "@material-ui/core";
-import { reorderArray, validInt } from "../lib/funclib";
-import WordOrderSelector from "../components/WordOrderSelector";
-import { DragDropContext, Draggable, Droppable, DropResult } from "react-beautiful-dnd";
+import { makeStyles } from "tss-react/mui";
 import DictionaryChooser from "../components/DictionaryChooser";
+import TCCheckbox from "../components/TCCheckbox";
+import WordOrderSelector from "../components/WordOrderSelector";
+import { validInt } from "../lib/funclib";
+import { RepetrobesActivityConfigType, WordOrdering } from "../lib/types";
 
 interface Props {
   activityConfig: RepetrobesActivityConfigType;
   onConfigChange: (activityConfig: RepetrobesActivityConfigType) => void;
 }
 
-const useStyles = makeStyles(() => ({
+const useStyles = makeStyles()({
   checkbox: { padding: "0.2em 0.5em" },
   multiselect: {
     padding: "0.4em",
@@ -36,10 +35,10 @@ const useStyles = makeStyles(() => ({
     padding: "4px",
     margin: "4px",
   },
-}));
+});
 
 export default function RepetrobesConfig({ activityConfig, onConfigChange }: Props): ReactElement {
-  const classes = useStyles();
+  const { classes } = useStyles();
   const theme = useTheme();
   const colourStyles: StylesConfig = {
     control: (styles) => ({ ...styles, backgroundColor: theme.palette.background.default }),

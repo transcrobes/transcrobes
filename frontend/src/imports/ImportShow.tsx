@@ -1,13 +1,15 @@
-import { FC, useEffect, useState } from "react";
-import { BooleanField, FieldProps, FunctionField, Show, SimpleShowLayout, TextField } from "react-admin";
+import { useEffect, useState } from "react";
+import { BooleanField, FunctionField, Show, SimpleShowLayout, TextField } from "react-admin";
+import { useParams } from "react-router-dom";
 import { HelpShowActions } from "../components/HelpShowActions";
-import { Import, ImportFirstSuccessStats, PROCESSING, PROCESS_TYPE, reverseEnum } from "../lib/types";
+import { ImportFirstSuccessStats, PROCESSING, PROCESS_TYPE, reverseEnum } from "../lib/types";
 import { ImportProgress } from "./ImportProgress";
 
 const DATA_SOURCE = "ImportShow.tsx";
 
-const ImportShow: FC<FieldProps<Import>> = (props) => {
+export default function ImportShow() {
   const [stats, setStats] = useState<ImportFirstSuccessStats>();
+  const { id } = useParams();
   useEffect(() => {
     if (window.componentsConfig.proxy.loaded) {
       (async function () {
@@ -15,15 +17,14 @@ const ImportShow: FC<FieldProps<Import>> = (props) => {
           await window.componentsConfig.proxy.sendMessagePromise<ImportFirstSuccessStats>({
             source: DATA_SOURCE,
             type: "getFirstSuccessStatsForImport",
-            value: { importId: (props as any).id },
+            value: { importId: id },
           });
         setStats(locStats);
       })();
     }
   }, [window.componentsConfig.proxy.loaded]);
-
   return (
-    <Show actions={<HelpShowActions helpUrl="https://transcrob.es/page/software/configure/imports/" />} {...props}>
+    <Show actions={<HelpShowActions helpUrl="https://transcrob.es/page/software/configure/imports/" />}>
       <SimpleShowLayout>
         <TextField source="id" />
         <TextField source="title" />
@@ -38,6 +39,4 @@ const ImportShow: FC<FieldProps<Import>> = (props) => {
       </SimpleShowLayout>
     </Show>
   );
-};
-
-export default ImportShow;
+}

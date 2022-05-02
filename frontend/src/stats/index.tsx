@@ -1,4 +1,4 @@
-import Icon from "@material-ui/icons/BarChart";
+import Icon from "@mui/icons-material/BarChart";
 
 export default {
   icon: Icon,

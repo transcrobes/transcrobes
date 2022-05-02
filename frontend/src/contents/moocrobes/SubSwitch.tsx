@@ -1,9 +1,9 @@
-import { FormControlLabel, FormGroup, Switch } from "@material-ui/core";
+import { ClassNameMap, FormControlLabel, FormGroup, Switch } from "@mui/material";
 import { ChangeEvent, ReactElement } from "react";
 
 interface SwitchProps {
   value: boolean;
-  cssClasses: any; // FIXME: any
+  cssClasses: ClassNameMap<"switch">;
   label: string;
   onValueChange: (event: ChangeEvent<HTMLInputElement>, checked: boolean) => void;
 }

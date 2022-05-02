@@ -1,7 +1,7 @@
-import { makeStyles, Theme } from "@material-ui/core";
 import { ReactElement } from "react";
+import { makeStyles } from "tss-react/mui";
 import { CARD_TYPES, getCardType } from "../database/Schema";
-import { CardType, CharacterType, DefinitionType, DictProvider, PosSentences } from "../lib/types";
+import { CardType, CharacterType, DefinitionType, PosSentences } from "../lib/types";
 import GraphQuestion from "./GraphQuestion";
 import MeaningQuestion from "./MeaningQuestion";
 import PhraseQuestion from "./PhraseQuestion";
@@ -11,13 +11,13 @@ interface StyleProps {
   premature: boolean;
 }
 
-const useStyles = makeStyles<Theme, StyleProps>((theme) => ({
+const useStyles = makeStyles<StyleProps>()((theme, params) => ({
   question: {
-    backgroundColor: ({ premature }) => (premature ? "orange" : "inherit"),
+    backgroundColor: params.premature ? "orange" : "inherit",
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
-    [theme.breakpoints.down("sm")]: {
+    [theme.breakpoints.down("md")]: {
       padding: "0.3em",
     },
     [theme.breakpoints.up("sm")]: {
@@ -51,7 +51,7 @@ export default function Question({
   translationProviderOrder,
   onCardFrontUpdate,
 }: QuestionProps): ReactElement {
-  const classes = useStyles({ premature });
+  const { classes } = useStyles({ premature });
   const cardType = getCardType(card);
   return (
     <div className={classes.question}>

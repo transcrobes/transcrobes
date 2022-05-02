@@ -1,4 +1,4 @@
-import Icon from "@material-ui/icons/HelpOutline";
+import Icon from "@mui/icons-material/HelpOutline";
 
 export default {
   icon: Icon,

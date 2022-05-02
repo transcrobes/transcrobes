@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import copy
 import dataclasses
-import json  # import orjson as json
+import json
 import logging
 import os
 import re
@@ -35,6 +35,7 @@ from app.models.user import AuthUser
 from app.schemas.files import ProcessData
 from app.worker.faustus import content_process_topic, list_process_topic
 from fastapi.exceptions import HTTPException
+from sqlalchemy import tuple_
 from sqlalchemy.ext.asyncio.session import AsyncSession
 from sqlalchemy.orm import selectinload
 from sqlalchemy.sql.expression import and_, or_, select, text
@@ -324,8 +325,6 @@ async def filter_cached_definitions(
         )
     )
     stmt = stmt.order_by(text("cached_date, word_id")).limit(limit)
-    # print(f"{limit=}, {updated_at=}, {user.from_lang=}, {user.to_lang=}, {user.from_lang=},
-    # {updated_at_datetime=}, {int(id)=}", str(stmt))
     try:
         result = await db.execute(stmt)
         definitions = [DefinitionSet.from_model(word, providers) for word in result.scalars().all()]
@@ -541,9 +540,6 @@ class WordList:
     async def from_model(dj_model):
         async with async_session() as db:
             stmt = select(models.UserListWord.word_id).where(models.UserListWord.user_list_id == dj_model.id)
-            #  stmt = select(models.UserListWord.word_id).select_from(
-            #     models.UserList).join(models.UserList.created_by).where(
-            #         models.UserListWord.user_list_id==dj_model.id).options(contains_eager(models.UserList.created_by))
             result = await db.execute(stmt.order_by("default_order"))
             ulws = result.scalars().all()
             return WordList(
@@ -1303,8 +1299,8 @@ async def get_object(db: AsyncSession, model_ref: type[Base], id: str, user: Aut
     return result.scalar_one_or_none()
 
 
-async def set_object(
-    obj: CommonType,
+async def set_objects(
+    objs: list[CommonType],
     model_ref: type[Base],
     info: Info[Context, Any],
     channel: str,
@@ -1313,148 +1309,217 @@ async def set_object(
 ):
     async with async_session() as db:
         user = await get_user(db, info.context.request)
-        dj_obj = None
-        if obj.id:
-            dj_obj = await get_object(db, model_ref, obj.id, user)
-        if not dj_obj:
-            dj_obj = model_ref(id=obj.id, created_by=user, updated_by=user)
+        tup = tuple_(model_ref.created_by_id, model_ref.id)
+        obj_unities = []
+        for obj in objs:
+            obj_unities.append(
+                (
+                    user.id,
+                    obj.id,
+                )
+            )
+        result = await db.execute(select(model_ref).where(tup.in_(obj_unities)))
+        some_objs = {}
+        for dj_obj in result.scalars().all():
+            some_objs[
+                (
+                    user.id,
+                    dj_obj.id,
+                )
+            ] = dj_obj
+
+        for obj in objs:
+            if (
+                user.id,
+                obj.id,
+            ) in some_objs:
+                dj_obj = some_objs[
+                    (
+                        user.id,
+                        obj.id,
+                    )
+                ]
+            else:
+                dj_obj = model_ref(id=obj.id, created_by=user, updated_by=user)
+
+            fill_common(dj_obj, obj)
+            fill_object(dj_obj, obj)
             db.add(dj_obj)
-
-        fill_common(dj_obj, obj)
-        fill_object(dj_obj, obj)
-
         try:
             await db.commit()
-            # db.add(dj_obj)  # FIXME: why is this necessary with expire_on_commit==False?
-            await info.context.broadcast.publish(channel=channel, message=str(user.id))
         except Exception as e:
             logger.exception(f"Error saving updated obj: {json.dumps(dataclasses.asdict(obj))}")
             logger.error(e)
             raise
 
-        return ref.from_model(await get_object(db, model_ref, obj.id, user))
+        await info.context.broadcast.publish(channel=channel, message=str(user.id))
+        result = await db.execute(select(model_ref).where(tup.in_(obj_unities)))
+        return [ref.from_model(obj) for obj in result.scalars().all()]
 
 
 @strawberry.type
 class Mutation:
-    # type Mutation {
-    #   setCard(card: CreateCard): Card
-    # }
     @strawberry.mutation
-    async def set_cards(self, info: Info[Context, Any], cards: CardsInput = None) -> Card:
-        logger.debug(f"The info is: {info=}, and the card is: {cards=}")
+    async def set_cards(
+        self, info: Info[Context, Any], cards: Optional[list[Optional[CardsInput]]] = None
+    ) -> list[Card]:
+        logger.debug(f"The info is: {info=}, and the cards are: {cards=}")
         async with async_session() as db:
             user = await get_user(db, info.context.request)
-            word_id, card_type = map(int, cards.id.split("-"))
+            card_unities = []
+            tup = tuple_(models.Card.user_id, models.Card.card_type, models.Card.word_id)
+            for card in cards:
+                word_id, card_type = map(int, card.id.split("-"))
+                card_unities.append((user.id, card_type, word_id))
 
             result = await db.execute(
-                select(models.Card)
-                .where(
-                    models.Card.user == user,
-                    models.Card.card_type == card_type,
-                    models.Card.word_id == word_id,
-                )
-                .options(selectinload(models.Card.user))
+                select(models.Card).where(tup.in_(card_unities)).options(selectinload(models.Card.user))
             )
-            dj_card = result.scalar_one_or_none() or models.Card(word_id=word_id, card_type=card_type, user=user)
+            some_objs = {}
+            for dj_obj in result.scalars().all():
+                some_objs[
+                    (
+                        dj_obj.user_id,
+                        dj_obj.card_type,
+                        dj_obj.word_id,
+                    )
+                ] = dj_obj
 
-            if cards.due_date:
-                dj_card.due_date = datetime.fromtimestamp(cards.due_date, pytz.utc)
+            for card in cards:
+                word_id, card_type = map(int, card.id.split("-"))
+                if (
+                    user.id,
+                    card_type,
+                    word_id,
+                ) in some_objs:
+                    dj_card = some_objs[
+                        (
+                            user.id,
+                            card_type,
+                            word_id,
+                        )
+                    ]
+                else:
+                    dj_card = models.Card(user=user, card_type=card_type, word_id=word_id)
 
-            if cards.first_revision_date:
-                dj_card.first_revision_date = datetime.fromtimestamp(cards.first_revision_date, pytz.utc)
-            if cards.last_revision_date:
-                dj_card.last_revision_date = datetime.fromtimestamp(cards.last_revision_date, pytz.utc)
-            if cards.first_success_date:
-                dj_card.first_success_date = datetime.fromtimestamp(cards.first_success_date, pytz.utc)
+                if card.due_date:
+                    dj_card.due_date = datetime.fromtimestamp(card.due_date, pytz.utc)
+                if card.first_revision_date:
+                    dj_card.first_revision_date = datetime.fromtimestamp(card.first_revision_date, pytz.utc)
+                if card.last_revision_date:
+                    dj_card.last_revision_date = datetime.fromtimestamp(card.last_revision_date, pytz.utc)
+                if card.first_success_date:
+                    dj_card.first_success_date = datetime.fromtimestamp(card.first_success_date, pytz.utc)
 
-            dj_card.interval = cards.interval
-            dj_card.repetition = cards.repetition
-            dj_card.efactor = cards.efactor
-            dj_card.front = cards.front
-            dj_card.back = cards.back
-            dj_card.known = cards.known
-            dj_card.suspended = cards.suspended
-            # FIXME: does this get done automatically???
-            # dj_card.updated_at = datetime.now(pytz.utc)  # int(time.time())  # time_ns()? something else?
-            dj_card.deleted = cards.deleted
+                dj_card.interval = card.interval
+                dj_card.repetition = card.repetition
+                dj_card.efactor = card.efactor
+                dj_card.front = card.front
+                dj_card.back = card.back
+                dj_card.known = card.known
+                dj_card.suspended = card.suspended
+                # FIXME: does this get done automatically???
+                # dj_card.updated_at = datetime.now(pytz.utc)  # int(time.time())  # time_ns()? something else?
+                dj_card.deleted = card.deleted
+                db.add(dj_card)
 
             try:
-                db.add(dj_card)
                 await db.commit()
-                await info.context.broadcast.publish(channel="cards", message=str(user.id))
             except Exception as e:
                 logger.exception(f"Error saving updated card: {json.dumps(dataclasses.asdict(cards))}")
                 logger.error(e)
                 raise
 
             result = await db.execute(
-                select(models.Card)
-                .where(
-                    models.Card.user == user,
-                    models.Card.card_type == card_type,
-                    models.Card.word_id == word_id,
-                )
-                .options(selectinload(models.Card.user))
+                select(models.Card).where(tup.in_(card_unities)).options(selectinload(models.Card.user))
             )
-            dj_card = result.scalar_one_or_none()
-            return Card.from_model(dj_card)
+            await info.context.broadcast.publish(channel="cards", message=str(user.id))
+            return_vals = [Card.from_model(dj_card) for dj_card in result.scalars().all()]
+            return return_vals
 
     @strawberry.mutation
-    async def set_imports(self, info: Info[Context, Any], imports: ImportsInput = None) -> Import:
+    async def set_imports(
+        self, info: Info[Context, Any], imports: Optional[list[Optional[ImportsInput]]] = None
+    ) -> list[Import]:
         channel = "imports"
         obj = imports
         logger.debug(f"The info is: {info=}, and the {channel=} is: {obj=}")
-        return await set_object(obj, models.Import, info, channel, Import, fill_import)
+        return await set_objects(obj, models.Import, info, channel, Import, fill_import)
 
     @strawberry.mutation
-    async def set_contents(self, info: Info[Context, Any], contents: ContentsInput = None) -> Content:
+    async def set_contents(
+        self, info: Info[Context, Any], contents: Optional[list[Optional[ContentsInput]]] = None
+    ) -> list[Content]:
         channel = "contents"
         obj = contents
         logger.debug(f"The info is: {info=}, and the {channel=} is: {obj=}")
-        content: Content = await set_object(obj, models.Content, info, channel, Content, fill_content)
-        if content.processing == REQUESTED:
-            await content_process_topic.send(value=ProcessData(type="content", id=content.id))
-        return content
+        content_list: list[Content] = await set_objects(obj, models.Content, info, channel, Content, fill_content)
+        for content in content_list:
+            if content.processing == REQUESTED:
+                await content_process_topic.send(value=ProcessData(type="content", id=content.id))
+        return content_list
 
     @strawberry.mutation
-    async def set_userlists(self, info: Info[Context, Any], userlists: UserlistsInput = None) -> UserList:
+    async def set_userlists(
+        self, info: Info[Context, Any], userlists: Optional[list[Optional[UserlistsInput]]] = None
+    ) -> list[UserList]:
         channel = "userlists"
         obj = userlists
         logger.debug(f"The info is: {info=}, and the {channel=} is: {obj=}")
-        ulist: UserList = await set_object(obj, models.UserList, info, channel, UserList, fill_user_list)
-        if ulist.processing == REQUESTED:
-            await list_process_topic.send(value=ProcessData(type="list", id=ulist.id))
-        return ulist
+        ulists: list[UserList] = await set_objects(obj, models.UserList, info, channel, UserList, fill_user_list)
+        for ulist in ulists:
+            if ulist.processing == REQUESTED:
+                await list_process_topic.send(value=ProcessData(type="list", id=ulist.id))
+        return ulists
 
     @strawberry.mutation
     async def set_recentsentences(
-        self, info: Info[Context, Any], recentsentences: RecentsentencesInput = None
-    ) -> RecentSentenceSet:
+        self, info: Info[Context, Any], recentsentences: Optional[list[Optional[RecentsentencesInput]]] = None
+    ) -> list[RecentSentenceSet]:
         channel = "recentsentences"
-        obj = recentsentences
-        logger.debug(f"The info is: {info=}, and the {channel=} is: {obj=}")
+        objs = recentsentences
+        logger.debug(f"The info is: {info=}, and the {channel=} is: {objs=}")
 
         async with async_session() as db:
             user = await get_user(db, info.context.request)
-            word_id = int(obj.id)
+
+            obj_unities = []
+            tup = tuple_(models.UserRecentSentences.user_id, models.UserRecentSentences.word_id)
+            for obj in objs:
+                obj_unities.append((user.id, int(obj.id)))
 
             result = await db.execute(
                 select(models.UserRecentSentences)
-                .where(
-                    models.UserRecentSentences.user == user,
-                    models.UserRecentSentences.word_id == word_id,
-                )
+                .where(tup.in_(obj_unities))
                 .options(selectinload(models.UserRecentSentences.user))
             )
-            dj_obj = result.scalar_one_or_none() or models.UserRecentSentences(word_id=word_id, user=user)
-            dj_obj.lz_content = obj.lz_content
-            # FIXME: does this get done automatically???
-            # dj_card.updated_at = datetime.now(pytz.utc)  # int(time.time())  # time_ns()? something else?
-            dj_obj.deleted = obj.deleted
+            some_objs = {}
+            for dj_obj in result.scalars().all():
+                some_objs[
+                    (
+                        dj_obj.user_id,
+                        dj_obj.word_id,
+                    )
+                ] = dj_obj
 
-            try:
+            for obj in objs:
+                word_id = int(obj.id)
+                if (
+                    user.id,
+                    word_id,
+                ) in some_objs:
+                    dj_obj = some_objs[
+                        (
+                            user.id,
+                            word_id,
+                        )
+                    ]
+                else:
+                    dj_obj = models.UserRecentSentences(word_id=word_id, user=user)
+                dj_obj.lz_content = obj.lz_content
+                dj_obj.deleted = obj.deleted
                 db.add(dj_obj)
+            try:
                 await db.commit()
                 await info.context.broadcast.publish(channel="recentsentences", message=str(user.id))
             except Exception as e:
@@ -1464,40 +1529,42 @@ class Mutation:
 
             result = await db.execute(
                 select(models.UserRecentSentences)
-                .where(
-                    models.UserRecentSentences.user == user,
-                    models.UserRecentSentences.word_id == word_id,
-                )
+                .where(tup.in_(obj_unities))
                 .options(selectinload(models.UserRecentSentences.user))
             )
-            dj_obj = result.scalar_one_or_none()
-            return RecentSentenceSet.from_model(dj_obj)
+
+            return_vals = [RecentSentenceSet.from_model(dj_obj) for dj_obj in result.scalars().all()]
+            return return_vals
 
     @strawberry.mutation
     async def set_userdictionaries(
-        self, info: Info[Context, Any], userdictionaries: UserdictionariesInput = None
-    ) -> UserDictionary:
+        self, info: Info[Context, Any], userdictionaries: Optional[list[Optional[UserdictionariesInput]]] = None
+    ) -> list[UserDictionary]:
         channel = "userdictionaries"
         obj = userdictionaries
         logger.debug(f"The info is: {info=}, and the {channel=} is: {obj=}")
-        userdictionary: UserDictionary = await set_object(
+        userdictionaries: list[UserDictionary] = await set_objects(
             obj, models.UserDictionary, info, channel, UserDictionary, fill_userdictionary
         )
-        return userdictionary
+        return userdictionaries
 
     @strawberry.mutation
-    async def set_goals(self, info: Info[Context, Any], goals: GoalsInput = None) -> Goal:
+    async def set_goals(
+        self, info: Info[Context, Any], goals: Optional[list[Optional[GoalsInput]]] = None
+    ) -> list[Goal]:
         channel = "goals"
         obj = goals
         logger.debug(f"The info is: {info=}, and the {channel=} is: {obj=}")
-        return await set_object(obj, models.Goal, info, channel, Goal, fill_goal)
+        return await set_objects(obj, models.Goal, info, channel, Goal, fill_goal)
 
     @strawberry.mutation
-    async def set_usersurveys(self, info: Info[Context, Any], usersurveys: UsersurveysInput = None) -> UserSurvey:
+    async def set_usersurveys(
+        self, info: Info[Context, Any], usersurveys: Optional[list[Optional[UsersurveysInput]]] = None
+    ) -> list[UserSurvey]:
         channel = "usersurveys"
         obj = usersurveys
         logger.debug(f"The info is: {info=}, and the {channel=} is: {obj=}")
-        return await set_object(obj, models.UserSurvey, info, channel, UserSurvey, fill_user_survey)
+        return await set_objects(obj, models.UserSurvey, info, channel, UserSurvey, fill_user_survey)
 
 
 async def changed_standard(info: Info[Context, Any], token: str, ref: type[CommonType]) -> CommonType:

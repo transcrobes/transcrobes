@@ -1,8 +1,9 @@
-import { FC, ReactElement } from "react";
-import * as Survey from "survey-react";
+import { ReactElement } from "react";
+import * as ReactSurvey from "survey-react";
 import "survey-react/survey.css";
-import { FieldProps, Show } from "react-admin";
-import { useTheme } from "@material-ui/core";
+import { Show, useRecordContext } from "react-admin";
+import { useTheme } from "@mui/material";
+import { Survey } from "../lib/types";
 
 const DATA_SOURCE = "surveyshow.tsx";
 
@@ -23,18 +24,19 @@ function saveData(surveyData: string, surveyId: string) {
   return true;
 }
 
-// FIXME: fix any
-function TheSurvey(prop: any): ReactElement {
-  const modelObjects = JSON.parse(prop.record.surveyJson);
-  const model = new Survey.Model(modelObjects);
-  if (prop.record.data) {
-    model.data = JSON.parse(prop.record.data);
+function TheSurvey(): ReactElement {
+  const record = useRecordContext<Survey>();
+  if (!record) return <></>;
+  const modelObjects = JSON.parse(record.surveyJson);
+  const model = new ReactSurvey.Model(modelObjects);
+  if (record.data) {
+    model.data = JSON.parse(record.data);
   }
   model.onComplete.add((sender: any) => {
-    saveData(sender.data, prop.record.id);
+    if (record.id) saveData(sender.data, record.id.toString());
   });
   const palette = useTheme().palette;
-  const themeColors = Survey.StylesManager.ThemeColors["default"];
+  const themeColors = ReactSurvey.StylesManager.ThemeColors["default"];
   themeColors["$main-color"] = palette.primary.main;
   themeColors["$main-hover-color"] = palette.primary.dark;
   themeColors["$text-color"] = palette.text.primary;
@@ -46,14 +48,14 @@ function TheSurvey(prop: any): ReactElement {
   themeColors["$inputs-background-color"] = palette.background.paper;
   themeColors["$error-color"] = palette.error.main;
   themeColors["$error-background-color"] = palette.error.light;
-  Survey.StylesManager.applyTheme("default");
-  return <Survey.Survey model={model} />;
+  ReactSurvey.StylesManager.applyTheme("default");
+  return <ReactSurvey.Survey model={model} />;
 }
 
-const SurveyShow: FC<FieldProps> = (props) => (
-  <Show {...props}>
-    <TheSurvey />
-  </Show>
-);
-
-export default SurveyShow;
+export default function SurveyShow() {
+  return (
+    <Show>
+      <TheSurvey />
+    </Show>
+  );
+}

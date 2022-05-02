@@ -1,4 +1,4 @@
-import { Button, Grid } from "@material-ui/core";
+import { Button, Grid } from "@mui/material";
 import _ from "lodash";
 import { ReactElement, useEffect, useState } from "react";
 import { InfoBox } from "../components/Common";

@@ -1,12 +1,9 @@
 import Tracker from "@openreplay/tracker";
 import { configureStore } from "@reduxjs/toolkit";
-import { connectRouter } from "connected-react-router";
 import { createHashHistory, History } from "history";
 import { fetchUtils } from "ra-core";
-import { adminReducer, adminSaga, AuthProvider, DataProvider, USER_LOGOUT } from "react-admin";
+import { AuthProvider, DataProvider } from "react-admin";
 import { combineReducers } from "redux";
-import createSagaMiddleware from "redux-saga";
-import { all, fork } from "redux-saga/effects";
 import { Workbox } from "workbox-window";
 import { getUserDexie, isInitialisedAsync } from "../database/authdb";
 import knownCardsReducer from "../features/card/knownCardsSlice";
@@ -55,7 +52,6 @@ export const REFRESH_TOKEN_PATH = "/api/v1/refresh";
 interface CreateStoreProps {
   authProvider?: AuthProvider;
   dataProvider?: DataProvider;
-  history?: History;
 }
 
 export let authProvider: AuthProvider | undefined;
@@ -83,7 +79,7 @@ if (typeof window !== "undefined") {
 
 const preloadedState = { theme };
 
-function createStore({ authProvider, dataProvider, history }: CreateStoreProps) {
+function createStore({ authProvider, dataProvider }: CreateStoreProps) {
   const reducer = combineReducers({
     videoReader: videoReaderReducer,
     bookReader: bookReaderReducer,
@@ -94,41 +90,27 @@ function createStore({ authProvider, dataProvider, history }: CreateStoreProps) 
     ui: uiReducer,
     dictionary: dictionaryReducer,
     userData: userSliceReducer,
-    ...(history && { admin: adminReducer, router: connectRouter(history) }),
   });
-  const resettableAppReducer = (state: any, action: any) =>
-    reducer(action.type !== USER_LOGOUT ? state : undefined, action);
 
   if (dataProvider && authProvider) {
-    const saga = function* rootSaga() {
-      yield all(
-        [
-          adminSaga(dataProvider, authProvider),
-          // add your own sagas here
-        ].map(fork),
-      );
-    };
-    const sagaMiddleware = createSagaMiddleware();
-
     const store = configureStore({
-      reducer: resettableAppReducer,
+      reducer,
       middleware: (getDefaultMiddleware) =>
-        // FIXME: react-admin seems to put binary files in redux, breaking best practices?
-        getDefaultMiddleware({ serializableCheck: false }).concat([
-          // contentConfigApi.middleware,
-          // usersApi.middleware,
-          sagaMiddleware,
-          // openReplayMiddleware,
-        ]),
+        getDefaultMiddleware({
+          serializableCheck: false,
+        }),
       preloadedState,
       devTools: process.env.NODE_ENV !== "production",
     });
 
-    sagaMiddleware.run(saga);
     return store;
   } else {
     const store = configureStore({
-      reducer: resettableAppReducer,
+      reducer,
+      middleware: (getDefaultMiddleware) =>
+        getDefaultMiddleware({
+          serializableCheck: false,
+        }),
       preloadedState,
       devTools: process.env.NODE_ENV !== "production",
     });
@@ -231,11 +213,11 @@ function createOptionsFromJWTToken():
   };
 }
 
-export default createStore;
+// export default createStore;
 export const store = createStore({
   authProvider,
   dataProvider,
-  history,
+  // history,
 });
 
 export type AdminStore = typeof store;

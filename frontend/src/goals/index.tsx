@@ -2,7 +2,7 @@ import GoalCreate from "./GoalCreate";
 import GoalEdit from "./GoalEdit";
 import GoalList from "./GoalList";
 import GoalShow from "./GoalShow";
-import GoalIcon from "@material-ui/icons/TrackChanges";
+import GoalIcon from "@mui/icons-material/TrackChanges";
 
 export default {
   create: GoalCreate,

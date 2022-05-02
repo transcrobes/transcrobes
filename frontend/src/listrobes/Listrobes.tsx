@@ -1,4 +1,5 @@
-import { Container, makeStyles } from "@material-ui/core";
+import { Container } from "@mui/material";
+import { makeStyles } from "tss-react/mui";
 import _ from "lodash";
 import { ReactElement, useEffect, useState } from "react";
 import { TopToolbar } from "react-admin";
@@ -9,7 +10,7 @@ import Loading from "../components/Loading";
 import { CARD_TYPES, getCardId } from "../database/Schema";
 import { setLoading } from "../features/ui/uiSlice";
 import { AbstractWorkerProxy } from "../lib/proxies";
-import { GRADES, practice } from "../lib/review";
+import { practice } from "../lib/review";
 import {
   EMPTY_CARD,
   GraderConfig,
@@ -21,6 +22,7 @@ import {
 } from "../lib/types";
 import ListrobesConfigLauncher from "./ListrobesConfigLauncher";
 import { VocabList } from "./VocabList";
+import { GRADES } from "../components/Common";
 
 const DATA_SOURCE = "listrobes.jsx";
 const DEFAULT_ITEMS_PER_PAGE = 50;
@@ -28,7 +30,7 @@ const DEFAULT_ITEM_ORDERING: WordOrdering = "Natural";
 const MIN_LOOKED_AT_EVENT_DURATION = 1300; // milliseconds
 let timeoutId: number;
 
-const useStyles = makeStyles(() => ({
+const useStyles = makeStyles()(() => ({
   toolbar: {
     justifyContent: "space-between",
     alignItems: "center",
@@ -51,7 +53,6 @@ interface Props {
 
 export function Listrobes({ proxy }: Props): ReactElement {
   const [vocab, setVocab] = useState<VocabReview[]>([]);
-
   const dispatch = useAppDispatch();
   const [graderConfig, setGraderConfig] = useState<GraderConfig>({
     gradeOrder: GRADES,
@@ -170,7 +171,7 @@ export function Listrobes({ proxy }: Props): ReactElement {
     dispatch(setLoading(undefined));
     submitLookupEvents(consultedDefinitions, USER_STATS_MODE.L1);
   }
-  const classes = useStyles();
+  const { classes } = useStyles();
   const helpUrl = "https://transcrob.es/page/software/configure/listrobes/";
 
   return (

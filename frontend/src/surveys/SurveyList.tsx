@@ -1,26 +1,17 @@
-import { makeStyles } from "@material-ui/core";
-import { FC } from "react";
-import {
-  Datagrid,
-  List,
-  ListProps,
-  SortButton,
-  TextField,
-  TopToolbar,
-  ShowButton,
-} from "react-admin";
+import { makeStyles } from "tss-react/mui";
+import { Datagrid, List, SortButton, TextField, TopToolbar, ShowButton } from "react-admin";
 import HelpButton from "../components/HelpButton";
 
 import { STATUS } from "../lib/types";
 
-const useStyles = makeStyles({
+const useStyles = makeStyles()({
   toolbar: {
     justifyContent: "space-between",
     alignItems: "center",
   },
 });
-const ListActions: FC<any> = () => {
-  const classes = useStyles();
+export function ListActions() {
+  const { classes } = useStyles();
   const helpUrl = "https://transcrob.es/page/contribute/surveys/";
   return (
     <TopToolbar className={classes.toolbar}>
@@ -28,17 +19,15 @@ const ListActions: FC<any> = () => {
       <HelpButton url={helpUrl} />
     </TopToolbar>
   );
-};
+}
 
-export const SurveyList: FC<ListProps> = (props) => {
+export default function SurveyList() {
   return (
-    <List {...props} actions={<ListActions />} filter={{ status: STATUS.ACTIVE }}>
+    <List actions={<ListActions />} filter={{ status: STATUS.ACTIVE }}>
       <Datagrid rowClick="show">
         <TextField source="title" />
         <ShowButton />
       </Datagrid>
     </List>
   );
-};
-
-export default SurveyList;
+}

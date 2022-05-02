@@ -1,18 +1,18 @@
 import { ReactElement, useState } from "react";
 import { Notification, useTranslate, useNotify } from "react-admin";
 import { Field, withTypes } from "react-final-form";
-import ReplayIcon from "@material-ui/icons/Replay";
-import { makeStyles } from "@material-ui/core/styles";
-import Card from "@material-ui/core/Card";
-import Avatar from "@material-ui/core/Avatar";
-import CardActions from "@material-ui/core/CardActions";
-import Button from "@material-ui/core/Button";
-import Typography from "@material-ui/core/Typography";
+import ReplayIcon from "@mui/icons-material/Replay";
+import { makeStyles } from "tss-react/mui";
+import Card from "@mui/material/Card";
+import Avatar from "@mui/material/Avatar";
+import CardActions from "@mui/material/CardActions";
+import Button from "@mui/material/Button";
+import Typography from "@mui/material/Typography";
 import { Link } from "react-router-dom";
-import CircularProgress from "@material-ui/core/CircularProgress";
-import { TextField } from "@material-ui/core";
+import CircularProgress from "@mui/material/CircularProgress";
+import { TextField } from "@mui/material";
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles()((theme) => ({
   main: {
     display: "flex",
     flexDirection: "column",
@@ -60,15 +60,7 @@ function renderInput({
   input: { ...inputProps },
   ...props
 }): ReactElement {
-  return (
-    <TextField
-      error={!!(touched && error)}
-      helperText={touched && error}
-      {...inputProps}
-      {...props}
-      fullWidth
-    />
-  );
+  return <TextField error={!!(touched && error)} helperText={touched && error} {...inputProps} {...props} fullWidth />;
 }
 
 const { Form } = withTypes<FormValues>();
@@ -76,7 +68,7 @@ const { Form } = withTypes<FormValues>();
 export default function RecoverPassword(): ReactElement {
   const [loading, setLoading] = useState(false);
   const translate = useTranslate();
-  const classes = useStyles();
+  const { classes } = useStyles();
   const notify = useNotify();
 
   function handleSubmit(auth: FormValues) {
@@ -84,7 +76,7 @@ export default function RecoverPassword(): ReactElement {
     // FIXME: hardcoded url
     fetch(`${location.origin}/api/v1/password-recovery/${auth.email}`, { method: "POST" })
       .then(() => {
-        notify("user.reset_password.email_success", "success");
+        notify("user.reset_password.email_success", { type: "success" });
         setLoading(false);
       })
       .catch((error: Error) => {
@@ -95,15 +87,10 @@ export default function RecoverPassword(): ReactElement {
             : typeof error === "undefined" || !error.message
             ? "user.reset_password.error"
             : error.message,
-          "warning",
-          {
-            _:
-              typeof error === "string"
-                ? error
-                : error && error.message
-                ? error.message
-                : undefined,
-          },
+          { type: "warning" },
+          // {
+          //   _: typeof error === "string" ? error : error && error.message ? error.message : undefined,
+          // },
         );
       });
   }
@@ -143,13 +130,7 @@ export default function RecoverPassword(): ReactElement {
                 </div>
               </div>
               <CardActions className={classes.actions}>
-                <Button
-                  variant="contained"
-                  type="submit"
-                  color="primary"
-                  disabled={loading}
-                  fullWidth
-                >
+                <Button variant="contained" type="submit" color="primary" disabled={loading} fullWidth>
                   {loading && <CircularProgress size={25} thickness={2} />}
                   {translate("user.reset_password.recover")}
                 </Button>

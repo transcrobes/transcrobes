@@ -1,16 +1,10 @@
-import { FC, ReactElement } from "react";
-import { Edit, SimpleForm, TextField, TextInput, required, FieldProps } from "react-admin";
+import { ReactElement } from "react";
+import { Edit, SimpleForm, TextField, TextInput, required } from "react-admin";
 import { HelpEditActions } from "../components/HelpEditActions";
-import { UserList } from "../lib/types";
 
-const UserListEdit: FC<FieldProps<UserList>> = (props): ReactElement => {
+export default function UserListEdit(): ReactElement {
   return (
-    <Edit
-      actions={
-        <HelpEditActions helpUrl="https://transcrob.es/page/software/configure/wordlists/" />
-      }
-      {...props}
-    >
+    <Edit actions={<HelpEditActions helpUrl="https://transcrob.es/page/software/configure/wordlists/" />}>
       <SimpleForm redirect="list">
         <TextField source="id" />
         <TextInput label="List name" source="title" validate={[required()]} />
@@ -18,6 +12,4 @@ const UserListEdit: FC<FieldProps<UserList>> = (props): ReactElement => {
       </SimpleForm>
     </Edit>
   );
-};
-
-export default UserListEdit;
+}

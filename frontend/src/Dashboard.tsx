@@ -1,11 +1,9 @@
 import { ReactElement, useEffect } from "react";
-import { Card, CardHeader } from "@material-ui/core";
+import { Card, CardHeader } from "@mui/material";
 import GoalsWidget from "./goals/GoalsWidget";
 import { ComponentsConfig } from "./lib/complexTypes";
 import { useAppSelector } from "./app/hooks";
 import { getUserDexie, isInitialisedAsync } from "./database/authdb";
-
-const VerticalSpacer = () => <span style={{ height: "1em" }} />;
 
 interface Props {
   config: ComponentsConfig;
@@ -18,6 +16,7 @@ export default function Dashboard({ config, inited }: Props): ReactElement {
       if (!username) {
         const realUser = await getUserDexie();
         if (realUser.username && !(await isInitialisedAsync(realUser.username))) {
+          // FIXME: should this be a navigate?
           window.location.href = "/#/init";
         }
       }
@@ -26,11 +25,10 @@ export default function Dashboard({ config, inited }: Props): ReactElement {
 
   return (
     <>
-      <Card>
+      <Card sx={{ marginTop: "1em" }}>
         <CardHeader title="Welcome to Transcrobes: Learn a language doing something you love" />
       </Card>
-      <VerticalSpacer />
-      <Card>
+      <Card sx={{ marginTop: "1em" }}>
         <CardHeader title="Goals Progress" />
         <GoalsWidget config={config} inited={inited} />
       </Card>

@@ -1,4 +1,4 @@
-import { makeStyles } from "@material-ui/core";
+import { makeStyles } from "tss-react/mui";
 import { ReactElement, useEffect, useState } from "react";
 import useResizeObserver from "use-resize-observer";
 import { useAppSelector } from "../../../app/hooks";
@@ -7,7 +7,7 @@ import { originalSentenceFromTokens } from "../../../lib/funclib";
 import { platformHelper } from "../../../lib/proxies";
 import { POPOVER_MIN_LOOKED_AT_EVENT_DURATION, PopupPosition, ReaderState } from "../../../lib/types";
 
-const useStyles = makeStyles({
+const useStyles = makeStyles()({
   popover: {
     padding: ".3em",
     borderColor: "#fff",
@@ -46,7 +46,7 @@ export default function Mouseover({ readerConfig }: Props): ReactElement {
   const mouseover = useAppSelector((state) => state.ui.mouseover);
   const fromLang = useAppSelector((state) => state.userData.user.fromLang);
   const [timeoutId, setTimeoutId] = useState(0);
-  const classes = useStyles();
+  const { classes } = useStyles();
   const { ref } = useResizeObserver<HTMLDivElement>({
     box: "border-box",
     onResize: ({ width }) => {

@@ -1,15 +1,15 @@
-import { makeStyles, Theme } from "@material-ui/core";
-import Grid from "@material-ui/core/Grid";
-import Typography from "@material-ui/core/Typography";
+import Grid from "@mui/material/Grid";
+import { makeStyles } from "tss-react/mui";
+import Typography from "@mui/material/Typography";
 import { ReactElement } from "react";
 
 interface Props {
   title: string;
 }
 
-const useStyles = makeStyles((theme: Theme) => ({
+const useStyles = makeStyles()((theme) => ({
   topControls: {
-    [theme.breakpoints.down("sm")]: {
+    [theme.breakpoints.down("md")]: {
       padding: theme.spacing(1),
     },
     [theme.breakpoints.up("sm")]: {
@@ -22,7 +22,7 @@ const useStyles = makeStyles((theme: Theme) => ({
 }));
 
 function VideoHeaderControls({ title }: Props): ReactElement {
-  const classes = useStyles();
+  const { classes } = useStyles();
   return (
     <Grid container direction="row" alignItems="center" justifyContent="space-between" className={classes.topControls}>
       <Grid item>

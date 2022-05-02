@@ -1,4 +1,5 @@
-import { Record as RARecord, Identifier } from "react-admin";
+// import { Record as RARecord, Identifier } from "react-admin";
+import { RaRecord, Identifier } from "react-admin";
 import { HslColor } from "react-colorful";
 
 import { CardDocument, CharacterDocument, DefinitionDocument, WordModelStatsDocument } from "../database/Schema";
@@ -387,6 +388,7 @@ export const ONE_YEAR_IN_SECS = 365 * 24 * 60 * 60; // default is only a week
 export const WEBPUB_CACHE_NAME = "webpub-cache";
 export const PRECACHE_PUBLICATIONS = "PRECACHE_PUBLICATIONS";
 export const IS_DEV = process.env.NODE_ENV === "development";
+export const IS_EXT = process.env.PLATFORM === "extension";
 
 // each logging line will be prepended with the service worker version
 function dolog(
@@ -475,7 +477,7 @@ export type EventQueueType = {
   eventString: string;
 };
 
-interface CommonRecord extends RARecord {
+interface CommonRecord extends RaRecord {
   title: string;
   description?: string;
 
@@ -498,6 +500,8 @@ export interface UserSurvey extends CommonRecord {
   surveyId: string;
   data: string;
 }
+
+export interface Survey extends SurveyType, UserSurvey {}
 
 export interface Goal extends CommonRecord {
   userList: Identifier;

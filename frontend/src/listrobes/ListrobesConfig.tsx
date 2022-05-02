@@ -1,4 +1,5 @@
-import { makeStyles, TextField, Theme, useTheme } from "@material-ui/core";
+import { TextField, Theme, useTheme } from "@mui/material";
+import { makeStyles } from "tss-react/mui";
 import _ from "lodash";
 import { ReactElement } from "react";
 import { DragDropContext, Draggable, Droppable, DropResult } from "react-beautiful-dnd";
@@ -7,7 +8,7 @@ import WordOrderSelector from "../components/WordOrderSelector";
 import { reorderArray, validInt } from "../lib/funclib";
 import { GraderConfig, WordOrdering } from "../lib/types";
 
-const useStyles = makeStyles((theme: Theme) => ({
+const useStyles = makeStyles()((theme: Theme) => ({
   typography: {
     padding: theme.spacing(2),
   },
@@ -77,7 +78,7 @@ export function ListrobesConfig({ graderConfig, onConfigChange }: Props): ReactE
       itemsPerPage: parseInt(e.target.value, 10),
     });
   }
-  const classes = useStyles();
+  const { classes } = useStyles();
   return (
     <div>
       <div>Taps for state</div>

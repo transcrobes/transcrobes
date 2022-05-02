@@ -1,11 +1,13 @@
-import Slider, { ValueLabelProps } from "@material-ui/core/Slider";
-import { createStyles, Theme, withStyles } from "@material-ui/core/styles";
-import Tooltip from "@material-ui/core/Tooltip";
+import Slider from "@mui/material/Slider";
+import { Theme } from "@mui/material/styles";
+import { withStyles } from "tss-react/mui";
+import Tooltip from "@mui/material/Tooltip";
 import { ReactElement } from "react";
+import { ValueLabelProps } from "@mui/base";
 
-const sliderStyles = createStyles((theme: Theme) => ({
+const sliderStyles = (theme: Theme) => ({
   thumb: {
-    [theme.breakpoints.down("sm")]: {
+    [theme.breakpoints.down("md")]: {
       height: 12,
       width: 12,
     },
@@ -25,7 +27,7 @@ const sliderStyles = createStyles((theme: Theme) => ({
   valueLabel: {
     left: "calc(-50% + 4px)",
   },
-  [theme.breakpoints.down("sm")]: {
+  [theme.breakpoints.down("md")]: {
     root: {
       height: 4,
       padding: "10px 0",
@@ -52,7 +54,10 @@ const sliderStyles = createStyles((theme: Theme) => ({
       borderRadius: 4,
     },
   },
-}));
+});
+
+const PrettoSlider = withStyles(Slider, sliderStyles);
+export default PrettoSlider;
 
 export function ValueLabelComponent({ children, open, value }: ValueLabelProps): ReactElement {
   return (
@@ -61,7 +66,3 @@ export function ValueLabelComponent({ children, open, value }: ValueLabelProps):
     </Tooltip>
   );
 }
-
-const PrettoSlider = withStyles(sliderStyles)(Slider);
-
-export default PrettoSlider;

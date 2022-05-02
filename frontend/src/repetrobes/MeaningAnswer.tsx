@@ -1,4 +1,4 @@
-import { Button } from "@material-ui/core";
+import { Button } from "@mui/material";
 import { ReactElement } from "react";
 import RecentSentencesElement from "../components/RecentSentencesElement";
 import { say } from "../lib/funclib";

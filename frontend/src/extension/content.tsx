@@ -2,7 +2,7 @@ import { createComponentVNode, render } from "inferno";
 import { Provider as InfernoProvider } from "inferno-redux";
 import jss from "jss";
 import preset from "jss-preset-default";
-import ReactDOM from "react-dom";
+import { createRoot } from "react-dom/client";
 import { Provider } from "react-redux";
 import { AdminStore, store } from "../app/createStore";
 import { ETFStyles, ETFStylesProps } from "../components/Common";
@@ -10,7 +10,7 @@ import EnrichedTextFragment from "../components/content/etf/EnrichedTextFragment
 import Mouseover from "../components/content/td/Mouseover";
 import TokenDetails from "../components/content/td/TokenDetails";
 import Loading from "../components/Loading";
-import { setState } from "../features/card/knownCardsSlice";
+import { setCardWordsState } from "../features/card/knownCardsSlice";
 import { getRefreshedState } from "../features/content/contentSlice";
 import {
   DEFAULT_WEB_READER_CONFIG_STATE,
@@ -42,12 +42,12 @@ const transcroberObserver: IntersectionObserver = new IntersectionObserver(onEnt
   threshold: [0.9],
 });
 
-ReactDOM.render(
+createRoot(document.body.appendChild(document.createElement("div"))!).render(
   <Provider store={store}>
     <Loading position="fixed" />
   </Provider>,
-  document.body.appendChild(document.createElement("div")),
 );
+
 store.dispatch(setLoading(true));
 
 const models: KeyedModels = {};
@@ -73,7 +73,7 @@ async function ensureAllLoaded(platformHelper: AbstractWorkerProxy, store: Admin
     type: "getSerialisableCardWords",
     value: "",
   });
-  store.dispatch(setState(value));
+  store.dispatch(setCardWordsState(value));
 
   await refreshDictionaries(store, platformHelper);
 }
@@ -100,12 +100,11 @@ proxy.sendMessagePromise<UserState>({ source: DATA_SOURCE, type: "getUser", valu
       jss.setup(preset());
       classes = jss.createStyleSheet(ETFStyles, { link: true }).attach().update(readerConfig).classes;
 
-      ReactDOM.render(
+      createRoot(document.body.appendChild(document.createElement("div"))!).render(
         <Provider store={store}>
           <TokenDetails readerConfig={readerConfig} />
           <Mouseover readerConfig={readerConfig} />
         </Provider>,
-        document.body.appendChild(document.createElement("div")),
       );
     });
   });

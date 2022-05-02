@@ -1,17 +1,16 @@
-import { IconButton } from "@material-ui/core";
-import { ClassNameMap } from "@material-ui/core/styles/withStyles";
-import Fullscreen from "@material-ui/icons/Fullscreen";
-import FullscreenExit from "@material-ui/icons/FullscreenExit";
+import { ClassNameMap, IconButton } from "@mui/material";
+import Fullscreen from "@mui/icons-material/Fullscreen";
+import FullscreenExit from "@mui/icons-material/FullscreenExit";
 import { ReactElement, useEffect, useState } from "react";
 import { useAppDispatch, useAppSelector } from "../../../app/hooks";
 import { getSound } from "../../../lib/componentMethods";
 import { TokenType } from "../../../lib/types";
-import CloseIcon from "@material-ui/icons/Close";
+import CloseIcon from "@mui/icons-material/Close";
 import { setTokenDetails } from "../../../features/ui/uiSlice";
 import DiscoverableWord from "../../DiscoverableWord";
 
 type Props = {
-  classes: ClassNameMap<"header" | "sound" | "best" | "icons">;
+  classes: ClassNameMap<"header" | "sound" | "best" | "icons" | "popupControls">;
   token: TokenType;
   bestGuess: string;
   extrasOpen: boolean;
@@ -47,11 +46,11 @@ export default function Header({ classes, token, bestGuess, extrasOpen, onToggle
       <div className={classes.best}>{bestGuess}</div>
       <DiscoverableWord graph={token.l} newTab />
       <div>
-        <IconButton className={classes.icons} onClick={toggleSentence} aria-label="Extras">
-          {extrasOpen ? <FullscreenExit /> : <Fullscreen />}
+        <IconButton sx={{ padding: "3px" }} onClick={toggleSentence} aria-label="Extras" size="large">
+          {extrasOpen ? <FullscreenExit className={classes.icons} /> : <Fullscreen className={classes.icons} />}
         </IconButton>
-        <IconButton className={classes.icons} onClick={closePopup} aria-label="Close">
-          <CloseIcon />
+        <IconButton sx={{ padding: "3px" }} onClick={closePopup} aria-label="Close" size="large">
+          <CloseIcon className={classes.icons} />
         </IconButton>
       </div>
     </div>

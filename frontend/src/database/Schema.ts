@@ -23,17 +23,17 @@ import {
 const CACHE_NAME = "v1";
 const INITIALISATION_CACHE_NAME = `${CACHE_NAME}.initialisation`;
 const LIVE_INTERVAL = 60;
-const BATCH_SIZE_PULL = 10000;
-const BATCH_SIZE_PUSH = 10000;
+const BATCH_SIZE_PULL = 1000000;
+const BATCH_SIZE_PUSH = 1000000;
 
 const COMMON_INFO = {
-  id: { type: "string" },
-  title: { type: "string" },
+  id: { type: "string", maxLength: 36 },
+  title: { type: "string", maxLength: 255 },
   description: { type: ["string", "null"] },
   createdBy: { type: "string" },
-  createdAt: { type: "number" },
+  createdAt: { type: "number", minimum: 1000000000, maximum: 9000000000, multipleOf: "0.0000001" },
   updatedBy: { type: ["string", "null"] },
-  updatedAt: { type: "number" },
+  updatedAt: { type: "number", minimum: 1000000000, maximum: 9000000000, multipleOf: "0.0000001" },
   status: { type: "number" },
   activateDate: { type: "number" },
   deactivateDate: { type: "number" },
@@ -146,6 +146,7 @@ const USER_DICTIONARIES_SCHEMA: RxJsonSchema<UserDictionary> = {
   required: ["id"],
   primaryKey: "id",
   type: "object",
+  // @ts-ignore
   properties: {
     ...COMMON_INFO,
     ...{
@@ -169,6 +170,7 @@ const EVENT_QUEUE_SCHEMA: RxJsonSchema<EventQueueType> = {
   properties: {
     id: {
       type: "string",
+      maxLength: 36,
     },
     eventString: {
       type: "string",
@@ -186,6 +188,7 @@ const CONTENT_CONFIGS_SCHEMA: RxJsonSchema<ContentConfigType> = {
   properties: {
     id: {
       type: "string",
+      maxLength: 36,
     },
     configString: {
       type: "string",
@@ -197,15 +200,17 @@ type DefinitionDocument = RxDocument<DefinitionType>;
 type DefinitionCollection = RxCollection<DefinitionType>;
 const DEFINITIONS_SCHEMA: RxJsonSchema<DefinitionType> = {
   version: 0,
-  required: ["id"],
+  required: ["id", "graph"],
   type: "object",
   primaryKey: "id",
   properties: {
     id: {
       type: "string",
+      maxLength: 36,
     },
     graph: {
       type: "string",
+      maxLength: 100,
     },
     sound: {
       type: "array",
@@ -288,12 +293,10 @@ const DEFINITIONS_SCHEMA: RxJsonSchema<DefinitionType> = {
         },
       },
     },
-    updatedAt: {
-      type: "number",
-    },
+    // @ts-ignore
+    updatedAt: { type: "number", minimum: 1000000000, maximum: 9000000000, multipleOf: "0.0000001" },
   },
   indexes: ["updatedAt", "graph"],
-  // required: ['graph', 'sound', 'definition', 'updatedAt']
 };
 
 // from https://github.com/skishore/makemeahanzi and chanind/hanzi-writer
@@ -306,7 +309,10 @@ const CHARACTERS_SCHEMA: RxJsonSchema<CharacterType> = {
   type: "object",
   properties: {
     // id == the graph/character but we MUST have a unique id column with react-admin
-    id: { type: "string" },
+    id: {
+      type: "string",
+      maxLength: 36,
+    },
     updatedAt: {
       type: "number",
     },
@@ -319,12 +325,12 @@ const CHARACTERS_SCHEMA: RxJsonSchema<CharacterType> = {
     decomposition: { type: "string" },
     radical: { type: "string" },
     etymology: {
-      type: "object",
+      type: ["object", "null"],
       properties: {
         type: { type: "string" },
-        hint: { type: "string" },
-        phonetic: { type: "string" },
-        semantic: { type: "string" },
+        hint: { type: ["string", "null"] },
+        phonetic: { type: ["string", "null"] },
+        semantic: { type: ["string", "null"] },
       },
     },
     structure: {
@@ -350,7 +356,7 @@ const CHARACTERS_SCHEMA: RxJsonSchema<CharacterType> = {
           },
         },
         radStrokes: {
-          type: "array",
+          type: ["array", "null"],
           items: {
             type: "number",
           },
@@ -368,25 +374,12 @@ const WORDLISTS_SCHEMA: RxJsonSchema<WordlistType> = {
   primaryKey: "id",
   type: "object",
   properties: {
-    id: {
-      type: "string",
-    },
-    name: {
-      type: "string",
-    },
-    default: {
-      type: "boolean",
-      default: false,
-    },
-    wordIds: {
-      type: "array",
-      items: {
-        type: "string",
-      },
-    },
-    updatedAt: {
-      type: "number",
-    },
+    id: { type: "string", maxLength: 36 },
+    name: { type: "string" },
+    default: { type: "boolean", default: false },
+    wordIds: { type: "array", items: { type: "string" } },
+    // @ts-ignore
+    updatedAt: { type: "number", minimum: 1000000000, maximum: 9000000000, multipleOf: "0.0000001" },
   },
   indexes: ["updatedAt"],
 };
@@ -399,37 +392,16 @@ const WORD_MODEL_STATS_SCHEMA: RxJsonSchema<WordModelStatsType> = {
   primaryKey: "id",
   type: "object",
   properties: {
-    id: {
-      type: "string",
-    },
-    nbSeen: {
-      type: "integer",
-      default: 0,
-    },
-    nbSeenSinceLastCheck: {
-      type: "integer",
-      default: 0,
-    },
-    lastSeen: {
-      type: ["number", "null"],
-    },
-    nbChecked: {
-      type: "integer",
-      default: 0,
-    },
-    lastChecked: {
-      type: ["number", "null"],
-    },
-    nbTranslated: {
-      type: "integer",
-      default: 0,
-    },
-    lastTranslated: {
-      type: ["number", "null"],
-    },
-    updatedAt: {
-      type: "number",
-    },
+    id: { type: "string", maxLength: 36 },
+    nbSeen: { type: "integer", default: 0 },
+    nbSeenSinceLastCheck: { type: "integer", default: 0 },
+    lastSeen: { type: ["number", "null"] },
+    nbChecked: { type: "integer", default: 0 },
+    lastChecked: { type: ["number", "null"] },
+    nbTranslated: { type: "integer", default: 0 },
+    lastTranslated: { type: ["number", "null"] },
+    // @ts-ignore
+    updatedAt: { type: "number", minimum: 1000000000, maximum: 9000000000, multipleOf: "0.0000001" },
   },
   indexes: ["updatedAt"],
 };
@@ -442,28 +414,13 @@ const DAY_MODEL_STATS_SCHEMA: RxJsonSchema<DayModelStatsType> = {
   primaryKey: "id",
   type: "object",
   properties: {
-    id: {
-      type: "string",
-    },
-    nbSeen: {
-      type: "integer",
-      default: 0,
-    },
-    nbChecked: {
-      type: "integer",
-      default: 0,
-    },
-    nbSuccess: {
-      type: "integer",
-      default: 0,
-    },
-    nbFailures: {
-      type: "integer",
-      default: 0,
-    },
-    updatedAt: {
-      type: "number",
-    },
+    id: { type: "string", maxLength: 36 },
+    nbSeen: { type: "integer", default: 0 },
+    nbChecked: { type: "integer", default: 0 },
+    nbSuccess: { type: "integer", default: 0 },
+    nbFailures: { type: "integer", default: 0 },
+    // @ts-ignore
+    updatedAt: { type: "number", minimum: 1000000000, maximum: 9000000000, multipleOf: "0.0000001" },
   },
   indexes: ["updatedAt"],
 };
@@ -518,6 +475,7 @@ const CARDS_SCHEMA: RxJsonSchema<CardType> = {
     // "{word_id}-{card_type}" - card_type: 1 = L2 written form, 2 = L2 sound representation, 3 = L1 definition
     id: {
       type: "string",
+      maxLength: 36,
     },
     dueDate: {
       type: "number",
@@ -576,15 +534,10 @@ const RECENTSENTENCES_SCHEMA: RxJsonSchema<RecentSentencesStoredType> = {
   primaryKey: "id",
   type: "object",
   properties: {
-    id: {
-      type: "string",
-    },
-    lzContent: {
-      type: "string",
-    },
-    updatedAt: {
-      type: "number",
-    },
+    id: { type: "string", maxLength: 36 },
+    lzContent: { type: "string" },
+    // @ts-ignore
+    updatedAt: { type: "number", minimum: 1000000000, maximum: 9000000000, multipleOf: "0.0000001" },
   },
   indexes: ["updatedAt"],
 };
@@ -596,6 +549,7 @@ const SURVEYS_SCHEMA: RxJsonSchema<SurveyType> = {
   required: ["id"],
   primaryKey: "id",
   type: "object",
+  // @ts-ignore
   properties: {
     ...COMMON_INFO,
     ...{
@@ -612,11 +566,18 @@ const IMPORTS_SCHEMA: RxJsonSchema<Import> = {
   required: ["id"],
   primaryKey: "id",
   type: "object",
+  // @ts-ignore
   properties: {
     ...COMMON_INFO,
     ...{
-      processing: { type: "number", default: PROCESSING.REQUESTED },
-      processType: { type: "number", default: PROCESS_TYPE.VOCABULARY_ONLY },
+      processing: { type: "number", default: PROCESSING.REQUESTED, minimum: 0, maximum: 5, multipleOf: 1 },
+      processType: {
+        type: "number",
+        default: PROCESS_TYPE.VOCABULARY_ONLY,
+        minimum: 1,
+        maximum: 3,
+        multipleOf: 1,
+      },
       importFile: { type: "string" },
       analysis: { type: ["string", "null"] },
       shared: { type: "boolean", default: false },
@@ -632,12 +593,13 @@ const CONTENTS_SCHEMA: RxJsonSchema<Content> = {
   required: ["id", "theImport"],
   primaryKey: "id",
   type: "object",
+  // @ts-ignore
   properties: {
     ...COMMON_INFO,
     ...{
-      processing: { type: "number", default: PROCESSING.NONE },
+      processing: { type: "number", default: PROCESSING.NONE, minimum: 0, maximum: 5, multipleOf: 1 },
       theImport: { type: "string" },
-      contentType: { type: "number" },
+      contentType: { type: "number", minimum: 1, maximum: 5, multipleOf: 1 }, // currently max 2 but leaving some fat
       author: { type: ["string", "null"] },
       cover: { type: ["string", "null"] },
       lang: { type: ["string", "null"] },
@@ -654,16 +616,17 @@ const USERLISTS_SCHEMA: RxJsonSchema<UserList> = {
   required: ["id", "theImport"],
   primaryKey: "id",
   type: "object",
+  // @ts-ignore
   properties: {
     ...COMMON_INFO,
     ...{
-      processing: { type: "number", default: PROCESSING.REQUESTED },
+      processing: { type: "number", default: PROCESSING.REQUESTED, minimum: 0, maximum: 5, multipleOf: 1 },
       shared: { type: "boolean", default: false },
       onlyDictionaryWords: { type: "boolean", default: false },
       wordsAreKnown: { type: "boolean", default: false },
       wordKnowledge: { type: "number", default: KNOWLEDGE_UNSET },
       nbToTake: { type: "number", default: NO_LIMIT },
-      theImport: { type: "string" },
+      theImport: { type: "string", maxLength: 36 },
       orderBy: { type: "number", default: 0 },
       minimumDocFrequency: { type: "number", default: NO_LIMIT },
       minimumAbsFrequency: { type: "number", default: NO_LIMIT },
@@ -679,10 +642,11 @@ const USERSURVEYS_SCHEMA: RxJsonSchema<UserSurvey> = {
   required: ["id", "surveyId"],
   primaryKey: "id",
   type: "object",
+  // @ts-ignore
   properties: {
     ...COMMON_INFO,
     ...{
-      surveyId: { type: "string" }, // think about using a proper foreign ref
+      surveyId: { type: "string", maxLength: 36 }, // think about using a proper foreign ref
       data: { type: ["string", "null"] },
     },
   },
@@ -696,12 +660,19 @@ const GOALS_SCHEMA: RxJsonSchema<Goal> = {
   required: ["id", "userList"],
   primaryKey: "id",
   type: "object",
+  // @ts-ignore
   properties: {
     ...COMMON_INFO,
     ...{
       parent: { type: ["string", "null"] },
-      userList: { type: "string" },
-      priority: { type: "number", default: 5 },
+      userList: { type: "string", maxLength: 36 }, // think about using a proper foreign ref
+      priority: {
+        type: "number",
+        default: 5,
+        minimum: 1,
+        maximum: 10,
+        multipleOf: 1,
+      },
     },
   },
   indexes: ["title", "userList", "priority", "createdAt"],

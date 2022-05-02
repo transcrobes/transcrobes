@@ -1,6 +1,6 @@
 import { CentredFlex, MeaningWrapper, CommonAnswerProps, StyledAnswer } from "./Common";
 import { ReactElement } from "react";
-import { Button } from "@material-ui/core";
+import { Button } from "@mui/material";
 import Meaning from "../components/Meaning";
 import RecentSentencesElement from "../components/RecentSentencesElement";
 import { say } from "../lib/funclib";

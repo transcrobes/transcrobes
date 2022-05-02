@@ -2,8 +2,8 @@ import { ReactElement } from "react";
 import { useRecordContext } from "react-admin";
 import { Import, ImportAnalysis } from "../lib/types";
 
-export default function ImportDetails(props: any): ReactElement {
-  const theImport = useRecordContext(props) as Import;
+export default function ImportDetails(): ReactElement {
+  const theImport = useRecordContext<Import>();
   const analysis: ImportAnalysis = JSON.parse(theImport.analysis);
 
   let nbTotalCharacters = 0;

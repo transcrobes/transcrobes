@@ -1,5 +1,6 @@
-import { Box, Container, FormGroup, makeStyles, Typography } from "@material-ui/core";
-import Button from "@material-ui/core/Button";
+import { Box, Container, FormGroup, Typography } from "@mui/material";
+import { makeStyles } from "tss-react/mui";
+import Button from "@mui/material/Button";
 import { useEffect, useState } from "react";
 import { store } from "../app/createStore";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
@@ -34,7 +35,7 @@ declare global {
 const proxy = new BackgroundWorkerProxy();
 setPlatformHelper(proxy);
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles()((theme) => ({
   groups: {
     margin: theme.spacing(1),
     maxWidth: "300px",
@@ -72,7 +73,7 @@ export default function Options(): JSX.Element {
   const dispatch = useAppDispatch();
   const userData = useAppSelector((state) => state.userData);
   const readerConfig = useAppSelector((state) => state.simpleReader[id] || DEFAULT_WEB_READER_CONFIG_STATE);
-  const classes = useStyles();
+  const { classes } = useStyles();
 
   dispatch(setLoading(true));
   useEffect(() => {
@@ -112,7 +113,7 @@ export default function Options(): JSX.Element {
           const progressCallback = (message: string) => {
             setMessage(message);
           };
-          const db = await getDb(dbConfig, progressCallback, !!inited && forceReinit);
+          const db = await getDb(dbConfig, progressCallback, undefined, !!inited && forceReinit);
           try {
             window.tcb = db;
             const action = !inited ? "Initialisation" : forceReinit ? "Reinitialisation" : "Settings Update";

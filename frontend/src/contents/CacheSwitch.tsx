@@ -1,4 +1,4 @@
-import { FormControlLabel, Switch } from "@material-ui/core";
+import { Switch } from "@mui/material";
 import { ReactElement, useEffect, useState } from "react";
 import { useRecordContext } from "react-admin";
 import { ExpirationPlugin } from "workbox-expiration";
@@ -24,12 +24,12 @@ const cacheFirst = new CacheFirst({
     }),
   ],
 });
-// FIXME: any
-export default function CacheSwitch(props: any): ReactElement {
+
+export default function CacheSwitch({ label }: { label?: string }): ReactElement {
   const [cached, setCached] = useState<boolean>(false);
   const [initialised, setInitialised] = useState<boolean>(false);
 
-  const content = useRecordContext(props) as Content;
+  const content = useRecordContext<Content>();
   let url: URL;
   if (content.contentType === CONTENT_TYPE.BOOK) {
     url = new URL(getManifestURL(content.id.toString()), window.location.href);
@@ -86,17 +86,12 @@ export default function CacheSwitch(props: any): ReactElement {
   }, [cached]);
   if (content.processing === PROCESSING.FINISHED) {
     return (
-      <FormControlLabel
-        label=""
-        control={
-          <Switch
-            checked={cached}
-            onClick={(e: React.MouseEvent<HTMLElement>) => {
-              e.stopPropagation();
-              setCached(!cached);
-            }}
-          />
-        }
+      <Switch
+        checked={cached}
+        onClick={(e: React.MouseEvent<HTMLElement>) => {
+          e.stopPropagation();
+          setCached(!cached);
+        }}
       />
     );
   } else {

@@ -1,9 +1,10 @@
-import { Container, FormControlLabel, makeStyles, Switch, TextField, Typography, useTheme } from "@material-ui/core";
+import { Container, FormControlLabel, Switch, TextField, Typography, useTheme } from "@mui/material";
+import { makeStyles } from "tss-react/mui";
 import axios, { CancelTokenSource } from "axios";
 import { Converter, ConvertText } from "opencc-js";
 import { ReactElement, useEffect, useMemo, useRef, useState } from "react";
 import { TopToolbar } from "react-admin";
-import { useHistory, useLocation } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { $enum } from "ts-enum-util";
 import { getAxiosHeaders } from "../app/createStore";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
@@ -43,7 +44,7 @@ interface Props {
   url: URL;
 }
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles()((theme) => ({
   root: { margin: theme.spacing(1), maxWidth: "800px" },
   toolbar: { alignItems: "center" },
   message: { color: "red", fontWeight: "bold", fontSize: "2em" },
@@ -87,7 +88,7 @@ function useQuery() {
 
 function Notrobes({ proxy, url }: Props): ReactElement {
   const currentQueryParam = useQuery();
-  const history = useHistory();
+  const navigate = useNavigate();
   const converter = useRef<ConvertText>(Converter({ from: "t", to: "cn" }));
   const [query, setQuery] = useState<string>(currentQueryParam.get("q") || "");
   const [wordListNames, setWordListNames] = useState<WordListNamesType>({});
@@ -114,7 +115,7 @@ function Notrobes({ proxy, url }: Props): ReactElement {
 
   const fromLang = useAppSelector((state) => state.userData.user.fromLang);
   const dispatch = useAppDispatch();
-  const classes = useStyles();
+  const { classes } = useStyles();
   const theme = useTheme();
 
   const dictionaries = useAppSelector((state) => state.dictionary);
@@ -227,7 +228,7 @@ function Notrobes({ proxy, url }: Props): ReactElement {
     }
     const newFilteredBySounds: Record<string, ShortWord> = {};
     const sounds = words[graph]?.sounds.join(" ");
-    for (const sound of words[graph]?.sounds) {
+    for (const sound of words[graph]?.sounds || []) {
       if (lBySound[sound]) {
         for (const val of lBySound[sound]) {
           if (val.sounds?.join(" ").includes(sounds) && (!dictOnly || val.isDict || val.id in userWords)) {
@@ -440,7 +441,7 @@ function Notrobes({ proxy, url }: Props): ReactElement {
       dispatch(setLoading(true));
       setMessage("");
       fetchSearchResults(q);
-      history.push(`notrobes?q=${q}`);
+      navigate(`/notrobes?q=${q}`, { replace: true });
     }
   }
 
@@ -508,7 +509,7 @@ function Notrobes({ proxy, url }: Props): ReactElement {
                     sourceGraph={word.graph}
                     label="By Character"
                     data={Object.values(filteredExistingByChars)}
-                    onRowClick={(id) => `notrobes?q=${id}`}
+                    onRowClick={(id) => `/notrobes?q=${id}`}
                   />
                 )}
                 {filteredExistingBySounds && (
@@ -516,7 +517,7 @@ function Notrobes({ proxy, url }: Props): ReactElement {
                     sourceGraph={word.graph}
                     label="By Sound"
                     data={Object.values(filteredExistingBySounds)}
-                    onRowClick={(id) => `notrobes?q=${id}`}
+                    onRowClick={(id) => `/notrobes?q=${id}`}
                   />
                 )}
                 {filteredExistingByRadicals && (
@@ -524,7 +525,7 @@ function Notrobes({ proxy, url }: Props): ReactElement {
                     sourceGraph={word.graph}
                     label="By Radical"
                     data={Object.values(filteredExistingByRadicals)}
-                    onRowClick={(id) => `notrobes?q=${id}`}
+                    onRowClick={(id) => `/notrobes?q=${id}`}
                   />
                 )}
               </div>

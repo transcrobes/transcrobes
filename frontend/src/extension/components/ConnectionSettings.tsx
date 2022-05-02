@@ -1,5 +1,4 @@
-import { FormGroup, FormLabel, TextField } from "@material-ui/core";
-import { ClassNameMap } from "@material-ui/core/styles/withStyles";
+import { ClassNameMap, FormGroup, FormLabel, TextField } from "@mui/material";
 import { ReactElement } from "react";
 
 type Props = {

@@ -1,5 +1,6 @@
-import { Container, makeStyles, Typography } from "@material-ui/core";
-import DownloadIcon from "@material-ui/icons/GetApp";
+import { Container, Typography } from "@mui/material";
+import { makeStyles } from "tss-react/mui";
+import DownloadIcon from "@mui/icons-material/GetApp";
 import jsonexport from "jsonexport/dist";
 import { Button, TopToolbar } from "ra-ui-materialui";
 import { ReactElement, useState } from "react";
@@ -15,7 +16,7 @@ type Props = {
 
 const DATA_SOURCE = "Exports.tsx";
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles()((theme) => ({
   exportType: { margin: theme.spacing(1), justifyContent: "space-between", display: "inline-flex", width: "100%" },
   header: { margin: theme.spacing(1), alignContent: "center" },
   toolbar: { alignItems: "center" },
@@ -31,7 +32,7 @@ const jsonexportPromise = (wordStats: any) => {
 };
 
 export default function Exports({ proxy }: Props): ReactElement {
-  const classes = useStyles();
+  const { classes } = useStyles();
   const helpUrl = "https://transcrob.es/page/software/configure/exports/";
   const [loading, setLoading] = useState(false);
 
@@ -85,7 +86,7 @@ export default function Exports({ proxy }: Props): ReactElement {
           Data Exports
         </Typography>
         <hr />
-        {loading && <Loading />}
+        {loading && <Loading show />}
         <div className={classes.exportType}>
           <div>Export per word activity data</div>
           <Button

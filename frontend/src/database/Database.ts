@@ -1,6 +1,7 @@
 import _ from "lodash";
-import { addPouchPlugin, getRxStoragePouch } from "rxdb";
-import { addRxPlugin, clone, createRxDatabase, removeRxDatabase } from "rxdb/plugins/core";
+import { addRxPlugin, clone, createRxDatabase, removeRxDatabase } from "rxdb";
+import { RxDBDevModePlugin } from "rxdb/plugins/dev-mode";
+import { getRxStorageDexie } from "rxdb/plugins/dexie";
 import { RxDBMigrationPlugin } from "rxdb/plugins/migration";
 import { RxDBQueryBuilderPlugin } from "rxdb/plugins/query-builder";
 import {
@@ -10,13 +11,9 @@ import {
   RxGraphQLReplicationState,
 } from "rxdb/plugins/replication-graphql";
 import { RxDBUpdatePlugin } from "rxdb/plugins/update";
-// TODO import these only in non-production build
-import { RxDBDevModePlugin } from "rxdb/plugins/dev-mode";
-// FIXME: only validate in dev and for not web extension (has `eval`)
-import { RxDBValidatePlugin } from "rxdb/plugins/validate";
 import { SubscriptionClient } from "subscriptions-transport-ws";
 import { store } from "../app/createStore";
-import { throttledRefreshToken, setUser } from "../features/user/userSlice";
+import { setUser, throttledRefreshToken } from "../features/user/userSlice";
 import { getFileStorage, IDBFileStorage } from "../lib/IDBFileStorage";
 import { fetchPlus } from "../lib/libMethods";
 import { API_PREFIX, IS_DEV } from "../lib/types";
@@ -39,12 +36,12 @@ import {
 
 declare const self: ServiceWorkerGlobalScope;
 
-addPouchPlugin(require("pouchdb-adapter-idb"));
-
 addRxPlugin(RxDBQueryBuilderPlugin);
-
 if (IS_DEV) {
-  addRxPlugin(RxDBValidatePlugin);
+  // FIXME: this is currently broken due to is-my-json-valid multipleOf check
+  // if (!IS_EXT) {
+  //   addRxPlugin(RxDBValidatePlugin);
+  // }
   addRxPlugin(RxDBDevModePlugin);
 }
 addRxPlugin(RxDBMigrationPlugin);
@@ -112,23 +109,19 @@ async function loadDatabase(
     cacheFiles = await cacheExports(baseUrl, initialisationCache, progressCallback);
     console.log("Refreshed the initialisation cache with new values", cacheFiles);
   }
-
   progressCallback("The data files have been downloaded, loading to the database : 13% complete", false);
 
-  const perFilePercent = 80 / cacheFiles.length;
+  const perFilePercent = 77 / cacheFiles.length;
   for (const i in cacheFiles) {
     const file = cacheFiles[i];
     const response = await initialisationCache.get(file);
     const content = JSON.parse(await response.text());
-    console.debug(`Trying to import reponse from cache for file ${file}`, file, response, content);
+    console.debug(`Trying to import reponse from cache for file ${file}`, file);
     // FIXME: check whether all the inserts actually insert
     if (file.split("/").slice(-1)[0].startsWith("hanzi-")) {
       await db.characters.bulkInsert(content);
-      await db.characters.find().where("id").eq(LOADED_CHAR_QUERY_ENTRY).exec();
     } else {
       await db.definitions.bulkInsert(content);
-      // force immediate index refresh so if we restart, we are already mostly ready
-      await db.definitions.find().where("graph").eq(LOADED_DEF_QUERY_ENTRY).exec();
     }
     await initialisationCache.remove(file);
     const newList = await initialisationCache.list();
@@ -140,6 +133,17 @@ async function loadDatabase(
     const percent = (perFilePercent * parseInt(i) + 13).toFixed(2);
     progressCallback(`Importing file ${i} : initialisation ${percent}% complete`, false);
   }
+  progressCallback("Updating indexes : initialisation 90% complete", false);
+  await db.definitions
+    .find({
+      selector: { graph: { $eq: LOADED_DEF_QUERY_ENTRY } },
+    })
+    .exec();
+  await db.characters
+    .find({
+      selector: { id: { $eq: LOADED_CHAR_QUERY_ENTRY } },
+    })
+    .exec();
 }
 
 async function cacheExports(
@@ -160,7 +164,7 @@ async function cacheExports(
     console.error(error);
     throw new Error(error);
   }
-  console.log("got back from ", EXPORTS_LIST_PATH, data);
+  // console.log("Got back from ", EXPORTS_LIST_PATH, data);
   // Add the hanzi character database urls
   const hanziExportFilesListURL = new URL(HZEXPORTS_LIST_PATH, baseUrl);
   let hanziList;
@@ -174,7 +178,7 @@ async function cacheExports(
     console.error(error);
     throw new Error(error);
   }
-  console.log("got back from ", HZEXPORTS_LIST_PATH, hanziList);
+  // console.log("Got back from ", HZEXPORTS_LIST_PATH, hanziList);
   data.push(...hanziList);
 
   const entryBlock = async (url: string, origin: string) => {
@@ -204,15 +208,15 @@ function refreshTokenIfRequired(
 ) {
   try {
     // this is currently a string, but could be made to be json, meaning an elegant parse of the error. But I suck...
-    const expiredMessage = error.innerErrors[0].message?.toString();
-    console.log("The error message was", expiredMessage);
-    if (expiredMessage.includes('{"statusCode":"403","detail":"Could not validate credentials"}')) {
+    const expiredMessage = error.innerErrors && error.innerErrors[0].message?.toString();
+    console.log("The error message was", expiredMessage, error);
+    if (expiredMessage?.includes('{"statusCode":"403","detail":"Could not validate credentials"}')) {
       console.log("Looks like the token has expired, trying to refresh");
       store.dispatch(throttledRefreshToken());
       // FIXME: this will set rubbish until the refresh actually happens - is this worth trying to improve upon?
       replicationState.setHeaders(getHeaders(store.getState().userData.user.accessToken));
     } else {
-      console.log("There was an error but apparently not an expiration");
+      console.log("There was an error but apparently not an expiration", error);
     }
   } catch (error) {
     console.error(error);
@@ -248,6 +252,7 @@ function setupTwoWayReplication(
     },
     pull: {
       queryBuilder: pullQuery,
+      batchSize: BATCH_SIZE_PULL,
     },
     live: true,
     /**
@@ -260,6 +265,7 @@ function setupTwoWayReplication(
   });
 
   // show replication-errors in logs
+  // @ts-ignore
   replicationState.error$.subscribe((err) => {
     console.error("replication two-way error:");
     console.dir(err);
@@ -301,12 +307,14 @@ function setupPullReplication(
     headers: headers,
     pull: {
       queryBuilder: pullQueryBuilder,
+      batchSize: BATCH_SIZE_PULL,
     },
     live: true,
     liveInterval,
     deletedFlag: "deleted",
   });
   // show replication-errors in logs
+  // @ts-ignore
   replicationState.error$.subscribe((err) => {
     console.error("replication error:");
     console.dir(err);
@@ -324,7 +332,7 @@ async function createDatabase(dbName: string): Promise<TranscrobesDatabase> {
   }
   return await createRxDatabase<TranscrobesCollections>({
     name: dbName,
-    storage: getRxStoragePouch("idb"),
+    storage: getRxStorageDexie(),
     multiInstance: false,
   });
 }
@@ -345,6 +353,11 @@ async function createCollections(db: TranscrobesDatabase) {
     }
   }
   if (reloadRequired.size > 0 && self && typeof self.needsReload !== "undefined") {
+    console.log(
+      "reloadRequired.size > 0 && self && typeof self.needsReload !== undefined",
+      reloadRequired,
+      self.needsReload,
+    );
     self.needsReload = true;
   }
 
@@ -356,10 +369,14 @@ async function deleteDatabase(dbName: string): Promise<void> {
   if (dbPromise) {
     console.log(`Delete existing database by object for ${dbName}...`);
     const db = await dbPromise;
-    if (db) await db.remove();
+    if (db) {
+      const removed = await db.remove();
+      console.log(`Deleted existing database by object ${dbName}`, removed);
+    }
   } else {
     console.log(`Delete existing database by name ${dbName}...`);
-    await removeRxDatabase(dbName, getRxStoragePouch("idb"));
+    const removed = await removeRxDatabase(dbName, getRxStorageDexie());
+    console.log(`Deleted existing database by name ${dbName}`, removed);
   }
   dbPromise = null;
 }
@@ -423,7 +440,12 @@ function setupGraphQLSubscription(
 async function testQueries(db: TranscrobesDatabase): Promise<DefinitionDocument[] | null> {
   // This makes sure indexes are loaded into memory. After this everything on definitions
   // will be super fast!
-  return await db.definitions.find().where("graph").eq(LOADED_DEF_QUERY_ENTRY).exec();
+  return await db.definitions
+    .find({
+      selector: { graph: { $eq: LOADED_DEF_QUERY_ENTRY } },
+      index: "graph",
+    })
+    .exec();
 }
 
 async function loadFromExports(
@@ -431,8 +453,9 @@ async function loadFromExports(
   accessToken: string,
   reinitialise = false,
   progressCallback: (message: string, finished: boolean) => void,
+  sw?: ServiceWorkerGlobalScope,
 ): Promise<TranscrobesDatabase> {
-  const activateSubscription = true;
+  const activateSubscription = false;
 
   const dbName = getDatabaseName(config);
 
@@ -512,6 +535,7 @@ async function loadFromExports(
 async function getDb(
   config: RxDBDataProviderParams,
   progressCallback: (message: string, finished: boolean) => void,
+  sw?: ServiceWorkerGlobalScope,
   reinitialise = false,
 ): Promise<TranscrobesDatabase> {
   const userData = await getUserDexie();

@@ -1,5 +1,5 @@
 import unidecode from "unidecode";
-import dayjs, { OpUnitType, QUnitType } from "dayjs";
+import dayjs, { ManipulateType } from "dayjs";
 import {
   DefinitionType,
   IDEAL_GLOSS_STRING_LENGTH,
@@ -233,7 +233,7 @@ export function complexPosToSimplePosLabels(pos: TreebankPosType, fromLang: Inpu
 export function dateRange(
   start: Date | number,
   end: Date | number,
-  interval: QUnitType | OpUnitType,
+  interval: ManipulateType,
   asUnixTimestamps = false,
 ): (number | Date)[] {
   const startDate = typeof start === "number" ? dayjs(start * 1000) : dayjs(start);

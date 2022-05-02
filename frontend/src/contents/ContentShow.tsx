@@ -1,14 +1,6 @@
-import { FC, useEffect, useState } from "react";
-import {
-  BooleanField,
-  FieldProps,
-  FunctionField,
-  ReferenceField,
-  Show,
-  SimpleShowLayout,
-  TextField,
-  useGetOne,
-} from "react-admin";
+import { useEffect, useState } from "react";
+import { BooleanField, FunctionField, ReferenceField, Show, SimpleShowLayout, TextField, useGetOne } from "react-admin";
+import { useParams } from "react-router-dom";
 import { HelpShowActions } from "../components/HelpShowActions";
 import { ImportProgress } from "../imports/ImportProgress";
 import { Content, CONTENT_TYPE, ImportFirstSuccessStats, PROCESSING, reverseEnum } from "../lib/types";
@@ -17,13 +9,14 @@ import CacheSwitch from "./CacheSwitch";
 
 const DATA_SOURCE = "ContentShow.tsx";
 
-const ContentShow: FC<FieldProps<Content>> = (props) => {
-  const { data, loaded } = useGetOne<Content>("contents", (props as any).id);
+export default function ContentShow() {
+  const { id = "" } = useParams();
+  const { data, isLoading } = useGetOne<Content>("contents", { id });
   const [stats, setStats] = useState<ImportFirstSuccessStats | null>();
   useEffect(() => {
     if (window.componentsConfig.proxy.loaded) {
       (async function () {
-        if (!loaded || !data?.theImport) return;
+        if (isLoading || !data?.theImport) return;
         const locStats: ImportFirstSuccessStats | null =
           await window.componentsConfig.proxy.sendMessagePromise<ImportFirstSuccessStats | null>({
             source: DATA_SOURCE,
@@ -35,7 +28,7 @@ const ContentShow: FC<FieldProps<Content>> = (props) => {
     }
   }, [data, window.componentsConfig.proxy.loaded]);
   return (
-    <Show actions={<HelpShowActions helpUrl="https://transcrob.es/page/software/configure/contents/" />} {...props}>
+    <Show actions={<HelpShowActions helpUrl="https://transcrob.es/page/software/configure/contents/" />}>
       <SimpleShowLayout>
         <TextField source="id" />
         <TextField source="title" />
@@ -43,20 +36,21 @@ const ContentShow: FC<FieldProps<Content>> = (props) => {
         <ReferenceField label="Source import" source="theImport" reference="imports" link="show">
           <TextField source="title" />
         </ReferenceField>
-        <FunctionField source="processing" render={(record: any) => reverseEnum(PROCESSING, record.processing)} />
-        <FunctionField source="contentType" render={(record: any) => reverseEnum(CONTENT_TYPE, record.contentType)} />
+        <FunctionField source="processing" render={(record: Content) => reverseEnum(PROCESSING, record.processing)} />
+        <FunctionField
+          source="contentType"
+          render={(record: Content) => reverseEnum(CONTENT_TYPE, record.contentType)}
+        />
         <TextField source="author" />
         <TextField source="cover" />
         <TextField label="Language" source="lang" />
         <BooleanField source="shared" />
-        <ActionButton props={props} />
-        <CacheSwitch label="Offline?" props={props} />
+        <ActionButton />
+        <CacheSwitch label="Offline?" />
         <hr />
         <h3>Progress</h3>
         <ImportProgress stats={stats} />
       </SimpleShowLayout>
     </Show>
   );
-};
-
-export default ContentShow;
+}

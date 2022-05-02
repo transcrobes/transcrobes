@@ -1,6 +1,6 @@
-import { Grid } from "@material-ui/core";
+import { Grid } from "@mui/material";
 import { bin } from "d3-array";
-import dayjs, { OpUnitType, QUnitType } from "dayjs";
+import dayjs, { ManipulateType } from "dayjs";
 import { useEffect, useState } from "react";
 import { useRecordContext } from "react-admin";
 import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
@@ -16,17 +16,19 @@ type ListGraphData = {
   wordTypes: number;
 };
 
-// FIXME: any
-export function UserListProgress(props: any) {
+interface Props {
+  yIsNumber?: boolean;
+  nbPeriods?: number;
+  periodType?: ManipulateType;
+}
+
+export function UserListProgress({ yIsNumber = false, nbPeriods = 8, periodType = "week" }: Props) {
   const [data, setData] = useState<ListGraphData[]>([]);
   const [stats, setStats] = useState<ListFirstSuccessStats | null>();
-  const obj = useRecordContext(props);
+  const obj = useRecordContext();
   const listId = obj ? ("userList" in obj ? obj.userList : obj.id) : "";
-  const { yIsNumber } = props;
-  const { nbPeriods = 8 } = props;
-  const { periodType = "week" as QUnitType | OpUnitType } = props;
   useEffect(() => {
-    (async function () {
+    (async () => {
       if (!window.componentsConfig.proxy.loaded) return;
       const locStats: ListFirstSuccessStats | null =
         await window.componentsConfig.proxy.sendMessagePromise<ListFirstSuccessStats | null>({
@@ -36,7 +38,7 @@ export function UserListProgress(props: any) {
         });
       setStats(locStats);
       if (!locStats) return;
-      const periods: (QUnitType | OpUnitType)[] = ["month", "week", "day"];
+      const periods: ManipulateType[] = ["month", "week", "day"];
       let currentPeriod = periods.findIndex((value) => value === periodType);
       if (currentPeriod < 0) {
         currentPeriod = 0;

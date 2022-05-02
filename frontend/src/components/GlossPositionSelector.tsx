@@ -1,4 +1,4 @@
-import { MenuItem, Select } from "@material-ui/core";
+import { MenuItem, Select } from "@mui/material";
 import { ReactElement } from "react";
 import { GlossPosition } from "../lib/types";
 

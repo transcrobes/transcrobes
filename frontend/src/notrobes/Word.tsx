@@ -1,7 +1,8 @@
-import { Button, makeStyles } from "@material-ui/core";
+import { Button } from "@mui/material";
 import dayjs from "dayjs";
-import { Fragment, ReactElement } from "react";
+import { ReactElement } from "react";
 import { $enum } from "ts-enum-util";
+import { makeStyles } from "tss-react/mui";
 import { ThinHR } from "../components/Common";
 import DefinitionGraph from "../components/DefinitionGraph";
 import DefinitionTranslations from "../components/DefinitionTranslations";
@@ -22,7 +23,7 @@ import {
   WordModelStatsType,
 } from "../lib/types";
 
-const useStyles = makeStyles(() => ({
+const useStyles = makeStyles()({
   characterDetails: {
     margin: ".5em",
     fontSize: "2em",
@@ -60,7 +61,7 @@ const useStyles = makeStyles(() => ({
   fieldName: {
     fontWeight: "bold",
   },
-}));
+});
 
 interface WordInfoProps {
   definition: DefinitionType;
@@ -70,7 +71,7 @@ interface WordInfoProps {
 }
 
 function WordInfo({ definition, characters, meaningCard, onCardFrontUpdate }: WordInfoProps): ReactElement {
-  const classes = useStyles();
+  const { classes } = useStyles();
   return (
     <>
       <div>
@@ -126,7 +127,6 @@ function Practicer({ wordId, onPractice }: PracticerProps): ReactElement {
 }
 
 function ExistingCards({ cards, classes }: { cards: CardType[]; classes: any }): ReactElement {
-  // const classes = useStyles();
   const cardsArray = [...cards.values()];
   const cardsRows = cardsArray.map((card) => {
     return (
@@ -172,7 +172,7 @@ function ExistingCards({ cards, classes }: { cards: CardType[]; classes: any }):
   );
 }
 function WordLists({ lists }: { lists: SortableListElementType[] }): ReactElement {
-  const classes = useStyles();
+  const { classes } = useStyles();
   return (
     <>
       <ThinHR />
@@ -232,7 +232,7 @@ function CharacterDetails({
 }
 
 function Synonyms({ definition }: { definition: DefinitionType }): ReactElement {
-  const classes = useStyles();
+  const { classes } = useStyles();
   return (
     <>
       <ThinHR />
@@ -251,7 +251,7 @@ function Synonyms({ definition }: { definition: DefinitionType }): ReactElement 
 }
 
 function WordModelStats({ wordModelStats }: { wordModelStats: WordModelStatsType }): ReactElement {
-  const classes = useStyles();
+  const { classes } = useStyles();
   return (
     <>
       <ThinHR />
@@ -318,7 +318,7 @@ function Sound({ definition }: { definition: DefinitionType }): ReactElement {
 }
 
 function WordMetadata({ definition }: { definition: DefinitionType }): ReactElement {
-  const classes = useStyles();
+  const { classes } = useStyles();
   return (
     <>
       <ThinHR />
@@ -366,7 +366,7 @@ function Word({
   onPractice,
   onCardFrontUpdate,
 }: WordProps): ReactElement {
-  const classes = useStyles();
+  const { classes } = useStyles();
   return (
     definition && (
       <div>

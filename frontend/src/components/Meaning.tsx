@@ -1,5 +1,5 @@
-import Popover from "@material-ui/core/Popover";
-import { createStyles, makeStyles, Theme } from "@material-ui/core/styles";
+import Popover from "@mui/material/Popover";
+import { makeStyles } from "tss-react/mui";
 import { ReactElement, useState } from "react";
 import { useAppSelector } from "../app/hooks";
 import { filterFakeL1Definitions, orderTranslations, toPosLabels } from "../lib/libMethods";
@@ -9,8 +9,8 @@ import EditableDefinitionTranslations from "./EditableDefinitionTranslations";
 import MeaningText from "./MeaningText";
 import SynonymsText from "./SynonymsText";
 
-const useStyles = makeStyles((theme: Theme) =>
-  createStyles({
+const useStyles = makeStyles()((theme) => {
+  return {
     popover: {
       pointerEvents: "none",
     },
@@ -20,8 +20,9 @@ const useStyles = makeStyles((theme: Theme) =>
     typography: {
       padding: theme.spacing(2),
     },
-  }),
-);
+  };
+});
+
 interface MeaningProps {
   editable: boolean;
   definition: DefinitionType;
@@ -39,7 +40,7 @@ export default function Meaning({
   translationProviderOrder,
   onCardFrontUpdate,
 }: MeaningProps): ReactElement {
-  const classes = useStyles();
+  const { classes } = useStyles();
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const [anchorElClick, setAnchorElClick] = useState<HTMLElement | null>(null);
   const fromLang = useAppSelector((state) => state.userData.user.fromLang);

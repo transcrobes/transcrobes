@@ -1,4 +1,4 @@
-import { makeStyles, Theme } from "@material-ui/core";
+import { makeStyles } from "tss-react/mui";
 import { ReactElement, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { store } from "../../app/createStore";
@@ -12,18 +12,20 @@ interface Props {
   currentCue: string;
 }
 
-const useStyles = makeStyles<Theme, VideoReaderState>({
-  boxWidth: {
-    maxWidth: (props) => `${(props.subBoxWidth || 1) * 100}%`,
-  },
+const useStyles = makeStyles<VideoReaderState>()((_theme, params) => {
+  return {
+    boxWidth: {
+      maxWidth: `${(params.subBoxWidth || 1) * 100}%`,
+    },
+  };
 });
 
 function SubtitleControl({ currentCue, models }: Props): ReactElement {
-  const { id } = useParams<ContentParams>();
+  const { id = "" } = useParams<ContentParams>();
   const readerConfig = useAppSelector((state) => state.videoReader[id] || DEFAULT_VIDEO_READER_CONFIG_STATE);
 
   const ref = useRef<HTMLDivElement>(null);
-  const classes = useStyles(readerConfig);
+  const { classes } = useStyles(readerConfig);
   const etfClasses = useJssStyles(readerConfig);
 
   if (ref.current && models) {

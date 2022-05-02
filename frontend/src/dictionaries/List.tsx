@@ -1,4 +1,4 @@
-import { CreateButton, Datagrid, List as RAList, ListProps, SortButton, TextField, TopToolbar } from "react-admin";
+import { CreateButton, Datagrid, List as RAList, SortButton, TextField, TopToolbar } from "react-admin";
 import HelpButton from "../components/HelpButton";
 
 function ListActions() {
@@ -11,9 +11,9 @@ function ListActions() {
   );
 }
 
-export default function List(props: ListProps) {
+export default function List() {
   return (
-    <RAList {...props} actions={<ListActions />} sort={{ field: "updatedAt", order: "DESC" }}>
+    <RAList actions={<ListActions />} sort={{ field: "updatedAt", order: "DESC" }}>
       <Datagrid rowClick="show">
         <TextField source="title" />
       </Datagrid>

@@ -1,12 +1,20 @@
-import { makeStyles } from "@material-ui/core/styles";
-import OpenInBrowserIcon from "@material-ui/icons/OpenInBrowser";
+import OpenInBrowserIcon from "@mui/icons-material/OpenInBrowser";
 import classnames from "classnames";
 import { ReactElement, useState } from "react";
-import { DashboardMenuItem, MenuItemLink, MenuProps, ReduxState, useTranslate, WithPermissions } from "react-admin";
-import { useSelector } from "react-redux";
+import {
+  DashboardMenuItem,
+  MenuItemLink,
+  MenuProps,
+  useSidebarState,
+  useTranslate,
+  WithPermissions,
+} from "react-admin";
+import { makeStyles } from "tss-react/mui";
 import { useAppSelector } from "../app/hooks";
 import contents from "../contents";
 import textcrobes from "../contents/textcrobes";
+import dictionaries from "../dictionaries";
+import statsExports from "../exports";
 import goals from "../goals";
 import help from "../help";
 import imports from "../imports";
@@ -14,16 +22,14 @@ import listrobes from "../listrobes";
 import notrobes from "../notrobes";
 import repetrobes from "../repetrobes";
 import stats from "../stats";
-import statsExports from "../exports";
 import surveys from "../surveys";
 import system from "../system";
 import userlists from "../userlists";
 import SubMenu from "./SubMenu";
-import dictionaries from "../dictionaries";
 
 type MenuName = "menuInput" | "menuOrganisation" | "menuLearning" | "menuSurveys";
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles()((theme) => ({
   root: {
     marginTop: theme.spacing(1),
     marginBottom: theme.spacing(1),
@@ -49,13 +55,13 @@ function Menu({ dense = false }: MenuProps): ReactElement {
   });
   const translate = useTranslate();
   useAppSelector((state) => state.theme); // force rerender on theme change
-  const classes = useStyles();
+  const { classes } = useStyles();
 
   const handleToggle = (menu: MenuName) => {
     setState((state) => ({ ...state, [menu]: !state[menu] }));
   };
-  const open = useSelector((state: ReduxState) => state.admin.ui.sidebarOpen);
-
+  // const open = useSelector((state: ReduxState) => state.admin.ui.sidebarOpen);
+  const [open] = useSidebarState();
   return (
     <div
       className={classnames(classes.root, {

@@ -1,21 +1,19 @@
+import SettingsIcon from "@mui/icons-material/Settings";
+import { Box, Drawer, IconButton } from "@mui/material";
+import { Theme } from "@mui/material/styles";
 import React, { ReactElement } from "react";
-import { makeStyles, createStyles, Theme } from "@material-ui/core/styles";
-
-import SettingsIcon from "@material-ui/icons/Settings";
-import { Box, Drawer, IconButton } from "@material-ui/core";
-import { ListrobesConfig } from "./ListrobesConfig";
+import { makeStyles } from "tss-react/mui";
 import { GraderConfig } from "../lib/types";
+import { ListrobesConfig } from "./ListrobesConfig";
 
-const useStyles = makeStyles((theme: Theme) =>
-  createStyles({
-    typography: {
-      padding: theme.spacing(2),
-    },
-    settings: {
-      paddingTop: 0,
-    },
-  }),
-);
+const useStyles = makeStyles()((theme: Theme) => ({
+  typography: {
+    padding: theme.spacing(2),
+  },
+  settings: {
+    paddingTop: 0,
+  },
+}));
 
 interface Props {
   graderConfig: GraderConfig;
@@ -23,7 +21,7 @@ interface Props {
 }
 
 export default function ListrobesConfigLauncher({ graderConfig, onConfigChange }: Props): ReactElement {
-  const classes = useStyles();
+  const { classes } = useStyles();
   const [isOpen, setIsOpen] = React.useState(false);
 
   // TODO: work out how to do this as proper functions!
@@ -39,7 +37,13 @@ export default function ListrobesConfigLauncher({ graderConfig, onConfigChange }
 
   return (
     <div>
-      <IconButton className={classes.settings} onClick={toggleDrawer(true)} color="primary" aria-label="settings">
+      <IconButton
+        className={classes.settings}
+        onClick={toggleDrawer(true)}
+        color="primary"
+        aria-label="settings"
+        size="large"
+      >
         <SettingsIcon />
       </IconButton>
       <Drawer anchor="left" open={isOpen} onClose={toggleDrawer(false)}>

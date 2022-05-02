@@ -1,14 +1,17 @@
-import { makeStyles, Theme } from "@material-ui/core";
 import { ReactElement } from "react";
+import { makeStyles } from "tss-react/mui";
 import { GradesType, VocabReview } from "../lib/types";
 
-const useStyles = makeStyles((theme: Theme) => ({
+const useStyles = makeStyles<void, "descriptionText">()((theme, _params, classes) => ({
   tipText: {
     border: "1px #333 solid",
     padding: "3px",
     width: "80%",
     fontSize: "150%",
     pageBreakInside: "avoid",
+    [`&:hover .${classes.descriptionText}`]: {
+      display: "block",
+    },
   },
   descriptionText: {
     transform: "translateY(35px)",
@@ -17,16 +20,13 @@ const useStyles = makeStyles((theme: Theme) => ({
     border: "1px solid #000",
     padding: "5px",
     backgroundColor: theme.palette.background.default,
-    opacity: "1",
-    "$tipText:hover &": {
-      display: "block",
-    },
+    zIndex: 2,
   },
   rowItem: { display: "flex", justifyContent: "space-between" },
 }));
 
 function RowItem({ item, gradeOrder }: { item: VocabReview; gradeOrder: GradesType[] }) {
-  const classes = useStyles();
+  const { classes } = useStyles();
   return (
     <div className={classes.rowItem}>
       <div>{item.graph}</div>
@@ -36,7 +36,7 @@ function RowItem({ item, gradeOrder }: { item: VocabReview; gradeOrder: GradesTy
 }
 
 function MeaningTooltip({ item }: { item: VocabReview }) {
-  const classes = useStyles();
+  const { classes } = useStyles();
   return (
     <div className={classes.descriptionText}>
       <div>Pinyin: {item.sound.join(" ")}</div>
@@ -54,14 +54,7 @@ interface Props {
   onMouseOut: () => void;
 }
 
-export function VocabItem({
-  index,
-  item,
-  gradeOrder,
-  onMouseOut,
-  onMouseOver,
-  onGradeUpdate,
-}: Props): ReactElement {
+export function VocabItem({ index, item, gradeOrder, onMouseOut, onMouseOver, onGradeUpdate }: Props): ReactElement {
   function handleMouseOver(e: React.MouseEvent<HTMLDivElement>) {
     e.preventDefault();
     onMouseOver(index);
@@ -71,7 +64,7 @@ export function VocabItem({
     e.preventDefault();
     onGradeUpdate(index);
   }
-  const classes = useStyles();
+  const { classes } = useStyles();
   return (
     <div className={classes.tipText}>
       <div onClick={handleClick} onMouseEnter={handleMouseOver} onMouseLeave={onMouseOut}>

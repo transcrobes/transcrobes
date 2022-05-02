@@ -1,10 +1,10 @@
-import { Create, FieldProps, required, SimpleForm, TextInput, useNotify, useRedirect, useRefresh } from "react-admin";
+import { Create, required, SimpleForm, TextInput, useNotify, useRedirect, useRefresh } from "react-admin";
 import { store } from "../app/createStore";
 import { HelpCreateActions } from "../components/HelpCreateActions";
 import { refreshDictionaries } from "../lib/dictionary";
 import { UserDictionary } from "../lib/types";
 
-export default function ACreate(props: FieldProps<UserDictionary>) {
+export default function ACreate() {
   const notify = useNotify();
   const refresh = useRefresh();
   const redirect = useRedirect();
@@ -12,14 +12,13 @@ export default function ACreate(props: FieldProps<UserDictionary>) {
   function onSuccess({ data }: { data: UserDictionary }) {
     notify(`Changes to dictionary "${data.title}" saved`);
     redirect("/userdictionaries");
-    refresh(true);
+    refresh();
     refreshDictionaries(store, window.componentsConfig.proxy);
   }
   return (
     <Create
-      onSuccess={onSuccess}
+      mutationOptions={{ onSuccess: onSuccess }}
       actions={<HelpCreateActions helpUrl="https://transcrob.es/page/software/configure/userdictionaries/" />}
-      {...props}
     >
       <SimpleForm redirect="list">
         <TextInput label="Dictionary name" source="title" validate={[required()]} />
@@ -28,5 +27,3 @@ export default function ACreate(props: FieldProps<UserDictionary>) {
     </Create>
   );
 }
-
-// export default ACreate;

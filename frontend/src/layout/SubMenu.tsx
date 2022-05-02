@@ -1,11 +1,10 @@
-import { Collapse, List, ListItemIcon, MenuItem, Tooltip, Typography } from "@material-ui/core";
-import { makeStyles } from "@material-ui/core/styles";
-import ExpandMore from "@material-ui/icons/ExpandMore";
-import { FC, Fragment, ReactElement } from "react";
-import { ReduxState, useTranslate } from "react-admin";
-import { useSelector } from "react-redux";
+import ExpandMore from "@mui/icons-material/ExpandMore";
+import { Collapse, List, ListItemIcon, MenuItem, Tooltip, Typography } from "@mui/material";
+import { Fragment, ReactElement } from "react";
+import { useSidebarState, useTranslate } from "react-admin";
+import { makeStyles } from "tss-react/mui";
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles()((theme) => ({
   icon: { minWidth: theme.spacing(5) },
   sidebarIsOpen: {
     "& a": {
@@ -27,15 +26,16 @@ interface Props {
   icon: ReactElement;
   isOpen: boolean;
   name: string;
+  children?: React.ReactNode;
 }
 
-const SubMenu: FC<Props> = ({ handleToggle, isOpen, name, icon, children, dense }) => {
+export default function SubMenu({ handleToggle, isOpen, name, icon, children, dense }: Props): ReactElement {
   const translate = useTranslate();
-  const classes = useStyles();
-  const sidebarIsOpen = useSelector<ReduxState, boolean>((state) => state.admin.ui.sidebarOpen);
-
+  const { classes } = useStyles();
+  // const sidebarIsOpen = useSelector<ReduxState, boolean>((state) => state.admin.ui.sidebarOpen);
+  const sidebarIsOpen = useSidebarState();
   const header = (
-    <MenuItem dense={dense} button onClick={handleToggle}>
+    <MenuItem dense={dense} onClick={handleToggle}>
       <ListItemIcon className={classes.icon}>{isOpen ? <ExpandMore /> : icon}</ListItemIcon>
       <Typography variant="inherit" color="textSecondary">
         {translate(name)}
@@ -64,6 +64,4 @@ const SubMenu: FC<Props> = ({ handleToggle, isOpen, name, icon, children, dense 
       </Collapse>
     </Fragment>
   );
-};
-
-export default SubMenu;
+}

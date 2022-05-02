@@ -1,11 +1,9 @@
-import { FC } from "react";
 import {
   BooleanField,
   CreateButton,
   Datagrid,
   FunctionField,
   List,
-  ListProps,
   SortButton,
   TextField,
   TopToolbar,
@@ -13,17 +11,19 @@ import {
 import HelpButton from "../components/HelpButton";
 import { PROCESSING, PROCESS_TYPE, reverseEnum } from "../lib/types";
 
-const ListActions: FC<any> = () => (
-  <TopToolbar>
-    <CreateButton />
-    <SortButton fields={["createdAt", "title", "processing"]} />
-    <HelpButton url="https://transcrob.es/page/software/configure/imports/" />
-  </TopToolbar>
-);
-
-export const ImportList: FC<ListProps> = (props) => {
+function ListActions() {
   return (
-    <List {...props} actions={<ListActions />} sort={{ field: "createdAt", order: "DESC" }}>
+    <TopToolbar>
+      <CreateButton />
+      <SortButton fields={["createdAt", "title", "processing"]} />
+      <HelpButton url="https://transcrob.es/page/software/configure/imports/" />
+    </TopToolbar>
+  );
+}
+
+export default function ImportList() {
+  return (
+    <List actions={<ListActions />} sort={{ field: "createdAt", order: "DESC" }}>
       <Datagrid rowClick="show">
         <TextField source="title" />
         <FunctionField source="processType" render={(record: any) => reverseEnum(PROCESS_TYPE, record.processType)} />
@@ -32,6 +32,4 @@ export const ImportList: FC<ListProps> = (props) => {
       </Datagrid>
     </List>
   );
-};
-
-export default ImportList;
+}

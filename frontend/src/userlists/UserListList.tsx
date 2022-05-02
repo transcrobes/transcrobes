@@ -1,13 +1,9 @@
-import { Button } from "@material-ui/core";
-import { makeStyles } from "@material-ui/core/styles";
-import { FC } from "react";
 import {
   BooleanField,
   CreateButton,
   Datagrid,
   FunctionField,
   List,
-  ListProps,
   ReferenceField,
   SortButton,
   TextField,
@@ -16,37 +12,28 @@ import {
 import HelpButton from "../components/HelpButton";
 import { PROCESSING, reverseEnum } from "../lib/types";
 
-const useStyles = makeStyles({
-  toolbar: {},
-});
-
-const ListActions: FC<any> = () => {
-  const classes = useStyles();
+function ListActions() {
   return (
-    <TopToolbar className={classes.toolbar}>
+    <TopToolbar>
       {/* {cloneElement(props.filters, { context: 'button' })} */}
       <CreateButton />
       <SortButton fields={["createdAt", "title", "processing"]} />
       <HelpButton url="https://transcrob.es/page/software/configure/wordlists/" />
     </TopToolbar>
   );
-};
+}
 
-export const UserListList: FC<ListProps> = (props) => {
+export default function UserListList() {
   return (
-    <>
-      <List {...props} actions={<ListActions />} sort={{ field: "createdAt", order: "DESC" }}>
-        <Datagrid rowClick="show">
+    <List actions={<ListActions />} sort={{ field: "createdAt", order: "DESC" }}>
+      <Datagrid rowClick="show">
+        <TextField source="title" />
+        <ReferenceField label="Source import" source="theImport" reference="imports" link="show">
           <TextField source="title" />
-          <ReferenceField label="Source import" source="theImport" reference="imports" link="show">
-            <TextField source="title" />
-          </ReferenceField>
-          <FunctionField source="processing" render={(record: any) => reverseEnum(PROCESSING, record.processing)} />
-          <BooleanField source="shared" sortable={false} />
-        </Datagrid>
-      </List>
-    </>
+        </ReferenceField>
+        <FunctionField source="processing" render={(record: any) => reverseEnum(PROCESSING, record.processing)} />
+        <BooleanField source="shared" sortable={false} />
+      </Datagrid>
+    </List>
   );
-};
-
-export default UserListList;
+}

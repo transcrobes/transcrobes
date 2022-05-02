@@ -8,7 +8,6 @@ import { ExpirationPlugin } from "workbox-expiration";
 import { precacheAndRoute } from "workbox-precaching";
 import { CacheFirst } from "workbox-strategies";
 import { getUserDexie } from "../database/authdb";
-
 import { TranscrobesDatabase } from "../database/Schema";
 import { IS_DEV, ONE_YEAR_IN_SECS, PRECACHE_PUBLICATIONS, WEBPUB_CACHE_NAME } from "../lib/types";
 import RxDBProvider from "../ra-data-rxdb";
@@ -26,7 +25,7 @@ declare global {
   interface ServiceWorkerGlobalScope {
     tcb: Promise<TranscrobesDatabase> | null;
     needsReload: boolean;
-    needsSWReload: boolean;
+    needsSWReload: boolean; // FIXME: unused
   }
 }
 let dataProvider: DataProvider | null;

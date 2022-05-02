@@ -1,10 +1,8 @@
 import dayjs from "dayjs";
 import draftToHtml from "draftjs-to-html";
 import LZString from "lz-string";
-import { clone } from "rxdb";
-import { MangoQuery } from "rxdb/dist/types/core";
-import { RxStorageBulkWriteError } from "rxdb/dist/types/types";
-import { isRxDocument } from "rxdb/plugins/core";
+import { clone, isRxDocument } from "rxdb";
+import { MangoQuery, RxStorageBulkWriteError } from "rxdb/dist/types/types";
 import { $enum } from "ts-enum-util";
 import { v4 as uuidv4 } from "uuid";
 import { getDatabaseName } from "../database/Database";
@@ -29,7 +27,6 @@ import {
   getSuccessWords,
   pythonCounter,
   recentSentencesFromLZ,
-  sizeOf,
   UUID,
 } from "./funclib";
 import { getFileStorage, IDBFileStorage } from "./IDBFileStorage";
@@ -74,8 +71,7 @@ function getNamedFileStorage(parameters: RxDBDataProviderParams): Promise<IDBFil
   if (!parameters.username) {
     throw new Error("Unable to find the current user");
   }
-  const importFileStore = getFileStorage(`${getDatabaseName(parameters)}_${IMPORT_FILE_STORAGE}`);
-  return importFileStore;
+  return getFileStorage(`${getDatabaseName(parameters)}_${IMPORT_FILE_STORAGE}`);
 }
 
 async function pushFiles(url: URL, username: string): Promise<{ status: "success" }> {
@@ -99,20 +95,12 @@ async function pushFiles(url: URL, username: string): Promise<{ status: "success
 
 async function sendUserEvents(db: TranscrobesDatabase, url: URL, maxSendEvents = 500): Promise<{ status: string }> {
   if (!db) {
-    console.debug("No db in sendUserEvents, not executing", db);
     return { status: "uninitialised" };
   }
   const allEvents: any[] = []; // FIXME: this should be a "user event" type
   const allEventIds: string[] = [];
 
-  const allEntries = await db.event_queue
-    .find({
-      selector: {
-        id: { $gte: null },
-      },
-      limit: maxSendEvents,
-    })
-    .exec();
+  const allEntries = await db.event_queue.find({ limit: maxSendEvents }).exec();
 
   for (const event of allEntries) {
     allEventIds.push(event.id.toString());
@@ -129,8 +117,7 @@ async function sendUserEvents(db: TranscrobesDatabase, url: URL, maxSendEvents =
   const apiEndPoint = new URL("/api/v1/data/user_events", url.origin).href;
   const data = await fetchPlus(apiEndPoint, JSON.stringify(allEvents));
   if (!data || !data["status"] || !(data["status"] === "success")) {
-    const message = "user_event update failed due to return status incorrect!";
-    throw message;
+    throw "user_event update failed due to return status incorrect!";
   } else {
     // remove from queue, but no need to wait
     db.event_queue.bulkRemove(allEventIds);
@@ -354,7 +341,12 @@ async function submitContentEnrichRequest(
   // This is done via a bit of a hack - in the graphql endpoint we look to see if the state
   // changes to PROCESSING.REQUESTED, and if so we launch an enrich operation. There is likely
   // a much cleaner way...
-  const content = await db.contents.findOne().where("id").eq(contentId).exec();
+  const content = await db.contents
+    .findOne({
+      // selector: { _id: contentId },
+      selector: { id: { $eq: contentId } },
+    })
+    .exec();
   if (!content) {
     console.error("Unable to find content for updating", contentId);
     return "failure";
@@ -368,7 +360,11 @@ async function saveSurvey(
   db: TranscrobesDatabase,
   { surveyId, dataValue }: { surveyId: string; dataValue: string },
 ): Promise<string> {
-  const userSurvey = await db.usersurveys.findOne().where("surveyId").eq(surveyId).exec();
+  const userSurvey = await db.usersurveys
+    .findOne({
+      selector: { surveyId: { $eq: surveyId } },
+    })
+    .exec();
   if (userSurvey && isRxDocument(userSurvey)) {
     // It's an update
     await userSurvey.atomicPatch({
@@ -544,22 +540,22 @@ async function getWordStatsForExport(db: TranscrobesDatabase) {
 }
 
 async function getWordDetailsUnsafe(db: TranscrobesDatabase, graph: string): Promise<WordDetailsRxType> {
-  const localDefinition = await db.definitions.find().where("graph").eq(graph).exec();
-  if (localDefinition.length > 0) {
-    const word = localDefinition.values().next().value as DefinitionDocument;
-    const cardIds = (
-      await db.cards.storageInstance.internals.pouch.allDocs({
-        startkey: `${word.id}-`,
-        endkey: `${word.id}-\uffff`,
-      })
-    ).rows.map((x: CardType) => x.id);
-    const cards = await db.cards.findByIds(cardIds);
+  const word = await db.definitions
+    .findOne({
+      selector: { graph: { $eq: graph } },
+    })
+    .exec();
+
+  if (word) {
+    const cards = await db.cards.findByIds(
+      $enum(CARD_TYPES)
+        .getValues()
+        .map((cardType) => getCardId(word.id, cardType)),
+    );
     const wordModelStats = [...(await db.word_model_stats.findByIds([word.id])).values()][0];
     const characters = await getCharacterDetailsUnsafe(db, graph.split(""));
-
     const sents = await getRecentSentences(db, [word.id]);
     const recentPosSentences = (sents.length > 0 && sents[0][1].posSentences) || null;
-
     return { word, cards, characters, wordModelStats, recentPosSentences };
   }
   return {
@@ -647,9 +643,13 @@ async function getRecentSentences(
   return sents;
 }
 
-async function getWordFromDBs(db: TranscrobesDatabase, word: string): Promise<DefinitionType | null> {
-  const value = await db.definitions.findOne().where("graph").eq(word).exec();
-  return value ? clone(value.toJSON()) : null;
+async function getWordFromDBs(db: TranscrobesDatabase, graph: string): Promise<DefinitionType | null> {
+  const word = await db.definitions
+    .findOne({
+      selector: { graph: { $eq: graph } },
+    })
+    .exec();
+  return word ? clone(word.toJSON()) : null;
 }
 
 async function getContentConfigFromStore(db: TranscrobesDatabase, contentId: number): Promise<ContentConfigType> {
@@ -706,7 +706,6 @@ async function addOrUpdateCardsForWord(
   { wordId, grade }: { wordId: string; grade: number },
 ): Promise<CardType[]> {
   const cards = [];
-
   for (const cardType of $enum(CARD_TYPES).getValues()) {
     const cardId = getCardId(wordId, cardType);
     const existing = await db.cards.findOne(cardId).exec();

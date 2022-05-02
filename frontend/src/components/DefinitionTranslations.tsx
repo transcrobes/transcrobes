@@ -1,4 +1,5 @@
-import { makeStyles, Typography } from "@material-ui/core";
+import { Typography } from "@mui/material";
+import { makeStyles } from "tss-react/mui";
 import { Fragment, ReactElement } from "react";
 import { useAppSelector } from "../app/hooks";
 import { filterFakeL1Definitions, orderTranslations } from "../lib/libMethods";
@@ -6,7 +7,7 @@ import { DefinitionType, PosTranslationsType, ProviderTranslationType } from "..
 import { InfoBox, ThinHR } from "./Common";
 import PosItem from "./PosItem";
 
-const useStyles = makeStyles({
+const useStyles = makeStyles()({
   translations: { maxWidth: "500px" },
 });
 
@@ -21,7 +22,7 @@ export default function DefinitionTranslations({
   cleanMeanings,
   translationProviderOrder,
 }: Props): ReactElement {
-  const styles = useStyles();
+  const { classes } = useStyles();
   const dictionaries = useAppSelector((state) => state.dictionary);
   const phones = definition.sound;
   let providerTranslations: ProviderTranslationType[] = [];
@@ -64,7 +65,7 @@ export default function DefinitionTranslations({
                 {index > 0 && <ThinHR />}
                 <InfoBox>
                   <Typography>{dictionaries[providerEntry.provider] || providerEntry.provider}</Typography>
-                  <div className={styles.translations}>
+                  <div className={classes.translations}>
                     {providerEntry.posTranslations.map((posItem) => {
                       return <PosItem key={posItem.posTag + posItem.sounds} item={posItem} />;
                     })}

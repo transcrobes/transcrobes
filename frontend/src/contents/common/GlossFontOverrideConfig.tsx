@@ -1,6 +1,5 @@
-import { FormControl, FormControlLabel, Switch } from "@material-ui/core";
-import { ClassNameMap } from "@material-ui/core/styles/withStyles";
-import { ToggleButton, ToggleButtonGroup } from "@material-ui/lab";
+import { ClassNameMap, FormControl, FormControlLabel, Switch } from "@mui/material";
+import { ToggleButton, ToggleButtonGroup } from "@mui/material";
 import { ReactElement } from "react";
 import { useAppDispatch } from "../../app/hooks";
 import Conftainer from "../../components/Conftainer";

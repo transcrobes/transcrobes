@@ -1,7 +1,13 @@
-import { styled } from "@material-ui/core";
+import { styled } from "@mui/material";
 import { WithStylesProps } from "react-jss";
 import { hslToHex } from "../lib/funclib";
 import { ReaderState, SEGMENTED_BASE_PADDING } from "../lib/types";
+import CheckIcon from "@mui/icons-material/Check";
+import SentimentSatisfiedIcon from "@mui/icons-material/SentimentSatisfied";
+import SentimentVeryDissatisfiedIcon from "@mui/icons-material/SentimentVeryDissatisfied";
+import SentimentVerySatisfiedIcon from "@mui/icons-material/SentimentVerySatisfied";
+import { GRADE } from "../database/Schema";
+import { GradesType } from "../lib/types";
 
 export const DEFAULT_FONT_COLOUR = { h: 0, s: 0, l: 0 };
 
@@ -52,3 +58,18 @@ export type ETFStylesType = typeof ETFStyles;
 export interface ETFStylesProps extends WithStylesProps<ETFStylesType> {
   children: React.ReactNode;
 }
+
+export const GRADES: GradesType[] = [
+  { id: GRADE.HARD.toString(), content: "Add as known (poorly)", icon: <SentimentSatisfiedIcon /> },
+  {
+    id: GRADE.UNKNOWN.toString(),
+    content: "Add as unknown",
+    icon: <SentimentVeryDissatisfiedIcon />,
+  },
+  {
+    id: GRADE.GOOD.toString(),
+    content: "Add as known (to revise)",
+    icon: <SentimentVerySatisfiedIcon />,
+  },
+  { id: GRADE.KNOWN.toString(), content: "Add as known (no revision)", icon: <CheckIcon /> },
+];

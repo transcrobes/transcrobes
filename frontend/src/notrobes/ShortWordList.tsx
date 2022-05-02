@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import {
   Datagrid,
-  Record as RARecord,
+  RaRecord,
   FunctionField,
   ListContextProvider,
   TextField as RATextField,
@@ -15,7 +15,7 @@ interface Props {
   sourceGraph: string;
   data: ShortWord[];
   label: string;
-  onRowClick: (id: Identifier, basePath: string, record: RARecord) => string;
+  onRowClick: (id: Identifier, basePath: string, record: RaRecord) => string;
 }
 
 export default function ShortWordList(props: Props) {
@@ -33,9 +33,9 @@ export default function ShortWordList(props: Props) {
 
   const listContext = useList({
     data,
-    ids,
-    loaded: true,
-    loading: false,
+    // ids,
+    // loaded: true,
+    // loading: false,
   });
   return (
     <div>
@@ -44,9 +44,9 @@ export default function ShortWordList(props: Props) {
         value={{ ...listContext, setPage, setPerPage, total: props.data.length - 1, page, perPage, sort, setSort }}
       >
         <Pagination forceSmall />
-        <Datagrid rowClick={props.onRowClick}>
+        <Datagrid bulkActionButtons={false} rowClick={props.onRowClick}>
           <RATextField source="id" />
-          <FunctionField label="Sounds" render={(record?: RARecord) => record && record.sounds?.join(" ")} />
+          <FunctionField label="Sounds" render={(record?: RaRecord) => record && record.sounds?.join(" ")} />
         </Datagrid>
       </ListContextProvider>
     </div>

@@ -1,4 +1,4 @@
-import Icon from "@material-ui/icons/SortByAlpha";
+import Icon from "@mui/icons-material/SortByAlpha";
 
 export default {
   icon: Icon,

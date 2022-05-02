@@ -1,5 +1,5 @@
-import { Box, Drawer, MenuItem, MenuList } from "@material-ui/core";
-import TocIcon from "@material-ui/icons/Toc";
+import { Box, Drawer, MenuItem, MenuList } from "@mui/material";
+import TocIcon from "@mui/icons-material/Toc";
 import React, { ReactElement } from "react";
 import { Button } from "react-admin";
 import { useParams } from "react-router-dom";
@@ -18,11 +18,11 @@ type Props = {
 function TableOfContents({ manifest, onClickChapter }: Props): ReactElement {
   const dispatch = useAppDispatch();
 
+  const { id = "" } = useParams<ContentParams>();
   const tocLinkHandler = (href: string) => {
     dispatch(bookReaderActions.setCurrentTocUrl({ id: id, value: href }));
     onClickChapter();
   };
-  const { id } = useParams<ContentParams>();
   const getLinkHref = (link: ReadiumLink): string => {
     if (link.href) return link.href;
     if (!link.children) throw new Error("Manifest is not well formed");

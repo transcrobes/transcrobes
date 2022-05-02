@@ -4,7 +4,7 @@ import {
   FunctionField,
   ListContextProvider,
   Pagination,
-  Record as RARecord,
+  RaRecord,
   TextField as RATextField,
   useList,
 } from "react-admin";
@@ -32,9 +32,9 @@ export default function CustomList(props: Props) {
 
   const listContext = useList({
     data,
-    ids,
-    loaded: true,
-    loading: false,
+    // ids,
+    // loaded: true,
+    // loading: false,
   });
   return (
     <ListContextProvider
@@ -47,7 +47,7 @@ export default function CustomList(props: Props) {
         }}
       >
         <RATextField source="id" />
-        <FunctionField label="Sounds" render={(record?: RARecord) => record && record.sounds} />
+        <FunctionField label="Sounds" render={(record?: RaRecord) => record && record.sounds} />
         <TranslationsField source="translations" itemSeparator={props.itemSeparator} />
       </Datagrid>
     </ListContextProvider>

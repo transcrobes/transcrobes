@@ -1,4 +1,4 @@
-import { styled } from "@material-ui/core";
+import { styled } from "@mui/material";
 import { ReactElement } from "react";
 import DefinitionGraph from "../components/DefinitionGraph";
 import useWindowDimensions from "../hooks/WindowDimensions";
@@ -28,7 +28,7 @@ export const CentredFlex = styled("div")(() => ({
 }));
 
 export const GraphSoundQuestionStyle = styled("div")(({ theme }) => ({
-  [theme.breakpoints.down("sm")]: {
+  [theme.breakpoints.down('md')]: {
     fontSize: "3em",
     padding: "0.1em",
   },
@@ -43,7 +43,7 @@ export const StyledAnswer = styled("div")(({ theme }) => ({
   justifyContent: "center",
   alignItems: "center",
   fontSize: "2em",
-  [theme.breakpoints.down("sm")]: {
+  [theme.breakpoints.down('md')]: {
     padding: "0.3em",
   },
   [theme.breakpoints.up("sm")]: {
@@ -53,7 +53,7 @@ export const StyledAnswer = styled("div")(({ theme }) => ({
 
 export const StyledQuestion = styled("div")(({ theme }) => ({
   fontSize: "2em",
-  [theme.breakpoints.down("sm")]: {
+  [theme.breakpoints.down('md')]: {
     padding: "0.3em",
   },
   [theme.breakpoints.up("sm")]: {
@@ -63,7 +63,7 @@ export const StyledQuestion = styled("div")(({ theme }) => ({
 
 export const MeaningWrapper = styled("div")(({ theme }) => ({
   display: "block",
-  [theme.breakpoints.down("sm")]: {
+  [theme.breakpoints.down('md')]: {
     padding: "0.2em",
   },
   [theme.breakpoints.up("sm")]: {

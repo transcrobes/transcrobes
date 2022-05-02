@@ -1,10 +1,11 @@
-import { Button, makeStyles } from "@material-ui/core";
+import { Button } from "@mui/material";
+import { makeStyles } from "tss-react/mui";
 import { ReactElement, useState } from "react";
 import { CharacterType } from "../lib/types";
 import CharacterGraph from "./CharacterGraph";
 import DiscoverableWord from "./DiscoverableWord";
 
-const useStyles = makeStyles({
+const useStyles = makeStyles()({
   centred: {
     display: "flex",
     justifyContent: "center",
@@ -27,7 +28,7 @@ export default function DefinitionGraph({
   newTab,
 }: Props): ReactElement {
   const [toAnimate, setToAnimate] = useState(characters.map(() => 0));
-  const classes = useStyles();
+  const { classes } = useStyles();
   function draw() {
     const toAnimateUpdate = characters.map(() => 0);
     toAnimateUpdate[0] = 1;

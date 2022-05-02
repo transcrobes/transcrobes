@@ -1,6 +1,6 @@
-import EnrichIcon from "@material-ui/icons/Add";
-import ReadIcon from "@material-ui/icons/LocalLibrary";
-import WatchIcon from "@material-ui/icons/Theaters";
+import EnrichIcon from "@mui/icons-material/Add";
+import ReadIcon from "@mui/icons-material/LocalLibrary";
+import WatchIcon from "@mui/icons-material/Theaters";
 import { ReactElement } from "react";
 import { Button, Identifier, useRecordContext } from "react-admin";
 import { Content, CONTENT_TYPE, PROCESSING } from "../lib/types";
@@ -22,11 +22,10 @@ function enrich(id: Identifier) {
   );
 }
 
-// FIXME: any
-function ActionButton(props: any): ReactElement {
+export default function ActionButton({ label }: { label?: string }): ReactElement {
   const stopPropagation = (e: React.MouseEvent<HTMLElement>) => e.stopPropagation();
 
-  const content = useRecordContext(props) as Content;
+  const content = useRecordContext<Content>();
   if (content.processing === PROCESSING.FINISHED) {
     let verb = "Watch";
     let Icon = WatchIcon;
@@ -54,5 +53,3 @@ function ActionButton(props: any): ReactElement {
     return <></>;
   }
 }
-
-export default ActionButton;

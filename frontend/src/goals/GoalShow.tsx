@@ -1,27 +1,25 @@
-import { FC } from "react";
-import { FieldProps, ReferenceField, Show, SimpleShowLayout, TextField } from "react-admin";
+import { ReferenceField, Show, SimpleShowLayout, TextField } from "react-admin";
 import { HelpShowActions } from "../components/HelpShowActions";
-import { Goal } from "../lib/types";
 import { UserListProgress } from "../stats/ListProgress";
 
-const GoalShow: FC<FieldProps<Goal>> = (props) => (
-  <Show actions={<HelpShowActions helpUrl="https://transcrob.es/page/software/configure/goals/" />} {...props}>
-    <SimpleShowLayout>
-      <TextField source="id" />
-      <TextField source="title" />
-      <TextField source="description" />
-      <ReferenceField source="userList" reference="userlists" link="show">
+export default function GoalShow() {
+  return (
+    <Show actions={<HelpShowActions helpUrl="https://transcrob.es/page/software/configure/goals/" />}>
+      <SimpleShowLayout>
+        <TextField source="id" />
         <TextField source="title" />
-      </ReferenceField>
-      <ReferenceField source="parent" reference="goals" link="show">
-        <TextField source="title" />
-      </ReferenceField>
-      <TextField source="priority" />
-      <hr />
-      <h3>Progress</h3>
-      <UserListProgress />
-    </SimpleShowLayout>
-  </Show>
-);
-
-export default GoalShow;
+        <TextField source="description" />
+        <ReferenceField source="userList" reference="userlists" link="show">
+          <TextField source="title" />
+        </ReferenceField>
+        <ReferenceField source="parent" reference="goals" link="show">
+          <TextField source="title" />
+        </ReferenceField>
+        <TextField source="priority" />
+        <hr />
+        <h3>Progress</h3>
+        <UserListProgress />
+      </SimpleShowLayout>
+    </Show>
+  );
+}

@@ -1,4 +1,4 @@
-import { makeStyles, Theme } from "@material-ui/core";
+import { makeStyles } from "tss-react/mui";
 import { ReactElement, useEffect, useState } from "react";
 import { PopupPosition, ReaderState } from "../../../lib/types";
 import Extras from "./Extras";
@@ -21,44 +21,47 @@ export interface StyleProps {
   fontSize: number;
 }
 // FIXME: allow setting the theme for popups!
-const useStyles = makeStyles<Theme, StyleProps>((theme: Theme) => ({
-  popup: (props) => ({
-    textAlign: "center",
-    borderRadius: "6px",
-    padding: "3px",
-    zIndex: 99999,
-    width: "90%",
-    maxWidth: "350px",
-    minWidth: "180px",
-    opacity: 1,
-    fontSize: `${Math.min(150, props.fontSize * (props.glossFontSize / 100))}%`,
-    position: "absolute",
-    display: "block",
-    // FIXME: added for testing, get from the theme!
-    color: "white",
-    fill: "white",
-    backgroundColor: "black",
-  }),
-  icons: { color: "white", padding: "6px" },
-  container: { textAlign: "left" },
-  synonymList: (props) => ({ fontSize: `${Math.min(150, props.fontSize)}%` }),
-  source: { marginLeft: "6px", padding: "5px 0" },
-  sourceName: { boxSizing: "border-box", textAlign: "left" },
-  sourcePos: { marginLeft: "12px" },
-  sourcePosDefs: { marginLeft: "18px", padding: "0 0 0 5px" },
-  header: { boxSizing: "border-box", display: "flex", justifyContent: "space-between" },
-  actions: {
-    boxSizing: "border-box",
-    paddingBottom: "4px",
-    display: "flex",
-    justifyContent: "center",
-  },
-  sound: { boxSizing: "border-box", padding: "2px" },
-  best: { boxSizing: "border-box", padding: "2px" },
-  sentenceButton: { boxSizing: "border-box", padding: "2px" },
-  // FIXME: this needs to get put down there somewhere...
-  recentSentences: (props) => ({ textAlign: "left", fontSize: `${Math.min(150, props.fontSize)}%` }),
-}));
+const useStyles = makeStyles<StyleProps>()((_theme, params) => {
+  return {
+    popup: {
+      textAlign: "center",
+      borderRadius: "6px",
+      padding: "3px",
+      zIndex: 99999,
+      width: "90%",
+      maxWidth: "350px",
+      minWidth: "180px",
+      opacity: 1,
+      fontSize: `${Math.min(150, params.fontSize * (params.glossFontSize / 100))}%`,
+      position: "absolute",
+      display: "block",
+      // FIXME: added for testing, get from the theme!
+      color: "white",
+      fill: "white",
+      backgroundColor: "black",
+    },
+    icons: { color: "white" },
+    popupControls: { padding: "3px" },
+    container: { textAlign: "left" },
+    synonymList: { fontSize: `${Math.min(150, params.fontSize)}%` },
+    source: { marginLeft: "6px", padding: "5px 0" },
+    sourceName: { boxSizing: "border-box", textAlign: "left" },
+    sourcePos: { marginLeft: "12px" },
+    sourcePosDefs: { marginLeft: "18px", padding: "0 0 0 5px" },
+    header: { boxSizing: "border-box", display: "flex", justifyContent: "space-between" },
+    actions: {
+      boxSizing: "border-box",
+      paddingBottom: "4px",
+      display: "flex",
+      justifyContent: "center",
+    },
+    sound: { boxSizing: "border-box", padding: "2px" },
+    best: { boxSizing: "border-box", padding: "2px" },
+    sentenceButton: { boxSizing: "border-box", padding: "2px" },
+    // FIXME: this needs to get put down there somewhere...
+    recentSentences: { textAlign: "left", fontSize: `${Math.min(150, params.fontSize)}%` },
+  };
+});
 
 export default function TokenDetails({ readerConfig }: Props): ReactElement {
   const invisible = {
@@ -67,7 +70,7 @@ export default function TokenDetails({ readerConfig }: Props): ReactElement {
     padding: "0px",
     visibility: "hidden",
   } as PopupPosition;
-  const classes = useStyles({
+  const { classes } = useStyles({
     fontSize: Math.min(150, readerConfig.fontSize * 100),
     glossFontSize: Math.min(150, readerConfig.glossFontSize * 100),
   });

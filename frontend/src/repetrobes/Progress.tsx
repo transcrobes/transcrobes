@@ -1,4 +1,4 @@
-import { styled, Theme, useTheme } from "@material-ui/core";
+import { styled, Theme, useTheme } from "@mui/material";
 import { ReactElement } from "react";
 import { RepetrobesActivityConfigType } from "../lib/types";
 
@@ -13,7 +13,7 @@ interface StyleProps {
 const ProgressStyle = styled(({ colour, children, ...other }: StyleProps) => {
   return <div {...other}>{children}</div>;
 })({
-  backgroundColor: ({ colour }: StyleProps) => colour || "inherit",
+  // backgroundColor: ({ colour }: StyleProps) => colour || "inherit",
   padding: "0.2em",
 });
 
@@ -48,15 +48,10 @@ export default function Progress({
   return (
     <div>
       <ProgressStyle
-        colour={progressColour(
-          theme,
-          newToday,
-          completedNewToday,
-          Math.min(allNewToday, activityConfig.maxNew),
-        )}
+        colour={progressColour(theme, newToday, completedNewToday, Math.min(allNewToday, activityConfig.maxNew))}
       >
-        New: ({completedNewToday}) {newToday} / {Math.min(allNewToday, activityConfig.maxNew)} (
-        {availableNewToday} available)
+        New: ({completedNewToday}) {newToday} / {Math.min(allNewToday, activityConfig.maxNew)} ({availableNewToday}{" "}
+        available)
       </ProgressStyle>
       <ProgressStyle
         colour={progressColour(

@@ -1,4 +1,5 @@
-import { Button, Grid, makeStyles, Typography } from "@material-ui/core";
+import { Button, Grid, Typography } from "@mui/material";
+import { makeStyles } from "tss-react/mui";
 import { ContentState, convertFromHTML, convertFromRaw, Editor, EditorState } from "draft-js";
 import "draft-js/dist/Draft.css";
 import { ReactElement, useState } from "react";
@@ -7,7 +8,7 @@ import { CardType, DefinitionType, noop, ProviderTranslationType } from "../lib/
 import MeaningEditor from "./MeaningEditor";
 import PosItems from "./PosItems";
 
-const useStyles = makeStyles({
+const useStyles = makeStyles()({
   providerEntry: { padding: "1em" },
   translations: { maxWidth: "500px" },
   editorContent: { maxWidth: "500px" },
@@ -29,7 +30,7 @@ export default function EditableDefinitionTranslations({
   const [current, setCurrent] = useState(card.front ? convertFromRaw(JSON.parse(card.front)) : undefined);
   const [editing, setEditing] = useState(false);
 
-  const styles = useStyles();
+  const { classes } = useStyles();
 
   function frontFromTranslations(providerTranslation: ProviderTranslationType): string {
     return renderToString(<PosItems providerEntry={providerTranslation} />);
@@ -54,10 +55,10 @@ export default function EditableDefinitionTranslations({
   return (
     <>
       {current && !editing && (
-        <Grid className={styles.providerEntry} container justifyContent="space-between">
+        <Grid className={classes.providerEntry} container justifyContent="space-between">
           <Grid item>
             <Typography>Current value</Typography>
-            <div className={styles.editorContent}>
+            <div className={classes.editorContent}>
               <Editor editorState={EditorState.createWithContent(current)} onChange={noop} readOnly={true} />
             </div>
           </Grid>
@@ -75,9 +76,9 @@ export default function EditableDefinitionTranslations({
         </Grid>
       )}
       {current && editing && (
-        <Grid className={styles.providerEntry} container justifyContent="space-between">
+        <Grid className={classes.providerEntry} container justifyContent="space-between">
           <Grid item>
-            <div className={styles.editorContent}>
+            <div className={classes.editorContent}>
               <MeaningEditor initial={current} handleSave={handleSave} />
             </div>
           </Grid>
@@ -88,14 +89,14 @@ export default function EditableDefinitionTranslations({
           return (
             providerEntry.posTranslations.length > 0 && (
               <Grid
-                className={styles.providerEntry}
+                className={classes.providerEntry}
                 container
                 justifyContent="space-between"
                 key={providerEntry.provider}
               >
                 <Grid item>
                   <Typography>{providerEntry.provider}</Typography>
-                  <PosItems providerEntry={providerEntry} classes={styles} />
+                  <PosItems providerEntry={providerEntry} classes={classes} />
                 </Grid>
                 <Grid item>
                   <Button

@@ -1,10 +1,11 @@
-import { createTheme, makeStyles, ThemeProvider } from "@material-ui/core";
+import { createTheme, StyledEngineProvider, ThemeProvider } from "@mui/material";
 import { EditorState } from "draft-js";
 import { stateToHTML } from "draft-js-export-html";
 import "draft-js/dist/Draft.css";
 import MUIRichTextEditor from "mui-rte";
 import { ReactElement, useEffect, useRef, useState } from "react";
 import { TopToolbar } from "react-admin";
+import { makeStyles } from "tss-react/mui";
 import { store } from "../../app/createStore";
 import { useAppDispatch, useAppSelector, useJssStyles } from "../../app/hooks";
 import Conftainer from "../../components/Conftainer";
@@ -33,7 +34,7 @@ type Props = {
 };
 const MAX_TEXT_LENGTH = 30000;
 const DATA_SOURCE = "Textcrobes.tsx";
-const useStyles = makeStyles({
+const useStyles = makeStyles()({
   error: {
     color: "red",
     fontWeight: "bold",
@@ -59,16 +60,18 @@ export default function Textcrobes({ proxy }: Props): ReactElement {
   const readerConfig = useAppSelector((state) => state.simpleReader[id] || DEFAULT_TEXT_READER_CONFIG_STATE);
   const themeName = useAppSelector((state) => state.theme);
 
-  const classes = useStyles();
+  const { classes } = useStyles();
   const etfClasses = useJssStyles(readerConfig);
 
   const theme = createTheme({
     palette: {
-      type: themeName || "light", // Switching the dark mode on is a single property value change.
+      mode: themeName || "light", // Switching the dark mode on is a single property value change.
     },
   });
 
   const helpUrl = "https://transcrob.es/page/software/learn/textcrobes/";
+  // FIXME: this is still the way to style the editor because there is hardcoding
+  // of the "overrides" property in mui-rte component.
   Object.assign(theme, {
     overrides: {
       MUIRichTextEditor: {
@@ -150,15 +153,17 @@ export default function Textcrobes({ proxy }: Props): ReactElement {
       {error && <div className={classes.error}>{error}</div>}
       <div onPaste={(event) => restrictToMaxCharacters(event)}>
         <Conftainer label="Text to Transcrobe" id="container">
-          <ThemeProvider theme={theme}>
-            <MUIRichTextEditor
-              maxLength={MAX_TEXT_LENGTH}
-              controls={[]}
-              onChange={setEditorState}
-              label="Type something here..."
-              onSave={noop}
-            />
-          </ThemeProvider>
+          <StyledEngineProvider injectFirst>
+            <ThemeProvider theme={theme}>
+              <MUIRichTextEditor
+                maxLength={MAX_TEXT_LENGTH}
+                controls={[]}
+                onChange={setEditorState}
+                label="Type something here..."
+                onSave={noop}
+              />
+            </ThemeProvider>
+          </StyledEngineProvider>
         </Conftainer>
       </div>
       <br />

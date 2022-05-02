@@ -1,4 +1,4 @@
-import { Typography } from "@material-ui/core";
+import { Typography } from "@mui/material";
 
 export default function Intro({ inited }: { inited: boolean }) {
   return !inited ? (

@@ -1,4 +1,4 @@
-import ExportIcon from "@material-ui/icons/ImportExport";
+import ExportIcon from "@mui/icons-material/ImportExport";
 
 export default {
   icon: ExportIcon,

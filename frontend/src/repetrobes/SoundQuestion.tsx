@@ -1,4 +1,4 @@
-import { Button } from "@material-ui/core";
+import { Button } from "@mui/material";
 import { ReactElement } from "react";
 import QuestionDefinitionGraph from "./Common";
 import { say } from "../lib/funclib";

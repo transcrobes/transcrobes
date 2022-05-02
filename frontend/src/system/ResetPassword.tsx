@@ -1,24 +1,25 @@
 import { ReactElement, useEffect, useState } from "react";
 import { Notification, useTranslate, useNotify } from "react-admin";
-import { useHistory } from "react-router";
+// import { useHistory } from "react-router";
+import { useNavigate } from "react-router";
 import { Field, withTypes } from "react-final-form";
-import ReplayIcon from "@material-ui/icons/Replay";
-import { makeStyles } from "@material-ui/core/styles";
-import Card from "@material-ui/core/Card";
-import Avatar from "@material-ui/core/Avatar";
-import CardActions from "@material-ui/core/CardActions";
-import Button from "@material-ui/core/Button";
-import Typography from "@material-ui/core/Typography";
+import ReplayIcon from "@mui/icons-material/Replay";
+import { makeStyles } from "tss-react/mui";
+import Card from "@mui/material/Card";
+import Avatar from "@mui/material/Avatar";
+import CardActions from "@mui/material/CardActions";
+import Button from "@mui/material/Button";
+import Typography from "@mui/material/Typography";
 import { Link } from "react-router-dom";
-import CircularProgress from "@material-ui/core/CircularProgress";
-import { TextField } from "@material-ui/core";
+import CircularProgress from "@mui/material/CircularProgress";
+import { TextField } from "@mui/material";
 import { useCookies } from "react-cookie";
 import PasswordStrengthBar from "react-password-strength-bar";
 import { OnChange } from "react-final-form-listeners";
 import { useAppDispatch } from "../app/hooks";
 import { throttledLogout } from "../features/user/userSlice";
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles()((theme) => ({
   main: {
     display: "flex",
     flexDirection: "column",
@@ -91,9 +92,10 @@ const { Form } = withTypes<FormValues>();
 function ResetPassword(): ReactElement {
   const [loading, setLoading] = useState(false);
   const translate = useTranslate();
-  const classes = useStyles();
+  const { classes } = useStyles();
   const notify = useNotify();
-  const history = useHistory();
+  // const history = useHistory();
+  const navigate = useNavigate();
   const [password, setLocalPassword] = useState("");
   const [passwordScore, setPasswordScore] = useState(0);
 
@@ -108,8 +110,9 @@ function ResetPassword(): ReactElement {
     removeCookie("session");
 
     if (!token) {
-      notify("user.reset_password.error", "error");
-      history.push("/recover-password");
+      notify("user.reset_password.error", { type: "error" });
+      // history.push("/recover-password");
+      navigate("/recover-password");
     }
   }, []);
 
@@ -128,8 +131,9 @@ function ResetPassword(): ReactElement {
     })
       .then((res) => {
         console.debug("Resetting password was", res.ok);
-        notify("user.reset_password.success", "success");
-        history.push("/login");
+        notify("user.reset_password.success", { type: "success" });
+        //history.push("/login");
+        navigate("/login");
       })
       .catch((error: Error) => {
         setLoading(false);
@@ -139,10 +143,10 @@ function ResetPassword(): ReactElement {
             : typeof error === "undefined" || !error.message
             ? "user.reset_password.error"
             : error.message,
-          "warning",
-          {
-            _: typeof error === "string" ? error : error && error.message ? error.message : undefined,
-          },
+          { type: "warning" },
+          // {
+          //   _: typeof error === "string" ? error : error && error.message ? error.message : undefined,
+          // },
         );
       });
   }
@@ -159,7 +163,8 @@ function ResetPassword(): ReactElement {
       errors.password = translate("user.reset_password.passwords_different");
     }
     if (!token) {
-      history.push("/recover-password");
+      //history.push("/recover-password");
+      navigate("/recover-password");
     }
 
     return errors;

@@ -2,7 +2,7 @@ import { createComponentVNode, render } from "inferno";
 import { Provider as InfernoProvider } from "inferno-redux";
 import jss from "jss";
 import preset from "jss-preset-default";
-import ReactDOM from "react-dom";
+import { createRoot } from "react-dom/client";
 import { Provider } from "react-redux";
 import { ETFStyles } from "../../components/Common";
 import EnrichedTextFragment from "../../components/content/etf/EnrichedTextFragment";
@@ -102,11 +102,11 @@ loadSettingsFromParentFrame();
 const uniqueIds = missingWordIdsFromModels(currentModels, definitions);
 
 ensureDefinitionsLoaded(proxy, [...uniqueIds], store).then(() => {
-  ReactDOM.render(
+  const container = document.body.appendChild(document.createElement("div"));
+  createRoot(container!).render(
     <Provider store={store}>
       <ETFStyleUpdater sheet={sheet} id={bookId} />
     </Provider>,
-    document.body.appendChild(document.createElement("div")),
   );
   if (tokensInModel(currentModels) > MAX_TOKENS_FOR_PRE_ENRICHMENT) {
     for (const etf of document.getElementsByTagName("enriched-text-fragment")) {

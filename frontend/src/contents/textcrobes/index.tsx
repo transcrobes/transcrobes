@@ -1,4 +1,4 @@
-import ShortTextIcon from "@material-ui/icons/ShortText";
+import ShortTextIcon from "@mui/icons-material/ShortText";
 
 export default {
   icon: ShortTextIcon,

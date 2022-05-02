@@ -1,20 +1,21 @@
+import { CardHeader, Typography } from "@mui/material";
+import Button from "@mui/material/Button";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
 import { ReactElement, useState } from "react";
-import Card from "@material-ui/core/Card";
-import CardContent from "@material-ui/core/CardContent";
-import Button from "@material-ui/core/Button";
-import { makeStyles } from "@material-ui/core/styles";
-import { CardHeader, Typography } from "@material-ui/core";
-import { useTranslate, Title, TopToolbar } from "react-admin";
-
-import { getDatabaseName, deleteDatabase } from "../database/Database";
-import { AbstractWorkerProxy } from "../lib/proxies";
-import HelpButton from "../components/HelpButton";
-import { ThemeName } from "../lib/types";
+import { Title, TopToolbar, useTheme, useTranslate } from "react-admin";
+import { makeStyles } from "tss-react/mui";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
-import { setInitialisedAsync } from "../database/authdb";
+import HelpButton from "../components/HelpButton";
+import { Loading } from "../components/Loading";
+import { clearAuthDatabase } from "../database/authdb";
+import { getDatabaseName } from "../database/Database";
 import { changeTheme } from "../features/themes/themeReducer";
+import { darkTheme, lightTheme } from "../layout/themes";
+import { AbstractWorkerProxy } from "../lib/proxies";
+import { ThemeName } from "../lib/types";
 
-const useStyles = makeStyles({
+const useStyles = makeStyles()({
   label: { width: "10em", display: "inline-block" },
   button: { margin: "1em" },
   toolbar: {
@@ -28,7 +29,7 @@ interface RefreshCacheButtonProps {
 }
 
 function RefreshCacheButton({ onCacheEmptied }: RefreshCacheButtonProps): ReactElement {
-  const classes = useStyles();
+  const { classes } = useStyles();
 
   function handleClick() {
     // WEBPUB_CACHE_NAME
@@ -50,45 +51,11 @@ function RefreshCacheButton({ onCacheEmptied }: RefreshCacheButtonProps): ReactE
   );
 }
 
-interface ReinstallDBButtonProps {
-  proxy: AbstractWorkerProxy;
-  onDBDeleted: (message: string) => void;
-}
-
-function ReinstallDBButton({ proxy, onDBDeleted }: ReinstallDBButtonProps): ReactElement {
-  const classes = useStyles();
-  const username = useAppSelector((state) => state.userData.username);
-
-  async function handleClick() {
-    if (username) {
-      const dbName = getDatabaseName({ url: new URL(window.location.href), username });
-      await proxy.sendMessagePromise<string>({
-        source: "System",
-        type: "resetDBConnections",
-        value: "",
-      });
-      await setInitialisedAsync(username, false);
-      // FIXME: should probably have this done in the SW, not here... ideally there should
-      // be no refs to data.ts in the UI AT ALL
-      await deleteDatabase(dbName);
-      const message = `Removed ${dbName}`;
-      onDBDeleted(message);
-      console.log(message);
-      window.location.href = "/";
-    }
-  }
-  return (
-    <Button variant="contained" className={classes.button} color={"primary"} onClick={handleClick}>
-      Reinstall DB (takes ~20 minutes!)
-    </Button>
-  );
-}
-
 interface ReloadDBButtonProps {
   proxy: AbstractWorkerProxy;
 }
 function ReloadDBButton({ proxy }: ReloadDBButtonProps): ReactElement {
-  const classes = useStyles();
+  const { classes } = useStyles();
 
   async function handleClick() {
     const username = useAppSelector((state) => state.userData.username);
@@ -106,6 +73,42 @@ function ReloadDBButton({ proxy }: ReloadDBButtonProps): ReactElement {
   );
 }
 
+interface ReinstallDBButtonProps {
+  beforeReinstall: () => void;
+  onDBDeleted: (message: string) => void;
+}
+
+function ReinstallDBButton({ beforeReinstall, onDBDeleted }: ReinstallDBButtonProps): ReactElement {
+  const { classes } = useStyles();
+  const username = useAppSelector((state) => state.userData.username);
+
+  async function handleClick() {
+    if (username) {
+      beforeReinstall();
+      const dbName = getDatabaseName({ url: new URL(window.location.href), username });
+      const reg = await navigator.serviceWorker.getRegistration();
+      await reg?.unregister();
+      await clearAuthDatabase();
+
+      const databases = await indexedDB.databases();
+      for (const db of databases) {
+        if (db.name && db.name.includes(dbName)) {
+          indexedDB.deleteDatabase(db.name);
+        }
+      }
+      const message = `Removed the database ${dbName}`;
+      onDBDeleted(message);
+      console.log(message);
+      window.location.href = "/";
+    }
+  }
+  return (
+    <Button variant="contained" className={classes.button} color={"primary"} onClick={handleClick}>
+      Refresh DB from server (up to 10 mins)
+    </Button>
+  );
+}
+
 interface Props {
   proxy: AbstractWorkerProxy;
 }
@@ -113,16 +116,20 @@ interface Props {
 function System({ proxy }: Props): ReactElement {
   const translate = useTranslate();
   const [message, setMessage] = useState("");
-  const classes = useStyles();
+  const [loading, setLoading] = useState(false);
+  const { classes } = useStyles();
   const helpUrl = "https://transcrob.es/page/software/configure/system/";
 
   // const locale = useLocale();
   // const setLocale = useSetLocale();
-  const theme = useAppSelector((state) => state.theme);
+
+  const myTheme = useAppSelector((state) => state.theme);
+  const [theme, setTheme] = useTheme();
   const dispatch = useAppDispatch();
 
   function handleUpdate(mode: ThemeName) {
     localStorage.setItem("mode", mode); // a bit hacky, probably better somewhere else
+    setTheme(mode === "dark" ? darkTheme : lightTheme);
     return dispatch(changeTheme(mode));
   }
 
@@ -135,6 +142,7 @@ function System({ proxy }: Props): ReactElement {
       <Card>
         <Title title={translate("pos.system")} />
         <CardContent>
+          <Loading position="relative" show={loading} message="Deleting the databases" />
           <div>
             <RefreshCacheButton onCacheEmptied={(message) => setMessage(message)} />
           </div>
@@ -142,7 +150,12 @@ function System({ proxy }: Props): ReactElement {
             <ReloadDBButton proxy={proxy} />
           </div>
           <div>
-            <ReinstallDBButton proxy={proxy} onDBDeleted={(message) => setMessage(message)} />
+            <ReinstallDBButton
+              beforeReinstall={() => setLoading(true)}
+              onDBDeleted={(message) => {
+                setMessage(message);
+              }}
+            />
           </div>
           <Typography>{message}</Typography>
         </CardContent>
@@ -156,7 +169,7 @@ function System({ proxy }: Props): ReactElement {
           <Button
             variant="contained"
             className={classes.button}
-            color={theme === "light" ? "primary" : "default"}
+            color={myTheme === "light" ? "primary" : undefined}
             onClick={() => handleUpdate("light")}
           >
             {translate("pos.theme.light")}
@@ -164,7 +177,7 @@ function System({ proxy }: Props): ReactElement {
           <Button
             variant="contained"
             className={classes.button}
-            color={theme === "dark" ? "primary" : "default"}
+            color={myTheme === "dark" ? "primary" : undefined}
             onClick={() => handleUpdate("dark")}
           >
             {translate("pos.theme.dark")}

@@ -1,8 +1,8 @@
-import { Box, Link } from "@material-ui/core";
-import { useTheme } from "@material-ui/core/styles";
-import Fullscreen from "@material-ui/icons/Fullscreen";
-import FullscreenExit from "@material-ui/icons/FullscreenExit";
-import HomeIcon from "@material-ui/icons/Home";
+import { Box, Link } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
+import Fullscreen from "@mui/icons-material/Fullscreen";
+import FullscreenExit from "@mui/icons-material/FullscreenExit";
+import HomeIcon from "@mui/icons-material/Home";
 import React from "react";
 import { Button } from "react-admin";
 import HelpButton from "../../components/HelpButton";

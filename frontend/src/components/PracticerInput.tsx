@@ -1,43 +1,30 @@
-import { IconButton, makeStyles, Theme } from "@material-ui/core";
-import CheckIcon from "@material-ui/icons/Check";
-import SentimentSatisfiedIcon from "@material-ui/icons/SentimentSatisfied";
-import SentimentVeryDissatisfiedIcon from "@material-ui/icons/SentimentVeryDissatisfied";
-import SentimentVerySatisfiedIcon from "@material-ui/icons/SentimentVerySatisfied";
+import CheckIcon from "@mui/icons-material/Check";
+import SentimentSatisfiedIcon from "@mui/icons-material/SentimentSatisfied";
+import SentimentVeryDissatisfiedIcon from "@mui/icons-material/SentimentVeryDissatisfied";
+import SentimentVerySatisfiedIcon from "@mui/icons-material/SentimentVerySatisfied";
+import { IconButton, useTheme } from "@mui/material";
 import * as CSS from "csstype";
 import { ReactElement } from "react";
+import { makeStyles } from "tss-react/mui";
 import { GRADE } from "../database/Schema";
 
 interface IconProps {
-  iconColour?: CSS.Color;
   iconPadding?: string;
-  smallSize?: number;
-  largeSize?: number;
 }
 
-const useStyles = makeStyles<Theme, IconProps>((theme) => ({
+const useStyles = makeStyles<IconProps>()((_theme, params) => ({
   practicerStyle: {
-    display: "flex",
+    display: "flex" as const,
     justifyContent: "space-between",
     padding: "0.5em",
   },
-  iconStyle: ({ iconColour, iconPadding, smallSize, largeSize }: IconProps) => {
-    return {
-      "& svg": {
-        [theme.breakpoints.down("sm")]: {
-          fontSize: smallSize || 72,
-        },
-        [theme.breakpoints.up("sm")]: {
-          fontSize: largeSize || 100,
-        },
-        color: iconColour || "blue",
-      },
-      padding: iconPadding || "12px",
-    };
+  iconStyle: {
+    padding: params.iconPadding || "12px",
   },
 }));
 
 interface PracticerInputProps {
-  iconColour?: CSS.Color;
+  iconColour?: CSS.Property.Color;
   smallSize?: number;
   largeSize?: number;
   iconPadding?: string;
@@ -56,36 +43,51 @@ function PracticerInput({
   function addOrUpdateCards(grade: number) {
     onPractice(wordId, grade);
   }
-  const classes = useStyles({ iconColour, smallSize, largeSize, iconPadding });
+  const theme = useTheme();
+  const { classes } = useStyles({ iconPadding });
+  const iconSizeStyle = {
+    [theme.breakpoints.down("md")]: {
+      fontSize: smallSize || 72,
+    },
+    [theme.breakpoints.up("sm")]: {
+      fontSize: largeSize || 100,
+    },
+    color: iconColour || "blue",
+  };
+
   return (
     <div className={classes.practicerStyle}>
       <IconButton
         className={classes.iconStyle}
         title="I don't know this word yet"
         onClick={() => addOrUpdateCards(GRADE.UNKNOWN)}
+        size="large"
       >
-        <SentimentVeryDissatisfiedIcon />
+        <SentimentVeryDissatisfiedIcon sx={iconSizeStyle} />
       </IconButton>
       <IconButton
         className={classes.iconStyle}
         title="I am not confident with this word"
         onClick={() => addOrUpdateCards(GRADE.HARD)}
+        size="large"
       >
-        <SentimentSatisfiedIcon />
+        <SentimentSatisfiedIcon sx={iconSizeStyle} />
       </IconButton>
       <IconButton
         className={classes.iconStyle}
         title="I am comfortable with this word"
         onClick={() => addOrUpdateCards(GRADE.GOOD)}
+        size="large"
       >
-        <SentimentVerySatisfiedIcon />
+        <SentimentVerySatisfiedIcon sx={iconSizeStyle} />
       </IconButton>
       <IconButton
         className={classes.iconStyle}
         title="I know this word, I don't need to revise it again"
         onClick={() => addOrUpdateCards(GRADE.KNOWN)}
+        size="large"
       >
-        <CheckIcon />
+        <CheckIcon sx={iconSizeStyle} />
       </IconButton>
     </div>
   );

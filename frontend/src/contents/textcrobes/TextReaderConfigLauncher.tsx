@@ -1,13 +1,14 @@
-import { Box, Drawer, makeStyles, Theme } from "@material-ui/core";
-import SettingsIcon from "@material-ui/icons/Settings";
+import { Box, Drawer } from "@mui/material";
+import { makeStyles } from "tss-react/mui";
+import SettingsIcon from "@mui/icons-material/Settings";
 import { ReactElement, useState } from "react";
 import { Button } from "react-admin";
 import useWindowDimensions from "../../hooks/WindowDimensions";
 import ContentConfigDrawer, { ContentConfigProps } from "../common/ReaderConfig";
 
-const useStyles = makeStyles((theme: Theme) => ({
+const useStyles = makeStyles()((theme) => ({
   button: {
-    [theme.breakpoints.down("sm")]: {
+    [theme.breakpoints.down("md")]: {
       "& svg": {
         fontSize: 15,
       },
@@ -22,7 +23,7 @@ const useStyles = makeStyles((theme: Theme) => ({
 
 export default function ContentConfigLauncher({ ...props }: ContentConfigProps): ReactElement {
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
-  const classes = useStyles();
+  const { classes } = useStyles();
   const open = Boolean(anchorEl);
   const dimensions = useWindowDimensions();
   const width = dimensions.width < 600 ? dimensions.width * 0.8 : "inherit";

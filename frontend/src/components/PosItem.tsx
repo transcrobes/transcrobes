@@ -1,4 +1,4 @@
-import { Typography } from "@material-ui/core";
+import { Typography } from "@mui/material";
 import { ReactElement } from "react";
 import { store } from "../app/createStore";
 import { toPosLabels } from "../lib/libMethods";
