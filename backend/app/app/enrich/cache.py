@@ -133,7 +133,7 @@ def get_blob_content(repo, path_name, branch="master"):
 
 def regenerate_character_jsons_multi() -> bool:
     logger.info("Generating character jsons")
-
+    pathlib.Path(settings.HANZI_CACHE_DIR).mkdir(parents=True, exist_ok=True)
     last_updated = int(os.path.basename(latest_character_json_dir_path()) or 0)
 
     g = Github()

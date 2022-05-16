@@ -165,7 +165,7 @@
     "ts-enum-util": "^4.0.2",
     "tss-react": "^3.6.2",
     "unidecode": "^0.1.8",
-    "use-resize-observer": "^8.0.0",
+    "use-resize-observer": "^9.0.0",
     "uuid": "^8.3.2",
     "workbox-core": "^6.3.0",
     "workbox-expiration": "^6.3.0",
