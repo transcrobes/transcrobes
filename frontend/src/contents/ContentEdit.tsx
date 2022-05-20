@@ -5,7 +5,7 @@ export default function ContentEdit() {
   return (
     <Edit actions={<HelpEditActions helpUrl="https://transcrob.es/page/software/configure/contents/" />}>
       <SimpleForm redirect="list">
-        <TextField source="id" />
+        <TextField source="id" sx={{ paddingBottom: "1em" }} />
         <TextInput label="Content name" source="title" validate={[required()]} />
         <TextInput label="Content description" multiline source="description" />
         <TextInput source="author" />

@@ -6,7 +6,7 @@ export default function UserListEdit(): ReactElement {
   return (
     <Edit actions={<HelpEditActions helpUrl="https://transcrob.es/page/software/configure/wordlists/" />}>
       <SimpleForm redirect="list">
-        <TextField source="id" />
+        <TextField source="id" sx={{ paddingBottom: "1em" }} />
         <TextInput label="List name" source="title" validate={[required()]} />
         <TextInput label="List description" multiline source="description" />
       </SimpleForm>

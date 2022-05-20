@@ -1314,24 +1314,24 @@ async def set_objects(
         for obj in objs:
             obj_unities.append(
                 (
-                    user.id,
-                    obj.id,
+                    int(user.id),
+                    str(obj.id),
                 )
             )
-        result = await db.execute(select(model_ref).where(tup.in_(obj_unities)))
+        stmt = select(model_ref).where(tup.in_(obj_unities))
+        result = await db.execute(stmt)
         some_objs = {}
         for dj_obj in result.scalars().all():
             some_objs[
                 (
-                    user.id,
-                    dj_obj.id,
+                    int(user.id),
+                    str(dj_obj.id),
                 )
             ] = dj_obj
-
         for obj in objs:
             if (
-                user.id,
-                obj.id,
+                int(user.id),
+                str(obj.id),
             ) in some_objs:
                 dj_obj = some_objs[
                     (

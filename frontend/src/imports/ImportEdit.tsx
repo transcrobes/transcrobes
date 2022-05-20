@@ -5,7 +5,7 @@ export default function ImportEdit() {
   return (
     <Edit actions={<HelpEditActions helpUrl="https://transcrob.es/page/software/configure/imports/" />}>
       <SimpleForm redirect="list">
-        <TextField source="id" />
+        <TextField source="id" sx={{ paddingBottom: "1em" }} />
         <TextInput label="Import name" source="title" validate={[required()]} />
         <TextInput label="Import description" multiline source="description" />
       </SimpleForm>

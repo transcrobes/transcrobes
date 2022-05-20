@@ -7,7 +7,7 @@ export default function ImportCreate() {
   return (
     <Create actions={<HelpCreateActions helpUrl="https://transcrob.es/page/software/configure/imports/" />}>
       <SimpleForm redirect="list">
-        <Typography>
+        <Typography sx={{ paddingBottom: "1em" }}>
           Please check the{" "}
           <a target="_blank" href="https://transcrob.es/page/software/configure/imports/">
             Online Help

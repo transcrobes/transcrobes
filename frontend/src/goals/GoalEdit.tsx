@@ -14,7 +14,7 @@ export default function GoalEdit() {
   return (
     <Edit actions={<HelpEditActions helpUrl="https://transcrob.es/page/software/configure/goals/" />}>
       <SimpleForm redirect="list">
-        <TextField source="id" />
+        <TextField source="id" sx={{ paddingBottom: "1em" }} />
         <TextInput label="Goal name" source="title" validate={[required()]} />
         <TextInput label="Goal description" multiline source="description" />
         <NumberInput max={10} min={1} defaultValue={5} source="priority" step={1} validate={[required()]} />
