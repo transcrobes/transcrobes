@@ -1,5 +1,13 @@
 import { ReactElement } from "react";
-import { EditActionsProps, ShowButton, TopToolbar, useEditContext, useResourceDefinition } from "react-admin";
+import {
+  CreateButton,
+  EditActionsProps,
+  ListButton,
+  ShowButton,
+  TopToolbar,
+  useEditContext,
+  useResourceDefinition,
+} from "react-admin";
 import HelpButton from "./HelpButton";
 
 const sanitizeRestProps = ({
@@ -18,11 +26,13 @@ export const HelpEditActions = ({
   ...rest
 }: EditActionsProps & { helpUrl: string; helpLabel?: string }): ReactElement => {
   const { record } = useEditContext(rest);
-  const { hasShow } = useResourceDefinition(rest);
+  const { hasShow, hasList, hasCreate } = useResourceDefinition(rest);
 
   return (
     <TopToolbar className={className} {...sanitizeRestProps(rest as any)}>
+      {hasCreate && <CreateButton />}
       {hasShow && <ShowButton record={record} />}
+      {hasList && <ListButton />}
       <HelpButton url={helpUrl} text={helpLabel} />
     </TopToolbar>
   );
