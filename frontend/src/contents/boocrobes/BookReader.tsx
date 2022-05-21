@@ -90,15 +90,24 @@ export default function BookReader({ proxy }: ContentProps): ReactElement {
   const [manifest, setManifest] = useState<WebpubManifest>();
   const [error, setError] = useState<Error | undefined>(undefined);
   const [reader, setReader] = useState<any | undefined>(undefined);
-  const [forceRefresh, setForceRefresh] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const dispatch = useAppDispatch();
   const readerConfig = useAppSelector((state) => state.bookReader[id] || DEFAULT_BOOK_READER_CONFIG_STATE);
   const userData = useAppSelector((state) => state.userData);
   const themeName = useAppSelector((state) => state.theme);
+  const [loaded, setLoaded] = useState(false);
   const theme = createTheme({
     palette: {
       mode: themeName || "light", // Switching the dark mode on is a single property value change.
+    },
+    breakpoints: {
+      values: {
+        xs: 0,
+        sm: 850,
+        md: 900,
+        lg: 1200,
+        xl: 1536,
+      },
     },
   });
   useEffect(() => {
@@ -132,7 +141,6 @@ export default function BookReader({ proxy }: ContentProps): ReactElement {
         atStart: conf.atStart,
         atEnd: conf.atEnd,
       };
-
       window.transcrobesStore = store;
       const reader = await D2Reader.load({
         url,
@@ -191,6 +199,7 @@ export default function BookReader({ proxy }: ContentProps): ReactElement {
                 D2Reader.applyUserSettings({ fontSize: 100 });
               }
             }
+            setLoaded(true);
           });
         }
       }, 1000);
@@ -200,11 +209,12 @@ export default function BookReader({ proxy }: ContentProps): ReactElement {
       window.etfLoaded = undefined;
       D2Reader.unload();
     };
-  }, [proxy.loaded, manifest, forceRefresh]);
+  }, [proxy.loaded, manifest]);
 
-  // FIXME: this is only before completely removing dita...
   useEffect(() => {
-    setForceRefresh(!forceRefresh);
+    if (loaded) {
+      D2Reader.applyUserSettings({ fontFamily: `${readerConfig.fontFamily},${readerConfig.fontFamilyChinese}` });
+    }
   }, [readerConfig.fontFamily, readerConfig.fontFamilyChinese]);
 
   useEffect(() => {
