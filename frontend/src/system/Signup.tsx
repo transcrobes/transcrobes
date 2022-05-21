@@ -1,18 +1,18 @@
-import { ReactElement, useState } from "react";
-import { Notification, useTranslate, useNotify, TopToolbar } from "react-admin";
-import { Field, withTypes } from "react-final-form";
 import AddIcon from "@mui/icons-material/Add";
-import { makeStyles } from "tss-react/mui";
-import Card from "@mui/material/Card";
 import Avatar from "@mui/material/Avatar";
-import CardActions from "@mui/material/CardActions";
 import Button from "@mui/material/Button";
-import Typography from "@mui/material/Typography";
-import { Link } from "react-router-dom";
+import Card from "@mui/material/Card";
+import CardActions from "@mui/material/CardActions";
 import CircularProgress from "@mui/material/CircularProgress";
 import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
+import { ReactElement, useState } from "react";
+import { Notification, useNotify, useTranslate } from "react-admin";
+import { Field, withTypes } from "react-final-form";
 import { OnChange } from "react-final-form-listeners";
-import PasswordStrengthBar from "react-password-strength-bar";
+import { Link } from "react-router-dom";
+import { makeStyles } from "tss-react/mui";
+import PasswordStrengthBar from "../components/PasswordStrengthBar";
 
 const emailRegex =
   /[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?/;

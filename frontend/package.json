@@ -69,6 +69,7 @@
     "@types/unidecode": "^0.1.1",
     "@types/uuid": "^8.3.1",
     "@types/workbox-webpack-plugin": "^5.1.8",
+    "@types/zxcvbn": "^4.4.1",
     "@typescript-eslint/eslint-plugin": "^5.10.2",
     "@typescript-eslint/parser": "^5.10.2",
     "babel-loader": "^8.2.2",
@@ -152,7 +153,6 @@
     "react-final-form": "^6.5.9",
     "react-final-form-listeners": "^1.0.3",
     "react-jss": "^10.9.0",
-    "react-password-strength-bar": "^0.4.0",
     "react-player": "^2.9.0",
     "react-redux": "^8.0.1",
     "react-router-dom": "^6.3.0",
@@ -171,6 +171,7 @@
     "workbox-expiration": "^6.3.0",
     "workbox-precaching": "^6.3.0",
     "workbox-routing": "^6.3.0",
-    "workbox-window": "^6.3.0"
+    "workbox-window": "^6.3.0",
+    "zxcvbn": "^4.4.2"
   }
 }

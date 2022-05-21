@@ -1,6 +1,5 @@
 import { ReactElement, useEffect, useState } from "react";
 import { Notification, useTranslate, useNotify } from "react-admin";
-// import { useHistory } from "react-router";
 import { useNavigate } from "react-router";
 import { Field, withTypes } from "react-final-form";
 import ReplayIcon from "@mui/icons-material/Replay";
@@ -14,10 +13,10 @@ import { Link } from "react-router-dom";
 import CircularProgress from "@mui/material/CircularProgress";
 import { TextField } from "@mui/material";
 import { useCookies } from "react-cookie";
-import PasswordStrengthBar from "react-password-strength-bar";
 import { OnChange } from "react-final-form-listeners";
 import { useAppDispatch } from "../app/hooks";
 import { throttledLogout } from "../features/user/userSlice";
+import PasswordStrengthBar from "../components/PasswordStrengthBar";
 
 const useStyles = makeStyles()((theme) => ({
   main: {
@@ -94,7 +93,6 @@ function ResetPassword(): ReactElement {
   const translate = useTranslate();
   const { classes } = useStyles();
   const notify = useNotify();
-  // const history = useHistory();
   const navigate = useNavigate();
   const [password, setLocalPassword] = useState("");
   const [passwordScore, setPasswordScore] = useState(0);
@@ -111,7 +109,6 @@ function ResetPassword(): ReactElement {
 
     if (!token) {
       notify("user.reset_password.error", { type: "error" });
-      // history.push("/recover-password");
       navigate("/recover-password");
     }
   }, []);
@@ -132,7 +129,6 @@ function ResetPassword(): ReactElement {
       .then((res) => {
         console.debug("Resetting password was", res.ok);
         notify("user.reset_password.success", { type: "success" });
-        //history.push("/login");
         navigate("/login");
       })
       .catch((error: Error) => {
@@ -144,9 +140,6 @@ function ResetPassword(): ReactElement {
             ? "user.reset_password.error"
             : error.message,
           { type: "warning" },
-          // {
-          //   _: typeof error === "string" ? error : error && error.message ? error.message : undefined,
-          // },
         );
       });
   }
@@ -163,7 +156,6 @@ function ResetPassword(): ReactElement {
       errors.password = translate("user.reset_password.passwords_different");
     }
     if (!token) {
-      //history.push("/recover-password");
       navigate("/recover-password");
     }
 
