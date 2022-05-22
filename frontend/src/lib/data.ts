@@ -67,14 +67,14 @@ import {
 
 const IMPORT_FILE_STORAGE = "import_file_storage";
 
-function getNamedFileStorage(parameters: RxDBDataProviderParams): Promise<IDBFileStorage> {
+export function getNamedFileStorage(parameters: RxDBDataProviderParams): Promise<IDBFileStorage> {
   if (!parameters.username) {
     throw new Error("Unable to find the current user");
   }
   return getFileStorage(`${getDatabaseName(parameters)}_${IMPORT_FILE_STORAGE}`);
 }
 
-async function pushFiles(url: URL, username: string): Promise<{ status: "success" }> {
+export async function pushFiles(url: URL, username: string): Promise<{ status: "success" }> {
   const apiEndPoint = new URL("/api/v1/enrich/import_file", url.origin).href;
   const fileStore = await getNamedFileStorage({ url, username });
   const cacheFiles = await fileStore.list();
@@ -93,7 +93,11 @@ async function pushFiles(url: URL, username: string): Promise<{ status: "success
   return { status: "success" };
 }
 
-async function sendUserEvents(db: TranscrobesDatabase, url: URL, maxSendEvents = 500): Promise<{ status: string }> {
+export async function sendUserEvents(
+  db: TranscrobesDatabase,
+  url: URL,
+  maxSendEvents = 500,
+): Promise<{ status: string }> {
   if (!db) {
     return { status: "uninitialised" };
   }
@@ -125,7 +129,7 @@ async function sendUserEvents(db: TranscrobesDatabase, url: URL, maxSendEvents =
   return { status: "success" };
 }
 
-async function getAllFromDB(
+export async function getAllFromDB(
   db: TranscrobesDatabase,
   { collection, queryObj }: { collection: TranscrobesCollectionsKeys; queryObj?: MangoQuery<TranscrobesDocumentTypes> },
 ): // TODO: see whether this could be properly typed
@@ -134,7 +138,7 @@ Promise<any[]> {
   return values.map((x) => x.toJSON());
 }
 
-async function getByIds(
+export async function getByIds(
   db: TranscrobesDatabase,
   { collection, ids }: { collection: TranscrobesCollectionsKeys; ids: string[] },
 ): // TODO: see whether this could be properly typed
@@ -144,7 +148,7 @@ Promise<any[]> {
   return [...values.values()].map((def) => def.toJSON());
 }
 
-async function getKnownWordIds(db: TranscrobesDatabase): Promise<Set<string>> {
+export async function getKnownWordIds(db: TranscrobesDatabase): Promise<Set<string>> {
   const knownWordIds = new Set<string>(
     (
       await db.cards
@@ -184,7 +188,7 @@ async function getGraphs(db: TranscrobesDatabase, wordIds: string[]): Promise<Ma
   return graphs;
 }
 
-async function getFirstSuccessStatsForImport(
+export async function getFirstSuccessStatsForImport(
   db: TranscrobesDatabase,
   { importId, analysisString }: { importId?: string; analysisString?: string },
 ): Promise<ImportFirstSuccessStats | null> {
@@ -243,7 +247,20 @@ async function getFirstSuccessStatsForImport(
   };
 }
 
-async function getFirstSuccessStatsForList(
+export async function getWaitingRevisions(db: TranscrobesDatabase): Promise<CardType[]> {
+  return (
+    await db.cards
+      .find({
+        selector: {
+          $and: [{ firstRevisionDate: { $gt: 0 } }, { dueDate: { $lt: dayjs().unix() } }, { known: { $ne: true } }],
+        },
+        sort: [{ dueDate: "asc" }],
+      })
+      .exec()
+  ).map((c) => clone(c.toJSON()));
+}
+
+export async function getFirstSuccessStatsForList(
   db: TranscrobesDatabase,
   listId?: string,
 ): Promise<ListFirstSuccessStats | null> {
@@ -295,7 +312,7 @@ async function getFirstSuccessStatsForList(
   };
 }
 
-async function getCardWords(db: TranscrobesDatabase): Promise<DayCardWords> {
+export async function getCardWords(db: TranscrobesDatabase): Promise<DayCardWords> {
   // FIXME:
   // Is this the best way to do this?
   // Basically, there are three states:
@@ -334,7 +351,7 @@ async function getCardWords(db: TranscrobesDatabase): Promise<DayCardWords> {
   };
 }
 
-async function submitContentEnrichRequest(
+export async function submitContentEnrichRequest(
   db: TranscrobesDatabase,
   { contentId }: { contentId: string },
 ): Promise<string> {
@@ -356,7 +373,7 @@ async function submitContentEnrichRequest(
   return "success";
 }
 
-async function saveSurvey(
+export async function saveSurvey(
   db: TranscrobesDatabase,
   { surveyId, dataValue }: { surveyId: string; dataValue: string },
 ): Promise<string> {
@@ -382,18 +399,18 @@ async function saveSurvey(
   return "success";
 }
 
-async function getWordListWordIds(db: TranscrobesDatabase, wordListId: string): Promise<string[]> {
+export async function getWordListWordIds(db: TranscrobesDatabase, wordListId: string): Promise<string[]> {
   const wordList = await db.wordlists.findByIds([wordListId]);
   return wordList.has(wordListId) ? wordList.get(wordListId)!.wordIds : [];
 }
 
-async function getDefaultWordLists(db: TranscrobesDatabase): Promise<SelectableListElementType[]> {
+export async function getDefaultWordLists(db: TranscrobesDatabase): Promise<SelectableListElementType[]> {
   return [...(await db.wordlists.find().exec())].map((x) => {
     return { label: x.name, value: x.id, selected: x.default };
   });
 }
 
-async function getUserListWords(db: TranscrobesDatabase): Promise<{
+export async function getUserListWords(db: TranscrobesDatabase): Promise<{
   userListWords: UserListWordType;
   wordListNames: WordListNamesType;
 }> {
@@ -420,7 +437,7 @@ async function getUserListWords(db: TranscrobesDatabase): Promise<{
   return { userListWords, wordListNames };
 }
 
-async function getWordDetails(db: TranscrobesDatabase, graph: string): Promise<WordDetailsType> {
+export async function getWordDetails(db: TranscrobesDatabase, graph: string): Promise<WordDetailsType> {
   const details = await getWordDetailsUnsafe(db, graph);
   let chars: (CharacterType | null)[] = [];
   if (details.word) {
@@ -440,7 +457,7 @@ async function getWordDetails(db: TranscrobesDatabase, graph: string): Promise<W
   return safe;
 }
 
-async function getCardsForExport(db: TranscrobesDatabase) {
+export async function getCardsForExport(db: TranscrobesDatabase) {
   const allCards = await db.cards
     .find({ selector: { $or: [{ known: { $eq: true } }, { firstSuccessDate: { $gt: 0 } }] } })
     .exec();
@@ -477,7 +494,7 @@ async function getCardsForExport(db: TranscrobesDatabase) {
   return output;
 }
 
-async function getWordStatsForExport(db: TranscrobesDatabase) {
+export async function getWordStatsForExport(db: TranscrobesDatabase) {
   const allCards = await db.cards
     .find({ selector: { $or: [{ known: { $eq: true } }, { firstSuccessDate: { $gt: 0 } }] } })
     .exec();
@@ -567,7 +584,10 @@ async function getWordDetailsUnsafe(db: TranscrobesDatabase, graph: string): Pro
   };
 }
 
-async function getCharacterDetails(db: TranscrobesDatabase, graphs: string[]): Promise<(CharacterType | null)[]> {
+export async function getCharacterDetails(
+  db: TranscrobesDatabase,
+  graphs: string[],
+): Promise<(CharacterType | null)[]> {
   let chars: (CharacterType | null)[] = [];
   const values = await getCharacterDetailsUnsafe(db, graphs);
   if (graphs && graphs.length > 0) {
@@ -587,7 +607,7 @@ async function getCharacterDetailsUnsafe(
   return await db.characters.findByIds(graphs);
 }
 
-async function createCards(
+export async function createCards(
   db: TranscrobesDatabase,
   newCards: CardType[],
 ): Promise<{ success: CardType[]; error: RxStorageBulkWriteError<CardType>[] }> {
@@ -596,7 +616,7 @@ async function createCards(
   return { error: values.error, success };
 }
 
-async function updateRecentSentences(db: TranscrobesDatabase, sentences: RecentSentencesType[]): Promise<void> {
+export async function updateRecentSentences(db: TranscrobesDatabase, sentences: RecentSentencesType[]): Promise<void> {
   for (const s of cleanSentences(sentences)) {
     // Don't wait. Is this Ok?
     db.recentsentences.atomicUpsert({
@@ -619,7 +639,7 @@ function cleanSentences(sentences: RecentSentencesType[]): RecentSentencesType[]
   return sentences;
 }
 
-async function addRecentSentences(db: TranscrobesDatabase, sentences: RecentSentencesType[]): Promise<void> {
+export async function addRecentSentences(db: TranscrobesDatabase, sentences: RecentSentencesType[]): Promise<void> {
   await db.recentsentences.bulkInsert(
     cleanSentences(sentences).map((s) => {
       return {
@@ -631,7 +651,7 @@ async function addRecentSentences(db: TranscrobesDatabase, sentences: RecentSent
   );
 }
 
-async function getRecentSentences(
+export async function getRecentSentences(
   db: TranscrobesDatabase,
   ids: string[],
 ): Promise<Array<[string, RecentSentencesType]>> {
@@ -643,7 +663,7 @@ async function getRecentSentences(
   return sents;
 }
 
-async function getWordFromDBs(db: TranscrobesDatabase, graph: string): Promise<DefinitionType | null> {
+export async function getWordFromDBs(db: TranscrobesDatabase, graph: string): Promise<DefinitionType | null> {
   const word = await db.definitions
     .findOne({
       selector: { graph: { $eq: graph } },
@@ -652,13 +672,19 @@ async function getWordFromDBs(db: TranscrobesDatabase, graph: string): Promise<D
   return word ? clone(word.toJSON()) : null;
 }
 
-async function getContentConfigFromStore(db: TranscrobesDatabase, contentId: number): Promise<ContentConfigType> {
+export async function getContentConfigFromStore(
+  db: TranscrobesDatabase,
+  contentId: number,
+): Promise<ContentConfigType> {
   const dbValue = await db.content_config.findOne(contentId.toString()).exec();
   const returnVal = dbValue ? JSON.parse(dbValue.configString || "{}") : {};
   return returnVal;
 }
 
-async function setContentConfigToStore(db: TranscrobesDatabase, contentConfig: ContentConfigType): Promise<boolean> {
+export async function setContentConfigToStore(
+  db: TranscrobesDatabase,
+  contentConfig: ContentConfigType,
+): Promise<boolean> {
   await db.content_config.atomicUpsert({
     id: contentConfig.id.toString(),
     configString: JSON.stringify(contentConfig),
@@ -669,7 +695,7 @@ async function setContentConfigToStore(db: TranscrobesDatabase, contentConfig: C
 
 // FIXME: userStatsMode should be an enum
 // remove lemmaAndContexts any
-async function submitLookupEvents(
+export async function submitLookupEvents(
   db: TranscrobesDatabase,
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
   { lemmaAndContexts, userStatsMode, source }: { lemmaAndContexts: any; userStatsMode: number; source: string },
@@ -688,7 +714,7 @@ async function submitLookupEvents(
 
 // FIXME: seriously consider typing the eventData...
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-async function submitUserEvents(db: TranscrobesDatabase, eventData: any): Promise<boolean> {
+export async function submitUserEvents(db: TranscrobesDatabase, eventData: any): Promise<boolean> {
   let uuid = UUID();
   while (await db.event_queue.findOne(uuid).exec()) {
     console.debug(`looks like event ${uuid} already exists, looking for another`);
@@ -701,7 +727,7 @@ async function submitUserEvents(db: TranscrobesDatabase, eventData: any): Promis
   return true;
 }
 
-async function addOrUpdateCardsForWord(
+export async function addOrUpdateCardsForWord(
   db: TranscrobesDatabase,
   { wordId, grade }: { wordId: string; grade: number },
 ): Promise<CardType[]> {
@@ -721,7 +747,7 @@ async function addOrUpdateCardsForWord(
 }
 
 // FIXME: any, this will require not using the isRxDocument and being clean
-async function practiceCard(
+export async function practiceCard(
   db: TranscrobesDatabase,
   { currentCard, grade, badReviewWaitSecs }: { currentCard: any; grade: number; badReviewWaitSecs: number },
 ): Promise<CardType> {
@@ -753,11 +779,14 @@ async function practiceCard(
   return cardObject.toJSON();
 }
 
-async function updateCard(db: TranscrobesDatabase, card: CardType): Promise<void> {
+export async function updateCard(db: TranscrobesDatabase, card: CardType): Promise<void> {
   await db.cards.upsert(card);
 }
 
-async function practiceCardsForWord(db: TranscrobesDatabase, practiceDetails: PracticeDetailsType): Promise<void> {
+export async function practiceCardsForWord(
+  db: TranscrobesDatabase,
+  practiceDetails: PracticeDetailsType,
+): Promise<void> {
   const wordInfo = practiceDetails.wordInfo;
   const grade = practiceDetails.grade;
 
@@ -821,7 +850,10 @@ async function orderVocabReviews(
   return potentialWords;
 }
 
-async function getVocabReviews(db: TranscrobesDatabase, graderConfig: GraderConfig): Promise<VocabReview[] | null> {
+export async function getVocabReviews(
+  db: TranscrobesDatabase,
+  graderConfig: GraderConfig,
+): Promise<VocabReview[] | null> {
   const selectedLists = graderConfig.wordLists.filter((x) => x.selected).map((x) => x.value);
   if (selectedLists.length === 0) {
     console.debug("No wordLists, not trying to find reviews");
@@ -941,7 +973,7 @@ async function getPotentialWordIds(
   }
 }
 
-async function getSRSReviews(
+export async function getSRSReviews(
   db: TranscrobesDatabase,
   activityConfig: RepetrobesActivityConfigType,
   fromLang: InputLanguage,
@@ -1059,11 +1091,11 @@ async function getSRSReviews(
   };
 }
 
-async function getDayStats(db: TranscrobesDatabase): Promise<DayModelStatsType[]> {
+export async function getDayStats(db: TranscrobesDatabase): Promise<DayModelStatsType[]> {
   return [...(await db.day_model_stats.find().exec())].map((stat) => stat.toJSON());
 }
 
-async function saveDictionaryEntries(
+export async function saveDictionaryEntries(
   db: TranscrobesDatabase,
   { entries, dictionaryId }: { entries: Record<string, UserDefinitionType>; dictionaryId: string },
 ): Promise<void> {
@@ -1071,7 +1103,7 @@ async function saveDictionaryEntries(
   await dictionary?.atomicPatch({ lzContent: LZString.compressToUTF16(JSON.stringify(entries)) });
 }
 
-async function getAllShortChars(db: TranscrobesDatabase): Promise<Record<string, ShortChar>> {
+export async function getAllShortChars(db: TranscrobesDatabase): Promise<Record<string, ShortChar>> {
   const entries = await db.characters.find().exec();
   const chars: Record<string, ShortChar> = {};
   for (const char of entries) {
@@ -1080,7 +1112,7 @@ async function getAllShortChars(db: TranscrobesDatabase): Promise<Record<string,
   return chars;
 }
 
-async function getAllShortWords(db: TranscrobesDatabase): Promise<Record<string, ShortWord>> {
+export async function getAllShortWords(db: TranscrobesDatabase): Promise<Record<string, ShortWord>> {
   const entries = await db.definitions.find().exec();
   const words: Record<string, ShortWord> = {};
   for (const word of entries) {
@@ -1094,7 +1126,7 @@ async function getAllShortWords(db: TranscrobesDatabase): Promise<Record<string,
   return words;
 }
 
-async function getDictionaryEntries(
+export async function getDictionaryEntries(
   db: TranscrobesDatabase,
   { dictionaryId }: { dictionaryId: string },
 ): Promise<Record<string, UserDefinitionType>> {
@@ -1106,7 +1138,7 @@ async function getDictionaryEntries(
   );
 }
 
-async function getAllUserDictionaryEntries(db: TranscrobesDatabase): Promise<Record<string, null>> {
+export async function getAllUserDictionaryEntries(db: TranscrobesDatabase): Promise<Record<string, null>> {
   const dicts = await db.userdictionaries.find().exec();
   const allEntries: Record<string, null> = {};
   for (const dict of dicts) {
@@ -1119,47 +1151,3 @@ async function getAllUserDictionaryEntries(db: TranscrobesDatabase): Promise<Rec
   }
   return allEntries;
 }
-
-export {
-  getByIds,
-  getRecentSentences,
-  addRecentSentences,
-  updateRecentSentences,
-  getFirstSuccessStatsForList,
-  getFirstSuccessStatsForImport,
-  getCardWords,
-  sendUserEvents,
-  getNamedFileStorage,
-  pushFiles,
-  saveSurvey,
-  submitContentEnrichRequest,
-  getKnownWordIds,
-  getAllFromDB,
-  getDefaultWordLists,
-  getUserListWords,
-  getWordListWordIds,
-  getWordDetails,
-  getCharacterDetails,
-  createCards,
-  getWordFromDBs,
-  getContentConfigFromStore,
-  setContentConfigToStore,
-  submitLookupEvents,
-  submitUserEvents,
-  addOrUpdateCardsForWord,
-  practice,
-  practiceCard,
-  practiceCardsForWord,
-  getVocabReviews,
-  getSRSReviews,
-  updateCard,
-  recentSentencesFromLZ,
-  getDayStats,
-  getWordStatsForExport,
-  getCardsForExport,
-  saveDictionaryEntries,
-  getDictionaryEntries,
-  getAllShortWords,
-  getAllShortChars,
-  getAllUserDictionaryEntries,
-};

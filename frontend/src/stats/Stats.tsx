@@ -5,7 +5,8 @@ import { TopToolbar } from "react-admin";
 import HelpButton from "../components/HelpButton";
 import { DayProgressRead } from "./DayProgressRead";
 import { DayProgressRevised } from "./DayProgressRevised";
-import { UserListProgress } from "./ListProgress";
+import { ListProgress } from "./ListProgress";
+import { WaitingRevisions } from "./WaitingRevisions";
 
 const useStyles = makeStyles()((theme) => ({
   root: { margin: theme.spacing(1), maxWidth: "800px" },
@@ -28,19 +29,23 @@ export default function Stats(): ReactElement {
         </Typography>
         <hr />
         <Typography className={classes.header} variant="h6">
-          Known words
+          Known words (totals)
         </Typography>
-        <UserListProgress yIsNumber={true} nbPeriods={6} periodType="month" />
+        <ListProgress yIsNumber={true} nbPeriods={6} periodType="month" />
         <hr />
         <Typography className={classes.header} variant="h6">
-          Words seen and looked up
+          Words seen and looked up (rates)
         </Typography>
         <DayProgressRead />
         <hr />
         <Typography className={classes.header} variant="h6">
-          Words actively revised
+          Words actively revised (rates)
         </Typography>
         <DayProgressRevised />
+        <Typography className={classes.header} variant="h6">
+          Revisions waiting (totals)
+        </Typography>
+        <WaitingRevisions />
       </Container>
     </>
   );

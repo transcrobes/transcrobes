@@ -392,6 +392,7 @@ export function manageEvent(sw: ServiceWorkerGlobalScope, event: ExtendableMessa
     case "getRecentSentences":
     case "getFirstSuccessStatsForList":
     case "getFirstSuccessStatsForImport":
+    case "getWaitingRevisions":
     case "submitContentEnrichRequest":
     case "getDayStats":
     case "getWordStatsForExport":
