@@ -17,7 +17,7 @@ export default function Synonyms({ token, definition }: Props): ReactElement {
       const synonyms = definition.synonyms.filter(
         (x) => toSimplePos(x.posTag, fromLang) === toSimplePos(token.pos!, fromLang),
       );
-      setSyns(synonyms[0]?.values);
+      setSyns(synonyms[0]?.values || []);
     }
   }, [token]);
 
