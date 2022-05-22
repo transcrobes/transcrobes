@@ -59,14 +59,6 @@ export default function ContentConfig({
   const dispatch = useAppDispatch();
   const id = readerConfig.id;
   const { classes: localClasses } = useStyles();
-  // function fontColourSelectedChange(
-  //   checked: boolean,
-  //   // stateSetter: (value: ContentConfigPayload<HslColor | null>) => void,
-  //   stateSetter: AnyAction,
-  // ) {
-  //   dispatch(stateSetter({ id, value: checked ? DEFAULT_FONT_COLOUR : null }));
-  //   throw new Error("not implemented");
-  // }
   const changeGlossFontColour = useCallback(
     _.debounce((value: HslColor) => {
       dispatch(actions.setGlossFontColour({ id, value }));

@@ -6,6 +6,7 @@ import Conftainer from "../../components/Conftainer";
 import { bookReaderActions, DEFAULT_BOOK_READER_CONFIG_STATE } from "../../features/content/bookReaderSlice";
 import { ContentParams } from "../../lib/types";
 import ReaderConfig from "../common/ReaderConfig";
+import FivePercentFineControl from "../../components/FivePercentFineControl";
 
 const useStyles = makeStyles()((theme) => {
   return {
@@ -16,6 +17,15 @@ const useStyles = makeStyles()((theme) => {
       buttonGroup: { flexWrap: "wrap" as const, padding: "0.3em", width: "100%" },
     },
     button: { width: "100%" },
+    fineControlIcons: {
+      color: "#777",
+      fontSize: 20,
+      transform: "scale(0.9)",
+      "&:hover": {
+        color: theme.palette.getContrastText(theme.palette.background.default),
+        transform: "scale(1)",
+      },
+    },
   };
 });
 
@@ -43,6 +53,15 @@ export default function BookReaderConfig(): React.ReactElement {
             Scrolling
           </ToggleButton>
         </ToggleButtonGroup>
+      </Conftainer>
+      <Conftainer label="Page Margins" id="pageMargins">
+        <FivePercentFineControl
+          onValueChange={(value) => {
+            dispatch(bookReaderActions.setPageMargins({ id, value: value || 1 }));
+          }}
+          value={readerConfig.pageMargins}
+          className={classes.fineControlIcons}
+        />
       </Conftainer>
       <ReaderConfig classes={classes} actions={bookReaderActions} readerConfig={readerConfig} />
     </>

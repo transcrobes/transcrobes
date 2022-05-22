@@ -6,6 +6,7 @@ import { DEFAULT_READER_CONFIG_STATE, GenericState, ReaderState } from "../../li
 
 export interface BookReaderState extends ReaderState {
   fontColour: HslColor | null;
+  pageMargins: number;
   isScrolling: boolean;
   currentTocUrl: string | null;
   atStart: boolean;
@@ -19,6 +20,7 @@ export const DEFAULT_BOOK_READER_CONFIG_STATE: BookReaderState = {
   ...DEFAULT_READER_CONFIG_STATE,
   id: "",
   readerType: BOOK_READER_TYPE,
+  pageMargins: 1,
   isScrolling: false,
   currentTocUrl: null,
   atStart: true,
@@ -42,6 +44,10 @@ const bookReaderSlice = createGenericSlice({
     setLocationChanged(state: GenericState<BookReaderState>, action: PayloadAction<ContentConfigPayload<any>>) {
       state[action.payload.id] = state[action.payload.id] || DEFAULT_BOOK_READER_CONFIG_STATE;
       state[action.payload.id].location = action.payload.value;
+    },
+    setPageMargins(state: GenericState<BookReaderState>, action: PayloadAction<ContentConfigPayload<number>>) {
+      state[action.payload.id] = state[action.payload.id] || DEFAULT_BOOK_READER_CONFIG_STATE;
+      state[action.payload.id].pageMargins = action.payload.value;
     },
     setBookBoundaryChanged(
       state: GenericState<BookReaderState>,

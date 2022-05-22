@@ -140,6 +140,7 @@ export default function BookReader({ proxy }: ContentProps): ReactElement {
         location: conf.location,
         atStart: conf.atStart,
         atEnd: conf.atEnd,
+        pageMargins: conf.pageMargins,
       };
       window.transcrobesStore = store;
       const reader = await D2Reader.load({
@@ -220,6 +221,12 @@ export default function BookReader({ proxy }: ContentProps): ReactElement {
   useEffect(() => {
     D2Reader.scroll(readerConfig.isScrolling);
   }, [readerConfig.isScrolling]);
+
+  useEffect(() => {
+    if (loaded) {
+      D2Reader.applyUserSettings({ pageMargins: readerConfig.pageMargins });
+    }
+  }, [readerConfig.pageMargins]);
 
   // Re-calculate page location on scroll/TOC navigation/page button press
   useEffect(() => {

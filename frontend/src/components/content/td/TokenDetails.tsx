@@ -54,7 +54,6 @@ const useStyles = makeStyles<StyleProps>()((theme, params) => {
       boxSizing: "border-box",
       paddingBottom: "4px",
       display: "flex",
-      // justifyContent: "center",
     },
     sound: { boxSizing: "border-box", padding: "2px" },
     best: { boxSizing: "border-box", padding: "2px" },
