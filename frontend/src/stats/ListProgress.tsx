@@ -8,7 +8,7 @@ import { binnedData } from "../lib/funclib";
 import { dateRange } from "../lib/libMethods";
 import { ListFirstSuccessStats } from "../lib/types";
 
-const DATA_SOURCE = "UserlistProgress.tsx";
+const DATA_SOURCE = "ListProgress.tsx";
 
 type ListGraphData = {
   name: string;
@@ -22,7 +22,7 @@ interface Props {
   periodType?: ManipulateType;
 }
 
-export function UserListProgress({ yIsNumber = false, nbPeriods = 8, periodType = "week" }: Props) {
+export function ListProgress({ yIsNumber = false, nbPeriods = 8, periodType = "week" }: Props) {
   const [data, setData] = useState<ListGraphData[]>([]);
   const [stats, setStats] = useState<ListFirstSuccessStats | null>();
   const obj = useRecordContext();
@@ -103,7 +103,7 @@ export function UserListProgress({ yIsNumber = false, nbPeriods = 8, periodType 
       </Grid>
     </Grid>
   ) : stats === null ? (
-    <div>There are no list stats available for this goal</div>
+    <div>There are no list stats available</div>
   ) : (
     <div>The stats are still being generated</div>
   );

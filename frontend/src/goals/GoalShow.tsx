@@ -1,6 +1,6 @@
 import { ReferenceField, Show, SimpleShowLayout, TextField } from "react-admin";
 import { HelpShowActions } from "../components/HelpShowActions";
-import { UserListProgress } from "../stats/ListProgress";
+import { ListProgress } from "../stats/ListProgress";
 
 export default function GoalShow() {
   return (
@@ -18,7 +18,7 @@ export default function GoalShow() {
         <TextField source="priority" />
         <hr />
         <h3>Progress</h3>
-        <UserListProgress />
+        <ListProgress />
       </SimpleShowLayout>
     </Show>
   );

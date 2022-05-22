@@ -2,7 +2,7 @@ import { BooleanField, FunctionField, ReferenceField, Show, SimpleShowLayout, Te
 import { HelpShowActions } from "../components/HelpShowActions";
 import { GRADE } from "../database/Schema";
 import { ORDER_BY, PROCESSING, reverseEnum } from "../lib/types";
-import { UserListProgress } from "../stats/ListProgress";
+import { ListProgress } from "../stats/ListProgress";
 
 function wordKnowledge(record: any) {
   return record.wordKnowledge ? reverseEnum(GRADE, record.wordKnowledge) : "Don't set";
@@ -27,7 +27,7 @@ export default function UserListShow() {
         <BooleanField source="shared" />
         <hr />
         <h3>Progress</h3>
-        <UserListProgress />
+        <ListProgress />
       </SimpleShowLayout>
     </Show>
   );
