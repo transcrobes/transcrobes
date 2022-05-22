@@ -5,11 +5,11 @@ import { ReaderState, SentenceType } from "../lib/types";
 import ReactSentence from "./content/td/ReactSentence";
 
 interface Props {
-  recentSentenceId: BigInt | number;
+  recentSentenceId: bigint | number;
   sentence: SentenceType;
   readerConfig: ReaderState;
   isListItem?: boolean;
-  onDelete?: (modelId: number | BigInt) => void;
+  onDelete?: (modelId: number | bigint) => void;
   sameTab?: boolean;
 }
 

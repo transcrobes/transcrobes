@@ -1,6 +1,6 @@
 import FlashOffIcon from "@mui/icons-material/FlashOff";
 import FlashOnIcon from "@mui/icons-material/FlashOn";
-import { IconButton } from "@mui/material";
+import { IconButton, useTheme } from "@mui/material";
 import * as CSS from "csstype";
 import { ReactElement, useEffect, useState } from "react";
 import { makeStyles } from "tss-react/mui";
@@ -26,7 +26,7 @@ interface IconProps {
   iconColour?: CSS.Property.Color;
 }
 
-const useStyles = makeStyles<IconProps>()((_theme, params) => {
+const useStyles = makeStyles<IconProps>()((theme, params) => {
   return {
     message: {
       fontSize: "1em",
@@ -35,12 +35,13 @@ const useStyles = makeStyles<IconProps>()((_theme, params) => {
     iconStyle: {
       "& svg": {
         fontSize: 32,
-        color: params.iconColour || "white",
+        color: params.iconColour || theme.palette.text.primary,
       },
       padding: "2px",
     },
     toggle: {
       padding: "0.5em",
+      width: "20%",
     },
   };
 });
@@ -87,8 +88,8 @@ export default function Actions({ className, tokenDetails, definition }: Props):
     setMessage("");
   }, [tokenDetails.token.l]);
 
-  const { classes } = useStyles({ iconColour: "white" });
-
+  const { classes } = useStyles({});
+  const theme = useTheme();
   return tokenDetails.token.id ? (
     <>
       <Loading classes={classes} position="relative" size={50} top="0px" message="Saving Cards..." show={saving} />
@@ -105,14 +106,14 @@ export default function Actions({ className, tokenDetails, definition }: Props):
             </IconButton>
           )}
         </div>
-        {/* FIXME: change white to theme-sensitive! */}
         <PracticerInput
           onPractice={addOrUpdateCards}
           wordId={tokenDetails.token.id}
-          iconColour={"white"}
+          iconColour={theme.palette.text.primary}
           smallSize={32}
           largeSize={32}
           iconPadding="2px"
+          width={"80%"}
         />
       </div>
     </>

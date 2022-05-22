@@ -9,7 +9,7 @@ import RecentSentenceExample from "./RecentSentenceExample";
 
 interface Props {
   recentPosSentences: PosSentences | null;
-  onDelete?: (modelId: number | BigInt) => void;
+  onDelete?: (modelId: number | bigint) => void;
   sameTab?: boolean;
 }
 

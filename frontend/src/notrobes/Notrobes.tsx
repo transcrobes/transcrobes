@@ -445,7 +445,7 @@ function Notrobes({ proxy, url }: Props): ReactElement {
     }
   }
 
-  async function handleDeleteRecent(modelId: number | BigInt) {
+  async function handleDeleteRecent(modelId: number | bigint) {
     if (word && recentPosSentences) {
       const newRecents: RecentSentencesType = { id: word.id, posSentences: {} };
       for (const [k, posSentence] of Object.entries(recentPosSentences) as [TreebankPosType, PosSentence[]][]) {

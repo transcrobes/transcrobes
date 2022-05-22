@@ -350,7 +350,7 @@ interface WordProps {
   characters: (CharacterType | null)[];
   translationProviderOrder: Record<string, number>;
   onPractice: (wordId: string, grade: number) => void;
-  onDeleteRecent: (modelId: number | BigInt) => void;
+  onDeleteRecent: (modelId: number | bigint) => void;
   onCardFrontUpdate: (card: CardType) => void;
 }
 

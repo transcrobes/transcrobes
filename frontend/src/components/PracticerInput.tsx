@@ -10,6 +10,7 @@ import { GRADE } from "../database/Schema";
 
 interface IconProps {
   iconPadding?: string;
+  width?: string;
 }
 
 const useStyles = makeStyles<IconProps>()((_theme, params) => ({
@@ -17,6 +18,7 @@ const useStyles = makeStyles<IconProps>()((_theme, params) => ({
     display: "flex" as const,
     justifyContent: "space-between",
     padding: "0.5em",
+    width: params.width || "100%",
   },
   iconStyle: {
     padding: params.iconPadding || "12px",
@@ -28,6 +30,7 @@ interface PracticerInputProps {
   smallSize?: number;
   largeSize?: number;
   iconPadding?: string;
+  width?: string;
   onPractice: (wordId: string, grade: number) => void;
   wordId: string;
 }
@@ -39,12 +42,13 @@ function PracticerInput({
   smallSize,
   largeSize,
   iconPadding,
+  width,
 }: PracticerInputProps): ReactElement {
   function addOrUpdateCards(grade: number) {
     onPractice(wordId, grade);
   }
   const theme = useTheme();
-  const { classes } = useStyles({ iconPadding });
+  const { classes } = useStyles({ iconPadding, width });
   const iconSizeStyle = {
     [theme.breakpoints.down("md")]: {
       fontSize: smallSize || 72,

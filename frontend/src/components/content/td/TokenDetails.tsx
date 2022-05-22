@@ -21,11 +21,10 @@ export interface StyleProps {
   fontSize: number;
 }
 // FIXME: allow setting the theme for popups!
-const useStyles = makeStyles<StyleProps>()((_theme, params) => {
+const useStyles = makeStyles<StyleProps>()((theme, params) => {
   return {
     popup: {
       textAlign: "center",
-      borderRadius: "6px",
       padding: "3px",
       zIndex: 99999,
       width: "90%",
@@ -35,12 +34,14 @@ const useStyles = makeStyles<StyleProps>()((_theme, params) => {
       fontSize: `${Math.min(150, params.fontSize * (params.glossFontSize / 100))}%`,
       position: "absolute",
       display: "block",
-      // FIXME: added for testing, get from the theme!
-      color: "white",
-      fill: "white",
-      backgroundColor: "black",
+      color: theme.palette.text.primary,
+      fill: theme.palette.text.primary,
+      backgroundColor: theme.palette.background.default,
+      borderRadius: "6px",
+      borderColor: theme.palette.text.primary,
+      borderStyle: "solid",
     },
-    icons: { color: "white" },
+    icons: { color: theme.palette.text.primary },
     popupControls: { padding: "3px" },
     container: { textAlign: "left" },
     synonymList: { fontSize: `${Math.min(150, params.fontSize)}%` },
@@ -53,7 +54,7 @@ const useStyles = makeStyles<StyleProps>()((_theme, params) => {
       boxSizing: "border-box",
       paddingBottom: "4px",
       display: "flex",
-      justifyContent: "center",
+      // justifyContent: "center",
     },
     sound: { boxSizing: "border-box", padding: "2px" },
     best: { boxSizing: "border-box", padding: "2px" },
