@@ -3,6 +3,7 @@ import { bin } from "d3-array";
 import dayjs, { ManipulateType } from "dayjs";
 import { useEffect, useState } from "react";
 import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
+import { refreshDictionaries } from "../lib/dictionary";
 import { binnedData } from "../lib/funclib";
 import { dateRange } from "../lib/libMethods";
 import { CardType } from "../lib/types";
@@ -31,7 +32,7 @@ export function WaitingRevisions({ yIsNumber = true, periodType = "week" }: Prop
         type: "getWaitingRevisions",
       });
       setRevisions(revs);
-      if (!revs) return;
+      if (!revs || revs.length < 1) return;
       const periods: ManipulateType[] = ["month", "week", "day"];
       let currentPeriod = periods.findIndex((value) => value === periodType);
       if (currentPeriod < 0) {
