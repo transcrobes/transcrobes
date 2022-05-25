@@ -98,13 +98,13 @@ export function clean(): webpack.Configuration {
   };
 }
 
-export function devServer(path = "./dist"): webpack.Configuration {
+export function devServer(outpath = "./dist"): webpack.Configuration {
   return {
     watch: true,
     plugins: [
       new WebpackPluginServe({
         port: process.env.PORT || 5000,
-        static: path,
+        static: path.resolve(outpath + "/site"),
         liveReload: true,
         waitForBuild: true,
       }),

@@ -237,13 +237,11 @@ export default function Signup(): ReactElement {
                       <Typography>
                         <label>
                           I agree with the{" "}
-                          <a href="/consent.html" target="_blank">
-                            Research Consent Terms:
+                          <a href="/static/consent.html" target="_blank">
+                            Research Consent Terms
                           </a>
                         </label>
                       </Typography>
-                      {/* FIXME: work out why a checkbox like this doesn't work
-                      <Field name="consent">{() => <Checkbox />}</Field> */}
                       <Field name="consent" component="input" type="checkbox" />
                       <OnChange name="consent">
                         {(value) => {

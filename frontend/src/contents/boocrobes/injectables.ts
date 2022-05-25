@@ -7,17 +7,17 @@ declare var __webpack_hash__: any;
 const injectables: any[] = [
   {
     type: "style",
-    url: `${origin}/ReadiumCSS-before.css`,
+    url: `${origin}/static/ReadiumCSS-before.css`,
     r2before: true,
   },
   {
     type: "style",
-    url: `${origin}/ReadiumCSS-default.css`,
+    url: `${origin}/static/ReadiumCSS-default.css`,
     r2default: true,
   },
   {
     type: "style",
-    url: `${origin}/ReadiumCSS-after.css`,
+    url: `${origin}/static/ReadiumCSS-after.css`,
     r2after: true,
   },
   {
@@ -29,7 +29,7 @@ const injectables: any[] = [
   },
   {
     type: "style",
-    url: `${origin}/opendyslexic.css`,
+    url: `${origin}/static/opendyslexic.css`,
     fontFamily: "opendyslexic",
   },
 ];
@@ -39,7 +39,7 @@ for (const fontFamily of ["serif", "sans-serif", "opendyslexic", "monospace"]) {
   for (const fontFamilyChinese of ["notasanslight", "notaserifextralight", "notaserifregular", "mashanzheng"]) {
     augmentedInjectables.push({
       type: "style",
-      url: `${origin}/chinese.css`,
+      url: `${origin}/static/chinese.css`,
       fontFamily: `${fontFamily},${fontFamilyChinese}`,
     });
   }

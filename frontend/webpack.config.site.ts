@@ -35,7 +35,7 @@ const commonConfig = merge<Configuration>([
   },
   {
     output: {
-      path: path.resolve(__dirname, "./dist"),
+      path: path.resolve(__dirname, "./dist/site"),
       filename: "[name].[fullhash].js",
     },
   },
@@ -58,7 +58,7 @@ function loadStaticResources(sourceBase: string, outputDir: string) {
         patterns: [
           {
             from: path.join(sourceBase, "public/**/*.*"),
-            to: path.join(outputDir, "[name][ext]"),
+            to: path.join(outputDir, "../static", "[name][ext]"),
           },
         ],
       }),
