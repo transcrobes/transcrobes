@@ -144,6 +144,7 @@ class Settings(BaseSettings):
     DEBUG: bool = False
     MEDIA_ROOT: str = "/media/"
     DATA_ROOT: str = "/data/"
+    LOCAL_DATA_ROOT: str = "/localdata/"
 
     SQLALCHEMY_POOL_SIZE: int = 10
     SQLALCHEMY_POOL_MAX_OVERFLOW: int = 20

@@ -5,14 +5,14 @@ import faust
 from app.core.config import settings
 from app.schemas.files import ProcessData
 
-Path(settings.DATA_ROOT).mkdir(parents=True, exist_ok=True)
+Path(settings.LOCAL_DATA_ROOT).mkdir(parents=True, exist_ok=True)
 
 app = faust.App(
     "transcrobes",
     broker="kafka://" + settings.KAFKA_BROKER,
     store="rocksdb://",
-    datadir=os.path.join(settings.DATA_ROOT, "datadir"),
-    tabledir=os.path.join(settings.DATA_ROOT, "tabledir"),
+    datadir=os.path.join(settings.LOCAL_DATA_ROOT, "datadir"),
+    tabledir=os.path.join(settings.LOCAL_DATA_ROOT, "tabledir"),
     web_port=settings.FAUST_PORT,
     producer_max_request_size=settings.FAUST_PRODUCER_MAX_REQUEST_SIZE,
     consumer_max_fetch_size=settings.CONSUMER_MAX_FETCH_SIZE,
