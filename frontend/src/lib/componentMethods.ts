@@ -205,7 +205,7 @@ export function positionPopup(
     position.left = `${again}px`;
   }
   let translateDown = 20;
-  if (window.frameElement && window.frameElement.getBoundingClientRect) {
+  if (window.frameElement) {
     translateDown += HEADER_HEIGHT;
   }
   position.top = `${eventY + translateDown}px`;
