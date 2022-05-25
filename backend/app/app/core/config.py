@@ -1,6 +1,6 @@
 import os
 import secrets
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Literal, Optional, Union
 
 from pydantic import AnyHttpUrl, BaseSettings, EmailStr, HttpUrl, PostgresDsn, validator
 
@@ -69,8 +69,8 @@ class Settings(BaseSettings):
     # e.g: '["http://localhost", "http://localhost:4200", "http://localhost:3000", \
     # "http://localhost:8080", "http://local.dockertoolbox.tiangolo.com"]'
     BACKEND_CORS_ORIGINS: List[AnyHttpUrl] = []
-    TRACKING_KEY: str = "akey"
-    TRACKING_ENDPOINT: AnyHttpUrl = "http://localhost/injest"
+    TRACKING_KEY: Optional[Union[str, Literal[""]]] = "akey"
+    TRACKING_ENDPOINT: Optional[Union[AnyHttpUrl, Literal[""]]] = "http://localhost/injest"
 
     @validator("BACKEND_CORS_ORIGINS", pre=True)
     @classmethod

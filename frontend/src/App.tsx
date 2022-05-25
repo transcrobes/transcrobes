@@ -100,9 +100,13 @@ function App({ config }: Props): ReactElement {
               }),
             );
           }
-          tracker.start().then(() => {
-            tracker.setUserID(username);
-          });
+          try {
+            tracker.start().then(() => {
+              tracker.setUserID(username);
+            });
+          } catch (e) {
+            console.error(e);
+          }
         }
 
         if (await isInitialisedAsync(username)) {
