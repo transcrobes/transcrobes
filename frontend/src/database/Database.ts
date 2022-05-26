@@ -201,7 +201,6 @@ async function cacheExports(
 }
 
 function refreshTokenIfRequired(
-  url: URL,
   // FIXME: any
   replicationState: RxGraphQLReplicationState<any>,
   error: any,
@@ -209,14 +208,14 @@ function refreshTokenIfRequired(
   try {
     // this is currently a string, but could be made to be json, meaning an elegant parse of the error. But I suck...
     const expiredMessage = error.innerErrors && error.innerErrors[0].message?.toString();
-    console.log("The error message was", expiredMessage, error);
     if (expiredMessage?.includes('{"statusCode":"403","detail":"Could not validate credentials"}')) {
-      console.log("Looks like the token has expired, trying to refresh");
+      console.debug("Looks like the token has expired, trying to refresh");
       store.dispatch(throttledRefreshToken());
       // FIXME: this will set rubbish until the refresh actually happens - is this worth trying to improve upon?
       replicationState.setHeaders(getHeaders(store.getState().userData.user.accessToken));
     } else {
-      console.log("There was an error but apparently not an expiration", error);
+      console.log("There was an error but apparently not an expiration", expiredMessage);
+      console.error(error);
     }
   } catch (error) {
     console.error(error);
@@ -267,10 +266,7 @@ function setupTwoWayReplication(
   // show replication-errors in logs
   // @ts-ignore
   replicationState.error$.subscribe((err) => {
-    console.error("replication two-way error:");
-    console.dir(err);
-    console.log("Attempting to refresh token two-way replication, if that was the issue");
-    refreshTokenIfRequired(new URL(syncURL), replicationState, err);
+    refreshTokenIfRequired(replicationState, err);
   });
   // @ts-ignore
   // replicationState.received$.subscribe((change: any) => {
@@ -316,10 +312,7 @@ function setupPullReplication(
   // show replication-errors in logs
   // @ts-ignore
   replicationState.error$.subscribe((err) => {
-    console.error("replication error:");
-    console.dir(err);
-    console.log("Attempting to refresh token for pullonly, if that was the issue");
-    refreshTokenIfRequired(new URL(syncURL), replicationState, err);
+    refreshTokenIfRequired(replicationState, err);
   });
   return replicationState;
 }
