@@ -35,15 +35,6 @@ class Greeting(faust.Record):  # pylint:disable=W0223
     to_name: str
 
 
-hello_topic = app.topic("hello-topic", value_type=Greeting)
-
-
-@app.agent(hello_topic)
-async def hello(greetings):
-    async for greeting in greetings:
-        print(f"Hello from {greeting.from_name} to {greeting.to_name}")
-
-
 # Tasks
 import_process_topic = app.topic("import_process_topic", value_type=ProcessData)
 
