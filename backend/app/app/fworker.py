@@ -216,9 +216,7 @@ async def card_event(user_events):
 @app.page("/user_word_updates/{user_id}/{since}")
 @app.table_route(table=user_words, match_info="user_id")
 async def get_user_word_updates(web, _request, user_id: str, since: str) -> Any:
-    # async def get_user_word_updates(web, request, user_id: str, since: str, limit: str) -> Any:
     user_data: UserWords = user_words[user_id]
-    # updates: dict[str, UserWordT] = {}
     updates: list[list] = []
     for user_word in user_data.ordered_keys:
         if user_data.words[user_word].updated_at < float(since):
@@ -236,10 +234,6 @@ async def get_user_word_updates(web, _request, user_id: str, since: str) -> Any:
                 uw.updated_at,
             ]
         )
-        # updates[user_word] = user_data.words[user_word]
-    # updates.reverse()  # oldest update first
-    # if limit and int(limit) > 0:
-    #     updates = updates[:int(limit)]
     return web.json(updates)
 
 
@@ -263,6 +257,14 @@ async def get_user_day_updates(web, _request, user_id: str, since: str) -> Any:
             ]
         )
     return web.json(updates)
+
+
+@app.page("/all_user_data")
+async def all_user_data(web, _request) -> Any:
+    jout = {}
+    for user_id, value in user_words.items():
+        jout[user_id] = {"words": value.words, "days": value.days}
+    return web.json(jout)
 
 
 # faust -A app.fworker send @import_process_topic '{"type": "import", "id": "21430d94-2d09-4552-8a3c-4d4ad03d8475"}'
