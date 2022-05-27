@@ -71,6 +71,7 @@ services:
     image: "${DOCKER_IMAGE_FAUSTWORKER?Variable not set}:${TAG-latest}"
     volumes:
       - app-files-data:/media
+      - app-stats-data:/data
     ports:
       - "6066:6066"
     depends_on:
@@ -101,5 +102,6 @@ services:
 volumes:
   app-db-data:
   app-files-data:
+  app-stats-data:
   kafka_data_kraft:
     driver: local

@@ -7,6 +7,8 @@ RUN apt-get update && apt-get install -y \
   gzip \
   rsync  \
   openssh-client \
+  curl \
+  && apt-get -y autoremove && apt-get -y clean \
   && rm -rf /var/lib/apt/lists/*
 
 ADD scripts/backups-entrypoint.sh /app/entrypoint.sh

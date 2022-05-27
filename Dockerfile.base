@@ -27,7 +27,8 @@ RUN bash -c "if [ $INSTALL_DEV == 'true' ] ; then poetry install --no-root ; els
 RUN apt-get remove -y --purge \
   git make build-essential wget curl libgflags-dev libsnappy-dev \
   zlib1g-dev libbz2-dev liblz4-dev libzstd-dev librocksdb-dev libmagic-dev \
-  && apt-get -y autoremove
+  && apt-get -y autoremove && apt-get -y clean \
+  && rm -rf /var/lib/apt/lists/*
 
 COPY ./backend/app /app
 

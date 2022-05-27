@@ -14,7 +14,7 @@ from app.data.stats import push_user_stats_update_to_clients
 from app.enrich import data
 from app.enrich.cache import regenerate_character_jsons_multi, regenerate_definitions_jsons_multi
 from app.schemas.cache import DataType, RegenerationType
-from app.schemas.event import ActionEvent, CardEvent, VocabEvent
+from app.schemas.event import ActionEvent, CardEvent, ReloadEvent, VocabEvent
 from app.schemas.files import ProcessData
 from app.schemas.msg import Msg
 from app.worker.faustus import (
@@ -43,9 +43,35 @@ vocab_event_topic = app.topic("vocab_event_topic", value_type=VocabEvent)
 action_event_topic = app.topic("action_event_topic", value_type=ActionEvent)
 card_event_topic = app.topic("card_event_topic", value_type=CardEvent)
 
+reload_event_topic = app.topic("reload_event_topic", value_type=ReloadEvent)
+
 for name, pair in settings.LANG_PAIRS.items():
     logging.info("Installing lang pairs %s : %s", name, pair)
     data.managers[name] = data.EnrichmentManager(name, pair)
+
+
+@app.agent(reload_event_topic)
+async def reload_event(reload_events):
+    async for event in reload_events.group_by(ReloadEvent.user_id):
+        logger.info(f"Reload for user: {event.user_id} : {event.type=} : {event.user_stats_mode=} : {event.source=}")
+        user_data: UserWords = user_words[event.user_id]
+
+        for day, day_data in event.days.items():
+            if day not in user_data.days:
+                user_data.days[day] = day_data
+
+        for word, word_data in event.words.items():
+            if word not in user_data.words:
+                user_data.words[word] = word_data
+
+        user_data.ordered_keys = sorted(
+            user_data.words, key=lambda x: user_data.words[x].updated_at, reverse=True  # pylint: disable=W0640
+        )
+        user_data.ordered_day_keys = sorted(
+            user_data.days, key=lambda x: user_data.days[x].updated_at, reverse=True  # pylint: disable=W0640
+        )
+        logger.debug(f"{event.user_id=} : {user_data=}")
+        user_words[event.user_id] = user_data
 
 
 @app.agent(action_event_topic)

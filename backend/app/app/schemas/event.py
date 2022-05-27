@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import List, Optional
 
+from app.worker.faustus import UserDayT, UserWordT
 from faust import Record
 
 
@@ -21,6 +22,11 @@ class ActionEvent(BaseEvent):  # pylint: disable=W0223  # bc_word_lookup, bc_sen
 
 class VocabEvent(BaseEvent, validation=True):  # pylint: disable=W0223  # bulk_vocab
     data: dict[str, List[int]]
+
+
+class ReloadEvent(BaseEvent, validation=True):  # pylint: disable=W0223  # reload
+    words: dict[str, UserWordT] = {}
+    days: dict[int, UserDayT] = {}
 
 
 class CardEvent(BaseEvent):  # pylint: disable=W0223  # token_details_card

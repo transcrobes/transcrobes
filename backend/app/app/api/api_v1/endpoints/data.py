@@ -13,9 +13,9 @@ from typing import Any, List
 from app import models, schemas, stats
 from app.api import deps
 from app.data.models import DATA_JS_SUFFIX, DATA_JSON_SUFFIX, ENRICH_JSON_SUFFIX, PARSE_JSON_SUFFIX
-from app.fworker import action_event_topic, card_event_topic, vocab_event_topic
+from app.fworker import action_event_topic, card_event_topic, reload_event_topic, vocab_event_topic
 from app.models.user import absolute_resources_path
-from app.schemas.event import ActionEvent, BaseEvent, CardEvent, VocabEvent
+from app.schemas.event import ActionEvent, BaseEvent, CardEvent, ReloadEvent, VocabEvent
 from fastapi import APIRouter, Depends
 from fastapi.exceptions import HTTPException
 from fastapi.responses import FileResponse, Response
@@ -24,6 +24,30 @@ from starlette.responses import JSONResponse
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
+
+
+@router.post("/reload_events")
+async def reload_events(
+    events: dict[str, Any],
+    current_user: models.AuthUser = Depends(deps.get_current_active_superuser),
+) -> Any:  # FIXME: Any?
+    for user_id, gevent in events.items():
+        try:
+            event = ReloadEvent(
+                type="reload",
+                words=gevent["words"],
+                days=gevent["days"],
+                source="reload",
+                user_stats_mode=stats.USER_STATS_MODE_IGNORE,
+                user_id=user_id,
+            )
+            await reload_event_topic.send(value=event)
+        except Exception as ex:  # pylint: disable=W0703  # FIXME:
+            logger.exception(ex)
+            logger.exception(gevent)
+            return {"status": "failure"}
+
+    return {"status": "success"}
 
 
 def get_event(e: Any, user_id: int) -> BaseEvent:
