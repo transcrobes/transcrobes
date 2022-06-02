@@ -22,7 +22,10 @@ import {
 
 const CACHE_NAME = "v1";
 const INITIALISATION_CACHE_NAME = `${CACHE_NAME}.initialisation`;
-const LIVE_INTERVAL = 60;
+const LIVE_INTERVAL = 300;
+const LIVE_INTERVAL_WITH_SUBSCRIPTION = 600;
+// FIXME: these are large because they should work at this size and it isn't certain batches work in
+// all cases
 const BATCH_SIZE_PULL = 1000000;
 const BATCH_SIZE_PUSH = 1000000;
 
@@ -693,11 +696,10 @@ const DBPullCollections = {
     schema: WORD_MODEL_STATS_SCHEMA,
     feedKeys: ["id", "updatedAt"],
     deletedFlag: "deleted",
-    subscription: false,
-    // Doesn't require real time updates!
-    // subscriptionParams: {
-    //   token: "String!",
-    // },
+    subscription: true,
+    subscriptionParams: {
+      token: "String!",
+    },
   },
   day_model_stats: {
     schema: DAY_MODEL_STATS_SCHEMA,
@@ -725,7 +727,7 @@ const DBPullCollections = {
     deletedFlag: "deleted",
     subscription: false,
     pullQueryBuilder: pullCharsQueryBuilder,
-    liveInterval: 10000, // actually this could be much more, but this is already inconsequential
+    liveInterval: 1000000, // actually this could be much more, but this is already inconsequential
   },
 };
 type DBPullCollectionsType = typeof DBPullCollections;
@@ -883,6 +885,7 @@ export {
   CACHE_NAME,
   INITIALISATION_CACHE_NAME,
   LIVE_INTERVAL,
+  LIVE_INTERVAL_WITH_SUBSCRIPTION,
   BATCH_SIZE_PULL,
   BATCH_SIZE_PUSH,
   KNOWLEDGE_UNSET,

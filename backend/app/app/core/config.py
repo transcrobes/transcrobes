@@ -2,7 +2,7 @@ import os
 import secrets
 from typing import Any, Dict, List, Literal, Optional, Union
 
-from pydantic import AnyHttpUrl, BaseSettings, EmailStr, HttpUrl, PostgresDsn, validator
+from pydantic import AnyHttpUrl, BaseSettings, EmailStr, PostgresDsn, validator
 
 
 class AsyncPostgresDsn(PostgresDsn):
@@ -82,14 +82,6 @@ class Settings(BaseSettings):
         raise ValueError(v)
 
     PROJECT_NAME: str = "Transcrobes"
-    SENTRY_DSN: Optional[HttpUrl] = None
-
-    @validator("SENTRY_DSN", pre=True)
-    @classmethod
-    def sentry_dsn_can_be_blank(cls, v: str) -> Optional[str]:
-        if len(v) == 0:
-            return None
-        return v
 
     POSTGRES_SERVER: str
     POSTGRES_USER: str
@@ -97,6 +89,9 @@ class Settings(BaseSettings):
     POSTGRES_DB: str
     POSTGRES_PORT: Optional[str]
     SQLALCHEMY_DATABASE_URI: Optional[AsyncPostgresDsn] = None
+    SQLALCHEMY_DATABASE_SYNC_URI: Optional[PostgresDsn] = None
+    SQLALCHEMY_POOL_SIZE: int = 10
+    SQLALCHEMY_POOL_MAX_OVERFLOW: int = 20
 
     @validator("SQLALCHEMY_DATABASE_URI", pre=True)
     @classmethod
@@ -110,6 +105,58 @@ class Settings(BaseSettings):
             host=values.get("POSTGRES_SERVER"),
             port=values.get("POSTGRES_PORT", "5432"),
             path=f"/{values.get('POSTGRES_DB', '')}",
+        )
+
+    @validator("SQLALCHEMY_DATABASE_SYNC_URI", pre=True)
+    @classmethod
+    def assemble_sync_db_connection(cls, v: Optional[str], values: Dict[str, Any]) -> Any:
+        if isinstance(v, str):
+            return v
+        return PostgresDsn.build(
+            scheme="postgresql+psycopg2",
+            user=values.get("POSTGRES_USER"),
+            password=values.get("POSTGRES_PASSWORD"),
+            host=values.get("POSTGRES_SERVER"),
+            port=values.get("POSTGRES_PORT", "5432"),
+            path=f"/{values.get('POSTGRES_DB', '')}",
+        )
+
+    STATS_POSTGRES_SERVER: str
+    STATS_POSTGRES_USER: str
+    STATS_POSTGRES_PASSWORD: str
+    STATS_POSTGRES_DB: str
+    STATS_POSTGRES_PORT: Optional[str]
+    STATS_SQLALCHEMY_DATABASE_URI: Optional[AsyncPostgresDsn] = None
+    STATS_SQLALCHEMY_DATABASE_SYNC_URI: Optional[PostgresDsn] = None
+    STATS_SQLALCHEMY_POOL_SIZE: int = 10
+    STATS_SQLALCHEMY_POOL_MAX_OVERFLOW: int = 20
+
+    @validator("STATS_SQLALCHEMY_DATABASE_URI", pre=True)
+    @classmethod
+    def stats_assemble_db_connection(cls, v: Optional[str], values: Dict[str, Any]) -> Any:
+        if isinstance(v, str):
+            return v
+        return AsyncPostgresDsn.build(
+            scheme="postgresql+asyncpg",
+            user=values.get("STATS_POSTGRES_USER"),
+            password=values.get("STATS_POSTGRES_PASSWORD"),
+            host=values.get("STATS_POSTGRES_SERVER"),
+            port=values.get("STATS_POSTGRES_PORT", "5432"),
+            path=f"/{values.get('STATS_POSTGRES_DB', '')}",
+        )
+
+    @validator("STATS_SQLALCHEMY_DATABASE_SYNC_URI", pre=True)
+    @classmethod
+    def stats_assemble_sync_db_connection(cls, v: Optional[str], values: Dict[str, Any]) -> Any:
+        if isinstance(v, str):
+            return v
+        return PostgresDsn.build(
+            scheme="postgresql+psycopg2",
+            user=values.get("STATS_POSTGRES_USER"),
+            password=values.get("STATS_POSTGRES_PASSWORD"),
+            host=values.get("STATS_POSTGRES_SERVER"),
+            port=values.get("STATS_POSTGRES_PORT", "5432"),
+            path=f"/{values.get('STATS_POSTGRES_DB', '')}",
         )
 
     SMTP_TLS: bool = True
@@ -146,9 +193,6 @@ class Settings(BaseSettings):
     DATA_ROOT: str = "/data/"
     LOCAL_DATA_ROOT: str = "/localdata/"
 
-    SQLALCHEMY_POOL_SIZE: int = 10
-    SQLALCHEMY_POOL_MAX_OVERFLOW: int = 20
-
     BROADCASTER_MESSAGING_LAYER = "postgres"
 
     KAFKA_BROKER: str = "kafka:9092"
@@ -156,7 +200,6 @@ class Settings(BaseSettings):
     KAFKA_STATS_LOOP_SLEEP_SECS: int = 10
     KAFKA_MAX_POLL_RECORDS: int = 500
 
-    FAUST_PORT: int = 6066
     FAUST_HOST: str = "faustworker"
     FAUST_PRODUCER_MAX_REQUEST_SIZE: int = 10000000  # default is 1MB, which is small for us
     CONSUMER_MAX_FETCH_SIZE: int = 10000000  # default is 1MB, which is small for us

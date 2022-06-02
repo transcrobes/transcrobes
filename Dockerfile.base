@@ -7,7 +7,7 @@ WORKDIR /app/
 RUN apt-get update && apt-get upgrade -y && apt-get install -y \
   librocksdb6.11 libmagic1 \
   git make build-essential wget curl libgflags-dev libsnappy-dev \
-  zlib1g-dev libbz2-dev liblz4-dev libzstd-dev librocksdb-dev libmagic-dev \
+  zlib1g-dev libbz2-dev liblz4-dev libzstd-dev librocksdb-dev libmagic-dev librdkafka-dev \
   && apt-get -y clean
 
 RUN /usr/local/bin/python -m pip install --upgrade pip

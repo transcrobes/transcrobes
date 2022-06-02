@@ -11,7 +11,6 @@ import {
   RxGraphQLReplicationState,
 } from "rxdb/plugins/replication-graphql";
 import { RxDBUpdatePlugin } from "rxdb/plugins/update";
-import { SubscriptionClient } from "subscriptions-transport-ws";
 import { store } from "../app/createStore";
 import { setUser, throttledRefreshToken } from "../features/user/userSlice";
 import { getFileStorage, IDBFileStorage } from "../lib/IDBFileStorage";
@@ -29,10 +28,13 @@ import {
   DBTwoWayCollections,
   DefinitionDocument,
   LIVE_INTERVAL,
+  LIVE_INTERVAL_WITH_SUBSCRIPTION,
   reloadRequired,
   TranscrobesCollections,
   TranscrobesDatabase,
 } from "./Schema";
+
+import { createClient } from "graphql-ws";
 
 declare const self: ServiceWorkerGlobalScope;
 
@@ -89,7 +91,6 @@ async function loadDatabase(
   progressCallback: (message: string, finished: boolean) => void,
 ) {
   const initialisationCache = await getFileStorage(initialisationCacheName);
-  console.debug("initialisationCache", initialisationCache);
 
   // FIXME: this is NASTY!!!
   const baseUrl = new URL(syncURL).origin;
@@ -107,7 +108,7 @@ async function loadDatabase(
     cacheFiles = existingKeys;
   } else {
     cacheFiles = await cacheExports(baseUrl, initialisationCache, progressCallback);
-    console.log("Refreshed the initialisation cache with new values", cacheFiles);
+    console.debug("Refreshed the initialisation cache with new values", cacheFiles);
   }
   progressCallback("The data files have been downloaded, loading to the database : 13% complete", false);
 
@@ -116,7 +117,6 @@ async function loadDatabase(
     const file = cacheFiles[i];
     const response = await initialisationCache.get(file);
     const content = JSON.parse(await response.text());
-    console.debug(`Trying to import reponse from cache for file ${file}`, file);
     // FIXME: check whether all the inserts actually insert
     if (file.split("/").slice(-1)[0].startsWith("hanzi-")) {
       await db.characters.bulkInsert(content);
@@ -164,7 +164,6 @@ async function cacheExports(
     console.error(error);
     throw new Error(error);
   }
-  // console.log("Got back from ", EXPORTS_LIST_PATH, data);
   // Add the hanzi character database urls
   const hanziExportFilesListURL = new URL(HZEXPORTS_LIST_PATH, baseUrl);
   let hanziList;
@@ -178,7 +177,6 @@ async function cacheExports(
     console.error(error);
     throw new Error(error);
   }
-  // console.log("Got back from ", HZEXPORTS_LIST_PATH, hanziList);
   data.push(...hanziList);
 
   const entryBlock = async (url: string, origin: string) => {
@@ -195,8 +193,7 @@ async function cacheExports(
     progressCallback("Retrieved data file: " + url.split("/").slice(-1)[0], false);
     return await initialisationCache.put(url, new Blob([JSON.stringify(response)], { type: "application/json" }));
   };
-  const allBlocks = await Promise.all(data.map((x: string) => entryBlock(x, baseUrl)));
-  console.debug("Promise.all result from download and caching of all file blocks", allBlocks);
+  await Promise.all(data.map((x: string) => entryBlock(x, baseUrl)));
   return await initialisationCache.list();
 }
 
@@ -259,7 +256,7 @@ function setupTwoWayReplication(
      * when something has changed,
      * we can set the liveInterval to a high value
      */
-    liveInterval: 1000 * LIVE_INTERVAL, // liveInterval seconds * 1000
+    liveInterval: 1000 * (DBTwoWayCollections[colName].subscription ? LIVE_INTERVAL_WITH_SUBSCRIPTION : LIVE_INTERVAL),
     deletedFlag: "deleted",
   });
 
@@ -291,7 +288,10 @@ function setupPullReplication(
   const col = clone(DBPullCollections[colName]) as any;
 
   // liveInterval is in ms, so seconds * 1000
-  const liveInterval = "liveInterval" in col ? col.liveInterval : 1000 * LIVE_INTERVAL;
+  const liveInterval =
+    "liveInterval" in col
+      ? col.liveInterval
+      : 1000 * (col.subscription ? LIVE_INTERVAL_WITH_SUBSCRIPTION : LIVE_INTERVAL);
 
   const pullQueryBuilder =
     "pullQueryBuilder" in col
@@ -318,7 +318,7 @@ function setupPullReplication(
 }
 
 async function createDatabase(dbName: string): Promise<TranscrobesDatabase> {
-  console.log(`Create database ${dbName}...`);
+  console.debug(`Create database ${dbName}...`);
   if (dbPromise) {
     const db = await dbPromise;
     if (db) await db.destroy();
@@ -331,7 +331,7 @@ async function createDatabase(dbName: string): Promise<TranscrobesDatabase> {
 }
 
 async function createCollections(db: TranscrobesDatabase) {
-  console.log("Create collections...");
+  console.debug("Create collections...");
   for (const [colName, col] of Object.entries(DBCollections)) {
     try {
       await db.addCollections({ [colName]: col });
@@ -390,44 +390,63 @@ function setupGraphQLSubscription(
   wsEndpointUrl: string,
   jwtAccessToken: string,
 ) {
-  // setup graphql-subscriptions for pull-trigger
-  const wsClient = new SubscriptionClient(wsEndpointUrl, {
-    reconnect: true,
-    timeout: 1000 * 60,
-    connectionCallback: () => {
-      console.debug("SubscriptionClient.connectionCallback:");
+  const client = createClient({
+    url: wsEndpointUrl,
+    lazy: false,
+    keepAlive: 10_000,
+    on: {
+      connected: () => {
+        console.debug("SubscriptionClient.connected for", query);
+      },
+      error(error) {
+        console.warn("run() got error:", query, error);
+      },
     },
-    reconnectionAttempts: 10000,
-    inactivityTimeout: 10 * 1000,
-    lazy: true,
-  });
-  console.debug("Subscribe to GraphQL Subscriptions");
-  const ret = wsClient.request({
-    query,
-    /**
-     * there is no method in javascript to set custom auth headers
-     * at websockets. So we send the auth header directly as variable
-     * @link https://stackoverflow.com/a/4361358/3443137
-     */
-    variables: {
-      token: jwtAccessToken,
+    retryAttempts: 10_000,
+    shouldRetry: () => true,
+    connectionParams: () => {
+      store.dispatch(throttledRefreshToken());
+      const token = store.getState().userData.user.accessToken || "";
+      return { token };
     },
   });
-  ret.subscribe({
-    next: async (data) => {
-      // console.log("subscription emitted => trigger run()");
-      // console.dir(data);
+
+  (async () => {
+    const onNext = (data: any) => {
+      console.debug("subscription emitted => trigger run()", data);
 
       if (!!data.errors && data.errors.length > 0) {
         console.error(data.errors);
       }
-      await replicationState.run();
-    },
-    error(error) {
-      console.log("run() got error:");
-      console.error(error);
-    },
-  });
+      replicationState.notifyAboutRemoteChange();
+    };
+
+    let unsubscribe = () => {
+      console.log("The unsubscribe has been called");
+    };
+
+    await new Promise((resolve, reject) => {
+      unsubscribe = client.subscribe(
+        {
+          query,
+          variables: {
+            token: jwtAccessToken,
+          },
+        },
+        {
+          next: onNext,
+          error: (err: any) => {
+            console.log("There was a client.subscribe error", err);
+            reject();
+          },
+          complete: () => {
+            console.log("The client.subscribe completed");
+            resolve(null);
+          },
+        },
+      );
+    });
+  })();
 }
 
 async function testQueries(db: TranscrobesDatabase): Promise<DefinitionDocument[] | null> {
@@ -448,11 +467,10 @@ async function loadFromExports(
   progressCallback: (message: string, finished: boolean) => void,
   sw?: ServiceWorkerGlobalScope,
 ): Promise<TranscrobesDatabase> {
-  const activateSubscription = false;
+  const activateSubscription = true;
 
   const dbName = getDatabaseName(config);
 
-  console.log("before the creations", dbName);
   // FIXME: externalise the string
   const syncURL = new URL("/api/v1/graphql", config.url.origin).href;
   const wsEndpointUrl = `ws${config.url.protocol === "https:" ? "s" : ""}://${config.url.host}/subscriptions`;
@@ -462,7 +480,6 @@ async function loadFromExports(
     await deleteDatabase(dbName);
   }
   const db = await createDatabase(dbName);
-  console.log("created db", db);
   let justCreated = false;
 
   try {
@@ -518,8 +535,7 @@ async function loadFromExports(
       }
     }
   }
-  return testQueries(db).then((doc) => {
-    console.debug(`Queried the db for ${LOADED_DEF_QUERY_ENTRY}:`, doc);
+  return testQueries(db).then(() => {
     progressCallback("The indexes have now been generated. The initialisation has finished! : 100% complete", true);
     return db;
   });

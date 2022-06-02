@@ -3,7 +3,7 @@ import { Theme } from "@mui/material/styles";
 import { withStyles } from "tss-react/mui";
 import Tooltip from "@mui/material/Tooltip";
 import { ReactElement } from "react";
-import { ValueLabelProps } from "@mui/base";
+import { SliderValueLabelProps } from "@mui/base";
 
 const sliderStyles = (theme: Theme) => ({
   thumb: {
@@ -59,7 +59,7 @@ const sliderStyles = (theme: Theme) => ({
 const PrettoSlider = withStyles(Slider, sliderStyles);
 export default PrettoSlider;
 
-export function ValueLabelComponent({ children, open, value }: ValueLabelProps): ReactElement {
+export function ValueLabelComponent({ children, open, value }: SliderValueLabelProps): ReactElement {
   return (
     <Tooltip open={open} enterTouchDelay={0} placement="top" title={value}>
       {children}

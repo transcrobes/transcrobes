@@ -14,7 +14,6 @@ from dataclasses import field
 from datetime import datetime
 from typing import Any, List, Optional
 
-import aiohttp
 import pytz
 import strawberry
 from app import models
@@ -25,10 +24,11 @@ from app.data import clean_broadcaster_string
 from app.data.context import Context
 from app.data.models import REQUESTED
 from app.db.base_class import Base
-from app.db.session import async_session
+from app.db.session import async_session, async_stats_session
 from app.enrich import HANZI_JSON_CACHE_FILE_REGEX, latest_character_json_dir_path, latest_definitions_json_dir_path
 from app.enrich.data import managers
 from app.enrich.models import ensure_cache_preloaded, update_cache
+from app.models import stats
 from app.models.migrated import KNOWLEDGE_UNSET
 from app.models.mixins import ActivatorMixin, DetailedMixin
 from app.models.user import AuthUser
@@ -345,33 +345,36 @@ class DayModelStats:
     deleted: Optional[bool] = False
 
     @staticmethod
-    def from_list(wmlist: list):
-        ws = DayModelStats(
-            id=wmlist[0],
-            nb_seen=wmlist[1],
-            nb_checked=wmlist[2],
-            nb_success=wmlist[3],
-            nb_failures=wmlist[4],
-            updated_at=wmlist[5],
+    def from_model(dj_model):
+        return DayModelStats(
+            id=dj_model.day,
+            nb_seen=dj_model.nb_seen,
+            nb_checked=dj_model.nb_checked,
+            nb_success=dj_model.nb_success,
+            nb_failures=dj_model.nb_failures,
+            updated_at=dj_model.updated_at,
         )
-        return ws
 
 
-async def filter_day_model_stats_faust(
+async def filter_day_model_stats(
     user_id: int,
     limit: int,
-    updated_at: float,
+    updated_at: float = 0,
 ) -> List[WordModelStats]:
-    logger.debug(f"filter_day_model_stats_faust started: {user_id=}, {limit=}, {updated_at=}")
+    logger.debug(f"filter_day_model_stats started: {user_id=}, {limit=}, {updated_at=}")
+
+    stmt = select(stats.UserDay).where(stats.UserDay.user_id == user_id)
     updated_at = updated_at or 0
-    async with aiohttp.ClientSession() as session:
-        query = f"http://{settings.FAUST_HOST}:{settings.FAUST_PORT}/user_day_updates/{user_id}/{updated_at}"
-        async with session.get(query) as resp:
-            resp.raise_for_status()
-            updates = await resp.json()
-            if limit > 0:
-                updates = updates[:limit]
-            objs = [DayModelStats.from_list(user_day) for user_day in updates if user_day[5] > updated_at]
+    if updated_at > 0:
+        base_query = stats.UserDay.updated_at > updated_at
+        stmt = stmt.where(base_query)
+
+    async with async_stats_session() as db:
+        result = await db.execute(stmt.order_by("updated_at", "day").limit(limit))
+        obj_list = result.scalars().all()
+        objs = [DayModelStats.from_model(user_day) for user_day in obj_list]
+
+        logger.debug(f"filter_day_model_stats finished: {user_id=}, {limit=} {updated_at=}")
     return objs
 
 
@@ -383,30 +386,23 @@ class WordModelStats:
     last_seen: Optional[float] = 0
     nb_checked: Optional[int] = 0
     last_checked: Optional[float] = 0
-    nb_translated: Optional[int] = 0
-    last_translated: Optional[float] = 0
+    nb_translated: Optional[int] = 0  # unused but required by the API
+    last_translated: Optional[float] = 0  # unused but required by the API
     updated_at: Optional[float] = 0
     deleted: Optional[bool] = False
 
-    @staticmethod
-    def from_model(dj_model):
-        ws = WordModelStats(
-            id=dj_model.word_id,
-            nb_seen=dj_model.nb_seen,
-            nb_seen_since_last_check=dj_model.nb_seen_since_last_check,
-            nb_checked=dj_model.nb_checked,
-            nb_translated=dj_model.nb_translated,
-            updated_at=dj_model.updated_at.timestamp(),
-            # FIXME: do I need this?
-            # deleted=False
-        )
-        if dj_model.last_seen:
-            ws.last_seen = dj_model.last_seen.timestamp()
-        if dj_model.last_checked:
-            ws.last_checked = dj_model.last_checked.timestamp()
-        if dj_model.last_translated:
-            ws.last_translated = dj_model.last_translated.timestamp()
-        return ws
+    # @staticmethod
+    # def from_model(dj_model):
+    #     ws = WordModelStats(
+    #         # id=dj_model.???,
+    #         nb_seen=dj_model.nb_seen,
+    #         nb_seen_since_last_check=dj_model.nb_seen_since_last_check,
+    #         nb_checked=dj_model.nb_checked,
+    #         updated_at=dj_model.updated_at,
+    #     )
+    #     ws.last_seen = dj_model.last_seen
+    #     ws.last_checked = dj_model.last_checked
+    #     return ws
 
     @staticmethod
     def from_list(wmlist: list):
@@ -448,83 +444,58 @@ def add_word_ids(user_words: list, lang_pair: str) -> list:
     return filtered_words
 
 
-async def filter_word_model_stats_faust(
+async def filter_word_model_stats(
+    db: AsyncSession,
     user_id: int,
     lang_pair: str,
     limit: int,
-    id: int,
-    updated_at: float,
-) -> List[WordModelStats]:
-
-    logger.debug(f"filter_word_model_stats_faust started: {user_id=}, {limit=}, {id=}, {updated_at=}")
-
-    if settings.DEBUG:
-        async with async_session() as db:
-            await ensure_cache_preloaded(db, lang_pair.split(":")[0], lang_pair.split(":")[1])
-    updated_at = updated_at or 0
-    async with aiohttp.ClientSession() as session:
-        query = f"http://{settings.FAUST_HOST}:{settings.FAUST_PORT}/user_word_updates/{user_id}/{updated_at}"
-        async with session.get(query) as resp:
-            resp.raise_for_status()
-            try:
-                updates = add_word_ids(await resp.json(), lang_pair)
-            except MissingCacheValueException:
-                # This happens because broadcaster actually doesn't work... sigh... encode...
-                async with async_session() as db:
-                    cached_max_timestamp = next(reversed(cached_definitions[lang_pair].values()))[0]
-                    await update_cache(db, lang_pair.split(":")[0], lang_pair.split(":")[1], cached_max_timestamp)
-                updates = add_word_ids(await resp.json(), lang_pair)
-
-            updates = sorted(updates, key=lambda k: (k[7], k[8]))
-            if limit > 0:
-                updates = updates[:limit]
-            objs = [
-                WordModelStats.from_list(user_word)
-                for user_word in updates
-                if user_word[8] > id or user_word[7] > updated_at
-            ]
-    return objs
-
-
-async def filter_word_model_stats_db(
-    db: AsyncSession,
-    user_id: int,
-    limit: int,
-    ref: CommonType,
-    model_ref: models.UserWord,
     id: Optional[str] = "",
     updated_at: Optional[float] = -1,
 ) -> List[CommonType]:
-    # FIXME: currently unused, can probably delete as the faust version seems to work ok
-    logger.debug(
-        f"filter_word_model_stats_db started: {user_id=}, {limit=}, {id=}, {updated_at=}, {ref=}, {model_ref=}"
-    )
+    logger.debug(f"filter_word_model_stats started: {user_id=}, {limit=}, {id=}, {updated_at=}")
+    stmt = select(stats.UserWord).where(stats.UserWord.user_id == user_id)
+    updated_at = updated_at or 0
+    if updated_at > 0:
+        base_query = stats.UserWord.updated_at >= updated_at
+        stmt = stmt.where(base_query)
 
-    stmt = select(model_ref).where(model_ref.user_id == user_id).options(selectinload(model_ref.created_by))
-
-    if updated_at and updated_at > 0:
-        updated_at_datetime = datetime.fromtimestamp(updated_at, pytz.utc)
-        base_query = model_ref.updated_at > updated_at_datetime
-        if not id:
-            stmt = stmt.where(base_query)
-        else:
-            stmt = stmt.where(
-                or_(
-                    base_query,
-                    and_(
-                        model_ref.updated_at == updated_at_datetime,
-                        model_ref.word_id > int(id),
-                    ),
-                )
-            )
-
-    result = await db.execute(stmt.order_by("updated_at", "id").limit(limit))
+    stmt = stmt.order_by("updated_at")
+    # WARNING! we can't filter here because we need to get the word_id and filter on that first
+    # stmt = stmt.limit(limit)
+    result = await db.execute(stmt)
     obj_list = result.scalars().all()
-    objs = [ref.from_model(dj_model) for dj_model in obj_list]
-    logger.debug(
-        f"filter_word_model_stats_db finished: {user_id=}, {limit=}, {id=}, {updated_at=}, {ref=}, {model_ref=}"
-    )
-    return objs
+    lines = []
+    for uw in obj_list:
+        lines.append(
+            [
+                uw.graph,
+                uw.nb_seen,
+                uw.last_seen,
+                uw.nb_checked,
+                uw.last_checked,
+                uw.nb_seen_since_last_check,
+                0,  # uw.is_known,  # unused
+                uw.updated_at,
+            ]
+        )
+    try:
+        updates = add_word_ids(lines, lang_pair)
+    except MissingCacheValueException:
+        # This happens because broadcaster actually doesn't work... sigh... encode...
+        async with async_session() as db:
+            cached_max_timestamp = next(reversed(cached_definitions[lang_pair].values()))[0]
+            await update_cache(db, lang_pair.split(":")[0], lang_pair.split(":")[1], cached_max_timestamp)
+        updates = add_word_ids(lines, lang_pair)
+
+    updates = [
+        user_word
+        for user_word in sorted(updates, key=lambda k: (k[7], k[8]))
+        if user_word[7] > updated_at or user_word[8] > int(id)
+    ]
+    if limit > 0:
+        updates = updates[:limit]
+    logger.debug(f"filter_word_model_stats finished: {user_id=}, {limit=}, {id=}, {updated_at=}")
+    return [WordModelStats.from_list(user_word) for user_word in updates]
 
 
 @strawberry.type
@@ -1140,13 +1111,13 @@ class Query:
             user = await get_user(db, info.context.request)
             user_id = user.id
             lang_pair = user.lang_pair
-            # payload = deps.get_current_good_tokenpayload(token=await deps.reusable_oauth2(info.context.request))
-            # user_id = payload.sub
-            # lang_pair = payload.lang_pair
-            return await filter_word_model_stats_faust(user_id, lang_pair, limit, int(id) if id else 0, updated_at)
-            # return await filter_word_model_stats_db(
-            #     db, user.id, limit, WordModelStats, models.UserWord, word_id, updated_at
-            # )
+        logger.debug(f"Getting word model stats query: {user_id=}, {limit=}, {id=}, {updated_at=}, {lang_pair=}")
+        if settings.DEBUG:
+            async with async_session() as db:
+                await ensure_cache_preloaded(db, lang_pair.split(":")[0], lang_pair.split(":")[1])
+
+        async with async_stats_session() as db:
+            return await filter_word_model_stats(db, user_id, lang_pair, limit, int(id) if id else 0, updated_at)
 
     @strawberry.field
     async def feed_day_model_stats(  # pylint: disable=E0213
@@ -1158,7 +1129,8 @@ class Query:
         async with async_session() as db:
             user = await get_user(db, info.context.request)
             user_id = user.id
-            return await filter_day_model_stats_faust(user_id, limit, updated_at)
+
+        return await filter_day_model_stats(user_id, limit, updated_at)
 
     @strawberry.field
     async def feed_wordlists(  # pylint: disable=E0213
@@ -1433,7 +1405,7 @@ class Mutation:
             result = await db.execute(
                 select(models.Card).where(tup.in_(card_unities)).options(selectinload(models.Card.user))
             )
-            await info.context.broadcast.publish(channel="cards", message=str(user.id))
+            await info.context.broadcast.publish(channel=models.Card.__name__, message=str(user.id))
             return_vals = [Card.from_model(dj_card) for dj_card in result.scalars().all()]
             return return_vals
 
@@ -1441,19 +1413,19 @@ class Mutation:
     async def set_imports(
         self, info: Info[Context, Any], imports: Optional[list[Optional[ImportsInput]]] = None
     ) -> list[Import]:
-        channel = "imports"
         obj = imports
-        logger.debug(f"The info is: {info=}, and the {channel=} is: {obj=}")
-        return await set_objects(obj, models.Import, info, channel, Import, fill_import)
+        logger.debug(f"The info is: {info=}, and the channel {Import.__name__=} is: {obj=}")
+        return await set_objects(obj, models.Import, info, models.Import.__name__, Import, fill_import)
 
     @strawberry.mutation
     async def set_contents(
         self, info: Info[Context, Any], contents: Optional[list[Optional[ContentsInput]]] = None
     ) -> list[Content]:
-        channel = "contents"
         obj = contents
-        logger.debug(f"The info is: {info=}, and the {channel=} is: {obj=}")
-        content_list: list[Content] = await set_objects(obj, models.Content, info, channel, Content, fill_content)
+        logger.debug(f"The info is: {info=}, and the channel {Content.__name__=} is: {obj=}")
+        content_list: list[Content] = await set_objects(
+            obj, models.Content, info, models.Content.__name__, Content, fill_content
+        )
         for content in content_list:
             if content.processing == REQUESTED:
                 await content_process_topic.send(value=ProcessData(type="content", id=content.id))
@@ -1463,10 +1435,11 @@ class Mutation:
     async def set_userlists(
         self, info: Info[Context, Any], userlists: Optional[list[Optional[UserlistsInput]]] = None
     ) -> list[UserList]:
-        channel = "userlists"
         obj = userlists
-        logger.debug(f"The info is: {info=}, and the {channel=} is: {obj=}")
-        ulists: list[UserList] = await set_objects(obj, models.UserList, info, channel, UserList, fill_user_list)
+        logger.debug(f"The info is: {info=}, and the channel {UserList.__name__=} is: {obj=}")
+        ulists: list[UserList] = await set_objects(
+            obj, models.UserList, info, models.UserList.__name__, UserList, fill_user_list
+        )
         for ulist in ulists:
             if ulist.processing == REQUESTED:
                 await list_process_topic.send(value=ProcessData(type="list", id=ulist.id))
@@ -1476,9 +1449,8 @@ class Mutation:
     async def set_recentsentences(
         self, info: Info[Context, Any], recentsentences: Optional[list[Optional[RecentsentencesInput]]] = None
     ) -> list[RecentSentenceSet]:
-        channel = "recentsentences"
         objs = recentsentences
-        logger.debug(f"The info is: {info=}, and the {channel=} is: {objs=}")
+        logger.debug(f"The info is: {info=}, and the channel {RecentSentenceSet.__name__=} is: {objs=}")
 
         async with async_session() as db:
             user = await get_user(db, info.context.request)
@@ -1521,7 +1493,6 @@ class Mutation:
                 db.add(dj_obj)
             try:
                 await db.commit()
-                await info.context.broadcast.publish(channel="recentsentences", message=str(user.id))
             except Exception as e:
                 logger.exception(f"Error saving updated recentsentence: {json.dumps(dataclasses.asdict(obj))}")
                 logger.error(e)
@@ -1532,7 +1503,7 @@ class Mutation:
                 .where(tup.in_(obj_unities))
                 .options(selectinload(models.UserRecentSentences.user))
             )
-
+            await info.context.broadcast.publish(channel=models.UserRecentSentences.__name__, message=str(user.id))
             return_vals = [RecentSentenceSet.from_model(dj_obj) for dj_obj in result.scalars().all()]
             return return_vals
 
@@ -1540,11 +1511,10 @@ class Mutation:
     async def set_userdictionaries(
         self, info: Info[Context, Any], userdictionaries: Optional[list[Optional[UserdictionariesInput]]] = None
     ) -> list[UserDictionary]:
-        channel = "userdictionaries"
         obj = userdictionaries
-        logger.debug(f"The info is: {info=}, and the {channel=} is: {obj=}")
+        logger.debug(f"The info is: {info=}, and the channel {UserDictionary.__name__=} is: {obj=}")
         userdictionaries: list[UserDictionary] = await set_objects(
-            obj, models.UserDictionary, info, channel, UserDictionary, fill_userdictionary
+            obj, models.UserDictionary, info, models.UserDictionary.__name__, UserDictionary, fill_userdictionary
         )
         return userdictionaries
 
@@ -1552,32 +1522,27 @@ class Mutation:
     async def set_goals(
         self, info: Info[Context, Any], goals: Optional[list[Optional[GoalsInput]]] = None
     ) -> list[Goal]:
-        channel = "goals"
         obj = goals
-        logger.debug(f"The info is: {info=}, and the {channel=} is: {obj=}")
-        return await set_objects(obj, models.Goal, info, channel, Goal, fill_goal)
+        logger.debug(f"The info is: {info=}, and the channel {Goal.__name__=} is: {obj=}")
+        return await set_objects(obj, models.Goal, info, models.Goal.__name__, Goal, fill_goal)
 
     @strawberry.mutation
     async def set_usersurveys(
         self, info: Info[Context, Any], usersurveys: Optional[list[Optional[UsersurveysInput]]] = None
     ) -> list[UserSurvey]:
-        channel = "usersurveys"
         obj = usersurveys
-        logger.debug(f"The info is: {info=}, and the {channel=} is: {obj=}")
-        return await set_objects(obj, models.UserSurvey, info, channel, UserSurvey, fill_user_survey)
+        logger.debug(f"The info is: {info=}, and the channel {UserSurvey.__name__=} is: {obj=}")
+        return await set_objects(obj, models.UserSurvey, info, models.UserSurvey.__name__, UserSurvey, fill_user_survey)
 
 
-async def changed_standard(info: Info[Context, Any], token: str, ref: type[CommonType]) -> CommonType:
+async def changed_standard(info: Info[Context, Any], token: str, ref: type[Base]) -> CommonType:
     user_id = get_user_id_from_token(token)
     logger.debug("Setting up %ss subscription for user %s", ref.__name__, user_id)
-
-    async with info.context.broadcast.subscribe(channel=f"{ref.__name__}s") as subscriber:
+    async with info.context.broadcast.subscribe(channel=ref.__name__) as subscriber:
         async for event in subscriber:
-            # FIXME: how is this not necessary??? shouldn't it be??? why did i not put it???
-            # if clean_broadcaster_string(event.message) == str(user_id):
-
-            logger.debug(f"Got a {ref.__name__}s subscription event for {event.message}")
-            yield ref(id="42")
+            if clean_broadcaster_string(event.message) == str(user_id):
+                logger.debug(f"Got a {ref.__name__} subscription event for {event.message}")
+                yield ref(id="42")
 
 
 @strawberry.type
@@ -1589,11 +1554,11 @@ class Subscription:
     async def changed_cards(self, info: Info[Context, Any], token: str) -> Card:
         user_id = get_user_id_from_token(token)
 
-        logger.debug("Setting up card subscription for user %s", user_id)
-        async with info.context.broadcast.subscribe(channel="cards") as subscriber:
+        logger.debug("Setting up models.Card.__name__ subscription for user %s", user_id)
+        async with info.context.broadcast.subscribe(channel=models.Card.__name__) as subscriber:
             async for event in subscriber:
                 if clean_broadcaster_string(event.message) == str(user_id):
-                    logger.debug(f"Got a definitions subscription event for {user_id}")
+                    logger.debug(f"Got a models.Card.__name__ subscription event for {user_id}")
                     yield Card(id="42")
 
     # type Subscription {
@@ -1602,12 +1567,11 @@ class Subscription:
     @strawberry.subscription
     async def changed_daymodelstats(self, info: Info[Context, Any], token: str) -> DayModelStats:
         user_id = get_user_id_from_token(token)
-        logger.debug("Setting up day_model_stats subscription for user %s", user_id)
-
-        async with info.context.broadcast.subscribe(channel="day_model_stats") as subscriber:
+        logger.debug("Setting up stats.UserDay.__name__ subscription for user %s", user_id)
+        async with info.context.broadcast.subscribe(channel=stats.UserDay.__name__) as subscriber:
             async for event in subscriber:
                 if clean_broadcaster_string(event.message) == str(user_id):
-                    logger.debug(f"Got a day_model_stats subscription event for {user_id}")
+                    logger.debug(f"Got a stats.UserDay.__name__ subscription event for {user_id}")
                     yield DayModelStats(id="42")
 
     # type Subscription {
@@ -1616,12 +1580,11 @@ class Subscription:
     @strawberry.subscription
     async def changed_wordmodelstats(self, info: Info[Context, Any], token: str) -> WordModelStats:
         user_id = get_user_id_from_token(token)
-        logger.debug("Setting up word_model_stats subscription for user %s", user_id)
-
-        async with info.context.broadcast.subscribe(channel="word_model_stats") as subscriber:
+        logger.debug("Setting up stats.UserWord.__name__ subscription for user %s", user_id)
+        async with info.context.broadcast.subscribe(channel=stats.UserWord.__name__) as subscriber:
             async for event in subscriber:
                 if clean_broadcaster_string(event.message) == str(user_id):
-                    logger.debug(f"Got a word_model_stats subscription event for {user_id}")
+                    logger.debug(f"Got a stats.UserWord.__name__ subscription event for {user_id}")
                     yield WordModelStats(id="42")
 
     # type Subscription {
@@ -1630,11 +1593,11 @@ class Subscription:
     @strawberry.subscription
     async def changed_wordlists(self, info: Info[Context, Any], token: str) -> WordList:
         user_id = get_user_id_from_token(token)
-        logger.debug("Setting up word_list subscription for user %s", user_id)
-        async with info.context.broadcast.subscribe(channel="word_list") as subscriber:
+        logger.debug("Setting up WordList subscription for user %s", user_id)
+        async with info.context.broadcast.subscribe(channel="WordList") as subscriber:
             async for event in subscriber:
                 if clean_broadcaster_string(event.message) == str(user_id):
-                    logger.debug(f"Got a word_list subscription event for {user_id}")
+                    logger.debug(f"Got a WordList subscription event for {user_id}")
                     yield WordList(id="42", name="tmol", word_ids=["42"])
 
     # type Subscription {
@@ -1643,40 +1606,40 @@ class Subscription:
     @strawberry.subscription
     async def changed_definitions(self, info: Info[Context, Any], token: str) -> DefinitionSet:
         user_id = get_user_id_from_token(token)
-        logger.debug("Setting up definitions subscription for user %s", user_id)
+        logger.debug("Setting up models.CachedDefinition.__name__ subscription for user %s", user_id)
 
-        async with info.context.broadcast.subscribe(channel="definitions") as subscriber:
+        async with info.context.broadcast.subscribe(channel=models.CachedDefinition.__name__) as subscriber:
             async for event in subscriber:
-                logger.debug(f"Got a definitions subscription event for {event.message}")
+                logger.debug(f"Got a models.CachedDefinition.__name__ subscription event for {event.message}")
                 yield DefinitionSet(id="42", graph="四十二", sound=["42"])
 
     @strawberry.subscription
     async def changed_imports(self, info: Info[Context, Any], token: str) -> Import:
-        return changed_standard(info, token, Import)
+        return changed_standard(info, token, models.Import)
 
     @strawberry.subscription
     async def changed_recentsentences(self, info: Info[Context, Any], token: str) -> RecentSentenceSet:
-        return changed_standard(info, token, RecentSentenceSet)
+        return changed_standard(info, token, models.UserRecentSentences)
 
     @strawberry.subscription
     async def changed_goals(self, info: Info[Context, Any], token: str) -> Goal:
-        return changed_standard(info, token, Goal)
+        return changed_standard(info, token, models.Goal)
 
     @strawberry.subscription
     async def changed_contents(self, info: Info[Context, Any], token: str) -> Content:
-        return changed_standard(info, token, Content)
+        return changed_standard(info, token, models.Content)
 
     @strawberry.subscription
     async def changed_userlists(self, info: Info[Context, Any], token: str) -> UserList:
-        return changed_standard(info, token, UserList)
+        return changed_standard(info, token, models.UserList)
 
     @strawberry.subscription
     async def changed_usersurveys(self, info: Info[Context, Any], token: str) -> UserSurvey:
-        return changed_standard(info, token, UserSurvey)
+        return changed_standard(info, token, models.UserSurvey)
 
     @strawberry.subscription
     async def changed_userdictionaries(self, info: Info[Context, Any], token: str) -> UserDictionary:
-        return changed_standard(info, token, UserDictionary)
+        return changed_standard(info, token, models.UserDictionary)
 
 
 schema = strawberry.Schema(query=Query, mutation=Mutation, subscription=Subscription)

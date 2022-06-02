@@ -46,6 +46,8 @@ zhon = "^1.1.5"
 pinyinsplit = "^0.1.4"
 PyGithub = "^1.55"
 OpenCC = "^1.1.4"
+confluent-kafka = "1.8.2"
+orjson = "^3.7.2"
 
 [tool.poetry.dev-dependencies]
 mypy = "^0.961"

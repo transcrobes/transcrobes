@@ -14,13 +14,19 @@ services:
 
   backend:
     ports:
-      # - "8888:8888"
       - "8880:8000"
     volumes:
       - ./backend/app:/app
       - ./frontend/dist:/fapp
     environment:
       - SERVER_HOST=http://${DOMAIN?Variable not set}
+      # - TRANSCROBES_LOG_LEVEL=INFO
+      # - TRANSCROBES_DATA_LOG_LEVEL=INFO
+      # - TRANSCROBES_ENRICH_LOG_LEVEL=INFO
+      # - TRANSCROBES_ENRICHERS_LOG_LEVEL=INFO
+      # - TRANSCROBES_DEFAULT_LOG_LEVEL=INFO
+
+
     build:
       context: .
       dockerfile: Dockerfile.web
@@ -30,8 +36,6 @@ services:
     command: /bin/bash /start-reload.sh
 
   faustworker:
-    ports:
-      - ${FAUST_PORT:-6066}:${FAUST_PORT:-6066}
     volumes:
       - ./backend/app:/app
     environment:

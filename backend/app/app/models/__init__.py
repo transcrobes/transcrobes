@@ -13,7 +13,6 @@ from .migrated import (  # noqa: F401
     UserListWord,
     UserRecentSentences,
     UserSurvey,
-    UserWord,
     ZhhansEnABCLookup,
     ZhhansEnCCCLookup,
     ZhHskLookup,

@@ -10,12 +10,13 @@ import os
 from email.utils import formatdate
 from typing import Any, List
 
+import orjson
+from aiokafka import AIOKafkaProducer
 from app import models, schemas, stats
 from app.api import deps
+from app.core.config import settings
 from app.data.models import DATA_JS_SUFFIX, DATA_JSON_SUFFIX, ENRICH_JSON_SUFFIX, PARSE_JSON_SUFFIX
-from app.fworker import action_event_topic, card_event_topic, reload_event_topic, vocab_event_topic
 from app.models.user import absolute_resources_path
-from app.schemas.event import ActionEvent, BaseEvent, CardEvent, ReloadEvent, VocabEvent
 from fastapi import APIRouter, Depends
 from fastapi.exceptions import HTTPException
 from fastapi.responses import FileResponse, Response
@@ -25,62 +26,7 @@ from starlette.responses import JSONResponse
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
-
-@router.post("/reload_events")
-async def reload_events(
-    events: dict[str, Any],
-    current_user: models.AuthUser = Depends(deps.get_current_active_superuser),
-) -> Any:  # FIXME: Any?
-    for user_id, gevent in events.items():
-        try:
-            event = ReloadEvent(
-                type="reload",
-                words=gevent["words"],
-                days=gevent["days"],
-                source="reload",
-                user_stats_mode=stats.USER_STATS_MODE_IGNORE,
-                user_id=user_id,
-            )
-            await reload_event_topic.send(value=event)
-        except Exception as ex:  # pylint: disable=W0703  # FIXME:
-            logger.exception(ex)
-            logger.exception(gevent)
-            return {"status": "failure"}
-
-    return {"status": "success"}
-
-
-def get_event(e: Any, user_id: int) -> BaseEvent:
-    logger.debug("Got an event %s for user %s", e, user_id)
-    # FIXME: I am not currently using the e.get("user_stats_mode")...
-    if e["type"] in ["bulk_vocab"]:
-        return VocabEvent(
-            data=e["data"],
-            type=e["type"],
-            source=e["source"],
-            user_stats_mode=e.get("user_stats_mode") or stats.USER_STATS_MODE_IGNORE,
-            user_id=user_id,
-        )
-    elif e["type"] in ["practice_card"]:
-        return CardEvent(
-            type=e["type"],
-            source=e["source"],
-            user_stats_mode=e.get("user_stats_mode") or stats.USER_STATS_MODE_IGNORE,
-            user_id=user_id,
-            target_word=e["data"]["target_word"],
-            grade=e["data"]["grade"],
-            pos=e["data"].get("pos") or "OTHER",
-            source_sentence=e["data"].get("source_sentence"),
-        )
-    else:
-        return ActionEvent(
-            type=e["type"],
-            source=e["source"],
-            user_stats_mode=e.get("user_stats_mode") or stats.USER_STATS_MODE_IGNORE,
-            user_id=user_id,
-            target_word=e["data"]["target_word"],
-            target_sentence=e["data"].get("target_sentence"),
-        )
+aioproducer = AIOKafkaProducer(client_id=settings.PROJECT_NAME, bootstrap_servers=settings.KAFKA_BROKER)
 
 
 @router.post("/user_events")
@@ -89,38 +35,53 @@ async def user_events(
     # current_user: models.AuthUser = Depends(deps.get_current_active_user),
     current_user: schemas.TokenPayload = Depends(deps.get_current_active_tokenpayload),
 ) -> Any:  # FIXME: Any?
-    for gevent in events:
-        # if "source" not in gevent:
-        #     continue
-        # FIXME: this is a bug, fixit!!!
-        if not gevent["data"]:
-            continue
-        try:
-            event = get_event(gevent, current_user.id)
-            if isinstance(event, VocabEvent):
-                # for k in event.data.keys():
-                #     if len(k) > 10:
-                #         print("The target_word is invalid", event)
-                #         raise Exception("The target_word data is invalid")
-                logger.debug(
-                    f"Submitting vocab event for user {current_user=} with size {len(json.dumps(event.data))=}"
-                )
-                print(f"Submitting vocab event for user {current_user=} with size {len(json.dumps(event.data))=}")
-                await vocab_event_topic.send(value=event)
-            elif isinstance(event, CardEvent):
-                # if len(event.target_word) > 10:
-                #     print("The target_word is invalid", event)
-                #     raise Exception("The target_word is invalid")
-                await card_event_topic.send(value=event)
+    vocab = []
+    card = []
+    other = []
+    try:
+        for e in events:
+            if e["type"] in ["bulk_vocab"]:
+                event = {
+                    "data": e["data"],
+                    "type": e["type"],
+                    "source": e["source"],
+                    "user_stats_mode": e.get("user_stats_mode") or stats.USER_STATS_MODE_IGNORE,
+                    "user_id": current_user.id,
+                }
+                vocab.append(event)
+            elif e["type"] in ["practice_card"]:
+                event = {
+                    "type": e["type"],
+                    "source": e["source"],
+                    "user_stats_mode": e.get("user_stats_mode") or stats.USER_STATS_MODE_IGNORE,
+                    "user_id": current_user.id,
+                    "target_word": e["data"]["target_word"],
+                    "grade": e["data"]["grade"],
+                    "pos": e["data"].get("pos") or "OTHER",
+                    "source_sentence": e["data"].get("source_sentence"),
+                }
+                card.append(event)
             else:
-                # if len(event.target_word) > 10:
-                #     print("The target_word is invalid", event)
-                #     raise Exception("The target_word is invalid")
-                await action_event_topic.send(value=event)
-        except Exception as ex:  # pylint: disable=W0703  # FIXME:
-            logger.exception(ex)
-            logger.exception(gevent)
-            return {"status": "failure"}
+                event = {
+                    "type": e["type"],
+                    "source": e["source"],
+                    "user_stats_mode": e.get("user_stats_mode") or stats.USER_STATS_MODE_IGNORE,
+                    "user_id": current_user.id,
+                    "target_word": e["data"]["target_word"],
+                    "target_sentence": e["data"].get("target_sentence"),
+                }
+                other.append(event)
+        if vocab:
+            await aioproducer.send_and_wait(stats.VOCAB_EVENT_TOPIC_NAME, orjson.dumps(vocab))
+        if card:
+            await aioproducer.send_and_wait(stats.CARD_EVENT_TOPIC_NAME, orjson.dumps(card))
+        if other:
+            await aioproducer.send_and_wait(stats.ACTION_EVENT_TOPIC_NAME, orjson.dumps(other))
+
+    except Exception as ex:  # pylint: disable=W0703  # FIXME:
+        logger.exception(ex)
+        logger.exception(e)
+        return {"status": "failure"}
 
     return {"status": "success"}
 

@@ -219,40 +219,6 @@ class UserRecentSentences(Base):
     word = relationship("BingApiLookup")
 
 
-class UserWord(Base):
-    __table_args__ = (UniqueConstraint("user_id", "word_id"),)
-
-    id = Column(Integer, primary_key=True)
-    nb_seen = Column(Integer, nullable=False, default=0)
-    last_seen = Column(DateTime(True))
-    nb_checked = Column(Integer, nullable=False, default=0)
-    last_checked = Column(DateTime(True))
-    user_id = Column(
-        ForeignKey("authuser.id", deferrable=True, initially="DEFERRED"),
-        nullable=False,
-        index=True,
-    )
-    word_id = Column(
-        ForeignKey("bingapilookup.id", deferrable=True, initially="DEFERRED"),
-        nullable=False,
-        index=True,
-    )
-    nb_seen_since_last_check = Column(Integer, nullable=False, default=0)
-    is_known = Column(Boolean, nullable=False, default=False)
-    last_translated = Column(DateTime(True))
-    nb_translated = Column(Integer, default=0)
-    updated_at = Column(
-        DateTime(True),
-        nullable=False,
-        onupdate=utcnow(),
-        server_default=utcnow(),
-        index=True,
-    )
-
-    created_by = relationship("AuthUser")
-    word = relationship("BingApiLookup")
-
-
 class CachedDefinition(CachedAPIJSONLookupMixin, Base):
     __table_args__ = (
         CachedAPIJSONLookupMixin.unique,
@@ -469,39 +435,21 @@ class UserList(DetailedMixin, Base):
 
         result = await db.execute(text(sql))
 
-        new_userwords = []
         new_userlistwords = []
         newstuff = result.fetchall()
         for i, word_id in enumerate(newstuff):
-            if i % 4000 == 0 and i > 0:  # 4000 == 28000 / 7, which keeps us under the params limit of 32k
-                stmt = postgresql.insert(UserWord).values(new_userwords)
-                stmt = stmt.on_conflict_do_nothing(index_elements=["user_id", "word_id"])
-                await db.execute(stmt)
+            if i % 10000 == 0 and i > 0:  # 10000 == 30000 / 3, which keeps us under the params limit of 32k
                 stmt = postgresql.insert(UserListWord).values(new_userlistwords)
                 stmt = stmt.on_conflict_do_nothing(index_elements=["user_list_id", "word_id"])
                 await db.execute(stmt)
-                new_userwords = []
                 new_userlistwords = []
 
-            new_userwords.append(
-                {
-                    "user_id": self.created_by.id,
-                    "word_id": word_id[0],
-                    "nb_seen": 0,
-                    "nb_checked": 0,
-                    "nb_seen_since_last_check": 0,
-                    "is_known": self.word_knowledge == WORD_KNOWN,
-                }
-            )
             new_userlistwords.append({"user_list_id": self.id, "word_id": word_id[0], "default_order": i})
 
-        if len(new_userwords) > 0:
-            stmt = postgresql.insert(UserWord).values(new_userwords)
-            stmt = stmt.on_conflict_do_nothing(index_elements=["user_id", "word_id"])
-            await db.execute(stmt)
         if len(new_userlistwords) > 0:
             stmt = postgresql.insert(UserListWord).values(new_userlistwords)
             stmt = stmt.on_conflict_do_nothing(index_elements=["user_list_id", "word_id"])
+
             await db.execute(stmt)
 
         logger.info(f"Added {len(new_userlistwords)} list words for user_list_{self.id} for {self.created_by.email}")
@@ -569,10 +517,10 @@ class UserList(DetailedMixin, Base):
 
     async def publish_updates(self):
         broadcast = await get_broadcast()
-        await broadcast.publish(channel="word_list", message=str(self.created_by.id))
-        await broadcast.publish(channel="user_list", message=str(self.created_by.id))
+        logger.info(f"Send update to websocket for list {self.id} for user {self.created_by.id}")
+        await broadcast.publish(channel="WordList", message=str(self.created_by.id))
         if self.word_knowledge:
-            await broadcast.publish(channel="cards", message=str(self.created_by.id))
+            await broadcast.publish(channel=Card.__name__, message=str(self.created_by.id))
 
 
 class UserSurvey(DetailedMixin, Base):

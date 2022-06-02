@@ -4,6 +4,7 @@ import mimetypes
 import os
 
 from app.api.api_v1.api import api_router
+from app.api.api_v1.endpoints.data import aioproducer
 from app.api.api_v1.graphql import schema
 from app.core.config import settings
 from app.data.asgi import TranscrobesGraphQL
@@ -18,6 +19,16 @@ from starlette.middleware.cors import CORSMiddleware
 logging.config.dictConfig(settings.LOGGING)
 
 app = FastAPI(title=settings.PROJECT_NAME, openapi_url=f"{settings.API_V1_STR}/openapi.json")
+
+
+@app.on_event("startup")
+async def startup_event():
+    await aioproducer.start()
+
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    await aioproducer.stop()
 
 
 @app.exception_handler(RequestValidationError)

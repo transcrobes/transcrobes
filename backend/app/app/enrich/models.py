@@ -151,7 +151,7 @@ async def definition(  # pylint: disable=R0914
                 "After cached_entry.save, before publish broadcast definitions for  %s",
                 str(cached_entry.id),
             )
-            await (await get_broadcast()).publish(channel="definitions", message=str(cached_entry.id))
+            await (await get_broadcast()).publish(channel=CachedDefinition.__name__, message=str(cached_entry.id))
             # await stats.KAFKA_PRODUCER.send("definitions", str(cached_entry.id))
             logger.debug("Managed to submit broadcast definitions for  %s", str(cached_entry.id))
             if refresh:  # we just want to regenerate in the DB, leave now

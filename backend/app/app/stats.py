@@ -27,8 +27,11 @@ USER_STATS_MODE = [
     (GLOSSING_MODE_SEGMENT_ONLY, "Segmentation only"),
 ] + USER_GLOSSING_MODE
 
-# KAFKA_PRODUCER: KafkaProducer
 KAFKA_PRODUCER: AIOKafkaProducer
+
+VOCAB_EVENT_TOPIC_NAME = "vocab_event_topic"
+CARD_EVENT_TOPIC_NAME = "card_event_topic"
+ACTION_EVENT_TOPIC_NAME = "action_event_topic"
 
 
 async def _kafka_producer() -> AIOKafkaProducer:
@@ -40,14 +43,6 @@ async def _kafka_producer() -> AIOKafkaProducer:
     # Get cluster layout and initial topic/partition leadership information
     await KAFKA_PRODUCER.start()
     return KAFKA_PRODUCER
-
-
-# def _kafka_producer() -> KafkaProducer:
-#     global KAFKA_PRODUCER  # pylint: disable=W0603
-#     KAFKA_PRODUCER = KafkaProducer(
-#         bootstrap_servers=[settings.KAFKA_BROKER], value_serializer=lambda m: json.dumps(m).encode("ascii")
-#     )
-#     return KAFKA_PRODUCER
 
 
 def __getattr__(name: str) -> Any:

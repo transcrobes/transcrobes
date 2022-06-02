@@ -6,16 +6,14 @@
 export PGHOST=${PGHOST:-postgres}
 export PGPORT=${PGPORT:-5432}
 export PGUSER=${PGUSER:-postgres}
+: ${PGPASSWORD:?"--password to a PostgreSQL container or server is not set"}
+
 export BACKUPS_DATABASE_PATH=${BACKUPS_DATABASE_PATH:-/opt/backups/data}
 export BACKUPS_MEDIA_PATH=${BACKUPS_MEDIA_PATH:-/opt/backups/media}
 export DATA_ROOT=${DATA_ROOT:-/opt/backups}
 export MEDIA_ROOT=${MEDIA_ROOT:-/opt/transcrobes/media}
 export DAYS_TO_KEEP_HOURLY=${DAYS_TO_KEEP_HOURLY:-1}
 export DAYS_TO_KEEP_DAILY=${DAYS_TO_KEEP_DAILY:-90}
-export DAYS_TO_KEEP_DAILY=${DAYS_TO_KEEP_DAILY:-90}
-export STATS_URL_ENDPOINT=${STATS_URL_ENDPOINT}
-
-: ${PGPASSWORD:?"--password to a PostgreSQL container or server is not set"}
 
 # Ensure backup paths exist
 mkdir -p ${BACKUPS_DATABASE_PATH}
@@ -45,7 +43,7 @@ find $BACKUPS_DATABASE_PATH -name $OBSOLETE_FILES -type f -mtime "+$DAYS_TO_KEEP
 
 echo "Set backup file name to: $ARCHIVE with xz compression level $XZ_COMPRESSION_LEVEL"
 echo "Starting database backup..."
-pg_dumpall --clean > $ARCHIVE
+pg_dump -c --dbname=transcrobes  > $ARCHIVE
 echo "Database backup dumped, compressing with 'xz -T4 -${XZ_COMPRESSION_LEVEL} -zf $ARCHIVE'"
 xz -T4 -${XZ_COMPRESSION_LEVEL} -zf "$ARCHIVE"
 echo "Archive $ARCHIVE compressed, moving to ${BACKUPS_DATABASE_PATH}/$ARCHIVE.xz"
@@ -53,38 +51,39 @@ mv "$ARCHIVE.xz" "${BACKUPS_DATABASE_PATH}/$ARCHIVE.xz"
 echo "Finished backing up $ARCHIVE"
 
 ################################################################################
-# Stats backup
-if [[ -z $STATS_URL_ENDPOINT ]];
-then
-  echo "STATS_URL_ENDPOINT is not set, skipping stats backup"
+# Stats SQL backup
+: ${STATS_PGPASSWORD:?"--password to a PostgreSQL container or server is not set"}
+export PGHOST=${STATS_PGHOST:-postgres}
+export PGPORT=${STATS_PGPORT:-5432}
+export PGUSER=${STATS_PGUSER:-postgres}
+export PGPASSWORD=${STATS_PGPASSWORD:-postgres}
+
+DAILY_ARCHIVE="statsdb-archive-$(date +"%Y-%m-%d").sql"
+
+if [[ -f "${BACKUPS_DATABASE_PATH}/$DAILY_ARCHIVE.xz" ]]; then
+  ARCHIVE="statsdb-archive-$(date +"%Y-%m-%d_%H-%M").sql"
+  echo "Daily database archive $DAILY_ARCHIVE.xz exists, performing hourly backup $ARCHIVE"
 else
-  DAILY_ARCHIVE="stats-archive-$(date +"%Y-%m-%d").json"
-
-  if [[ -f "${BACKUPS_DATABASE_PATH}/$DAILY_ARCHIVE.xz" ]]; then
-    ARCHIVE="stats-archive-$(date +"%Y-%m-%d_%H-%M").json"
-    echo "Daily stats archive $DAILY_ARCHIVE.xz exists, performing hourly backup $ARCHIVE"
-  else
-    ARCHIVE="$DAILY_ARCHIVE"
-    echo "Daily stats archive $DAILY_ARCHIVE.xz doesn't exist, performing daily backup"
-  fi
-
-  echo "Cleaning obsolete hourly stats files"
-  export OBSOLETE_FILES='stats-archive-????-??-??_??-??.json.xz'
-  find $BACKUPS_DATABASE_PATH -name $OBSOLETE_FILES -type f -mtime "+$DAYS_TO_KEEP_HOURLY" -delete
-
-  echo "Cleaning obsolete daily database files"
-  export OBSOLETE_FILES='stats-archive-????-??-??.json.xz'
-  find $BACKUPS_DATABASE_PATH -name $OBSOLETE_FILES -type f -mtime "+$DAYS_TO_KEEP_DAILY" -delete
-
-  echo "Set backup file name to: $ARCHIVE with xz compression level $XZ_COMPRESSION_LEVEL"
-  echo "Starting stats backup..."
-  curl $STATS_URL_ENDPOINT > $ARCHIVE
-  echo "Stats backup dumped, compressing with 'xz -T4 -${XZ_COMPRESSION_LEVEL} -zf $ARCHIVE'"
-  xz -T4 -${XZ_COMPRESSION_LEVEL} -zf "$ARCHIVE"
-  echo "Archive $ARCHIVE compressed, moving to ${BACKUPS_DATABASE_PATH}/$ARCHIVE.xz"
-  mv "$ARCHIVE.xz" "${BACKUPS_DATABASE_PATH}/$ARCHIVE.xz"
-  echo "Finished backing up $ARCHIVE"
+  ARCHIVE="$DAILY_ARCHIVE"
+  echo "Daily database archive $DAILY_ARCHIVE.xz doesn't exist, performing daily backup"
 fi
+
+echo "Cleaning obsolete hourly database files"
+export OBSOLETE_FILES='statsdb-archive-????-??-??_??-??.sql.xz'
+find $BACKUPS_DATABASE_PATH -name $OBSOLETE_FILES -type f -mtime "+$DAYS_TO_KEEP_HOURLY" -delete
+
+echo "Cleaning obsolete daily database files"
+export OBSOLETE_FILES='statsdb-archive-????-??-??.sql.xz'
+find $BACKUPS_DATABASE_PATH -name $OBSOLETE_FILES -type f -mtime "+$DAYS_TO_KEEP_DAILY" -delete
+
+echo "Set backup file name to: $ARCHIVE with xz compression level $XZ_COMPRESSION_LEVEL"
+echo "Starting database backup..."
+pg_dump -c --dbname=transcrobes  > $ARCHIVE
+echo "Database backup dumped, compressing with 'xz -T4 -${XZ_COMPRESSION_LEVEL} -zf $ARCHIVE'"
+xz -T4 -${XZ_COMPRESSION_LEVEL} -zf "$ARCHIVE"
+echo "Archive $ARCHIVE compressed, moving to ${BACKUPS_DATABASE_PATH}/$ARCHIVE.xz"
+mv "$ARCHIVE.xz" "${BACKUPS_DATABASE_PATH}/$ARCHIVE.xz"
+echo "Finished backing up $ARCHIVE"
 
 ################################################################################
 # Media backup
@@ -106,13 +105,17 @@ echo "Cleaning obsolete daily media files"
 export OBSOLETE_FILES='media-????-??-??.tar.xz'
 find $BACKUPS_MEDIA_PATH -name $OBSOLETE_FILES -type f -mtime "+$DAYS_TO_KEEP_DAILY" -delete
 
-echo "Set backup file name to: $ARCHIVE with xz compression level $XZ_COMPRESSION_LEVEL"
-echo "Starting media files backup..."
-tar cf "$ARCHIVE" $MEDIA_ROOT/user_*
-echo "Media files tarred, compressing with 'xz -T4 -${XZ_COMPRESSION_LEVEL} -zf $ARCHIVE'"
-xz -T4 -${XZ_COMPRESSION_LEVEL} -zf $ARCHIVE
-echo "Archive $ARCHIVE compressed, moving to ${BACKUPS_MEDIA_PATH}/$ARCHIVE.xz"
-mv "$ARCHIVE.xz" "${BACKUPS_MEDIA_PATH}/$ARCHIVE.xz"
+if compgen -G $MEDIA_ROOT/user_* > /dev/null; then
+  echo "Set backup file name to: $ARCHIVE with xz compression level $XZ_COMPRESSION_LEVEL"
+  echo "Starting media files backup..."
+  tar cf "$ARCHIVE" $MEDIA_ROOT/user_*
+  echo "Media files tarred, compressing with 'xz -T4 -${XZ_COMPRESSION_LEVEL} -zf $ARCHIVE'"
+  xz -T4 -${XZ_COMPRESSION_LEVEL} -zf $ARCHIVE
+  echo "Archive $ARCHIVE compressed, moving to ${BACKUPS_MEDIA_PATH}/$ARCHIVE.xz"
+  mv "$ARCHIVE.xz" "${BACKUPS_MEDIA_PATH}/$ARCHIVE.xz"
+else
+  echo "No user media files found, skipping media backup"
+fi
 echo "Finished backing up $ARCHIVE"
 
 if [ ! -z $BACKUPS_SSH_KEY_PATH ]; then

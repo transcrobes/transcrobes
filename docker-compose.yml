@@ -1,4 +1,4 @@
-version: "3.3"
+version: "3.9"
 services:
   nginx:
     image: nginx:latest
@@ -18,39 +18,56 @@ services:
       - .env
     environment:
       - PGDATA=/var/lib/postgresql/data/pgdata
-    deploy:
-      placement:
-        constraints:
-          - node.labels.${STACK_NAME?Variable not set}.app-db-data == true
+
+  statsdb:
+    ports:
+      - "15433:5432"
+    image: postgres:14
+    volumes:
+      - app-statsdb-data:/var/lib/postgresql/data
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_SERVER=${STATS_POSTGRES_SERVER?Variable not set}
+      - POSTGRES_USER=${STATS_POSTGRES_USER?Variable not set}
+      - POSTGRES_PASSWORD=${STATS_POSTGRES_PASSWORD?Variable not set}
+      - POSTGRES_DB=${STATS_POSTGRES_DB?Variable not set}
+      - POSTGRES_PORT=${STATS_POSTGRES_PORT?Variable not set}
 
   corenlpzh:
     image: transcrobes/corenlp-chinese:4.3.1
     env_file:
       - .env
 
+  zookeeper:
+    image: docker.io/bitnami/zookeeper:latest
+    ports:
+      - "2181:2181"
+    volumes:
+      - "app-zookeeper_data:/bitnami"
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+
   kafka:
     image: docker.io/bitnami/kafka:latest
     volumes:
-      - "kafka_data_kraft:/bitnami"
+      - "app-kafka_data:/bitnami"
     environment:
-      - KAFKA_BROKER_ID=1
-      - KAFKA_ENABLE_KRAFT=yes
-      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=1@127.0.0.1:9093
-      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093
-      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
-      - KAFKA_CFG_PROCESS_ROLES=broker,controller
-      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
       - ALLOW_PLAINTEXT_LISTENER=yes
       - KAFKA_CFG_MAX_PARTITION_FETCH_BYTES=5242880 # 5MB
       - KAFKA_CFG_MAX_REQUEST_SIZE=5242880
       - KAFKA_CFG_REPLICA_FETCH_MAX_BYTES=5242880
       - KAFKA_CFG_MAX_MESSAGE_BYTES=5242880
       - KAFKA_CFG_MESSAGE_MAX_BYTES=5242880
-
+    depends_on:
+      - zookeeper
   backend:
     image: "${DOCKER_IMAGE_BACKEND?Variable not set}:${TAG-latest}"
     depends_on:
       - db
+      - statsdb
+      - kafka
     volumes:
       - app-files-data:/media
     env_file:
@@ -67,13 +84,37 @@ services:
         INSTALL_DEV: ${INSTALL_DEV-false}
         TRANSCROBES_DOCKER_REPO: ${TRANSCROBES_DOCKER_REPO-transcrobes}
 
+  sworker:
+    image: "${DOCKER_IMAGE_SWORKER?Variable not set}:${TAG-latest}"
+    depends_on:
+      - backend
+    volumes:
+      - app-files-data:/media
+      - ./backend/app:/app
+    env_file:
+      - .env
+    environment:
+      - SMTP_HOST=${SMTP_HOST}
+      - SERVER_NAME=${DOMAIN?Variable not set}
+      - SERVER_HOST=https://${DOMAIN?Variable not set}
+      - TRANSCROBES_LOG_LEVEL=INFO
+      - TRANSCROBES_DATA_LOG_LEVEL=INFO
+      - TRANSCROBES_ENRICH_LOG_LEVEL=INFO
+      - TRANSCROBES_ENRICHERS_LOG_LEVEL=INFO
+      - TRANSCROBES_DEFAULT_LOG_LEVEL=INFO
+
+    build:
+      context: .
+      dockerfile: Dockerfile.sworker
+      args:
+        INSTALL_DEV: ${INSTALL_DEV-false}
+        TRANSCROBES_DOCKER_REPO: ${TRANSCROBES_DOCKER_REPO-transcrobes}
+
   faustworker:
     image: "${DOCKER_IMAGE_FAUSTWORKER?Variable not set}:${TAG-latest}"
     volumes:
       - app-files-data:/media
       - app-stats-data:/data
-    ports:
-      - "6066:6066"
     depends_on:
       - db
       - kafka
@@ -84,7 +125,6 @@ services:
       - SERVER_HOST=https://${DOMAIN?Variable not set}
       # Allow explicit env var override for tests
       - SMTP_HOST=${SMTP_HOST?Variable not set}
-      - FAUST_PORT=${FAUST_PORT?6066}
     build:
       context: .
       dockerfile: Dockerfile.worker
@@ -103,5 +143,8 @@ volumes:
   app-db-data:
   app-files-data:
   app-stats-data:
-  kafka_data_kraft:
+  app-statsdb-data:
+  app-zookeeper_data:
+    driver: local
+  app-kafka_data:
     driver: local
