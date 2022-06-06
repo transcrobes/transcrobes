@@ -126,7 +126,6 @@ python-versions = ">=3.6.2"
 
 [package.dependencies]
 lazy-object-proxy = ">=1.4.0"
-typing-extensions = {version = ">=3.10", markers = "python_version < \"3.10\""}
 wrapt = ">=1.11,<2"
 
 [[package]]
@@ -235,7 +234,6 @@ mypy-extensions = ">=0.4.3"
 pathspec = ">=0.9.0"
 platformdirs = ">=2"
 tomli = {version = ">=1.1.0", markers = "python_version < \"3.11\""}
-typing-extensions = {version = ">=3.10.0.0", markers = "python_version < \"3.10\""}
 
 [package.extras]
 colorama = ["colorama (>=0.4.3)"]
@@ -938,7 +936,7 @@ python-versions = "*"
 
 [[package]]
 name = "opencc"
-version = "1.1.3"
+version = "1.1.4"
 description = "Conversion between Traditional and Simplified Chinese"
 category = "main"
 optional = false
@@ -1180,7 +1178,6 @@ mccabe = ">=0.6,<0.8"
 platformdirs = ">=2.2.0"
 tomli = {version = ">=1.1.0", markers = "python_version < \"3.11\""}
 tomlkit = ">=0.10.1"
-typing-extensions = {version = ">=3.10.0", markers = "python_version < \"3.10\""}
 
 [package.extras]
 spelling = ["pyenchant (>=3.2,<4.0)"]
@@ -1471,7 +1468,7 @@ sqlcipher = ["sqlcipher3-binary"]
 
 [[package]]
 name = "sqlalchemy2-stubs"
-version = "0.0.2a22"
+version = "0.0.2a23"
 description = "Typing Stubs for SQLAlchemy 1.4"
 category = "main"
 optional = false
@@ -1490,7 +1487,6 @@ python-versions = ">=3.6"
 
 [package.dependencies]
 anyio = ">=3.4.0,<5"
-typing-extensions = {version = ">=3.10.0", markers = "python_version < \"3.10\""}
 
 [package.extras]
 full = ["itsdangerous", "jinja2", "python-multipart", "pyyaml", "requests"]
@@ -1746,8 +1742,8 @@ python-versions = "*"
 
 [metadata]
 lock-version = "1.1"
-python-versions = "^3.9"
-content-hash = "e5f850f727191e1d4c3465f17c383747090c600814fdb590009259ed094c3eee"
+python-versions = "^3.10"
+content-hash = "40fc82488077c7b2ac53dd07011afa2728358cfdf4e55ba077b04a6a5cb4f9cf"
 
 [metadata.files]
 aiofiles = [
@@ -2653,18 +2649,14 @@ nodeenv = [
     {file = "nodeenv-1.6.0.tar.gz", hash = "sha256:3ef13ff90291ba2a4a7a4ff9a979b63ffdd00a464dbe04acf0ea6471517a4c2b"},
 ]
 opencc = [
-    {file = "OpenCC-1.1.3-cp27-cp27m-macosx_10_9_x86_64.whl", hash = "sha256:d51d53270fb967211f297d976497ebed1875576502e5ceb8bb4bf86404d5fc53"},
-    {file = "OpenCC-1.1.3-cp27-cp27mu-manylinux1_x86_64.whl", hash = "sha256:1db67f6950fe40ab6c20c560808508a2afa049361908cf0bd39f33bdbcab77de"},
-    {file = "OpenCC-1.1.3-cp35-cp35m-macosx_10_9_x86_64.whl", hash = "sha256:f21fe97c3d06568b31a65a9b9138d454424fb37565c9ae7105347ec8fa1ec90c"},
-    {file = "OpenCC-1.1.3-cp35-cp35m-manylinux1_x86_64.whl", hash = "sha256:94d95dce79c6ba3d4143d66f854e160e07ca5be571d4cbac555f4b2ffad7f837"},
-    {file = "OpenCC-1.1.3-cp36-cp36m-macosx_10_9_x86_64.whl", hash = "sha256:a7e7ef677c107a915f649847a9e901703b099e8dac643e34c0dee14cca0d748a"},
-    {file = "OpenCC-1.1.3-cp36-cp36m-manylinux1_x86_64.whl", hash = "sha256:d3551e5ed3939129fbb8cfb244de6924892d2f950009e666f0d4e7aec53ca953"},
-    {file = "OpenCC-1.1.3-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:7b61cead7f1fba11d027804b706e087ad14da981192c7e0f51e768cbcf2ea22b"},
-    {file = "OpenCC-1.1.3-cp37-cp37m-manylinux1_x86_64.whl", hash = "sha256:78cf0874896bb686f9d1b9dc612b911118db99ef96567cbf98f61a817c4312c7"},
-    {file = "OpenCC-1.1.3-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:c0a85bb12f362903241a53c767838fe09d494c4caffe12797157bdd8133b7e6e"},
-    {file = "OpenCC-1.1.3-cp38-cp38-manylinux1_x86_64.whl", hash = "sha256:2d1043e4d19ac89656b83e027f1834451ee0639d27239b579ba0b7cbb24af805"},
-    {file = "OpenCC-1.1.3-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:3aadc356b3b67dead0614fd47530351130eddf0d45b9889a5b58dd888c945640"},
-    {file = "OpenCC-1.1.3-cp39-cp39-manylinux1_x86_64.whl", hash = "sha256:48309ed913fde331f43beea36ca74252f1e279ee98d149f8509151a2252adbca"},
+    {file = "OpenCC-1.1.4-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:f6ac142c255ec302a82789897f9f6d6919b0775eee7a6f5245f019201843445d"},
+    {file = "OpenCC-1.1.4-cp310-cp310-manylinux1_x86_64.whl", hash = "sha256:3b850c82dec80cdb53bb647f8e73a76169f808f96c1392deba3b65802aa20df2"},
+    {file = "OpenCC-1.1.4-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:f5057d534ba80f7152dd0ecafd2a77da2deb304f8a9de75d0ec8886939d5376b"},
+    {file = "OpenCC-1.1.4-cp37-cp37m-manylinux1_x86_64.whl", hash = "sha256:b8f03a5bbe95c06b4a332d8068cd17181efbaca84bd7cfa05cad26581ef57eaa"},
+    {file = "OpenCC-1.1.4-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:8a5d27bdbb274d7f8c62fa9b764425962493ae5e17ecadc5cf2c9884aa607c97"},
+    {file = "OpenCC-1.1.4-cp38-cp38-manylinux1_x86_64.whl", hash = "sha256:1881bc2c1a8ae2bb447236e3d15e59619d398e30132d8237aa2c2e08e4188416"},
+    {file = "OpenCC-1.1.4-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:2ba4fe82ba4725db124b4eea9c641364b81e251bb1ebe6cc7e7a02bcbbea602f"},
+    {file = "OpenCC-1.1.4-cp39-cp39-manylinux1_x86_64.whl", hash = "sha256:470234d260b1115818ccfa12f28717d581b1ea9b70a288b6eaeee01eeeb5636d"},
 ]
 opentracing = [
     {file = "opentracing-2.4.0.tar.gz", hash = "sha256:a173117e6ef580d55874734d1fa7ecb6f3655160b8b8974a2a1e98e5ec9c840d"},
@@ -3075,8 +3067,8 @@ sqlalchemy = [
     {file = "SQLAlchemy-1.4.37.tar.gz", hash = "sha256:3688f92c62db6c5df268e2264891078f17ecb91e3141b400f2e28d0f75796dea"},
 ]
 sqlalchemy2-stubs = [
-    {file = "sqlalchemy2-stubs-0.0.2a22.tar.gz", hash = "sha256:31288db647bbdd411ad1e22da39a10ebe211bdcfe2efef24bcebea05abc28dd4"},
-    {file = "sqlalchemy2_stubs-0.0.2a22-py3-none-any.whl", hash = "sha256:b9b907c3555d0b11bb8d738b788be478ce3871174839171d0d49aba5d0785016"},
+    {file = "sqlalchemy2-stubs-0.0.2a23.tar.gz", hash = "sha256:a13d94e23b5b0da8ee21986ef8890788a1f2eb26c2a9f39424cc933e4e7e87ff"},
+    {file = "sqlalchemy2_stubs-0.0.2a23-py3-none-any.whl", hash = "sha256:6011d2219365d4e51f3e9d83ffeb5b904964ef1d143dc1298d8a70ce8641014d"},
 ]
 starlette = [
     {file = "starlette-0.19.1-py3-none-any.whl", hash = "sha256:5a60c5c2d051f3a8eb546136aa0c9399773a689595e099e0877704d5888279bf"},
