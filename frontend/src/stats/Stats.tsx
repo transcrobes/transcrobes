@@ -29,7 +29,7 @@ export default function Stats(): ReactElement {
         </Typography>
         <hr />
         <Typography className={classes.header} variant="h6">
-          Known words (totals)
+          Known words and characters (totals)
         </Typography>
         <ListProgress yIsNumber={true} nbPeriods={6} periodType="month" />
         <hr />

@@ -1,8 +1,9 @@
-import { Box, Grid, Link } from "@mui/material";
+import { Box, Button, Grid, Link } from "@mui/material";
 import { ReactElement, useEffect, useState } from "react";
 import { GoalDocument } from "../database/Schema";
 import { ComponentsConfig } from "../lib/complexTypes";
 import { DayCardWords, STATUS, WordlistType } from "../lib/types";
+import GoalIcon from "@mui/icons-material/TrackChanges";
 
 interface Props {
   config: ComponentsConfig;
@@ -103,6 +104,11 @@ export default function GoalsWidget({ config, inited }: Props): ReactElement {
           <FormRow name={x.name} goalId={x.goalId} percent={x.percent.toFixed(2)} />
         </Grid>
       ))}
+      {goals.length === 0 && (
+        <Link href={`#/goals`} sx={{ textDecoration: "none" }}>
+          <Button startIcon={<GoalIcon />}>Create Goals now</Button>
+        </Link>
+      )}
     </Box>
   );
 }

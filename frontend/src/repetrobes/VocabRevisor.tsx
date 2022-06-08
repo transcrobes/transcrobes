@@ -1,4 +1,4 @@
-import { Button, Theme, useTheme } from "@mui/material";
+import { Box, Button, Theme, useTheme } from "@mui/material";
 import dayjs from "dayjs";
 import timezone from "dayjs/plugin/timezone";
 import utc from "dayjs/plugin/utc";
@@ -93,12 +93,12 @@ export function VocabRevisor({
       {!loading && !!definition && !!currentCard && !!characters && (
         <>
           {premature && (
-            <div style={{ backgroundColor: premature ? "orange" : "inherit", textAlign: "center" }}>
+            <Box sx={{ backgroundColor: premature ? "orange" : "inherit", textAlign: "center" }}>
               Card not due until{" "}
               {dayjs(currentCard.dueDate * 1000)
                 .tz(dayjs.tz.guess())
                 .format("YYYY-MM-DD HH:mm:ss")}
-            </div>
+            </Box>
           )}
           <Question
             translationProviderOrder={activityConfig.translationProviderOrder}

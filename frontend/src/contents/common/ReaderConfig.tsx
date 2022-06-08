@@ -1,8 +1,8 @@
 import { ClassNameMap, FormControl, FormControlLabel, Switch, ToggleButton, ToggleButtonGroup } from "@mui/material";
-import { makeStyles } from "tss-react/mui";
 import _ from "lodash";
 import React, { ReactElement, useCallback } from "react";
 import { HslColor } from "react-colorful";
+import { makeStyles } from "tss-react/mui";
 import { useAppDispatch } from "../../app/hooks";
 import { Conftainer as BasicConftainer, DEFAULT_FONT_COLOUR } from "../../components/Common";
 import Conftainer from "../../components/Conftainer";
@@ -10,13 +10,11 @@ import DictionaryChooser from "../../components/DictionaryChooser";
 import FivePercentFineControl from "../../components/FivePercentFineControl";
 import FontColour from "../../components/FontColour";
 import { bookReaderActions } from "../../features/content/bookReaderSlice";
-import { ContentConfigPayload } from "../../features/content/contentSlice";
 import { simpleReaderActions } from "../../features/content/simpleReaderSlice";
 import { videoReaderActions } from "../../features/content/videoReaderSlice";
 import { GlossPosition, ReaderState, USER_STATS_MODE } from "../../lib/types";
 import GlossFontOverrideConfig from "./GlossFontOverrideConfig";
 import MainTextOverrideConfig from "./MainTextOverrideConfig";
-import { AnyAction } from "@reduxjs/toolkit";
 
 export interface ContentConfigProps {
   containerRef?: React.RefObject<HTMLDivElement>;

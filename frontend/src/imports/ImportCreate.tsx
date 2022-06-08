@@ -5,8 +5,11 @@ import { MAX_IMPORT_SIZE_BYTES, PROCESS_TYPE } from "../lib/types";
 
 export default function ImportCreate() {
   return (
-    <Create actions={<HelpCreateActions helpUrl="https://transcrob.es/page/software/configure/imports/" />}>
-      <SimpleForm redirect="list">
+    <Create
+      redirect="list"
+      actions={<HelpCreateActions helpUrl="https://transcrob.es/page/software/configure/imports/" />}
+    >
+      <SimpleForm>
         <Typography sx={{ paddingBottom: "1em" }}>
           Please check the{" "}
           <a target="_blank" href="https://transcrob.es/page/software/configure/imports/">

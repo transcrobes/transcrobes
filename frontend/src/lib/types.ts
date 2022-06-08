@@ -80,6 +80,8 @@ export const POPOVER_MIN_LOOKED_AT_EVENT_DURATION = 1500; // milliseconds
 
 export const MAX_IMPORT_SIZE_BYTES = 15000000;
 
+export const MIN_KNOWN_BEFORE_ADVANCED = 1000;
+
 export type KnownLanguage = "en" | "zh-Hans";
 export type InputLanguage = "zh-Hans";
 
@@ -930,6 +932,7 @@ export type ListFirstSuccessStats = {
 };
 
 export type GraderConfig = {
+  isAdvanced: boolean;
   gradeOrder: GradesType[];
   itemOrdering: WordOrdering;
   itemsPerPage: number;

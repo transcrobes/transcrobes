@@ -120,7 +120,7 @@ class Entry extends Component<StatedEntryProps, LocalEntryState> {
     const token = this.props.token;
     const needsGloss =
       readerConfig.glossing > USER_STATS_MODE.NO_GLOSS &&
-      !(token.l in knownCards.knownCardWordGraphs) &&
+      !(token.l in (knownCards.knownCardWordGraphs || {})) &&
       !!token.pos &&
       (!isNumberToken(token) || GLOSS_NUMBER_NOUNS);
 
@@ -294,7 +294,7 @@ function mapStateToProps(state: RootState, props: EntryProps) {
   }
   return {
     glossToggled: props.token.id ? state.definitions[props.token.id]?.glossToggled : undefined,
-    isKnown: props.token.l in state.knownCards.knownCardWordGraphs,
+    isKnown: props.token.l in (state.knownCards.knownCardWordGraphs || {}),
     glossing: readerConfig.glossing,
     mouseover: readerConfig.mouseover,
     translationProviderOrder: readerConfig.translationProviderOrder,

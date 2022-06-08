@@ -115,8 +115,14 @@ export const userSlice = createSlice({
   extraReducers: (builder) => {
     builder
       .addCase(login.fulfilled, (state, action: PayloadAction<UserDetails>) => {
-        setUserDexie({ ...state, user: action.payload });
         state.user = action.payload;
+        state.success = true;
+        state.error = false;
+        setUserDexie({ ...state });
+      })
+      .addCase(login.rejected, (state) => {
+        state.success = false;
+        state.error = true;
       })
       .addCase(logout.fulfilled, (state) => {
         state.user = DEFAULT_USER;
@@ -124,11 +130,12 @@ export const userSlice = createSlice({
         state.password = "";
         state.success = false;
         state.error = false;
-
         setUserDexie({ ...state, user: DEFAULT_USER });
       })
       .addCase(refreshToken.fulfilled, (state, action) => {
         state.user = action.payload;
+        state.success = true;
+        state.error = false;
         setUserDexie({ ...state });
       });
   },

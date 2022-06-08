@@ -457,8 +457,7 @@ async def process_epub_to_webpub(db: AsyncSession, the_import: Import, manager: 
 
 def text_from_import(an_import: Import, manager: EnrichmentManager, remove_whitespace=True):
     # We should only have valid files here, but should probably add more checking anyway
-
-    with open(an_import.imported_path(), encoding="utf8") as fh:
+    with open(an_import.imported_path(), encoding="utf_8_sig") as fh:
         contents = fh.read()
         tester = magic.Magic(mime=True, mime_encoding=True)
         file_type, _file_encoding = tester.from_buffer(
@@ -637,7 +636,7 @@ async def get_analysis_from_csv(an_import: Import, manager: EnrichmentManager):
     Extract unique set of words from the first column (currently only supports comma-separated and first column)
     """
     all_words = set()
-    async with aiofiles.open(an_import.imported_path()) as csv_file:
+    async with aiofiles.open(an_import.imported_path(), encoding="utf_8_sig") as csv_file:
         csv_reader = csv.reader((await csv_file.read()).splitlines(), delimiter=",")
         line_count = 0
         for row in csv_reader:

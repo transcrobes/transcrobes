@@ -5,6 +5,7 @@ import React, { ReactElement } from "react";
 import { makeStyles } from "tss-react/mui";
 import { GraderConfig } from "../lib/types";
 import { ListrobesConfig } from "./ListrobesConfig";
+import { Button } from "react-admin";
 
 const useStyles = makeStyles()((theme: Theme) => ({
   typography: {
@@ -37,7 +38,7 @@ export default function ListrobesConfigLauncher({ graderConfig, onConfigChange }
 
   return (
     <div>
-      <IconButton
+      {/* <IconButton
         className={classes.settings}
         onClick={toggleDrawer(true)}
         color="primary"
@@ -45,7 +46,9 @@ export default function ListrobesConfigLauncher({ graderConfig, onConfigChange }
         size="large"
       >
         <SettingsIcon />
-      </IconButton>
+      </IconButton> */}
+
+      <Button size="large" children={<SettingsIcon />} label="Listrobes Settings" onClick={toggleDrawer(true)} />
       <Drawer anchor="left" open={isOpen} onClose={toggleDrawer(false)}>
         <Box sx={{ width: 300 }} role="presentation">
           <ListrobesConfig graderConfig={graderConfig} onConfigChange={onConfigChange} />

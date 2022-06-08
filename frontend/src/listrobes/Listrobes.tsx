@@ -1,13 +1,15 @@
 import { Container } from "@mui/material";
-import { makeStyles } from "tss-react/mui";
 import _ from "lodash";
 import { ReactElement, useEffect, useState } from "react";
 import { TopToolbar } from "react-admin";
 import { $enum } from "ts-enum-util";
-import { useAppDispatch } from "../app/hooks";
+import { makeStyles } from "tss-react/mui";
+import { useAppDispatch, useAppSelector } from "../app/hooks";
+import { BASIC_GRADES, GRADES } from "../components/Common";
 import HelpButton from "../components/HelpButton";
 import Loading from "../components/Loading";
-import { CARD_TYPES, getCardId } from "../database/Schema";
+import { CARD_TYPES, getCardId, GRADE } from "../database/Schema";
+import { setCardWordsState } from "../features/card/knownCardsSlice";
 import { setLoading } from "../features/ui/uiSlice";
 import { AbstractWorkerProxy } from "../lib/proxies";
 import { practice } from "../lib/review";
@@ -15,19 +17,22 @@ import {
   EMPTY_CARD,
   GraderConfig,
   GradesType,
+  MIN_KNOWN_BEFORE_ADVANCED,
   SelectableListElementType,
+  SerialisableDayCardWords,
   USER_STATS_MODE,
   VocabReview,
   WordOrdering,
 } from "../lib/types";
+import BasicGradeChooser from "./BasicGradeChooser";
 import ListrobesConfigLauncher from "./ListrobesConfigLauncher";
 import { VocabList } from "./VocabList";
-import { GRADES } from "../components/Common";
 
 const DATA_SOURCE = "listrobes.jsx";
 const DEFAULT_ITEMS_PER_PAGE = 50;
 const DEFAULT_ITEM_ORDERING: WordOrdering = "Natural";
 const MIN_LOOKED_AT_EVENT_DURATION = 1300; // milliseconds
+
 let timeoutId: number;
 
 const useStyles = makeStyles()(() => ({
@@ -54,12 +59,26 @@ interface Props {
 export function Listrobes({ proxy }: Props): ReactElement {
   const [vocab, setVocab] = useState<VocabReview[]>([]);
   const dispatch = useAppDispatch();
+  const wordsCount = useAppSelector((state) => Object.keys(state.knownCards.allCardWordGraphs || {}).length);
+  const isAdvanced = wordsCount > MIN_KNOWN_BEFORE_ADVANCED;
+
   const [graderConfig, setGraderConfig] = useState<GraderConfig>({
+    isAdvanced,
     gradeOrder: GRADES,
     itemOrdering: DEFAULT_ITEM_ORDERING,
     itemsPerPage: DEFAULT_ITEMS_PER_PAGE,
     wordLists: [],
   });
+  useEffect(() => {
+    const newOrder = graderConfig.isAdvanced ? GRADES : BASIC_GRADES;
+    setGraderConfig({
+      ...graderConfig,
+      gradeOrder: newOrder,
+    });
+    if (!graderConfig.isAdvanced) {
+      setVocab(vocab.map((v) => ({ ...v, clicks: v.clicks >= newOrder.length ? 0 : v.clicks })));
+    }
+  }, [graderConfig.isAdvanced]);
 
   useEffect(() => {
     dispatch(setLoading(true));
@@ -69,14 +88,19 @@ export function Listrobes({ proxy }: Props): ReactElement {
         type: "getDefaultWordLists",
         value: {},
       });
-      const gConfig = { ...graderConfig, wordLists };
+      const gConfig = {
+        ...graderConfig,
+        isAdvanced,
+        wordLists,
+        gradeOrder: graderConfig.isAdvanced ? GRADES : BASIC_GRADES,
+      };
       setGraderConfig(gConfig);
       const vocabbie = await proxy.sendMessagePromise<VocabReview[]>({
         source: DATA_SOURCE,
         type: "getVocabReviews",
         value: {
           ...gConfig,
-          gradeOrder: gradesWithoutIcons(gConfig.gradeOrder),
+          gradeOrder: gradesWithoutIcons(gConfig.gradeOrder), // send only the IDs, this is a hack...
         },
       });
       setVocab(vocabbie);
@@ -158,6 +182,15 @@ export function Listrobes({ proxy }: Props): ReactElement {
       type: "createCards",
       value: newCards,
     });
+    dispatch(
+      setCardWordsState(
+        await proxy.sendMessagePromise<SerialisableDayCardWords>({
+          source: DATA_SOURCE,
+          type: "getSerialisableCardWords",
+        }),
+      ),
+    );
+
     setVocab(
       await proxy.sendMessagePromise<VocabReview[]>({
         source: DATA_SOURCE,
@@ -180,7 +213,7 @@ export function Listrobes({ proxy }: Props): ReactElement {
         <ListrobesConfigLauncher graderConfig={graderConfig} onConfigChange={handleConfigChange} />
         <HelpButton url={helpUrl} />
       </TopToolbar>
-
+      {!graderConfig.isAdvanced && <BasicGradeChooser graderConfig={graderConfig} setGraderConfig={setGraderConfig} />}
       <Container maxWidth="lg">
         <Loading />
         <div className={classes.columnList}>

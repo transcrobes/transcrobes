@@ -1,7 +1,8 @@
-import { Box, Container, FormGroup, Typography } from "@mui/material";
-import { makeStyles } from "tss-react/mui";
+import { Box, Container, FormGroup, FormLabel, Typography } from "@mui/material";
 import Button from "@mui/material/Button";
 import { useEffect, useState } from "react";
+import { FormContainer, TextFieldElement } from "react-hook-form-mui";
+import { makeStyles } from "tss-react/mui";
 import { store } from "../app/createStore";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
 import HelpButton from "../components/HelpButton";
@@ -20,13 +21,19 @@ import {
 import { setLoading } from "../features/ui/uiSlice";
 import { setUser, throttledLogin, updateBaseUrl, updatePassword, updateUsername } from "../features/user/userSlice";
 import { refreshDictionaries } from "../lib/dictionary";
-import { onError } from "../lib/funclib";
 import { BackgroundWorkerProxy, setPlatformHelper } from "../lib/proxies";
+import { IS_DEV } from "../lib/types";
 import { RxDBDataProviderParams } from "../ra-data-rxdb";
-import ConnectionSettings from "./components/ConnectionSettings";
 import Initialisation from "./components/Initialisation";
 import Intro from "./components/Intro";
 
+const DEFAULT_SERVER_URL = IS_DEV ? "http://localhost" : "https://am.transcrob.es";
+
+type FormProps = {
+  username: string;
+  password: string;
+  baseUrl: string;
+};
 declare global {
   interface Window {
     tcb: TranscrobesDatabase;
@@ -47,10 +54,7 @@ const useStyles = makeStyles()((theme) => ({
     margin: theme.spacing(1),
     width: "200px",
   },
-  message: {
-    margin: theme.spacing(1),
-    fontSize: "2em",
-  },
+  message: {},
   glossFontColour: { display: "flex", justifyContent: "flex-start", padding: "0.4em" },
   header: { display: "inline-flex", justifyContent: "space-between", alignItems: "start" },
   headerText: { padding: "1em" },
@@ -61,11 +65,9 @@ export default function Options(): JSX.Element {
   const [inited, setInited] = useState<boolean | null>(null);
   const [running, setRunning] = useState<boolean | null>(null);
   const [message, setMessage] = useState<string>("");
-  const [forceReinit, setForceReinit] = useState(false);
-
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [baseUrl, setBaseUrl] = useState("");
+  const [baseUrl, setBaseUrl] = useState(DEFAULT_SERVER_URL);
   const [loaded, setLoaded] = useState(false);
 
   const id = WEB_READER_ID;
@@ -74,7 +76,6 @@ export default function Options(): JSX.Element {
   const userData = useAppSelector((state) => state.userData);
   const readerConfig = useAppSelector((state) => state.simpleReader[id] || DEFAULT_WEB_READER_CONFIG_STATE);
   const { classes } = useStyles();
-
   dispatch(setLoading(true));
   useEffect(() => {
     (async () => {
@@ -82,7 +83,7 @@ export default function Options(): JSX.Element {
       const userData = store.getState().userData;
       setPassword(userData.password);
       setUsername(userData.username);
-      setBaseUrl(userData.baseUrl);
+      setBaseUrl(userData.baseUrl || DEFAULT_SERVER_URL);
 
       const linit = await isInitialisedAsync(userData.username);
       setInited(linit);
@@ -97,6 +98,17 @@ export default function Options(): JSX.Element {
       dispatch(setLoading(false));
     })();
   }, []);
+  useEffect(() => {
+    if (userData.error) {
+      setMessage(
+        `There was an error logging in to ${baseUrl}. \n\n
+          Please check the login details, or try again in a short while.`,
+      );
+      console.error("Something bad happened, couldnt get an accessToken to start a syncDB()");
+    } else {
+      setMessage("");
+    }
+  }, [userData.error]);
 
   useEffect(() => {
     if (loaded) {
@@ -105,7 +117,7 @@ export default function Options(): JSX.Element {
         setRunning(true);
         if (!userData.user.accessToken) {
           setMessage("There was an error starting the initial synchronisation. Please try again in a short while.");
-          onError("Something bad happened, couldnt get an accessToken to start a syncDB()");
+          console.error("Something bad happened, couldnt get an accessToken to start a syncDB()");
         } else {
           setMessage("");
           const dbConfig: RxDBDataProviderParams = { url: new URL(userData.baseUrl), username: userData.username };
@@ -113,10 +125,10 @@ export default function Options(): JSX.Element {
           const progressCallback = (message: string) => {
             setMessage(message);
           };
-          const db = await getDb(dbConfig, progressCallback, undefined, !!inited && forceReinit);
+          const db = await getDb(dbConfig, progressCallback, undefined);
           try {
             window.tcb = db;
-            const action = !inited ? "Initialisation" : forceReinit ? "Reinitialisation" : "Settings Update";
+            const action = !inited ? "Initialisation" : "Settings Update";
             setMessage(`${action} Complete!`);
             setRunning(false);
             await setInitialisedAsync(userData.username);
@@ -131,6 +143,7 @@ export default function Options(): JSX.Element {
                 value: store.getState().simpleReader[WEB_READER_ID],
               }),
             );
+            location.reload();
           } catch (err: any) {
             setRunning(false);
             setMessage(`There was an error setting up Transcrobes.
@@ -144,70 +157,95 @@ export default function Options(): JSX.Element {
     }
   }, [userData.user.accessToken]);
 
-  async function saveFields() {
-    dispatch(updateUsername(username));
-    dispatch(updatePassword(password));
-    dispatch(updateBaseUrl(baseUrl));
+  async function saveFields(values: FormProps) {
+    dispatch(updateUsername(values.username));
+    dispatch(updatePassword(values.password));
+    dispatch(updateBaseUrl(values.baseUrl));
     dispatch(throttledLogin());
-
     setMessage("Saving the options, please wait and keep this window open...");
   }
 
-  async function handleSubmit(forceReinit: boolean) {
-    setForceReinit(forceReinit);
-    await saveFields();
-  }
   const helpUrl = "https://transcrob.es/page/software/install/clients/brocrobes/";
+
   return (
     <Container maxWidth="md">
       {loaded ? (
-        <>
+        <FormContainer
+          defaultValues={{
+            username,
+            password,
+            baseUrl,
+          }}
+          onSuccess={saveFields}
+        >
           <div className={classes.header}>
-            <ConnectionSettings
-              baseUrl={baseUrl}
-              classes={classes}
-              password={password}
-              username={username}
-              setUsername={setUsername}
-              setPassword={setPassword}
-              setBaseUrl={setBaseUrl}
-            />
+            <div>
+              <FormLabel className={classes.headerText} component="legend">
+                Transcrobes Server Connection Settings
+              </FormLabel>
+              <FormGroup className={classes.groups}>
+                <TextFieldElement
+                  name={"username"}
+                  className={classes.controls}
+                  required={true}
+                  value={username}
+                  label="Username"
+                  type="email"
+                  variant="filled"
+                />
+                <TextFieldElement
+                  name="password"
+                  className={classes.controls}
+                  required={true}
+                  value={password}
+                  label="Password"
+                  type="password"
+                  variant="filled"
+                />
+                <TextFieldElement
+                  name={"baseUrl"}
+                  className={classes.controls}
+                  required={true}
+                  value={baseUrl}
+                  label="Server URL"
+                  type="url"
+                  variant="filled"
+                />
+              </FormGroup>
+            </div>
             <HelpButton url={helpUrl} />
           </div>
 
-          <ReaderConfig
-            classes={classes}
-            actions={simpleReaderActions}
-            readerConfig={readerConfig}
-            allowMainTextOverride={false}
-          />
+          {inited && (
+            <ReaderConfig
+              classes={classes}
+              actions={simpleReaderActions}
+              readerConfig={readerConfig}
+              allowMainTextOverride={false}
+            />
+          )}
           <FormGroup className={classes.groups}>
             <Box className={classes.controls}>
               <Button
+                type="submit"
                 disabled={!!running}
                 className={classes.buttons}
-                onClick={() => handleSubmit(false)}
                 variant="contained"
                 color="primary"
               >
                 Save
               </Button>
             </Box>
-            {inited && (
-              <Box className={classes.controls}>
-                <Button
-                  disabled={!!running}
-                  className={classes.buttons}
-                  onClick={() => handleSubmit(true)}
-                  variant="contained"
-                  color="primary"
-                >
-                  Reinitialise
-                </Button>
-              </Box>
-            )}
           </FormGroup>
-          <Typography className={classes.message}>{message}</Typography>
+          <Typography
+            sx={(theme) => ({
+              margin: theme.spacing(1),
+              fontSize: "2em",
+              color: userData.error ? "error.main" : "text.primary",
+            })}
+          >
+            {message}
+          </Typography>
           <Intro inited={!!inited} />
           {running && (
             <>
@@ -215,7 +253,7 @@ export default function Options(): JSX.Element {
               <Initialisation />
             </>
           )}
-        </>
+        </FormContainer>
       ) : (
         <Loading disableShrink message="Loading configuration from the local database..." />
       )}

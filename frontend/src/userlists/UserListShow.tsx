@@ -1,5 +1,6 @@
 import { BooleanField, FunctionField, ReferenceField, Show, SimpleShowLayout, TextField } from "react-admin";
 import { HelpShowActions } from "../components/HelpShowActions";
+import { ProcessingField } from "../components/ProcessingField";
 import { GRADE } from "../database/Schema";
 import { ORDER_BY, PROCESSING, reverseEnum } from "../lib/types";
 import { ListProgress } from "../stats/ListProgress";
@@ -18,7 +19,7 @@ export default function UserListShow() {
         <ReferenceField label="Source import" source="theImport" reference="imports" link="show">
           <TextField source="title" />
         </ReferenceField>
-        <FunctionField label="Processing status" render={(record: any) => reverseEnum(PROCESSING, record.processing)} />
+        <ProcessingField label="Processing status" />
         <TextField source="nbToTake" />
         <TextField source="minimumAbsFrequency" />
         <TextField source="minimumDocFrequency" />

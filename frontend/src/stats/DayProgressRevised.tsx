@@ -1,9 +1,10 @@
-import { Grid } from "@mui/material";
+import { Grid, useTheme } from "@mui/material";
 import { bin } from "d3-array";
 import dayjs, { ManipulateType } from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat";
 import { useEffect, useState } from "react";
 import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
+import useWindowDimensions from "../hooks/WindowDimensions";
 import { binnedDayData } from "../lib/funclib";
 import { dateRange } from "../lib/libMethods";
 import { DayModelStatsType } from "../lib/types";
@@ -102,17 +103,17 @@ export function DayProgressRevised({ nbPeriods = 8, periodType = 2 }: Props) {
     })();
   }, [window.componentsConfig.proxy.loaded]);
 
-  const blue = "#8884d8";
-  const green = "#2cfc03";
+  const theme = useTheme();
+  const dims = useWindowDimensions();
   return stats ? (
-    <Grid container alignItems="center" spacing={3} justifyContent="center">
-      <Grid item>
-        <LineChart width={500} height={300} data={data}>
+    <Grid container spacing={3} justifyContent="center">
+      <Grid item paddingLeft="0px !important">
+        <LineChart width={Math.min(dims.width - 10, 600)} height={300} data={data}>
           <XAxis dataKey="name" />
           <YAxis name="Progress" />
           <CartesianGrid stroke="#eee" strokeDasharray="5 5" />
-          <Line type="monotone" dataKey="nbSuccess" stroke={blue} />
-          <Line type="monotone" dataKey="nbFailure" stroke={green} />
+          <Line type="monotone" dataKey="nbSuccess" stroke={theme.palette.primary.main} />
+          <Line type="monotone" dataKey="nbFailure" stroke={theme.palette.success.light} />
         </LineChart>
       </Grid>
       <Grid item>
@@ -120,18 +121,18 @@ export function DayProgressRevised({ nbPeriods = 8, periodType = 2 }: Props) {
           <tbody>
             <tr>
               <td>
-                <span style={{ color: blue }}>Nb Successes</span>
+                <span style={{ color: theme.palette.primary.main }}>Nb Successes</span>
               </td>
               <td>
-                <span style={{ color: blue }}>{totals.nbSuccess}</span>
+                <span style={{ color: theme.palette.primary.main }}>{totals.nbSuccess}</span>
               </td>
             </tr>
             <tr>
               <td>
-                <span style={{ color: green }}>Nb Re-revisions</span>
+                <span style={{ color: theme.palette.success.light }}>Nb Re-revisions</span>
               </td>
               <td>
-                <span style={{ color: green }}>{totals.nbFailures}</span>
+                <span style={{ color: theme.palette.success.light }}>{totals.nbFailures}</span>
               </td>
             </tr>
           </tbody>

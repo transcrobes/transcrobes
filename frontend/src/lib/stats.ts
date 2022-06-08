@@ -135,7 +135,7 @@ async function addToRecentSentences(model: ModelType, minTokens = 5, maxTokens =
 }
 
 // FIXME: glossing should be an enum
-function vocabCountersFromETF(model: ModelType, glossing: number, knownCards: SerialisableDayCardWords) {
+function vocabCountersFromETF(model: ModelType, glossing: number, knownCards: Partial<SerialisableDayCardWords>) {
   const counter: { [key: string]: [number, number] } = {};
 
   for (const sentence of model.s) {
@@ -143,7 +143,7 @@ function vocabCountersFromETF(model: ModelType, glossing: number, knownCards: Se
       // it needs to have a pos for us to be interested, though maybe "bg" would be better
       if (token.pos) {
         const lemma = token.l;
-        const lookedUp = glossing > USER_STATS_MODE.NO_GLOSS && !(lemma in knownCards.knownCardWordGraphs);
+        const lookedUp = glossing > USER_STATS_MODE.NO_GLOSS && !(lemma in (knownCards.knownCardWordGraphs || {}));
         counter[lemma] = counter[lemma]
           ? [counter[lemma][0] + 1, lookedUp ? counter[lemma][1] + 1 : 0]
           : [1, lookedUp ? 1 : 0];
@@ -158,7 +158,7 @@ function vocabCountersFromETF(model: ModelType, glossing: number, knownCards: Se
 export function observerFunc(
   readerConfig: () => ReaderState,
   models: KeyedModels,
-  knownCards: () => SerialisableDayCardWords,
+  knownCards: () => Partial<SerialisableDayCardWords>,
 ) {
   return function onScreen(entries: IntersectionObserverEntry[], observer: IntersectionObserver): void {
     for (const entry of entries) {

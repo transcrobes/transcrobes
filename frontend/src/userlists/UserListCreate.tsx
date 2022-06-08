@@ -14,8 +14,11 @@ import { PROCESSING, STATUS } from "../lib/types";
 
 export default function UserListCreate() {
   return (
-    <Create actions={<HelpCreateActions helpUrl="https://transcrob.es/page/software/configure/wordlists/" />}>
-      <SimpleForm redirect="list">
+    <Create
+      redirect="list"
+      actions={<HelpCreateActions helpUrl="https://transcrob.es/page/software/configure/wordlists/" />}
+    >
+      <SimpleForm>
         <TextInput label="List name" source="title" validate={[required()]} />
         <TextInput label="List description" multiline source="description" />
         <NumberInput min={-1} source="nbToTake" step={1} defaultValue={-1} />

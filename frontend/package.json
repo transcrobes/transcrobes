@@ -1,6 +1,6 @@
 {
   "name": "transcrobes",
-  "version": "0.11.5",
+  "version": "0.13.0",
   "private": true,
   "scripts": {
     "validate": "tsc --noEmit",
@@ -51,7 +51,7 @@
   "devDependencies": {
     "@babel/core": "^7.15.5",
     "@babel/preset-react": "^7.14.5",
-    "@types/chrome": "^0.0.188",
+    "@types/chrome": "^0.0.190",
     "@types/d3-array": "^3.0.2",
     "@types/debounce": "^1.2.1",
     "@types/draftjs-to-html": "^0.8.1",
@@ -112,6 +112,7 @@
     "csstype": "^3.0.11",
     "d3-array": "^3.1.1",
     "dayjs": "^1.10.7",
+    "detect-browser": "^5.3.0",
     "dexie": "^3.0.3",
     "draft-js-export-html": "^1.4.1",
     "draftjs-to-html": "^0.9.1",
@@ -152,6 +153,7 @@
     "react-dom": "^18.1.0",
     "react-final-form": "^6.5.9",
     "react-final-form-listeners": "^1.0.3",
+    "react-hook-form-mui": "^3.5.5",
     "react-jss": "^10.9.0",
     "react-player": "^2.9.0",
     "react-redux": "^8.0.1",

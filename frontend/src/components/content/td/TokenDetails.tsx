@@ -41,7 +41,7 @@ const useStyles = makeStyles<StyleProps>()((theme, params) => {
       borderColor: theme.palette.text.primary,
       borderStyle: "solid",
     },
-    icons: { color: theme.palette.text.primary },
+    icons: { color: theme.palette.text.primary, fontSize: "24px" },
     popupControls: { padding: "3px" },
     container: { textAlign: "left" },
     synonymList: { fontSize: `${Math.min(150, params.fontSize)}%` },

@@ -12,6 +12,13 @@
   <title>
     <%= htmlWebpackPlugin.options.context.title %>
   </title>
+  <script>
+    import('https://cdn.skypack.dev/detect-browser@5').then(({ detect }) => {
+      if (!['yandexbrowser', 'edge-chromium', 'chrome', 'opera-mini', 'opera'].includes(detect().name)) {
+        location.href = '/static/unsupported.html';
+      }
+    });
+  </script>
 </head>
 
 <body>

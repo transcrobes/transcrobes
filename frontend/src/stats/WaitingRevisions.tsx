@@ -1,9 +1,9 @@
-import { Grid } from "@mui/material";
+import { Grid, useTheme } from "@mui/material";
 import { bin } from "d3-array";
 import dayjs, { ManipulateType } from "dayjs";
 import { useEffect, useState } from "react";
 import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
-import { refreshDictionaries } from "../lib/dictionary";
+import useWindowDimensions from "../hooks/WindowDimensions";
 import { binnedData } from "../lib/funclib";
 import { dateRange } from "../lib/libMethods";
 import { CardType } from "../lib/types";
@@ -67,17 +67,16 @@ export function WaitingRevisions({ yIsNumber = true, periodType = "week" }: Prop
     })();
   }, [window.componentsConfig.proxy.loaded]);
 
-  const blue = "#8884d8";
-  const green = "#2cfc03";
+  const theme = useTheme();
+  const dims = useWindowDimensions();
   return revisions ? (
-    <Grid container alignItems="center" spacing={3} justifyContent="center">
-      <Grid item>
-        <LineChart width={500} height={300} data={data}>
+    <Grid container spacing={3} justifyContent="center">
+      <Grid item paddingLeft="0px !important">
+        <LineChart width={Math.min(dims.width - 10, 600)} height={300} data={data}>
           <XAxis dataKey="name" />
           <YAxis tickFormatter={(tick) => `${tick}${yIsNumber ? "" : "%"}`} name="Progress" />
           <CartesianGrid stroke="#eee" strokeDasharray="5 5" />
-          <Line type="monotone" dataKey="wordTypes" stroke={blue} />
-          <Line type="monotone" dataKey="charTypes" stroke={green} />
+          <Line type="monotone" dataKey="wordTypes" stroke={theme.palette.primary.main} />
         </LineChart>
       </Grid>
       <Grid item>
@@ -85,7 +84,7 @@ export function WaitingRevisions({ yIsNumber = true, periodType = "week" }: Prop
           <tbody>
             <tr>
               <td>
-                <span style={{ color: blue }}>Total waiting</span>
+                <span style={{ color: theme.palette.primary.main }}>Total waiting</span>
               </td>
               <td>{revisions.length}</td>
             </tr>

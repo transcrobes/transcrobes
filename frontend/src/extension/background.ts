@@ -83,12 +83,21 @@ async function loadDb(callback: any, message: EventData) {
 }
 
 chrome.action.onClicked.addListener(function (tab) {
-  if (tab.id) {
-    chrome.scripting.executeScript({
-      target: { tabId: tab.id, allFrames: true },
-      files: ["content-bundle.js"],
-    });
-  }
+  getUserDexie().then((userData) => {
+    if (tab.id) {
+      if (!userData.username || !userData.password || !userData.baseUrl) {
+        chrome.runtime.openOptionsPage(() => console.debug("User not initialised"));
+      } else {
+        chrome.scripting.executeScript({
+          target: { tabId: tab.id, allFrames: true },
+          files: ["content-bundle.js"],
+        });
+      }
+    } else {
+      // FIXME: is this useful
+      chrome.runtime.openOptionsPage(() => console.log("No tab.id, not sure how we get here!"));
+    }
+  });
 });
 
 chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {

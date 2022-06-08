@@ -59,17 +59,9 @@ export interface ETFStylesProps extends WithStylesProps<ETFStylesType> {
   children: React.ReactNode;
 }
 
-export const GRADES: GradesType[] = [
-  { id: GRADE.HARD.toString(), content: "Add as known (poorly)", icon: <SentimentSatisfiedIcon /> },
-  {
-    id: GRADE.UNKNOWN.toString(),
-    content: "Add as unknown",
-    icon: <SentimentVeryDissatisfiedIcon />,
-  },
-  {
-    id: GRADE.GOOD.toString(),
-    content: "Add as known (to revise)",
-    icon: <SentimentVerySatisfiedIcon />,
-  },
-  { id: GRADE.KNOWN.toString(), content: "Add as known (no revision)", icon: <CheckIcon /> },
-];
+const hard = { id: GRADE.HARD.toString(), content: "Add as known (poorly)", icon: <SentimentSatisfiedIcon /> };
+const unknown = { id: GRADE.UNKNOWN.toString(), content: "Add as unknown", icon: <SentimentVeryDissatisfiedIcon /> };
+const good = { id: GRADE.GOOD.toString(), content: "Add as known (to revise)", icon: <SentimentVerySatisfiedIcon /> };
+const known = { id: GRADE.KNOWN.toString(), content: "Add as known (no revision)", icon: <CheckIcon /> };
+export const GRADES: GradesType[] = [hard, unknown, good, known];
+export const BASIC_GRADES: GradesType[] = [good, unknown];

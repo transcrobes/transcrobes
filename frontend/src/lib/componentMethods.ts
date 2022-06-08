@@ -61,7 +61,7 @@ export async function getSound(token: TokenType, definitions: DefinitionsState):
 export async function getNormalGloss(
   token: TokenType,
   readerConfig: ReaderState,
-  uCardWords: SerialisableDayCardWords,
+  uCardWords: Partial<SerialisableDayCardWords>,
   definitions: DefinitionsState,
   fromLang: InputLanguage,
 ): Promise<string> {
@@ -124,7 +124,7 @@ function originalSentenceFromTokens(tokens: TokenType[]): string {
 async function getL2Simplified(
   token: TokenType,
   previousGloss: string,
-  uCardWords: SerialisableDayCardWords,
+  uCardWords: Partial<SerialisableDayCardWords>,
   definitions: DefinitionsState,
   fromLang: InputLanguage,
   readerConfig: ReaderState,
@@ -143,7 +143,11 @@ async function getL2Simplified(
 
     let innerGloss;
     if (syns && syns.length > 0) {
-      const userSynonyms = filterKnown(uCardWords.knownWordIdsCounter, uCardWords.knownCardWordGraphs, syns[0].values);
+      const userSynonyms = filterKnown(
+        uCardWords.knownWordIdsCounter || {},
+        uCardWords.knownCardWordGraphs || {},
+        syns[0].values,
+      );
       if (userSynonyms.length > 0) {
         innerGloss = userSynonyms[0];
       }
@@ -158,7 +162,7 @@ export function isNumberToken(token: TokenType): boolean {
 }
 export async function getPopoverText(
   token: TokenType,
-  uCardWords: SerialisableDayCardWords,
+  uCardWords: Partial<SerialisableDayCardWords>,
   definitions: DefinitionsState,
   fromLang: InputLanguage,
   readerConfig: ReaderState,

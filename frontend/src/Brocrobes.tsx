@@ -10,6 +10,7 @@ const useStyles = makeStyles()({
     alignItems: "center",
   },
 });
+
 export default function Brocrobes(): ReactElement {
   const { classes } = useStyles();
   const helpUrl = "https://transcrob.es/page/software/install/clients/brocrobes/";

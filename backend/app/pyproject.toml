@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "transcrobes"
-version = "0.11.5"
+version = "0.13.0"
 description = ""
 authors = ["Anton Melser <anton@transcrob.es>"]
 license = "AGPLv3"
@@ -48,7 +48,7 @@ PyGithub = "^1.55"
 OpenCC = "^1.1.4"
 
 [tool.poetry.dev-dependencies]
-mypy = "^0.960"
+mypy = "^0.961"
 autoflake = "^1.4"
 pytest = "^7.1.2"
 pytest-cov = "^3.0.0"

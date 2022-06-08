@@ -111,7 +111,6 @@ function App({ config }: Props): ReactElement {
 
         if (await isInitialisedAsync(username)) {
           await config.proxy.asyncInit({ username: username });
-          setInited(true);
           dispatch(
             setCardWordsState(
               await config.proxy.sendMessagePromise<SerialisableDayCardWords>({
@@ -121,6 +120,7 @@ function App({ config }: Props): ReactElement {
             ),
           );
           await refreshDictionaries(store, config.proxy);
+          setInited(true);
         } else if (shouldRedirectUninited(window.location.href)) {
           window.location.href = "/#/init";
         }
@@ -145,48 +145,50 @@ function App({ config }: Props): ReactElement {
   }
   return (
     (dataProvider && (
-      <Admin
-        theme={theme}
-        authProvider={authProvider}
-        dataProvider={dataProvider}
-        i18nProvider={i18nProvider}
-        dashboard={() => Dashboard({ config, inited })}
-        title="Transcrobes"
-        layout={Layout}
-        loginPage={Login}
-        history={localHistory}
-        // @ts-ignore
-        logoutButton={(props) => <Logout proxy={componentsConfig.proxy} {...props} />}
-      >
-        {/* disableTelemetry be nice for now */}
-        {(_permissions) => [
-          <Resource name="imports" {...imports} />,
-          <Resource name="contents" {...contents} />,
-          <Resource name="userdictionaries" {...dictionaries} />,
-          <Resource name="goals" {...goals} />,
-          <Resource name="userlists" {...userlists} />,
-          <Resource name="surveys" {...surveys} />,
-          <CustomRoutes>
-            <Route path="/notrobes" element={<Notrobes proxy={config.proxy} url={config.url} />} />
-            <Route path="/listrobes" element={<Listrobes proxy={config.proxy} />} />,
-            <Route path="/stats" element={<Stats />} />,
-            <Route path="/exports" element={<Exports proxy={config.proxy} />} />,
-            <Route path="/repetrobes" element={<Repetrobes proxy={config.proxy} />} />,
-            <Route path="/textcrobes" element={<Textcrobes proxy={config.proxy} />} />,
-            <Route path="/contents/:id/watch" element={<VideoPlayerScreen proxy={config.proxy} />} />,
-            <Route path="/brocrobes" element={<Brocrobes />} />,
-            <Route path="/system" element={<System proxy={config.proxy} />} />,
-            <Route path="/help" element={<Help />} />
-          </CustomRoutes>,
-          <CustomRoutes noLayout>
-            <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/recover-password" element={<RecoverPassword />} />
-            <Route path="/signup" element={<Signup />} />
-            <Route path="/contents/:id/read" element={<Reader proxy={config.proxy} />} />
-            <Route path="/init" element={<Init proxy={config.proxy} />} />
-          </CustomRoutes>,
-        ]}
-      </Admin>
+      <>
+        <Admin
+          theme={theme}
+          authProvider={authProvider}
+          dataProvider={dataProvider}
+          i18nProvider={i18nProvider}
+          dashboard={() => Dashboard({ config, inited })}
+          title="Transcrobes"
+          layout={Layout}
+          loginPage={Login}
+          history={localHistory}
+          // @ts-ignore
+          logoutButton={(props) => <Logout proxy={componentsConfig.proxy} {...props} />}
+        >
+          {/* disableTelemetry be nice for now */}
+          {(_permissions) => [
+            <Resource name="imports" {...imports} />,
+            <Resource name="contents" {...contents} />,
+            <Resource name="userdictionaries" {...dictionaries} />,
+            <Resource name="goals" {...goals} />,
+            <Resource name="userlists" {...userlists} />,
+            <Resource name="surveys" {...surveys} />,
+            <CustomRoutes>
+              <Route path="/notrobes" element={<Notrobes proxy={config.proxy} url={config.url} />} />
+              <Route path="/listrobes" element={<Listrobes proxy={config.proxy} />} />,
+              <Route path="/stats" element={<Stats />} />,
+              <Route path="/exports" element={<Exports proxy={config.proxy} />} />,
+              <Route path="/repetrobes" element={<Repetrobes proxy={config.proxy} />} />,
+              <Route path="/textcrobes" element={<Textcrobes proxy={config.proxy} />} />,
+              <Route path="/contents/:id/watch" element={<VideoPlayerScreen proxy={config.proxy} />} />,
+              <Route path="/brocrobes" element={<Brocrobes />} />,
+              <Route path="/system" element={<System proxy={config.proxy} />} />,
+              <Route path="/help" element={<Help />} />
+            </CustomRoutes>,
+            <CustomRoutes noLayout>
+              <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/recover-password" element={<RecoverPassword />} />
+              <Route path="/signup" element={<Signup />} />
+              <Route path="/contents/:id/read" element={<Reader proxy={config.proxy} />} />
+              <Route path="/init" element={<Init proxy={config.proxy} />} />
+            </CustomRoutes>,
+          ]}
+        </Admin>
+      </>
     )) || <></>
   );
 }

@@ -47,10 +47,15 @@ export default function Header({ classes, token, bestGuess, extrasOpen, onToggle
       <DiscoverableWord graph={token.l} newTab />
       <div>
         <IconButton sx={{ padding: "3px" }} onClick={toggleSentence} aria-label="Extras" size="large">
-          {extrasOpen ? <FullscreenExit className={classes.icons} /> : <Fullscreen className={classes.icons} />}
+          {extrasOpen ? (
+            <FullscreenExit sx={{ fontSize: "24px" }} className={classes.icons} />
+          ) : (
+            <Fullscreen sx={{ fontSize: "24px" }} className={classes.icons} />
+          )}
         </IconButton>
         <IconButton sx={{ padding: "3px" }} onClick={closePopup} aria-label="Close" size="large">
-          <CloseIcon className={classes.icons} />
+          {/* FIXME: how TF??? do I set the guarantee fontSize cleanly??? */}
+          <CloseIcon sx={{ fontSize: "24px" }} className={classes.icons} />
         </IconButton>
       </div>
     </div>

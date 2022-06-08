@@ -36,7 +36,12 @@ export default function ContentConfigLauncher({ ...props }: ContentConfigProps):
   }
   return (
     <>
-      <Button className={classes.button} children={<SettingsIcon />} label="Settings" onClick={handleClick} />
+      <Button
+        className={classes.button}
+        children={<SettingsIcon />}
+        label="Textcrobes Settings"
+        onClick={handleClick}
+      />
       <Drawer container={props.containerRef?.current} anchor="left" open={open} onClose={handleClose}>
         <Box sx={{ width: width }} role="presentation">
           <ContentConfigDrawer containerRef={props.containerRef} {...props} />

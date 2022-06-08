@@ -2,10 +2,10 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { SerialisableDayCardWords, SerialisableStringSet } from "../../lib/types";
 
 const initialState = {
-  knownCardWordGraphs: {},
-  allCardWordGraphs: {},
-  knownWordIdsCounter: {},
-} as SerialisableDayCardWords;
+  knownCardWordGraphs: undefined,
+  allCardWordGraphs: undefined,
+  knownWordIdsCounter: undefined,
+} as Partial<SerialisableDayCardWords>;
 
 const cardsSlice = createSlice({
   name: "knownCards",
@@ -15,6 +15,8 @@ const cardsSlice = createSlice({
       return action.payload;
     },
     addKnownCards(state, action: PayloadAction<SerialisableStringSet>) {
+      state.knownCardWordGraphs ??= {};
+      state.allCardWordGraphs ??= {};
       for (const id in action.payload) {
         state.knownCardWordGraphs[id] = null;
         // FIXME: is this needed?

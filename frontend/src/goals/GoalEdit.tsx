@@ -12,8 +12,8 @@ import { HelpEditActions } from "../components/HelpEditActions";
 
 export default function GoalEdit() {
   return (
-    <Edit actions={<HelpEditActions helpUrl="https://transcrob.es/page/software/configure/goals/" />}>
-      <SimpleForm redirect="list">
+    <Edit redirect="list" actions={<HelpEditActions helpUrl="https://transcrob.es/page/software/configure/goals/" />}>
+      <SimpleForm>
         <TextField source="id" sx={{ paddingBottom: "1em" }} />
         <TextInput label="Goal name" source="title" validate={[required()]} />
         <TextInput label="Goal description" multiline source="description" />

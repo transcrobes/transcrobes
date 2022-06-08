@@ -1,6 +1,8 @@
+import { Box, useTheme } from "@mui/system";
 import { ReactElement } from "react";
 import { makeStyles } from "tss-react/mui";
 import { GradesType, VocabReview } from "../lib/types";
+import { getColour } from "./funclib";
 
 const useStyles = makeStyles<void, "descriptionText">()((theme, _params, classes) => ({
   tipText: {
@@ -22,16 +24,21 @@ const useStyles = makeStyles<void, "descriptionText">()((theme, _params, classes
     backgroundColor: theme.palette.background.default,
     zIndex: 2,
   },
-  rowItem: { display: "flex", justifyContent: "space-between" },
 }));
 
 function RowItem({ item, gradeOrder }: { item: VocabReview; gradeOrder: GradesType[] }) {
-  const { classes } = useStyles();
+  const palette = useTheme().palette;
   return (
-    <div className={classes.rowItem}>
+    <Box
+      sx={{
+        display: "flex",
+        justifyContent: "space-between",
+        backgroundColor: getColour(gradeOrder[item.clicks], palette),
+      }}
+    >
       <div>{item.graph}</div>
       <div>{gradeOrder[item.clicks].icon}</div>
-    </div>
+    </Box>
   );
 }
 

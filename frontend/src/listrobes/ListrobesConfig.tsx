@@ -1,12 +1,13 @@
-import { TextField, Theme, useTheme } from "@mui/material";
-import { makeStyles } from "tss-react/mui";
+import { Box, FormControlLabel, Switch, TextField, Theme, useTheme } from "@mui/material";
 import _ from "lodash";
 import { ReactElement } from "react";
 import { DragDropContext, Draggable, Droppable, DropResult } from "react-beautiful-dnd";
 import Select, { StylesConfig } from "react-select";
+import { makeStyles } from "tss-react/mui";
 import WordOrderSelector from "../components/WordOrderSelector";
 import { reorderArray, validInt } from "../lib/funclib";
 import { GraderConfig, WordOrdering } from "../lib/types";
+import { getColour } from "./funclib";
 
 const useStyles = makeStyles()((theme: Theme) => ({
   typography: {
@@ -21,14 +22,6 @@ const useStyles = makeStyles()((theme: Theme) => ({
     padding: "0.4em",
     marginBottom: "0.4em",
     justifyContent: "space-between",
-  },
-  rowItem: { paddingRight: "8px" },
-  row: {
-    border: "solid",
-    display: "flex",
-    justifyContent: "space-between",
-    padding: "4px",
-    margin: "4px",
   },
 }));
 
@@ -78,10 +71,21 @@ export function ListrobesConfig({ graderConfig, onConfigChange }: Props): ReactE
       itemsPerPage: parseInt(e.target.value, 10),
     });
   }
+  function handleAdvancedChange(_e: React.ChangeEvent<HTMLInputElement>, checked: boolean) {
+    onConfigChange({
+      ...graderConfig,
+      isAdvanced: checked,
+    });
+  }
   const { classes } = useStyles();
   return (
     <div>
-      <div>Taps for state</div>
+      <FormControlLabel
+        label="Advanced mode"
+        control={<Switch checked={!!graderConfig.isAdvanced} onChange={handleAdvancedChange} />}
+      />
+
+      <div>Default click order</div>
       <div className={classes.multiselect}>
         <DragDropContext onDragEnd={handleDragEnd}>
           <Droppable droppableId="droppable">
@@ -90,15 +94,21 @@ export function ListrobesConfig({ graderConfig, onConfigChange }: Props): ReactE
                 {graderConfig.gradeOrder.map((item, index) => (
                   <Draggable key={item.id} draggableId={item.id} index={index}>
                     {(provided) => (
-                      <div
-                        className={classes.row}
-                        ref={provided.innerRef}
-                        {...provided.draggableProps}
-                        {...provided.dragHandleProps}
-                      >
-                        <div className={classes.rowItem}>{index}</div>
-                        <div>{item.content}</div>
-                        {item.icon}
+                      <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}>
+                        <Box
+                          sx={{
+                            backgroundColor: getColour(item, theme.palette),
+                            border: "solid",
+                            display: "flex",
+                            justifyContent: "space-between",
+                            padding: "4px",
+                            margin: "4px",
+                          }}
+                        >
+                          <Box sx={{ paddingRight: "8px" }}>{index}</Box>
+                          <div>{item.content}</div>
+                          {item.icon}
+                        </Box>
                       </div>
                     )}
                   </Draggable>

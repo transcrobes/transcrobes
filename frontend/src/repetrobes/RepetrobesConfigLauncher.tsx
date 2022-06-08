@@ -4,6 +4,7 @@ import React, { ReactElement } from "react";
 import { makeStyles } from "tss-react/mui";
 import { RepetrobesActivityConfigType } from "../lib/types";
 import RepetrobesConfig from "./RepetrobesConfig";
+import { Button } from "react-admin";
 
 const useStyles = makeStyles()({
   settings: {
@@ -31,8 +32,8 @@ export default function RepetrobesConfigLauncher({ activityConfig, onConfigChang
   };
 
   return (
-    <div>
-      <IconButton
+    <Box>
+      {/* <IconButton
         className={classes.settings}
         onClick={toggleDrawer(true)}
         color="primary"
@@ -40,12 +41,13 @@ export default function RepetrobesConfigLauncher({ activityConfig, onConfigChang
         size="large"
       >
         <SettingsIcon />
-      </IconButton>
+      </IconButton> */}
+      <Button size="large" children={<SettingsIcon />} label="Repetrobes Settings" onClick={toggleDrawer(true)} />
       <Drawer anchor="left" open={isOpen} onClose={toggleDrawer(false)}>
         <Box sx={{ width: 300 }} role="presentation">
           <RepetrobesConfig activityConfig={activityConfig} onConfigChange={onConfigChange} />
         </Box>
       </Drawer>
-    </div>
+    </Box>
   );
 }

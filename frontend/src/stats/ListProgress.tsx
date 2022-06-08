@@ -1,9 +1,10 @@
-import { Grid } from "@mui/material";
+import { Grid, useTheme } from "@mui/material";
 import { bin } from "d3-array";
 import dayjs, { ManipulateType } from "dayjs";
 import { useEffect, useState } from "react";
 import { useRecordContext } from "react-admin";
 import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
+import useWindowDimensions from "../hooks/WindowDimensions";
 import { binnedData } from "../lib/funclib";
 import { dateRange } from "../lib/libMethods";
 import { ListFirstSuccessStats } from "../lib/types";
@@ -44,9 +45,8 @@ export function ListProgress({ yIsNumber = false, nbPeriods = 8, periodType = "w
         currentPeriod = 0;
       }
       const firstSuccess = locStats.successWords[0];
-      const end = dayjs();
+      const end = dayjs().add(1, "day");
       const start = Math.max(end.add(-nbPeriods, periods[currentPeriod]).unix(), firstSuccess.firstSuccess);
-
       let thresholds: number[] = [];
       while (thresholds.length < 3 && currentPeriod < periods.length) {
         thresholds = dateRange(start, end.unix(), periods[currentPeriod], true) as number[];
@@ -70,17 +70,17 @@ export function ListProgress({ yIsNumber = false, nbPeriods = 8, periodType = "w
     })();
   }, [window.componentsConfig.proxy.loaded]);
 
-  const blue = "#8884d8";
-  const green = "#2cfc03";
+  const theme = useTheme();
+  const dims = useWindowDimensions();
   return stats ? (
-    <Grid container alignItems="center" spacing={3} justifyContent="center">
-      <Grid item>
-        <LineChart width={500} height={300} data={data}>
+    <Grid container spacing={3} justifyContent="center">
+      <Grid item paddingLeft="0px !important">
+        <LineChart width={Math.min(dims.width - 10, 600)} height={300} data={data}>
           <XAxis dataKey="name" />
           <YAxis tickFormatter={(tick) => `${tick}${yIsNumber ? "" : "%"}`} name="Progress" />
           <CartesianGrid stroke="#eee" strokeDasharray="5 5" />
-          <Line type="monotone" dataKey="wordTypes" stroke={blue} />
-          <Line type="monotone" dataKey="charTypes" stroke={green} />
+          <Line type="monotone" dataKey="wordTypes" stroke={theme.palette.primary.main} />
+          <Line type="monotone" dataKey="charTypes" stroke={theme.palette.success.light} />
         </LineChart>
       </Grid>
       <Grid item>
@@ -88,15 +88,19 @@ export function ListProgress({ yIsNumber = false, nbPeriods = 8, periodType = "w
           <tbody>
             <tr>
               <td>
-                <span style={{ color: blue }}>Unique words (types)</span>
+                <span style={{ color: theme.palette.primary.main }}>Unique words (types)</span>
               </td>
-              <td>{stats.nbUniqueWords}</td>
+              <td>
+                <span style={{ color: theme.palette.primary.main }}>{stats.nbUniqueWords}</span>
+              </td>
             </tr>
             <tr>
               <td>
-                <span style={{ color: green }}>Unique chars (types)</span>
+                <span style={{ color: theme.palette.success.light }}>Unique chars (types)</span>
               </td>
-              <td>{stats.nbUniqueCharacters}</td>
+              <td>
+                <span style={{ color: theme.palette.success.light }}>{stats.nbUniqueCharacters}</span>
+              </td>
             </tr>
           </tbody>
         </table>

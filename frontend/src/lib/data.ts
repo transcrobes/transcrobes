@@ -236,6 +236,8 @@ export async function getFirstSuccessStatsForImport(
       });
     }
   }
+  successChars.sort((a, b) => a.firstSuccess - b.firstSuccess);
+  successWords.sort((a, b) => a.firstSuccess - b.firstSuccess);
 
   return {
     successChars,
@@ -303,7 +305,8 @@ export async function getFirstSuccessStatsForList(
       });
     }
   }
-
+  successChars.sort((a, b) => a.firstSuccess - b.firstSuccess);
+  successWords.sort((a, b) => a.firstSuccess - b.firstSuccess);
   return {
     successChars,
     successWords,

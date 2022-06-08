@@ -4,8 +4,11 @@ import { PROCESSING, STATUS } from "../lib/types";
 
 export default function GoalCreate() {
   return (
-    <Create actions={<HelpCreateActions helpUrl="https://transcrob.es/page/software/configure/goals/" />}>
-      <SimpleForm redirect="list">
+    <Create
+      redirect="list"
+      actions={<HelpCreateActions helpUrl="https://transcrob.es/page/software/configure/goals/" />}
+    >
+      <SimpleForm>
         <TextInput label="Goal name" source="title" validate={[required()]} />
         <TextInput label="Goal description" multiline source="description" />
         <NumberInput max={10} min={1} defaultValue={5} source="priority" step={1} validate={[required()]} />

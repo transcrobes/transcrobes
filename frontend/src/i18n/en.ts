@@ -6,7 +6,7 @@ const customEnglishMessages: TranslationMessages = {
   pos: {
     search: "Search",
     configuration: "Configuration",
-    system: "System",
+    system: "Global Settings",
     help: "Help!",
     language: "Language",
     theme: {
@@ -94,7 +94,7 @@ const customEnglishMessages: TranslationMessages = {
       name: "Brocrobes",
     },
     system: {
-      name: "System",
+      name: "Global Settings",
       initialise: "Initialise",
     },
     help: {

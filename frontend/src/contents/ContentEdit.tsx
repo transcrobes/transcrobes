@@ -3,8 +3,11 @@ import { HelpEditActions } from "../components/HelpEditActions";
 
 export default function ContentEdit() {
   return (
-    <Edit actions={<HelpEditActions helpUrl="https://transcrob.es/page/software/configure/contents/" />}>
-      <SimpleForm redirect="list">
+    <Edit
+      redirect="list"
+      actions={<HelpEditActions helpUrl="https://transcrob.es/page/software/configure/contents/" />}
+    >
+      <SimpleForm>
         <TextField source="id" sx={{ paddingBottom: "1em" }} />
         <TextInput label="Content name" source="title" validate={[required()]} />
         <TextInput label="Content description" multiline source="description" />

@@ -1,11 +1,12 @@
 import { CreateButton, Datagrid, List as RAList, SortButton, TextField, TopToolbar } from "react-admin";
 import HelpButton from "../components/HelpButton";
+import { ListEmpty } from "../components/ListEmpty";
 
-function ListActions() {
+function ListActions({ empty }: { empty?: boolean }) {
   return (
     <TopToolbar>
-      <CreateButton />
-      <SortButton fields={["updatedAt", "title"]} />
+      {!empty && <CreateButton />}
+      {!empty && <SortButton fields={["createdAt", "title"]} />}
       <HelpButton url="https://transcrob.es/page/software/configure/userdictionaries/" />
     </TopToolbar>
   );
@@ -13,7 +14,11 @@ function ListActions() {
 
 export default function List() {
   return (
-    <RAList actions={<ListActions />} sort={{ field: "updatedAt", order: "DESC" }}>
+    <RAList
+      empty={<ListEmpty actions={<ListActions empty />} />}
+      actions={<ListActions />}
+      sort={{ field: "updatedAt", order: "DESC" }}
+    >
       <Datagrid rowClick="show">
         <TextField source="title" />
       </Datagrid>

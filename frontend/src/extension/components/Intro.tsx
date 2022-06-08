@@ -6,7 +6,7 @@ export default function Intro({ inited }: { inited: boolean }) {
       <Typography variant="h4">Welcome! It's Transcrobes initialisation time!</Typography>
       <Typography>
         Transcrobes is entirely browser-based but needs to download a lot of reference data in order to save on
-        bandwidth and dramatically improve performance, and that is going to take a while (15-25 minutes, depending on
+        bandwidth and dramatically improve performance, and that is going to take a while (3-15 minutes, depending on
         how fast your phone/tablet/computer is).
       </Typography>
       <Typography>
@@ -18,15 +18,10 @@ export default function Intro({ inited }: { inited: boolean }) {
     </>
   ) : (
     <>
-      <Typography variant="h4">Reinitialise Transcrobes or update settings</Typography>
-      <Typography>
-        You may need to reinitialise the system if you encounter issues, such as the system not transcrobing webpages.
-        If it works on <b>some</b> pages then reinitilising won't have any effect, so keep this in mind. Reinitialising
-        will take 15-25 minutes.
-      </Typography>
+      <Typography variant="h4">Update settings</Typography>
       <Typography>
         Saving updated settings should only take a few seconds, unless you are changing your username. You may need to
-        reinitialise if you change your username.
+        reinstall the extension (delete and add again) if you change your username and encounter issues.
       </Typography>
     </>
   );

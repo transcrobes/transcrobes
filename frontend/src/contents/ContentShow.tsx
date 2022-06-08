@@ -2,8 +2,9 @@ import { useEffect, useState } from "react";
 import { BooleanField, FunctionField, ReferenceField, Show, SimpleShowLayout, TextField, useGetOne } from "react-admin";
 import { useParams } from "react-router-dom";
 import { HelpShowActions } from "../components/HelpShowActions";
+import { ProcessingField } from "../components/ProcessingField";
 import { ImportProgress } from "../imports/ImportProgress";
-import { Content, CONTENT_TYPE, ImportFirstSuccessStats, PROCESSING, reverseEnum } from "../lib/types";
+import { Content, CONTENT_TYPE, ImportFirstSuccessStats, reverseEnum } from "../lib/types";
 import ActionButton from "./ActionButton";
 import CacheSwitch from "./CacheSwitch";
 
@@ -36,7 +37,7 @@ export default function ContentShow() {
         <ReferenceField label="Source import" source="theImport" reference="imports" link="show">
           <TextField source="title" />
         </ReferenceField>
-        <FunctionField source="processing" render={(record: Content) => reverseEnum(PROCESSING, record.processing)} />
+        <ProcessingField label="Processing status" />
         <FunctionField
           source="contentType"
           render={(record: Content) => reverseEnum(CONTENT_TYPE, record.contentType)}

@@ -31,6 +31,16 @@ export function sizeOf(value: any) {
   return (typeSizes as any)[typeof value](value);
 }
 
+export function convertArrayToObject(array: any[], key: any) {
+  const initialValue = {};
+  return array.reduce((obj, item) => {
+    return {
+      ...obj,
+      [item[key]]: item,
+    };
+  }, initialValue);
+}
+
 export function getKnownChars(
   knownCards: Map<string, CardType>,
   knownGraphs: Map<string, string>,

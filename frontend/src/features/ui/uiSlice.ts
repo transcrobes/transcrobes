@@ -26,12 +26,14 @@ type UIState = {
   tokenDetails: TokenDetailsState | undefined;
   mouseover: PopoverState | undefined;
   loading: boolean | undefined;
+  ignoreBeginner: boolean | undefined;
 };
 
 const initialState = {
   tokenDetails: undefined,
   mouseover: undefined,
   loading: undefined,
+  ignoreBeginner: undefined,
 } as UIState;
 
 const uiSlice = createSlice({
@@ -47,8 +49,11 @@ const uiSlice = createSlice({
     setLoading(state, action: PayloadAction<boolean | undefined>) {
       state.loading = action.payload;
     },
+    setIgnoreBeginner(state, action: PayloadAction<boolean | undefined>) {
+      state.ignoreBeginner = action.payload;
+    },
   },
 });
 
-export const { setTokenDetails, setMouseover, setLoading } = uiSlice.actions;
+export const { setTokenDetails, setMouseover, setLoading, setIgnoreBeginner } = uiSlice.actions;
 export default uiSlice.reducer;
