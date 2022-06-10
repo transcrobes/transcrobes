@@ -1,13 +1,10 @@
 import { Create, NumberInput, ReferenceInput, required, SelectInput, SimpleForm, TextInput } from "react-admin";
 import { HelpCreateActions } from "../components/HelpCreateActions";
-import { PROCESSING, STATUS } from "../lib/types";
+import { DOCS_DOMAIN, PROCESSING, STATUS } from "../lib/types";
 
 export default function GoalCreate() {
   return (
-    <Create
-      redirect="list"
-      actions={<HelpCreateActions helpUrl="https://transcrob.es/page/software/configure/goals/" />}
-    >
+    <Create redirect="list" actions={<HelpCreateActions helpUrl={`//${DOCS_DOMAIN}/page/software/configure/goals/`} />}>
       <SimpleForm>
         <TextInput label="Goal name" source="title" validate={[required()]} />
         <TextInput label="Goal description" multiline source="description" />

@@ -13,7 +13,7 @@ import { getDatabaseName } from "../database/Database";
 import { changeTheme } from "../features/themes/themeReducer";
 import { darkTheme, lightTheme } from "../layout/themes";
 import { AbstractWorkerProxy } from "../lib/proxies";
-import { ThemeName } from "../lib/types";
+import { DOCS_DOMAIN, ThemeName } from "../lib/types";
 
 const useStyles = makeStyles()({
   label: { width: "10em", display: "inline-block" },
@@ -118,13 +118,14 @@ function System({ proxy }: Props): ReactElement {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const { classes } = useStyles();
-  const helpUrl = "https://transcrob.es/page/software/configure/system/";
+
+  const helpUrl = `//${DOCS_DOMAIN}/page/software/configure/system/`;
 
   // const locale = useLocale();
   // const setLocale = useSetLocale();
 
   const myTheme = useAppSelector((state) => state.theme);
-  const [theme, setTheme] = useTheme();
+  const [, setTheme] = useTheme();
   const dispatch = useAppDispatch();
 
   function handleUpdate(mode: ThemeName) {

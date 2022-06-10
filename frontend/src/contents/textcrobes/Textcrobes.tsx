@@ -26,7 +26,7 @@ import { ImportProgress } from "../../imports/ImportProgress";
 import { ensureDefinitionsLoaded } from "../../lib/dictionary";
 import { wordIdsFromModels } from "../../lib/funclib";
 import { ServiceWorkerProxy } from "../../lib/proxies";
-import { EnrichedHtmlModels, ImportFirstSuccessStats, KeyedModels, noop } from "../../lib/types";
+import { DOCS_DOMAIN, EnrichedHtmlModels, ImportFirstSuccessStats, KeyedModels, noop } from "../../lib/types";
 import ContentConfigLauncherDrawer from "./TextReaderConfigLauncher";
 
 type Props = {
@@ -69,7 +69,7 @@ export default function Textcrobes({ proxy }: Props): ReactElement {
     },
   });
 
-  const helpUrl = "https://transcrob.es/page/software/learn/textcrobes/";
+  const helpUrl = `//${DOCS_DOMAIN}/page/software/learn/textcrobes/`;
   // FIXME: this is still the way to style the editor because there is hardcoding
   // of the "overrides" property in mui-rte component.
   Object.assign(theme, {

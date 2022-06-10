@@ -1,10 +1,11 @@
 import { ReferenceField, Show, SimpleShowLayout, TextField } from "react-admin";
 import { HelpShowActions } from "../components/HelpShowActions";
+import { DOCS_DOMAIN } from "../lib/types";
 import { ListProgress } from "../stats/ListProgress";
 
 export default function GoalShow() {
   return (
-    <Show actions={<HelpShowActions helpUrl="https://transcrob.es/page/software/configure/goals/" />}>
+    <Show actions={<HelpShowActions helpUrl={`//${DOCS_DOMAIN}/page/software/configure/goals/`} />}>
       <SimpleShowLayout>
         <TextField source="id" />
         <TextField source="title" />

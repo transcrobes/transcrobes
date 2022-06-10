@@ -22,12 +22,12 @@ import { setLoading } from "../features/ui/uiSlice";
 import { setUser, throttledLogin, updateBaseUrl, updatePassword, updateUsername } from "../features/user/userSlice";
 import { refreshDictionaries } from "../lib/dictionary";
 import { BackgroundWorkerProxy, setPlatformHelper } from "../lib/proxies";
-import { IS_DEV } from "../lib/types";
+import { DOCS_DOMAIN, IS_DEV, SITE_DOMAIN } from "../lib/types";
 import { RxDBDataProviderParams } from "../ra-data-rxdb";
 import Initialisation from "./components/Initialisation";
 import Intro from "./components/Intro";
 
-const DEFAULT_SERVER_URL = IS_DEV ? "http://localhost" : "https://am.transcrob.es";
+const DEFAULT_SERVER_URL = `http${IS_DEV ? "" : "s"}//${SITE_DOMAIN}`;
 
 type FormProps = {
   username: string;
@@ -147,7 +147,7 @@ export default function Options(): JSX.Element {
           } catch (err: any) {
             setRunning(false);
             setMessage(`There was an error setting up Transcrobes.
-                  Please try again in a little while, or contact Transcrobes support (<a href="https://transcrob.es/page/contact/">here</a>)`);
+                  Please try again in a little while, or contact Transcrobes support (<a href="http://${DOCS_DOMAIN}/page/contact/">here</a>)`);
             console.log("getDb() threw an error in options.ts");
             console.dir(err);
             console.error(err);
@@ -165,8 +165,7 @@ export default function Options(): JSX.Element {
     setMessage("Saving the options, please wait and keep this window open...");
   }
 
-  const helpUrl = "https://transcrob.es/page/software/install/clients/brocrobes/";
-
+  const helpUrl = `http://${DOCS_DOMAIN}/page/software/install/clients/brocrobes/`;
   return (
     <Container maxWidth="md">
       {loaded ? (

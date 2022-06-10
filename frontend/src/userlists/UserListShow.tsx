@@ -2,7 +2,7 @@ import { BooleanField, FunctionField, ReferenceField, Show, SimpleShowLayout, Te
 import { HelpShowActions } from "../components/HelpShowActions";
 import { ProcessingField } from "../components/ProcessingField";
 import { GRADE } from "../database/Schema";
-import { ORDER_BY, PROCESSING, reverseEnum } from "../lib/types";
+import { DOCS_DOMAIN, ORDER_BY, PROCESSING, reverseEnum } from "../lib/types";
 import { ListProgress } from "../stats/ListProgress";
 
 function wordKnowledge(record: any) {
@@ -11,7 +11,7 @@ function wordKnowledge(record: any) {
 
 export default function UserListShow() {
   return (
-    <Show actions={<HelpShowActions helpUrl="https://transcrob.es/page/software/configure/wordlists/" />}>
+    <Show actions={<HelpShowActions helpUrl={`//${DOCS_DOMAIN}/page/software/configure/wordlists/`} />}>
       <SimpleShowLayout>
         <TextField source="id" />
         <TextField source="title" />

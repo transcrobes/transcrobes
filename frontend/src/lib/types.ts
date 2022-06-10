@@ -80,7 +80,7 @@ export const POPOVER_MIN_LOOKED_AT_EVENT_DURATION = 1500; // milliseconds
 
 export const MAX_IMPORT_SIZE_BYTES = 15000000;
 
-export const MIN_KNOWN_BEFORE_ADVANCED = 1000;
+export const MIN_KNOWN_BEFORE_ADVANCED = 500;
 
 export type KnownLanguage = "en" | "zh-Hans";
 export type InputLanguage = "zh-Hans";
@@ -391,6 +391,9 @@ export const WEBPUB_CACHE_NAME = "webpub-cache";
 export const PRECACHE_PUBLICATIONS = "PRECACHE_PUBLICATIONS";
 export const IS_DEV = process.env.NODE_ENV === "development";
 export const IS_EXT = process.env.PLATFORM === "extension";
+export const DOCS_DOMAIN = process.env.DOCS_DOMAIN || "localhost:1313";
+export const SITE_DOMAIN = process.env.SITE_DOMAIN || "localhost";
+export const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || "admin@example.com").split(",").map((x) => x.trim());
 
 // each logging line will be prepended with the service worker version
 function dolog(

@@ -18,6 +18,7 @@ import {
   CardType,
   CharacterType,
   DefinitionType,
+  DOCS_DOMAIN,
   PosSentence,
   PosSentences,
   RecentSentencesType,
@@ -556,7 +557,7 @@ function Notrobes({ proxy, url }: Props): ReactElement {
       return <></>;
     }
   }
-  const helpUrl = "https://transcrob.es/page/software/learn/notrobes/";
+  const helpUrl = `//${DOCS_DOMAIN}/page/software/learn/notrobes/`;
   return (
     <>
       <TopToolbar className={classes.toolbar}>

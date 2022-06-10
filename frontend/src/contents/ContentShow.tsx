@@ -4,7 +4,7 @@ import { useParams } from "react-router-dom";
 import { HelpShowActions } from "../components/HelpShowActions";
 import { ProcessingField } from "../components/ProcessingField";
 import { ImportProgress } from "../imports/ImportProgress";
-import { Content, CONTENT_TYPE, ImportFirstSuccessStats, reverseEnum } from "../lib/types";
+import { Content, CONTENT_TYPE, DOCS_DOMAIN, ImportFirstSuccessStats, reverseEnum } from "../lib/types";
 import ActionButton from "./ActionButton";
 import CacheSwitch from "./CacheSwitch";
 
@@ -29,7 +29,7 @@ export default function ContentShow() {
     }
   }, [data, window.componentsConfig.proxy.loaded]);
   return (
-    <Show actions={<HelpShowActions helpUrl="https://transcrob.es/page/software/configure/contents/" />}>
+    <Show actions={<HelpShowActions helpUrl={`//${DOCS_DOMAIN}/page/software/configure/contents/`} />}>
       <SimpleShowLayout>
         <TextField source="id" />
         <TextField source="title" />

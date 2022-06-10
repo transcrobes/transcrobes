@@ -10,13 +10,13 @@ import {
 } from "react-admin";
 import { HelpCreateActions } from "../components/HelpCreateActions";
 import { GRADE, KNOWLEDGE_UNSET } from "../database/Schema";
-import { PROCESSING, STATUS } from "../lib/types";
+import { DOCS_DOMAIN, PROCESSING, STATUS } from "../lib/types";
 
 export default function UserListCreate() {
   return (
     <Create
       redirect="list"
-      actions={<HelpCreateActions helpUrl="https://transcrob.es/page/software/configure/wordlists/" />}
+      actions={<HelpCreateActions helpUrl={`//${DOCS_DOMAIN}/page/software/configure/wordlists/`} />}
     >
       <SimpleForm>
         <TextInput label="List name" source="title" validate={[required()]} />

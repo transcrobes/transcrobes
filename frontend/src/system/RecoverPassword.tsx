@@ -11,6 +11,7 @@ import Typography from "@mui/material/Typography";
 import { Link } from "react-router-dom";
 import CircularProgress from "@mui/material/CircularProgress";
 import { TextField } from "@mui/material";
+import { DOCS_DOMAIN } from "../lib/types";
 
 const useStyles = makeStyles()((theme) => ({
   main: {
@@ -103,7 +104,7 @@ export default function RecoverPassword(): ReactElement {
     return errors;
   }
 
-  const helpUrl = "https://transcrob.es";
+  const helpUrl = `//${DOCS_DOMAIN}`;
   return (
     <Form
       onSubmit={handleSubmit}

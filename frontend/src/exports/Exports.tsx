@@ -8,7 +8,7 @@ import { downloadCSV } from "react-admin";
 import HelpButton from "../components/HelpButton";
 import { Loading } from "../components/Loading";
 import { ServiceWorkerProxy } from "../lib/proxies";
-import { DayModelStatsType } from "../lib/types";
+import { DayModelStatsType, DOCS_DOMAIN } from "../lib/types";
 
 type Props = {
   proxy: ServiceWorkerProxy;
@@ -33,7 +33,7 @@ const jsonexportPromise = (wordStats: any) => {
 
 export default function Exports({ proxy }: Props): ReactElement {
   const { classes } = useStyles();
-  const helpUrl = "https://transcrob.es/page/software/configure/exports/";
+  const helpUrl = `//${DOCS_DOMAIN}/page/software/configure/exports/`;
   const [loading, setLoading] = useState(false);
 
   async function runCardsExport() {

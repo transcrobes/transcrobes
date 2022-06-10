@@ -18,6 +18,7 @@ import {
   DailyReviewables,
   debug,
   DefinitionType,
+  DOCS_DOMAIN,
   EMPTY_CARD,
   log,
   RecentSentencesStoredType,
@@ -532,7 +533,7 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
   }
   const { classes } = useStyles();
   const theme = useTheme();
-  const helpUrl = "https://transcrob.es/page/software/learn/repetrobes/";
+  const helpUrl = `//${DOCS_DOMAIN}/page/software/learn/repetrobes/`;
   return (
     <div>
       <div ref={windowBeginRef} />

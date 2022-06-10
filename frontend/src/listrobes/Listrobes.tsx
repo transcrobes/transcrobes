@@ -14,6 +14,7 @@ import { setLoading } from "../features/ui/uiSlice";
 import { AbstractWorkerProxy } from "../lib/proxies";
 import { practice } from "../lib/review";
 import {
+  DOCS_DOMAIN,
   EMPTY_CARD,
   GraderConfig,
   GradesType,
@@ -205,8 +206,7 @@ export function Listrobes({ proxy }: Props): ReactElement {
     submitLookupEvents(consultedDefinitions, USER_STATS_MODE.L1);
   }
   const { classes } = useStyles();
-  const helpUrl = "https://transcrob.es/page/software/configure/listrobes/";
-
+  const helpUrl = `//${DOCS_DOMAIN}/page/software/configure/listrobes/`;
   return (
     <>
       <TopToolbar className={classes.toolbar}>

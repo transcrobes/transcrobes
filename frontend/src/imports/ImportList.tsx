@@ -11,14 +11,14 @@ import {
 import HelpButton from "../components/HelpButton";
 import { ListEmpty } from "../components/ListEmpty";
 import { ProcessingField } from "../components/ProcessingField";
-import { PROCESS_TYPE, reverseEnum } from "../lib/types";
+import { DOCS_DOMAIN, PROCESS_TYPE, reverseEnum } from "../lib/types";
 
 function ListActions({ empty }: { empty?: boolean }) {
   return (
     <TopToolbar>
       {!empty && <CreateButton />}
       {!empty && <SortButton fields={["createdAt", "title", "processing"]} />}
-      <HelpButton url="https://transcrob.es/page/software/configure/imports/" />
+      <HelpButton url={`//${DOCS_DOMAIN}/page/software/configure/imports/`} />
     </TopToolbar>
   );
 }

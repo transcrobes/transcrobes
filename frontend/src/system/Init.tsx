@@ -11,6 +11,7 @@ import Loading from "../components/Loading";
 import { isInitialisedAsync, setInitialisedAsync } from "../database/authdb";
 import { setLoading } from "../features/ui/uiSlice";
 import { AbstractWorkerProxy, ProgressCallbackMessage } from "../lib/proxies";
+import { DOCS_DOMAIN } from "../lib/types";
 
 const noSleep = new NoSleep();
 
@@ -19,7 +20,7 @@ const useStyles = makeStyles()({
   button: { margin: "1em" },
 });
 
-const helpUrl = "https://transcrob.es";
+const helpUrl = `//${DOCS_DOMAIN}`;
 function Intro() {
   const translate = useTranslate();
   return (

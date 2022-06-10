@@ -88,6 +88,6 @@ const getConfig = (mode: "production" | "development") => {
   }
 };
 
-console.log(JSON.stringify(getConfig(mode), null, 2));
+// console.log(JSON.stringify(getConfig(mode), null, 2));
 
 export default getConfig(mode);

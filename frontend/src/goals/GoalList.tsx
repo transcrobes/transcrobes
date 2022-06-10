@@ -12,14 +12,14 @@ import {
 } from "react-admin";
 import HelpButton from "../components/HelpButton";
 import { ListEmpty } from "../components/ListEmpty";
-import { PROCESSING } from "../lib/types";
+import { DOCS_DOMAIN, PROCESSING } from "../lib/types";
 
 function ListActions({ empty, createDisabled }: { empty?: boolean; createDisabled?: boolean }) {
   return (
     <TopToolbar>
       {!empty && !createDisabled && <CreateButton />}
       {!empty && <SortButton fields={["createdAt", "title"]} />}
-      <HelpButton url="https://transcrob.es/page/software/configure/goals/" />
+      <HelpButton url={`//${DOCS_DOMAIN}/page/software/configure/goals/`} />
     </TopToolbar>
   );
 }

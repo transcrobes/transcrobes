@@ -9,6 +9,7 @@ import { Link, useLocation } from "react-router-dom";
 import { makeStyles } from "tss-react/mui";
 import { isInitialisedAsync } from "../database/authdb";
 import { lightTheme } from "../layout/themes";
+import { ADMIN_EMAILS, DOCS_DOMAIN } from "../lib/types";
 
 const useStyles = makeStyles()((theme) => ({
   main: {
@@ -62,8 +63,8 @@ const { Form } = withTypes<FormValues>();
 
 const messages = {
   "001": "Email validated successfully",
-  "002": "Email validation error, please contact anton@transcrob.es",
-  "003": "Email validation expired, please contact anton@transcrob.es",
+  "002": `Email validation error, please contact ${ADMIN_EMAILS.join(" or ")}`,
+  "003": `Email validation expired, please contact ${ADMIN_EMAILS.join(" or ")}`,
 };
 
 function Login(): ReactElement {
@@ -121,7 +122,7 @@ function Login(): ReactElement {
     return errors;
   }
 
-  const helpUrl = "https://transcrob.es";
+  const helpUrl = `//${DOCS_DOMAIN}`;
   return (
     <Form
       onSubmit={handleSubmit}

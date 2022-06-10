@@ -17,6 +17,7 @@ import { OnChange } from "react-final-form-listeners";
 import { useAppDispatch } from "../app/hooks";
 import { throttledLogout } from "../features/user/userSlice";
 import PasswordStrengthBar from "../components/PasswordStrengthBar";
+import { DOCS_DOMAIN } from "../lib/types";
 
 const useStyles = makeStyles()((theme) => ({
   main: {
@@ -162,7 +163,7 @@ function ResetPassword(): ReactElement {
     return errors;
   }
 
-  const helpUrl = "https://transcrob.es";
+  const helpUrl = `//${DOCS_DOMAIN}`;
   return (
     <Form
       onSubmit={handleSubmit}

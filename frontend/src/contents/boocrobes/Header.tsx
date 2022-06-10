@@ -11,6 +11,7 @@ import { HEADER_HEIGHT } from "../common/types";
 import BookReaderLauncher from "./BookReaderConfigLauncher";
 import TableOfContentsLauncher from "./TableOfContentsLauncher";
 import { WebpubManifest } from "./WebpubManifestTypes/WebpubManifest";
+import { DOCS_DOMAIN } from "../../lib/types";
 
 interface Props {
   manifest: WebpubManifest;
@@ -19,7 +20,7 @@ interface Props {
 export default function Header({ manifest }: Props): React.ReactElement {
   const [isFullscreen, toggleFullscreen] = useFullscreen();
   const theme = useTheme();
-  const helpUrl = "https://transcrob.es/page/software/learn/boocrobes/";
+  const helpUrl = `//${DOCS_DOMAIN}/page/software/learn/boocrobes/`;
   return (
     <Box
       component="header"

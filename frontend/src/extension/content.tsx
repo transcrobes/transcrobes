@@ -28,6 +28,7 @@ import { observerFunc } from "../lib/stats";
 import {
   ComponentClass,
   ComponentFunction,
+  DOCS_DOMAIN,
   KeyedModels,
   ModelType,
   ReaderState,
@@ -82,7 +83,7 @@ proxy.sendMessagePromise<UserState>({ source: DATA_SOURCE, type: "getUser", valu
   if (!userData.username || !userData.password || !userData.baseUrl) {
     store.dispatch(setLoading(undefined));
     alert(
-      `You need an account on a Transcrobes server to Transcrobe a page. \n\n If you have an account please fill in the options page (right-click on the Transcrobe Me! icon -> Extension Options) with your login information (username, password, server URL).\n\n See the Transcrobes site https://transcrob.es for more information`,
+      `You need an account on a Transcrobes server to Transcrobe a page. \n\n If you have an account please fill in the options page (right-click on the Transcrobe Me! icon -> Extension Options) with your login information (username, password, server URL).\n\n See the Transcrobes site http://${DOCS_DOMAIN} for more information`,
     );
     throw new Error("Unable to find the current username");
   }

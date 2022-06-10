@@ -9,10 +9,11 @@ import {
   TextInput,
 } from "react-admin";
 import { HelpEditActions } from "../components/HelpEditActions";
+import { DOCS_DOMAIN } from "../lib/types";
 
 export default function GoalEdit() {
   return (
-    <Edit redirect="list" actions={<HelpEditActions helpUrl="https://transcrob.es/page/software/configure/goals/" />}>
+    <Edit redirect="list" actions={<HelpEditActions helpUrl={`//${DOCS_DOMAIN}/page/software/configure/goals/`} />}>
       <SimpleForm>
         <TextField source="id" sx={{ paddingBottom: "1em" }} />
         <TextInput label="Goal name" source="title" validate={[required()]} />

@@ -7,6 +7,7 @@ import { getUserDexie, isInitialisedAsync } from "./database/authdb";
 import HelpButton from "./components/HelpButton";
 import { TopToolbar } from "react-admin";
 import { ListProgress } from "./stats/ListProgress";
+import { DOCS_DOMAIN } from "./lib/types";
 
 interface Props {
   config: ComponentsConfig;
@@ -26,7 +27,7 @@ export default function Dashboard({ config, inited }: Props): ReactElement {
     })();
   }, [username]);
 
-  const helpUrl = "https://transcrob.es/page/software/learn/dashboard/";
+  const helpUrl = `https://${DOCS_DOMAIN}/page/software/learn/dashboard/`;
   return (
     <>
       <TopToolbar

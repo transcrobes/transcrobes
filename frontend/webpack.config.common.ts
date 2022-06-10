@@ -1,13 +1,12 @@
+import CircularDependencyPlugin from "circular-dependency-plugin";
+import Dotenv from "dotenv-webpack";
+import { GitRevisionPlugin } from "git-revision-webpack-plugin";
+import HtmlWebpackPlugin from "html-webpack-plugin";
 import * as path from "path";
+import TerserPlugin from "terser-webpack-plugin";
 import * as webpack from "webpack";
-// in case you run into any typescript error when configuring `devServer`
 import "webpack-dev-server";
 import { WebpackPluginServe } from "webpack-plugin-serve";
-
-import { GitRevisionPlugin } from "git-revision-webpack-plugin";
-import TerserPlugin from "terser-webpack-plugin";
-import HtmlWebpackPlugin from "html-webpack-plugin";
-import CircularDependencyPlugin from "circular-dependency-plugin";
 import { InjectManifest } from "workbox-webpack-plugin";
 
 export function config(mode: "production" | "development"): webpack.Configuration {
@@ -30,6 +29,13 @@ export function config(mode: "production" | "development"): webpack.Configuratio
     plugins: [
       new webpack.ProvidePlugin({
         process: "process/browser",
+      }),
+
+      new Dotenv({
+        path: `./.env.${mode}.local`,
+        allowEmptyValues: true, // allow empty variables (e.g. `FOO=`) (treat it as empty string, rather than missing)
+        systemvars: true, // load all the predefined 'process.env' variables which will trump anything local per dotenv specs.
+        silent: false, // hide any errors
       }),
     ],
   };

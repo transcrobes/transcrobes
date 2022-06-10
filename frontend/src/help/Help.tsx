@@ -3,9 +3,12 @@ import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import { ReactElement } from "react";
 import { Title, useTranslate } from "react-admin";
+import { ADMIN_EMAILS, DOCS_DOMAIN } from "../lib/types";
 
 export default function Help(): ReactElement {
   const translate = useTranslate();
+
+  const helpUrl = `//${DOCS_DOMAIN}/page/software/learn/home/`;
   return (
     <div>
       <Card>
@@ -14,20 +17,20 @@ export default function Help(): ReactElement {
         <CardContent>
           <Typography style={{ padding: "1em" }}>
             The{" "}
-            <a target="_blank" href="https://transcrob.es/page/software/learn/home/">
+            <a target="_blank" href={helpUrl}>
               Transcrobes information site
             </a>{" "}
             has user documentation for the Transcrobes platform.
           </Typography>
           <Typography style={{ padding: "1em" }}>
             For anything not covered in the online documentation or for any comments, questions or suggestions about the
-            software, theories or the research, please contant the Lead Researcher and developer, Anton Melser
-            (anton@transcrob.es or anton.melser@my.cityu.edu.hk)
+            software, theories or the research, please contant the Lead Researcher and developer, Anton Melser (
+            {ADMIN_EMAILS.join(" or ")})
           </Typography>
           <Typography style={{ padding: "1em" }}>
             Transcrobes is also an active academic research project. The key aspects of the theory behind the software
             are outlined{" "}
-            <a target="_blank" href="https://transcrob.es/page/meaningful-io/intro/">
+            <a target="_blank" href={`//${DOCS_DOMAIN}/page/meaningful-io/intro/`}>
               here
             </a>
             . There are also two video introductions on YouTube, available{" "}

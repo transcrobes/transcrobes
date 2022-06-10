@@ -16,7 +16,7 @@ import {
 import { ensureDefinitionsLoaded } from "../../lib/dictionary";
 import { getSubsURL, missingWordIdsFromModels } from "../../lib/funclib";
 import { fetchPlus } from "../../lib/libMethods";
-import { Content, ContentParams, ContentProps, KeyedModels, SUBS_DATA_SUFFIX } from "../../lib/types";
+import { Content, ContentParams, ContentProps, DOCS_DOMAIN, KeyedModels, SUBS_DATA_SUFFIX } from "../../lib/types";
 import VideoPlayer, { VideoPlayerHandle } from "./VideoPlayer";
 import VideoReaderConfigLauncher from "./VideoReaderConfigLauncher";
 
@@ -63,7 +63,7 @@ export default function VideoPlayerScreen({ proxy }: ContentProps): ReactElement
     })();
   }, [proxy.loaded]);
 
-  const helpUrl = "https://transcrob.es/page/software/learn/moocrobes/";
+  const helpUrl = `//${DOCS_DOMAIN}/page/software/learn/moocrobes/`;
   const vpHandle = useRef<VideoPlayerHandle>(null);
   return (
     <>

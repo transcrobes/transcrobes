@@ -2,7 +2,7 @@ import { makeStyles } from "tss-react/mui";
 import { Datagrid, List, SortButton, TextField, TopToolbar, ShowButton } from "react-admin";
 import HelpButton from "../components/HelpButton";
 
-import { STATUS } from "../lib/types";
+import { DOCS_DOMAIN, STATUS } from "../lib/types";
 
 const useStyles = makeStyles()({
   toolbar: {
@@ -12,7 +12,7 @@ const useStyles = makeStyles()({
 });
 export function ListActions() {
   const { classes } = useStyles();
-  const helpUrl = "https://transcrob.es/page/contribute/surveys/";
+  const helpUrl = `//${DOCS_DOMAIN}/page/contribute/surveys/`;
   return (
     <TopToolbar className={classes.toolbar}>
       <SortButton fields={["title"]} />

@@ -2,7 +2,7 @@ import { Create, required, SimpleForm, TextInput, useNotify, useRedirect, useRef
 import { store } from "../app/createStore";
 import { HelpCreateActions } from "../components/HelpCreateActions";
 import { refreshDictionaries } from "../lib/dictionary";
-import { UserDictionary } from "../lib/types";
+import { DOCS_DOMAIN, UserDictionary } from "../lib/types";
 
 export default function ACreate() {
   const notify = useNotify();
@@ -18,7 +18,7 @@ export default function ACreate() {
   return (
     <Create
       mutationOptions={{ onSuccess: onSuccess }}
-      actions={<HelpCreateActions helpUrl="https://transcrob.es/page/software/configure/userdictionaries/" />}
+      actions={<HelpCreateActions helpUrl={`//${DOCS_DOMAIN}/page/software/configure/userdictionaries/`} />}
     >
       <SimpleForm redirect="list">
         <TextInput label="Dictionary name" source="title" validate={[required()]} />

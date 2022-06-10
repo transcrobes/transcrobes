@@ -7,6 +7,7 @@ import { DayProgressRead } from "./DayProgressRead";
 import { DayProgressRevised } from "./DayProgressRevised";
 import { ListProgress } from "./ListProgress";
 import { WaitingRevisions } from "./WaitingRevisions";
+import { DOCS_DOMAIN } from "../lib/types";
 
 const useStyles = makeStyles()((theme) => ({
   root: { margin: theme.spacing(1), maxWidth: "800px" },
@@ -17,7 +18,7 @@ const useStyles = makeStyles()((theme) => ({
 
 export default function Stats(): ReactElement {
   const { classes } = useStyles();
-  const helpUrl = "https://transcrob.es/page/software/learn/stats/";
+  const helpUrl = `//${DOCS_DOMAIN}/page/software/learn/stats/`;
   return (
     <>
       <TopToolbar className={classes.toolbar}>

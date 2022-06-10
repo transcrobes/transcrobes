@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, Typography } from "@mui/material";
 import { makeStyles } from "tss-react/mui";
 import { TopToolbar } from "react-admin";
 import HelpButton from "./components/HelpButton";
+import { DOCS_DOMAIN } from "./lib/types";
 
 const useStyles = makeStyles()({
   toolbar: {
@@ -13,7 +14,7 @@ const useStyles = makeStyles()({
 
 export default function Brocrobes(): ReactElement {
   const { classes } = useStyles();
-  const helpUrl = "https://transcrob.es/page/software/install/clients/brocrobes/";
+  const helpUrl = `https://${DOCS_DOMAIN}/page/software/install/clients/brocrobes/`;
   return (
     <>
       <TopToolbar className={classes.toolbar}>

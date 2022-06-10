@@ -1,13 +1,14 @@
 import { CreateButton, Datagrid, List as RAList, SortButton, TextField, TopToolbar } from "react-admin";
 import HelpButton from "../components/HelpButton";
 import { ListEmpty } from "../components/ListEmpty";
+import { DOCS_DOMAIN } from "../lib/types";
 
 function ListActions({ empty }: { empty?: boolean }) {
   return (
     <TopToolbar>
       {!empty && <CreateButton />}
       {!empty && <SortButton fields={["createdAt", "title"]} />}
-      <HelpButton url="https://transcrob.es/page/software/configure/userdictionaries/" />
+      <HelpButton url={`//${DOCS_DOMAIN}/page/software/configure/userdictionaries/`} />
     </TopToolbar>
   );
 }

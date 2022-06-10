@@ -1,18 +1,18 @@
 import { Typography } from "@mui/material";
 import { BooleanInput, Create, FileField, FileInput, required, SelectInput, SimpleForm, TextInput } from "react-admin";
 import { HelpCreateActions } from "../components/HelpCreateActions";
-import { MAX_IMPORT_SIZE_BYTES, PROCESS_TYPE } from "../lib/types";
+import { DOCS_DOMAIN, MAX_IMPORT_SIZE_BYTES, PROCESS_TYPE } from "../lib/types";
 
 export default function ImportCreate() {
   return (
     <Create
       redirect="list"
-      actions={<HelpCreateActions helpUrl="https://transcrob.es/page/software/configure/imports/" />}
+      actions={<HelpCreateActions helpUrl={`//${DOCS_DOMAIN}/page/software/configure/imports/`} />}
     >
       <SimpleForm>
         <Typography sx={{ paddingBottom: "1em" }}>
           Please check the{" "}
-          <a target="_blank" href="https://transcrob.es/page/software/configure/imports/">
+          <a target="_blank" href={`//${DOCS_DOMAIN}/page/software/configure/imports/`}>
             Online Help
           </a>{" "}
           for information about supported import formats!

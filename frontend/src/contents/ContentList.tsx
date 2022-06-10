@@ -3,7 +3,7 @@ import { Datagrid, FunctionField, Link, List, ReferenceField, SortButton, TextFi
 import HelpButton from "../components/HelpButton";
 import { ListEmpty } from "../components/ListEmpty";
 import { ProcessingField } from "../components/ProcessingField";
-import { CONTENT_TYPE, reverseEnum } from "../lib/types";
+import { CONTENT_TYPE, DOCS_DOMAIN, reverseEnum } from "../lib/types";
 import ActionButton from "./ActionButton";
 import CacheSwitch from "./CacheSwitch";
 
@@ -11,7 +11,7 @@ function ListActions({ empty }: { empty?: boolean }) {
   return (
     <TopToolbar>
       {!empty && <SortButton fields={["createdAt", "title", "processing"]} />}
-      <HelpButton url="https://transcrob.es/page/software/configure/contents/" />
+      <HelpButton url={`//${DOCS_DOMAIN}/page/software/configure/contents/`} />
     </TopToolbar>
   );
 }
