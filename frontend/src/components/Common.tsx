@@ -60,7 +60,7 @@ export interface ETFStylesProps extends WithStylesProps<ETFStylesType> {
 }
 
 const hard = { id: GRADE.HARD.toString(), content: "Add as known (poorly)", icon: <SentimentSatisfiedIcon /> };
-const unknown = { id: GRADE.UNKNOWN.toString(), content: "Add as unknown", icon: <SentimentVeryDissatisfiedIcon /> };
+const unknown = { id: GRADE.UNKNOWN.toString(), content: "Plan to learn", icon: <SentimentVeryDissatisfiedIcon /> };
 const good = { id: GRADE.GOOD.toString(), content: "Add as known (to revise)", icon: <SentimentVerySatisfiedIcon /> };
 const known = { id: GRADE.KNOWN.toString(), content: "Add as known (no revision)", icon: <CheckIcon /> };
 export const GRADES: GradesType[] = [hard, unknown, good, known];
