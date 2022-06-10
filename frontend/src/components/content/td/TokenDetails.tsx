@@ -1,6 +1,6 @@
 import { makeStyles } from "tss-react/mui";
 import { ReactElement, useEffect, useState } from "react";
-import { PopupPosition, ReaderState } from "../../../lib/types";
+import { IS_EXT, PopupPosition, ReaderState } from "../../../lib/types";
 import Extras from "./Extras";
 import Header from "./Header";
 import { getWord, positionPopup } from "../../../lib/componentMethods";
@@ -11,6 +11,8 @@ import useResizeObserver from "use-resize-observer";
 import { originalSentenceFromTokens } from "../../../lib/funclib";
 import { platformHelper } from "../../../lib/proxies";
 import ReaderConfigProvider from "../../ReaderConfigProvider";
+import { ExtensionReaderState } from "../../../features/content/extensionReaderSlice";
+import { Box } from "@mui/system";
 
 export type Props = {
   readerConfig: ReaderState;
@@ -20,6 +22,16 @@ export interface StyleProps {
   glossFontSize: number;
   fontSize: number;
 }
+
+function openOptions() {
+  chrome.runtime.sendMessage({ type: "showOptions", source: "TokenDetails", value: null });
+}
+
+function preventDefault(event: React.MouseEvent<HTMLDivElement, MouseEvent>) {
+  event.preventDefault();
+  event.stopPropagation();
+}
+
 // FIXME: allow setting the theme for popups!
 const useStyles = makeStyles<StyleProps>()((theme, params) => {
   return {
@@ -42,6 +54,7 @@ const useStyles = makeStyles<StyleProps>()((theme, params) => {
       borderStyle: "solid",
     },
     icons: { color: theme.palette.text.primary, fontSize: "24px" },
+    suggestions: { color: theme.palette.primary.main },
     popupControls: { padding: "3px" },
     container: { textAlign: "left" },
     synonymList: { fontSize: `${Math.min(150, params.fontSize)}%` },
@@ -82,16 +95,6 @@ export default function TokenDetails({ readerConfig }: Props): ReactElement {
   const [extrasOpen, setExtrasOpen] = useState(false);
   const [boxWidth, setBoxWidth] = useState(0);
 
-  useEffect(() => {
-    (async () => {
-      if (tokenDetails) {
-        const def =
-          (tokenDetails.token.id && definitions[tokenDetails.token.id]) || (await getWord(tokenDetails.token.l));
-        setGuess(bestGuess(tokenDetails.token, def, fromLang, readerConfig));
-      }
-    })();
-  }, [tokenDetails]);
-
   const { ref } = useResizeObserver<HTMLDivElement>({
     box: "border-box",
     onResize: ({ width }) => {
@@ -111,12 +114,15 @@ export default function TokenDetails({ readerConfig }: Props): ReactElement {
     },
   });
 
-  function preventDefault(event: React.MouseEvent<HTMLDivElement, MouseEvent>) {
-    event.preventDefault();
-    event.stopPropagation();
-  }
-
   useEffect(() => {
+    (async () => {
+      if (tokenDetails) {
+        const def =
+          (tokenDetails.token.id && definitions[tokenDetails.token.id]) || (await getWord(tokenDetails.token.l));
+        setGuess(bestGuess(tokenDetails.token, def, fromLang, readerConfig));
+      }
+    })();
+
     if (tokenDetails) {
       setStyles(
         positionPopup(
@@ -143,10 +149,17 @@ export default function TokenDetails({ readerConfig }: Props): ReactElement {
       setExtrasOpen(false);
     }
   }, [tokenDetails]);
-
   return tokenDetails && tokenDetails.token.id && definitions[tokenDetails.token.id] ? (
     <ReaderConfigProvider readerConfig={readerConfig}>
       <div ref={ref} className={classes.popup} style={styles} onClick={(event) => preventDefault(event)}>
+        {IS_EXT && (readerConfig as ExtensionReaderState).showSuggestions && (
+          <Box>
+            <a className={classes.suggestions} href="#" onClick={openOptions}>
+              Add pinyin? Change position, colour, size...?
+            </a>
+            <hr />
+          </Box>
+        )}
         <Header
           classes={classes}
           token={tokenDetails.token}

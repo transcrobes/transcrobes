@@ -10,6 +10,7 @@ import knownCardsReducer from "../features/card/knownCardsSlice";
 import bookReaderReducer from "../features/content/bookReaderSlice";
 import simpleReaderReducer from "../features/content/simpleReaderSlice";
 import videoReaderReducer from "../features/content/videoReaderSlice";
+import extensionReaderReducer from "../features/content/extensionReaderSlice";
 import definitionsReducer from "../features/definition/definitionsSlice";
 import themeReducer from "../features/themes/themeReducer";
 import uiReducer from "../features/ui/uiSlice";
@@ -83,6 +84,7 @@ function createStore({ authProvider, dataProvider }: CreateStoreProps) {
   const reducer = combineReducers({
     videoReader: videoReaderReducer,
     bookReader: bookReaderReducer,
+    extensionReader: extensionReaderReducer,
     simpleReader: simpleReaderReducer,
     theme: themeReducer,
     knownCards: knownCardsReducer,

@@ -1,7 +1,12 @@
 import { Component, createVNode, VNode } from "inferno";
 import { connect } from "inferno-redux";
 import type { RootState } from "../../../app/createStore";
-import { BOOK_READER_TYPE, SIMPLE_READER_TYPE, VIDEO_READER_TYPE } from "../../../features/content/contentSlice";
+import {
+  BOOK_READER_TYPE,
+  SIMPLE_READER_TYPE,
+  VIDEO_READER_TYPE,
+  EXTENSION_READER_TYPE,
+} from "../../../features/content/contentSlice";
 import { addDefinitions } from "../../../features/definition/definitionsSlice";
 import { DOMRectangle, setMouseover, setTokenDetails } from "../../../features/ui/uiSlice";
 import { eventCoordinates, getNormalGloss, getWord, isNumberToken } from "../../../lib/componentMethods";
@@ -285,6 +290,9 @@ function mapStateToProps(state: RootState, props: EntryProps) {
       break;
     case VIDEO_READER_TYPE:
       readerConfig = state.videoReader[props.readerConfig.id];
+      break;
+    case EXTENSION_READER_TYPE:
+      readerConfig = state.extensionReader[props.readerConfig.id];
       break;
     case SIMPLE_READER_TYPE:
       readerConfig = state.simpleReader[props.readerConfig.id];

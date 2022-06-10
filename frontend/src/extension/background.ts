@@ -106,6 +106,8 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
   if (message.type === "syncDB") {
     console.log("Starting a background syncDB db load");
     loadDb(sendResponse, message);
+  } else if (message.type === "showOptions") {
+    chrome.runtime.openOptionsPage(() => console.debug("Show options from", message.source));
   } else if (message.type === "heartbeat") {
     sendResponse({ source: message.source, type: message.type, value: dayjs().format() });
   } else if (message.type === "getByIds") {

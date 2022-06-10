@@ -2,7 +2,7 @@
 import { AnyAction, createSlice, PayloadAction, SliceCaseReducers, ValidateSliceCaseReducers } from "@reduxjs/toolkit";
 import _ from "lodash";
 import { HslColor } from "react-colorful";
-import { AbstractWorkerProxy, platformHelper, ServiceWorkerProxy } from "../../lib/proxies";
+import { AbstractWorkerProxy, platformHelper } from "../../lib/proxies";
 import {
   ContentConfigType,
   FontFamily,
@@ -15,6 +15,7 @@ import {
 export const VIDEO_READER_TYPE = "videoReader";
 export const BOOK_READER_TYPE = "bookReader";
 export const SIMPLE_READER_TYPE = "simpleReader";
+export const EXTENSION_READER_TYPE = "extensionReader";
 
 export function handleConfigUpdate<T extends ReaderState>(newConfig: T, id: string, proxy: AbstractWorkerProxy): void {
   const configToSave: ContentConfigType = {
@@ -145,6 +146,7 @@ export const createGenericSlice = <T extends ReaderState, Reducers extends Slice
           return (
             action.type.startsWith(`${BOOK_READER_TYPE}/`) ||
             action.type.startsWith(`${VIDEO_READER_TYPE}/`) ||
+            action.type.startsWith(`${EXTENSION_READER_TYPE}/`) ||
             action.type.startsWith(`${SIMPLE_READER_TYPE}/`)
           );
         },

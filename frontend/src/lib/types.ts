@@ -285,7 +285,7 @@ export interface GenericState<T extends ReaderState> {
   [key: string]: T;
 }
 
-export type ReaderType = "simpleReader" | "videoReader" | "bookReader";
+export type ReaderType = "simpleReader" | "videoReader" | "bookReader" | "extensionReader";
 
 export interface ReaderState {
   id: string;
@@ -313,8 +313,8 @@ export const DEFAULT_READER_CONFIG_STATE: ReaderState = {
   fontFamilyChinese: "notasanslight",
   fontSize: 1,
   fontColour: null,
-  glossFontSize: 1,
-  glossFontColour: null,
+  glossFontSize: 0.9,
+  glossFontColour: { h: 240, s: 100, l: 70 },
   glossPosition: "row",
   glossing: USER_STATS_MODE.L1,
   segmentation: true,

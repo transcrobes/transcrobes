@@ -1,31 +1,42 @@
-import { Box, Container, FormGroup, FormLabel, Typography } from "@mui/material";
+import {
+  Box,
+  Container,
+  createTheme,
+  CssBaseline,
+  FormGroup,
+  FormLabel,
+  ThemeProvider,
+  Typography,
+} from "@mui/material";
 import Button from "@mui/material/Button";
-import { useEffect, useState } from "react";
+import { ReactElement, useEffect, useState } from "react";
 import { FormContainer, TextFieldElement } from "react-hook-form-mui";
 import { makeStyles } from "tss-react/mui";
 import { store } from "../app/createStore";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
 import HelpButton from "../components/HelpButton";
 import Loading from "../components/Loading";
-import ReaderConfig from "../contents/common/ReaderConfig";
 import { getUserDexie, isInitialisedAsync, setInitialisedAsync } from "../database/authdb";
 import { getDb } from "../database/Database";
 import { TranscrobesDatabase } from "../database/Schema";
 import { getRefreshedState } from "../features/content/contentSlice";
 import {
-  DEFAULT_WEB_READER_CONFIG_STATE,
-  simpleReaderActions,
-  SimpleReaderState,
-  WEB_READER_ID,
-} from "../features/content/simpleReaderSlice";
+  DEFAULT_EXTENSION_READER_CONFIG_STATE,
+  extensionReaderActions,
+  ExtensionReaderState,
+  EXTENSION_READER_ID,
+} from "../features/content/extensionReaderSlice";
+import { changeTheme } from "../features/themes/themeReducer";
 import { setLoading } from "../features/ui/uiSlice";
 import { setUser, throttledLogin, updateBaseUrl, updatePassword, updateUsername } from "../features/user/userSlice";
+import { darkTheme, lightTheme } from "../layout/themes";
 import { refreshDictionaries } from "../lib/dictionary";
 import { BackgroundWorkerProxy, setPlatformHelper } from "../lib/proxies";
 import { DOCS_DOMAIN, IS_DEV, SITE_DOMAIN } from "../lib/types";
 import { RxDBDataProviderParams } from "../ra-data-rxdb";
 import Initialisation from "./components/Initialisation";
 import Intro from "./components/Intro";
+import ExtensionConfig from "./ExtensionReaderConfig";
 
 const DEFAULT_SERVER_URL = `http${IS_DEV ? "" : "s"}//${SITE_DOMAIN}`;
 
@@ -45,14 +56,23 @@ setPlatformHelper(proxy);
 const useStyles = makeStyles()((theme) => ({
   groups: {
     margin: theme.spacing(1),
-    maxWidth: "300px",
+    width: "100%",
+    [theme.breakpoints.down("sm")]: {
+      minWidth: "200px",
+    },
+    [theme.breakpoints.up("sm")]: {
+      minWidth: "300px",
+    },
+  },
+  buttonGroup: {
+    margin: theme.spacing(1),
   },
   controls: {
     margin: theme.spacing(1),
   },
   buttons: {
     margin: theme.spacing(1),
-    width: "200px",
+    width: "100%",
   },
   message: {},
   glossFontColour: { display: "flex", justifyContent: "flex-start", padding: "0.4em" },
@@ -61,7 +81,7 @@ const useStyles = makeStyles()((theme) => ({
   configContainer: { maxWidth: "500px" },
 }));
 
-export default function Options(): JSX.Element {
+export default function Options(): ReactElement {
   const [inited, setInited] = useState<boolean | null>(null);
   const [running, setRunning] = useState<boolean | null>(null);
   const [message, setMessage] = useState<string>("");
@@ -69,12 +89,12 @@ export default function Options(): JSX.Element {
   const [password, setPassword] = useState("");
   const [baseUrl, setBaseUrl] = useState(DEFAULT_SERVER_URL);
   const [loaded, setLoaded] = useState(false);
+  const theme = useAppSelector((state) => createTheme(state.theme === "dark" ? darkTheme : lightTheme));
 
-  const id = WEB_READER_ID;
+  const id = EXTENSION_READER_ID;
 
   const dispatch = useAppDispatch();
   const userData = useAppSelector((state) => state.userData);
-  const readerConfig = useAppSelector((state) => state.simpleReader[id] || DEFAULT_WEB_READER_CONFIG_STATE);
   const { classes } = useStyles();
   dispatch(setLoading(true));
   useEffect(() => {
@@ -87,13 +107,14 @@ export default function Options(): JSX.Element {
 
       const linit = await isInitialisedAsync(userData.username);
       setInited(linit);
-      let conf: SimpleReaderState = { ...DEFAULT_WEB_READER_CONFIG_STATE, id };
+      let conf: ExtensionReaderState = { ...DEFAULT_EXTENSION_READER_CONFIG_STATE, id };
       if (userData.username && linit) {
         await proxy.asyncInit({ username: userData.username });
         await refreshDictionaries(store, proxy);
-        conf = await getRefreshedState<SimpleReaderState>(proxy, DEFAULT_WEB_READER_CONFIG_STATE, id);
+        conf = await getRefreshedState<ExtensionReaderState>(proxy, DEFAULT_EXTENSION_READER_CONFIG_STATE, id);
       }
-      dispatch(simpleReaderActions.setState({ id, value: conf }));
+      dispatch(changeTheme(conf.themeName));
+      dispatch(extensionReaderActions.setState({ id, value: conf }));
       setLoaded(true);
       dispatch(setLoading(false));
     })();
@@ -133,17 +154,19 @@ export default function Options(): JSX.Element {
             setRunning(false);
             await setInitialisedAsync(userData.username);
             console.debug("Synchronisation finished!");
-            setInited(true);
             // Prior to this point the db might not have been inited, meaning that the state persistence
             // would not have happened. This happens on the first run. Setting state here ensures that the
             // conf is properly persisted.
             dispatch(
-              simpleReaderActions.setState({
+              extensionReaderActions.setState({
                 id,
-                value: store.getState().simpleReader[WEB_READER_ID],
+                value: store.getState().extensionReader[id],
               }),
             );
-            location.reload();
+            if (!inited) {
+              location.reload();
+            }
+            setInited(true);
           } catch (err: any) {
             setRunning(false);
             setMessage(`There was an error setting up Transcrobes.
@@ -167,95 +190,112 @@ export default function Options(): JSX.Element {
 
   const helpUrl = `http://${DOCS_DOMAIN}/page/software/install/clients/brocrobes/`;
   return (
-    <Container maxWidth="md">
-      {loaded ? (
-        <FormContainer
-          defaultValues={{
-            username,
-            password,
-            baseUrl,
-          }}
-          onSuccess={saveFields}
-        >
-          <div className={classes.header}>
-            <div>
-              <FormLabel className={classes.headerText} component="legend">
-                Transcrobes Server Connection Settings
-              </FormLabel>
-              <FormGroup className={classes.groups}>
-                <TextFieldElement
-                  name={"username"}
-                  className={classes.controls}
-                  required={true}
-                  value={username}
-                  label="Username"
-                  type="email"
-                  variant="filled"
-                />
-                <TextFieldElement
-                  name="password"
-                  className={classes.controls}
-                  required={true}
-                  value={password}
-                  label="Password"
-                  type="password"
-                  variant="filled"
-                />
-                <TextFieldElement
-                  name={"baseUrl"}
-                  className={classes.controls}
-                  required={true}
-                  value={baseUrl}
-                  label="Server URL"
-                  type="url"
-                  variant="filled"
-                />
-              </FormGroup>
-            </div>
-            <HelpButton url={helpUrl} />
-          </div>
-
-          {inited && (
-            <ReaderConfig
-              classes={classes}
-              actions={simpleReaderActions}
-              readerConfig={readerConfig}
-              allowMainTextOverride={false}
-            />
-          )}
-          <FormGroup className={classes.groups}>
-            <Box className={classes.controls}>
-              <Button
-                type="submit"
-                disabled={!!running}
-                className={classes.buttons}
-                variant="contained"
-                color="primary"
-              >
-                Save
-              </Button>
-            </Box>
-          </FormGroup>
-          <Typography
-            sx={(theme) => ({
-              margin: theme.spacing(1),
-              fontSize: "2em",
-              color: userData.error ? "error.main" : "text.primary",
-            })}
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <Container maxWidth="md">
+        {loaded ? (
+          <FormContainer
+            defaultValues={{
+              username,
+              password,
+              baseUrl,
+            }}
+            onSuccess={saveFields}
           >
-            {message}
-          </Typography>
-          <Intro inited={!!inited} />
-          {running && (
-            <>
-              <Loading position="fixed" disableShrink />
-              <Initialisation />
-            </>
-          )}
-        </FormContainer>
-      ) : (
-        <Loading disableShrink message="Loading configuration from the local database..." />
-      )}
-    </Container>
+            <div className={classes.header}>
+              <div>
+                <FormLabel className={classes.headerText} component="legend">
+                  Transcrobes Server Connection Settings
+                </FormLabel>
+                <FormGroup className={classes.groups}>
+                  <TextFieldElement
+                    name={"username"}
+                    className={classes.controls}
+                    required={true}
+                    value={username}
+                    label="Username"
+                    type="email"
+                    variant="filled"
+                  />
+                  <TextFieldElement
+                    name="password"
+                    className={classes.controls}
+                    required={true}
+                    value={password}
+                    label="Password"
+                    type="password"
+                    variant="filled"
+                  />
+                  <TextFieldElement
+                    name={"baseUrl"}
+                    className={classes.controls}
+                    required={true}
+                    value={baseUrl}
+                    label="Server URL"
+                    type="url"
+                    variant="filled"
+                  />
+                </FormGroup>
+              </div>
+              <div>
+                <HelpButton url={helpUrl} />
+                {inited && (
+                  <Typography
+                    sx={(theme) => ({
+                      bgcolor: "warning.light",
+                      [theme.breakpoints.down("md")]: {
+                        fontSize: "1em",
+                        padding: "0.2em",
+                        margin: "0.2em",
+                      },
+                      [theme.breakpoints.up("md")]: {
+                        fontSize: "2em",
+                        padding: "0.5em",
+                        margin: "0.5em",
+                      },
+                    })}
+                  >
+                    Don't forget to hit save (at the bottom) after making a change!
+                  </Typography>
+                )}
+              </div>
+            </div>
+
+            {inited && <ExtensionConfig />}
+            <FormGroup className={classes.buttonGroup}>
+              <Box className={classes.controls}>
+                <Button
+                  type="submit"
+                  disabled={!!running}
+                  className={classes.buttons}
+                  variant="contained"
+                  color="primary"
+                >
+                  Save
+                </Button>
+              </Box>
+            </FormGroup>
+            <Typography
+              sx={(theme) => ({
+                margin: theme.spacing(1),
+                fontSize: "2em",
+                color: userData.error ? "error.main" : "text.primary",
+              })}
+            >
+              {message}
+            </Typography>
+            <Intro inited={!!inited} />
+            {running && (
+              <>
+                <Loading position="fixed" disableShrink />
+                <Initialisation />
+              </>
+            )}
+          </FormContainer>
+        ) : (
+          <Loading disableShrink message="Loading configuration from the local database..." />
+        )}
+      </Container>
+    </ThemeProvider>
   );
 }

@@ -1,3 +1,4 @@
+import { Box } from "@mui/system";
 import { useEffect, useState } from "react";
 import {
   DragDropContext,
@@ -55,7 +56,7 @@ function getListStyle(isDraggingOver: boolean) {
   return {
     background: isDraggingOver ? "lightblue" : "lightgrey",
     padding: grid,
-    width: 250,
+    width: "100%",
   };
 }
 
@@ -113,6 +114,11 @@ export default function DictionaryChooser({ selected, onSelectionChange }: Props
             <Droppable key={ind} droppableId={`${ind}`}>
               {(provided, snapshot) => (
                 <div ref={provided.innerRef} style={getListStyle(snapshot.isDraggingOver)} {...provided.droppableProps}>
+                  {ind === 0 ? (
+                    <Box sx={{ margin: "0.3em" }}>Selected</Box>
+                  ) : (
+                    <Box sx={{ margin: "0.3em" }}>Unselected</Box>
+                  )}
                   {el.map((item, index) => (
                     <Draggable key={item.id} draggableId={item.id} index={index}>
                       {(provided, snapshot) => (

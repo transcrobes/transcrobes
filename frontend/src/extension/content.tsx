@@ -1,3 +1,4 @@
+import { createTheme, GlobalStyles, ScopedCssBaseline, ThemeProvider } from "@mui/material";
 import { createComponentVNode, render } from "inferno";
 import { Provider as InfernoProvider } from "inferno-redux";
 import jss from "jss";
@@ -13,13 +14,15 @@ import Loading from "../components/Loading";
 import { setCardWordsState } from "../features/card/knownCardsSlice";
 import { getRefreshedState } from "../features/content/contentSlice";
 import {
-  DEFAULT_WEB_READER_CONFIG_STATE,
-  simpleReaderActions,
-  SimpleReaderState,
-  WEB_READER_ID,
-} from "../features/content/simpleReaderSlice";
+  DEFAULT_EXTENSION_READER_CONFIG_STATE,
+  extensionReaderActions,
+  ExtensionReaderState,
+  EXTENSION_READER_ID,
+} from "../features/content/extensionReaderSlice";
+import { WEB_READER_ID } from "../features/content/simpleReaderSlice";
 import { setLoading, setTokenDetails } from "../features/ui/uiSlice";
 import { setUser } from "../features/user/userSlice";
+import { darkTheme, lightTheme } from "../layout/themes";
 import { ensureDefinitionsLoaded, refreshDictionaries } from "../lib/dictionary";
 import { missingWordIdsFromModels } from "../lib/funclib";
 import { enrichChildren, toEnrich } from "../lib/libMethods";
@@ -52,7 +55,7 @@ createRoot(document.body.appendChild(document.createElement("div"))!).render(
 store.dispatch(setLoading(true));
 
 const models: KeyedModels = {};
-let readerConfig: ReaderState;
+let readerConfig: ExtensionReaderState;
 const getReaderConfig = () => readerConfig;
 const getKnownCards = () => store.getState().knownCards;
 const readObserver = new IntersectionObserver(observerFunc(getReaderConfig, models, getKnownCards), {
@@ -63,11 +66,11 @@ const proxy = new BackgroundWorkerProxy();
 setPlatformHelper(proxy);
 
 let classes: ETFStylesProps["classes"] | null = null;
-const id = WEB_READER_ID;
+const id = EXTENSION_READER_ID;
 
 async function ensureAllLoaded(platformHelper: AbstractWorkerProxy, store: AdminStore) {
-  const conf = await getRefreshedState<SimpleReaderState>(proxy, DEFAULT_WEB_READER_CONFIG_STATE, id);
-  store.dispatch(simpleReaderActions.setState({ id, value: conf }));
+  const conf = await getRefreshedState<ExtensionReaderState>(proxy, DEFAULT_EXTENSION_READER_CONFIG_STATE, id);
+  store.dispatch(extensionReaderActions.setState({ id, value: conf }));
 
   const value = await platformHelper.sendMessagePromise<SerialisableDayCardWords>({
     source: DATA_SOURCE,
@@ -92,7 +95,7 @@ proxy.sendMessagePromise<UserState>({ source: DATA_SOURCE, type: "getUser", valu
 
   proxy.asyncInit({ username: userData.username }).then(() => {
     ensureAllLoaded(proxy, store).then(() => {
-      readerConfig = store.getState().simpleReader[id];
+      readerConfig = store.getState().extensionReader[id];
       enrichChildren(document.body, transcroberObserver, userData.user.fromLang || "zh-Hans");
       document.addEventListener("click", () => {
         store.dispatch(setTokenDetails(undefined));
@@ -103,8 +106,24 @@ proxy.sendMessagePromise<UserState>({ source: DATA_SOURCE, type: "getUser", valu
 
       createRoot(document.body.appendChild(document.createElement("div"))!).render(
         <Provider store={store}>
-          <TokenDetails readerConfig={readerConfig} />
-          <Mouseover readerConfig={readerConfig} />
+          <ThemeProvider theme={createTheme(readerConfig.themeName === "dark" ? darkTheme : lightTheme)}>
+            <ScopedCssBaseline
+              style={{
+                fontSize: "1em",
+              }}
+            >
+              <GlobalStyles
+                styles={{
+                  hr: {
+                    marginBlockStart: "0.4em",
+                    marginBlockEnd: "0.4em",
+                  },
+                }}
+              />
+              <TokenDetails readerConfig={readerConfig} />
+              <Mouseover readerConfig={readerConfig} />
+            </ScopedCssBaseline>
+          </ThemeProvider>
         </Provider>,
       );
     });
