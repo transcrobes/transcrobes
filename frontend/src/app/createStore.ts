@@ -14,6 +14,7 @@ import extensionReaderReducer from "../features/content/extensionReaderSlice";
 import definitionsReducer from "../features/definition/definitionsSlice";
 import themeReducer from "../features/themes/themeReducer";
 import uiReducer from "../features/ui/uiSlice";
+import statsReducer from "../features/stats/statsSlice";
 import dictionaryReducer from "../features/dictionary/dictionarySlice";
 import userSliceReducer, { doLogin, setAndSaveUser, throttledLogout } from "../features/user/userSlice";
 import { ComponentsConfig } from "../lib/complexTypes";
@@ -90,6 +91,7 @@ function createStore({ authProvider, dataProvider }: CreateStoreProps) {
     knownCards: knownCardsReducer,
     definitions: definitionsReducer,
     ui: uiReducer,
+    stats: statsReducer,
     dictionary: dictionaryReducer,
     userData: userSliceReducer,
   });

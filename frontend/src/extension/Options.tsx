@@ -71,12 +71,11 @@ const useStyles = makeStyles()((theme) => ({
     margin: theme.spacing(1),
   },
   buttons: {
-    margin: theme.spacing(1),
     width: "100%",
   },
   message: {},
   glossFontColour: { display: "flex", justifyContent: "flex-start", padding: "0.4em" },
-  header: { display: "inline-flex", justifyContent: "space-between", alignItems: "start" },
+  header: { width: "100%", display: "inline-flex", justifyContent: "space-between", alignItems: "start" },
   headerText: { padding: "1em" },
   configContainer: { maxWidth: "500px" },
 }));
@@ -237,28 +236,40 @@ export default function Options(): ReactElement {
                   />
                 </FormGroup>
               </div>
-              <div>
-                <HelpButton url={helpUrl} />
+              <Box>
+                <Box
+                  sx={{
+                    width: "100%",
+                    display: "inline-flex",
+                    textAlign: "right",
+                    justifyContent: "flex-end",
+                    padding: "1em",
+                  }}
+                >
+                  <HelpButton url={helpUrl} />
+                </Box>
                 {inited && (
-                  <Typography
-                    sx={(theme) => ({
-                      bgcolor: "warning.light",
-                      [theme.breakpoints.down("md")]: {
-                        fontSize: "1em",
-                        padding: "0.2em",
-                        margin: "0.2em",
-                      },
-                      [theme.breakpoints.up("md")]: {
-                        fontSize: "2em",
-                        padding: "0.5em",
-                        margin: "0.5em",
-                      },
-                    })}
-                  >
-                    Don't forget to hit save (at the bottom) after making a change!
-                  </Typography>
+                  <Box>
+                    <Typography
+                      sx={(theme) => ({
+                        bgcolor: "warning.light",
+                        [theme.breakpoints.down("md")]: {
+                          fontSize: "1em",
+                          padding: "0.2em",
+                          margin: "0.2em",
+                        },
+                        [theme.breakpoints.up("md")]: {
+                          fontSize: "2em",
+                          padding: "0.5em",
+                          margin: "0.5em",
+                        },
+                      })}
+                    >
+                      Don't forget to hit save (at the bottom) after making a change!
+                    </Typography>
+                  </Box>
                 )}
-              </div>
+              </Box>
             </div>
 
             {inited && <ExtensionConfig />}

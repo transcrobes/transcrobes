@@ -84,6 +84,7 @@ export const MIN_KNOWN_BEFORE_ADVANCED = 500;
 
 export type KnownLanguage = "en" | "zh-Hans";
 export type InputLanguage = "zh-Hans";
+export type CornerPosition = "none" | "top-left" | "top-right" | "bottom-left" | "bottom-right";
 
 const SIMPLE_POS_VALUES = ["ADV", "OTHER", "CONJ", "DET", "NOUN", "VERB", "PREP", "PRON", "ADJ", "MODAL"] as const;
 const SIMPLE_POS_VALUES_OBJ = SIMPLE_POS_VALUES.reduce(
@@ -798,6 +799,14 @@ export type SerialisableDayCardWords = {
   knownCardWordGraphs: SerialisableStringSet;
   allCardWordGraphs: SerialisableStringSet;
   knownWordIdsCounter: PythonCounter;
+};
+
+export type ContentStats = {
+  knownChars: PythonCounter;
+  chars: PythonCounter;
+  knownWords: PythonCounter;
+  words: PythonCounter;
+  sentenceLengths: PythonCounter;
 };
 
 export type GradesType = {

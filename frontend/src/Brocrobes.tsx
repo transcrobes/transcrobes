@@ -14,7 +14,7 @@ const useStyles = makeStyles()({
 
 export default function Brocrobes(): ReactElement {
   const { classes } = useStyles();
-  const helpUrl = `https://${DOCS_DOMAIN}/page/software/install/clients/brocrobes/`;
+  const helpUrl = `//${DOCS_DOMAIN}/page/software/install/clients/brocrobes/`;
   return (
     <>
       <TopToolbar className={classes.toolbar}>

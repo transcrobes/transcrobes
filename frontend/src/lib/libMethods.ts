@@ -21,6 +21,7 @@ import {
 } from "./types";
 import { DefinitionDocument } from "../database/Schema";
 import { fetcher } from "./fetcher";
+import { toEnrich } from "./funclib";
 
 export function toSimplePos(pos: SimplePosType | TreebankPosType, fromLang: InputLanguage) {
   if (fromLang === "zh-Hans") {
@@ -203,19 +204,6 @@ function walkNodeTree(root: HTMLElement, options: TreeWalkerMethods) {
   }
 
   return nodes;
-}
-
-export function toEnrich(charstr: string, fromLanguage: InputLanguage = "zh-Hans"): boolean {
-  // TODO: find out why the results are different if these consts are global...
-  // unicode cjk radicals, supplement and characters, see src/enrichers/zhhans/__init__.py for details
-  const zhReg = /[\u2e80-\u2ef3\u2f00-\u2fd5\u4e00-\u9fff]+/gi;
-  // const enReg = /[[A-z]+/gi;
-  switch (fromLanguage) {
-    // case "en":
-    //   return enReg.test(charstr);
-    case "zh-Hans":
-      return zhReg.test(charstr);
-  }
 }
 
 type TreeWalkerMethods = {

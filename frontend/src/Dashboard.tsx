@@ -27,7 +27,7 @@ export default function Dashboard({ config, inited }: Props): ReactElement {
     })();
   }, [username]);
 
-  const helpUrl = `https://${DOCS_DOMAIN}/page/software/learn/dashboard/`;
+  const helpUrl = `//${DOCS_DOMAIN}/page/software/learn/dashboard/`;
   return (
     <>
       <TopToolbar

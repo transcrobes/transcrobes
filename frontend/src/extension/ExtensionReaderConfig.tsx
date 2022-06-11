@@ -9,7 +9,7 @@ import {
   EXTENSION_READER_ID,
 } from "../features/content/extensionReaderSlice";
 import { changeTheme } from "../features/themes/themeReducer";
-import { ThemeName } from "../lib/types";
+import { CornerPosition, ThemeName } from "../lib/types";
 
 export default function ExtensionConfig(): ReactElement {
   const id = EXTENSION_READER_ID;
@@ -28,7 +28,7 @@ export default function ExtensionConfig(): ReactElement {
             control={
               <Switch
                 checked={!!readerConfig.showSuggestions}
-                onChange={(event: React.ChangeEvent<HTMLInputElement>, checked: boolean) =>
+                onChange={(_e: React.ChangeEvent<HTMLInputElement>, checked: boolean) =>
                   dispatch(actions.setShowSuggestions({ id, value: checked }))
                 }
               />
@@ -36,12 +36,12 @@ export default function ExtensionConfig(): ReactElement {
           />
         </FormControl>
       </Conftainer>
-      <Conftainer label="Theme mode" id="themeMode">
+      <Conftainer label="Popup theme mode" id="themeMode">
         <ToggleButtonGroup
           sx={{ width: "100%" }}
           exclusive
           value={readerConfig.themeName}
-          onChange={(event: React.MouseEvent<HTMLElement>, value: ThemeName) => {
+          onChange={(_e: React.MouseEvent<HTMLElement>, value: ThemeName) => {
             dispatch(changeTheme(value));
             dispatch(actions.setThemeName({ id, value }));
           }}
@@ -51,6 +51,26 @@ export default function ExtensionConfig(): ReactElement {
           </ToggleButton>
           <ToggleButton sx={{ width: "100%" }} value={"dark"}>
             Dark Mode
+          </ToggleButton>
+        </ToggleButtonGroup>
+      </Conftainer>
+      <Conftainer label="Page analysis" id="pageAnalysis">
+        <ToggleButtonGroup
+          sx={{ width: "100%" }}
+          exclusive
+          value={readerConfig.analysisPosition}
+          onChange={(_e: React.MouseEvent<HTMLElement>, value: CornerPosition) => {
+            dispatch(actions.setAnalysisPosition({ id, value }));
+          }}
+        >
+          <ToggleButton sx={{ width: "100%" }} value={"none"}>
+            Off
+          </ToggleButton>
+          <ToggleButton sx={{ width: "100%" }} value={"top-right"}>
+            Top Right
+          </ToggleButton>
+          <ToggleButton sx={{ width: "100%" }} value={"bottom-right"}>
+            Bottom Right
           </ToggleButton>
         </ToggleButtonGroup>
       </Conftainer>

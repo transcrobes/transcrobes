@@ -39,10 +39,9 @@ const useStyles = makeStyles()((theme) => {
     fontColour: { display: "flex" as const, justifyContent: "flex-start", padding: "0.4em" },
     buttonGroup: {
       [theme.breakpoints.up("sm")]: {
-        padding: "0.3em",
         width: "100%",
       },
-      [theme.breakpoints.down("md")]: { flexWrap: "wrap" as const, padding: "0.3em", width: "100%" },
+      [theme.breakpoints.down("md")]: { flexWrap: "wrap" as const, width: "100%" },
     },
     button: { width: "100%" },
   };

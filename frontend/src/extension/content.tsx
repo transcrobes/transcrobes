@@ -1,4 +1,4 @@
-import { createTheme, GlobalStyles, ScopedCssBaseline, ThemeProvider } from "@mui/material";
+import { createTheme, ScopedCssBaseline, ThemeProvider } from "@mui/material";
 import { createComponentVNode, render } from "inferno";
 import { Provider as InfernoProvider } from "inferno-redux";
 import jss from "jss";
@@ -10,6 +10,7 @@ import { ETFStyles, ETFStylesProps } from "../components/Common";
 import EnrichedTextFragment from "../components/content/etf/EnrichedTextFragment";
 import Mouseover from "../components/content/td/Mouseover";
 import TokenDetails from "../components/content/td/TokenDetails";
+import ContentAnalysis from "../components/ContentAnalysis";
 import Loading from "../components/Loading";
 import { setCardWordsState } from "../features/card/knownCardsSlice";
 import { getRefreshedState } from "../features/content/contentSlice";
@@ -19,13 +20,13 @@ import {
   ExtensionReaderState,
   EXTENSION_READER_ID,
 } from "../features/content/extensionReaderSlice";
-import { WEB_READER_ID } from "../features/content/simpleReaderSlice";
+import { addModelsToState } from "../features/stats/statsSlice";
 import { setLoading, setTokenDetails } from "../features/ui/uiSlice";
 import { setUser } from "../features/user/userSlice";
-import { darkTheme, lightTheme } from "../layout/themes";
+import { popupLightTheme, popupDarkTheme } from "../layout/themes";
 import { ensureDefinitionsLoaded, refreshDictionaries } from "../lib/dictionary";
-import { missingWordIdsFromModels } from "../lib/funclib";
-import { enrichChildren, toEnrich } from "../lib/libMethods";
+import { missingWordIdsFromModels, toEnrich } from "../lib/funclib";
+import { enrichChildren } from "../lib/libMethods";
 import { AbstractWorkerProxy, BackgroundWorkerProxy, setPlatformHelper } from "../lib/proxies";
 import { observerFunc } from "../lib/stats";
 import {
@@ -34,8 +35,8 @@ import {
   DOCS_DOMAIN,
   KeyedModels,
   ModelType,
-  ReaderState,
   SerialisableDayCardWords,
+  SerialisableStringSet,
   UserState,
 } from "../lib/types";
 
@@ -55,9 +56,13 @@ createRoot(document.body.appendChild(document.createElement("div"))!).render(
 store.dispatch(setLoading(true));
 
 const models: KeyedModels = {};
+
 let readerConfig: ExtensionReaderState;
 const getReaderConfig = () => readerConfig;
 const getKnownCards = () => store.getState().knownCards;
+const knownWords: SerialisableStringSet = {};
+const knownChars: SerialisableStringSet = {};
+
 const readObserver = new IntersectionObserver(observerFunc(getReaderConfig, models, getKnownCards), {
   threshold: [1.0],
 });
@@ -78,6 +83,16 @@ async function ensureAllLoaded(platformHelper: AbstractWorkerProxy, store: Admin
     value: "",
   });
   store.dispatch(setCardWordsState(value));
+  for (const word of Object.keys(value.knownCardWordGraphs)) {
+    if (toEnrich(word)) {
+      knownWords[word] = null;
+    }
+    for (const char of word) {
+      if (toEnrich(char)) {
+        knownChars[char] = null;
+      }
+    }
+  }
 
   await refreshDictionaries(store, platformHelper);
 }
@@ -106,22 +121,11 @@ proxy.sendMessagePromise<UserState>({ source: DATA_SOURCE, type: "getUser", valu
 
       createRoot(document.body.appendChild(document.createElement("div"))!).render(
         <Provider store={store}>
-          <ThemeProvider theme={createTheme(readerConfig.themeName === "dark" ? darkTheme : lightTheme)}>
-            <ScopedCssBaseline
-              style={{
-                fontSize: "1em",
-              }}
-            >
-              <GlobalStyles
-                styles={{
-                  hr: {
-                    marginBlockStart: "0.4em",
-                    marginBlockEnd: "0.4em",
-                  },
-                }}
-              />
+          <ThemeProvider theme={createTheme(readerConfig.themeName === "dark" ? popupDarkTheme : popupLightTheme)}>
+            <ScopedCssBaseline>
               <TokenDetails readerConfig={readerConfig} />
               <Mouseover readerConfig={readerConfig} />
+              {readerConfig.analysisPosition !== "none" && <ContentAnalysis />}
             </ScopedCssBaseline>
           </ThemeProvider>
         </Provider>,
@@ -156,6 +160,16 @@ export function onEntryId(entries: IntersectionObserverEntry[]): void {
         }
         models[data.id.toString()] = data;
         const uniqueIds = missingWordIdsFromModels({ [data.id.toString()]: data }, store.getState().definitions);
+
+        if (readerConfig.analysisPosition !== "none") {
+          store.dispatch(
+            addModelsToState({
+              model: data,
+              knownWords,
+              knownChars,
+            }),
+          );
+        }
         if (uniqueIds.size > 0) {
           // FIXME: how much does a setLoading cost?
           if (loading) store.dispatch(setLoading(undefined));

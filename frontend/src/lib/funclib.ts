@@ -9,6 +9,7 @@ import {
   DefinitionsState,
   FirstSuccess,
   HistoData,
+  InputLanguage,
   KeyedModels,
   PosSentences,
   PythonCounter,
@@ -341,4 +342,17 @@ export function reorderArray(list: any[], startIndex: number, endIndex: number):
   const [removed] = result.splice(startIndex, 1);
   result.splice(endIndex, 0, removed);
   return result;
+}
+
+export function toEnrich(charstr: string, fromLanguage: InputLanguage = "zh-Hans"): boolean {
+  // TODO: find out why the results are different if these consts are global...
+  // unicode cjk radicals, supplement and characters, see src/enrichers/zhhans/__init__.py for details
+  const zhReg = /[\u2e80-\u2ef3\u2f00-\u2fd5\u4e00-\u9fff]+/gi;
+  // const enReg = /[[A-z]+/gi;
+  switch (fromLanguage) {
+    // case "en":
+    //   return enReg.test(charstr);
+    case "zh-Hans":
+      return zhReg.test(charstr);
+  }
 }

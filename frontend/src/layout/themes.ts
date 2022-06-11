@@ -79,6 +79,97 @@ export const darkTheme = {
   },
 };
 
+const popupOverrides = {
+  typography: {
+    fontSize: 16,
+  },
+  components: {
+    MuiTypography: {
+      styleOverrides: {
+        root: {
+          fontSize: 16,
+        },
+      },
+    },
+    MuiScopedCssBaseline: {
+      styleOverrides: {
+        root: {
+          fontSize: 16,
+        },
+      },
+    },
+    MuiCardContent: {
+      styleOverrides: {
+        root: ({ theme }: any) => ({
+          [theme.breakpoints.down("sm")]: {
+            padding: 8,
+          },
+        }),
+      },
+    },
+    MuiCardHeader: {
+      styleOverrides: {
+        root: ({ theme }: any) => ({
+          [theme.breakpoints.down("sm")]: {
+            padding: "8px 8px 0px",
+          },
+          paddingBottom: 0,
+        }),
+      },
+    },
+    MuiTableCell: {
+      styleOverrides: {
+        root: ({ theme }: any) => ({
+          fontSize: 16,
+          [theme.breakpoints.down("sm")]: {
+            padding: 8,
+          },
+        }),
+      },
+    },
+    MuiDialogTitle: {
+      styleOverrides: {
+        root: {
+          fontSize: 24,
+        },
+      },
+    },
+    MuiDialogContent: {
+      styleOverrides: {
+        root: {
+          fontSize: 16,
+        },
+      },
+    },
+    MuiButtonBase: {
+      styleOverrides: {
+        root: {
+          fontSize: 16,
+        },
+      },
+    },
+    MuiSvgIcon: {
+      styleOverrides: {
+        root: {
+          fontSize: 16,
+        },
+      },
+    },
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          fontSize: 16,
+        },
+      },
+    },
+  },
+};
+export const popupDarkTheme = {
+  ...darkTheme,
+  components: { ...darkTheme.components, ...popupOverrides.components },
+  typography: { ...darkTheme.typography, ...popupOverrides.typography },
+};
+
 export const lightTheme = {
   palette: {
     primary: {
@@ -185,4 +276,10 @@ export const lightTheme = {
       },
     },
   },
+};
+
+export const popupLightTheme = {
+  ...lightTheme,
+  components: { ...darkTheme.components, ...popupOverrides.components },
+  typography: { ...darkTheme.typography, ...popupOverrides.typography },
 };
