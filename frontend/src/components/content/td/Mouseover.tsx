@@ -7,24 +7,24 @@ import { originalSentenceFromTokens } from "../../../lib/funclib";
 import { platformHelper } from "../../../lib/proxies";
 import { POPOVER_MIN_LOOKED_AT_EVENT_DURATION, PopupPosition, ReaderState } from "../../../lib/types";
 
-const useStyles = makeStyles()({
+const useStyles = makeStyles()((theme) => ({
   popover: {
     padding: ".3em",
-    borderColor: "#fff",
+    borderColor: theme.palette.text.primary,
     borderWidth: "medium",
     borderStyle: "solid",
-    backgroundColor: "black !important",
+    backgroundColor: [theme.palette.background.default, "!important"],
     zIndex: 99999,
-    opacity: "1 !important",
+    opacity: [1, "!important"],
     minWidth: "120px",
-    color: "#fff",
+    color: theme.palette.text.primary,
     maxWidth: "250px",
     textAlign: "center",
     borderRadius: "6px",
     position: "absolute",
     display: "block",
   },
-});
+}));
 
 export type Props = {
   readerConfig: ReaderState;

@@ -38,7 +38,7 @@ import Initialisation from "./components/Initialisation";
 import Intro from "./components/Intro";
 import ExtensionConfig from "./ExtensionReaderConfig";
 
-const DEFAULT_SERVER_URL = `http${IS_DEV ? "" : "s"}//${SITE_DOMAIN}`;
+const DEFAULT_SERVER_URL = `http${IS_DEV ? "" : "s"}://${SITE_DOMAIN}`;
 
 type FormProps = {
   username: string;
