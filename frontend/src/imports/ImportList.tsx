@@ -26,6 +26,7 @@ function ListActions({ empty }: { empty?: boolean }) {
 export default function ImportList() {
   return (
     <List
+      queryOptions={{ refetchInterval: 5000 }}
       empty={<ListEmpty actions={<ListActions empty />} />}
       actions={<ListActions />}
       sort={{ field: "createdAt", order: "DESC" }}

@@ -53,7 +53,12 @@ function EmtpyList() {
 
 export default function UserListList() {
   return (
-    <List empty={<EmtpyList />} actions={<ListActions />} sort={{ field: "createdAt", order: "DESC" }}>
+    <List
+      queryOptions={{ refetchInterval: 5000 }}
+      empty={<EmtpyList />}
+      actions={<ListActions />}
+      sort={{ field: "createdAt", order: "DESC" }}
+    >
       <Datagrid rowClick="show">
         <TextField source="title" />
         <ReferenceField label="Source import" source="theImport" reference="imports" link="show">
