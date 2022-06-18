@@ -157,6 +157,7 @@ class Entry extends Component<StatedEntryProps, LocalEntryState> {
     attemptsRemaining: number;
   }): void {
     const token = this.props.token;
+    console.debug("Looking for definition update for", token.l);
     const {
       knownCards,
       definitions,
@@ -177,12 +178,18 @@ class Entry extends Component<StatedEntryProps, LocalEntryState> {
     promise.then((def) => {
       if (!def) {
         window.setTimeout(this.lookForDefinitionUpdate, RETRY_DEFINITION_MS, {
-          glossing: readerConfig.glossing,
+          glossing: (readerConfig || this.props.readerConfig).glossing,
           attemptsRemaining: attemptsRemaining - 1,
         });
       } else {
         this.context.store.dispatch(addDefinitions([{ ...def, glossToggled: false }]));
-        getNormalGloss(token, readerConfig, knownCards, definitions, fromLang || "zh-Hans").then((gloss) => {
+        getNormalGloss(
+          token,
+          readerConfig || this.props.readerConfig,
+          knownCards,
+          definitions,
+          fromLang || "zh-Hans",
+        ).then((gloss) => {
           this.setState({ gloss });
         });
       }
