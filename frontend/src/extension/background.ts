@@ -89,7 +89,7 @@ chrome.action.onClicked.addListener(function (tab) {
         chrome.runtime.openOptionsPage(() => console.debug("User not initialised"));
       } else {
         chrome.scripting.executeScript({
-          target: { tabId: tab.id, allFrames: true },
+          target: { tabId: tab.id, allFrames: false },
           files: ["content-bundle.js"],
         });
       }
