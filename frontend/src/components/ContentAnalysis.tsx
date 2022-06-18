@@ -18,7 +18,7 @@ import _ from "lodash";
 import * as React from "react";
 import { useAppSelector } from "../app/hooks";
 import { EXTENSION_READER_ID } from "../features/content/extensionReaderSlice";
-import { DOCS_DOMAIN, PythonCounter } from "../lib/types";
+import { ContentStats, DOCS_DOMAIN, PythonCounter } from "../lib/types";
 import HelpButton from "./HelpButton";
 
 const Transition = React.forwardRef(function Transition(
@@ -41,7 +41,7 @@ function format(num: number) {
 export default function ContentAnalysis() {
   const [open, setOpen] = React.useState(false);
   const [removed, setRemoved] = React.useState(false);
-  const stats = useAppSelector((state) => state.stats);
+  const outsideStats = useAppSelector((state) => state.stats);
   const readerConfig = useAppSelector((state) => state.extensionReader[EXTENSION_READER_ID]);
 
   const [knownChars, setKnownChars] = React.useState(0);
@@ -57,32 +57,49 @@ export default function ContentAnalysis() {
   const theme = useTheme();
   const [colour, setColour] = React.useState(theme.palette.success.main);
 
+  const debounce = React.useCallback(
+    _.debounce(
+      (stats: ContentStats) => {
+        const kc = sumit(stats.knownChars);
+        const c = sumit(stats.chars);
+        const kw = sumit(stats.knownWords);
+        const w = sumit(stats.words);
+        const kct = Object.keys(stats.knownChars).length;
+        const ct = Object.keys(stats.chars).length;
+        const kwt = Object.keys(stats.knownWords).length;
+        const wt = Object.keys(stats.words).length;
+        // FIXME: there is a more efficient way to do this
+        const ml = _.mean(Object.entries(stats.sentenceLengths).flatMap(([x, y]) => Array(y).fill(parseInt(x)))) || 0;
+        setKnownChars(kc);
+        setChars(c);
+        setKnownWords(kw);
+        setWords(w);
+        setKnownCharsTypes(kct);
+        setCharsTypes(ct);
+        setKnownWordsTypes(kwt);
+        setWordsTypes(wt);
+        setMedianLength(ml);
+        if (kc / c < 0.7 || kw / w < 0.5 || ml > 40) {
+          setColour(theme.palette.warning.main);
+        } else if (kc / c < 0.8 || kw / w < 0.8 || ml > 30) {
+          setColour(theme.palette.info.main);
+        }
+      },
+      1000,
+      { maxWait: 2000 },
+    ),
+    [],
+  );
+
   React.useEffect(() => {
-    const kc = sumit(stats.knownChars);
-    const c = sumit(stats.chars);
-    const kw = sumit(stats.knownWords);
-    const w = sumit(stats.words);
-    const kct = Object.keys(stats.knownChars).length;
-    const ct = Object.keys(stats.chars).length;
-    const kwt = Object.keys(stats.knownWords).length;
-    const wt = Object.keys(stats.words).length;
-    // FIXME: there is a more efficient way to do this
-    const ml = _.mean(Object.entries(stats.sentenceLengths).flatMap(([x, y]) => Array(y).fill(parseInt(x)))) || 0;
-    setKnownChars(kc);
-    setChars(c);
-    setKnownWords(kw);
-    setWords(w);
-    setKnownCharsTypes(kct);
-    setCharsTypes(ct);
-    setKnownWordsTypes(kwt);
-    setWordsTypes(wt);
-    setMedianLength(ml);
-    if (kc / c < 0.7 || kw / w < 0.5 || ml > 40) {
-      setColour(theme.palette.warning.main);
-    } else if (kc / c < 0.8 || kw / w < 0.8 || ml > 30) {
-      setColour(theme.palette.info.main);
-    }
-  }, [stats.chars, stats.knownChars, stats.knownWords, stats.sentenceLengths, stats.words]);
+    debounce(outsideStats);
+  }, [
+    outsideStats.chars,
+    outsideStats.knownChars,
+    outsideStats.knownWords,
+    outsideStats.sentenceLengths,
+    outsideStats.words,
+  ]);
 
   function handleClickOpen() {
     setOpen(true);
