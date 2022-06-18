@@ -691,6 +691,8 @@ async def process_import(file_event: ProcessData):
         await db.commit()
 
         await (await get_broadcast()).publish(channel=Import.__name__, message=str(an_import.created_by.id))
+        # There won't be a content update if it was a csv import but who cares!
+        await (await get_broadcast()).publish(channel=Content.__name__, message=str(an_import.created_by.id))
         logger.info("Finished running import %s", file_event.id)
 
 
