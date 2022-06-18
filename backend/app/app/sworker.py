@@ -1,17 +1,17 @@
+import asyncio
 import logging
 import logging.config
 import time
 import traceback
 from datetime import datetime
 
-import confluent_kafka
 import orjson
+from aiokafka import AIOKafkaConsumer
 from app.core.config import settings
-from app.data.stats import sync_push_user_stats_update_to_clients
-from app.db.session import stats_engine
+from app.data.stats import push_user_stats_update_to_clients
+from app.db.session import async_stats_session
 from app.models.stats import UserDay, UserWord
 from app.stats import ACTION_EVENT_TOPIC_NAME, CARD_EVENT_TOPIC_NAME, VOCAB_EVENT_TOPIC_NAME
-from confluent_kafka import Consumer, KafkaError, KafkaException
 from sqlalchemy import case
 from sqlalchemy.dialects import postgresql
 
@@ -24,41 +24,36 @@ STATS_TOPICS_TO_CONSUME = [VOCAB_EVENT_TOPIC_NAME, ACTION_EVENT_TOPIC_NAME, CARD
 
 
 def get_event_dates(tstamp):
-    if tstamp[0] == confluent_kafka.TIMESTAMP_LOG_APPEND_TIME:
-        return tstamp[1] / 1000.0
-    elif tstamp[0] == confluent_kafka.TIMESTAMP_CREATE_TIME:
-        return tstamp[1] / 1000.0
-    else:
-        return time.time()
+    return tstamp / 1000.0 or time.time()
 
 
-def send_updates(word_updates, day_updates, update_ids, include_success=False):
-    with stats_engine.connect() as db:
+async def send_updates(word_updates, day_updates, update_ids, include_success=False):
+    async with async_stats_session() as db:
         if len(word_updates) > 0:
             stmt = send_word_updates(word_updates)
-            db.execute(stmt)
+            await db.execute(stmt)
         if len(day_updates) > 0:
             stmt_day = send_day_updates(day_updates, include_success)
-            db.execute(stmt_day)
-        db.commit()
+            await db.execute(stmt_day)
+        await db.commit()
 
     if len(day_updates) > 0:
-        sync_push_user_stats_update_to_clients(update_ids, UserDay.__name__),
+        await push_user_stats_update_to_clients(update_ids, UserDay.__name__),
     if len(word_updates) > 0:
-        sync_push_user_stats_update_to_clients(update_ids, UserWord.__name__),
+        await push_user_stats_update_to_clients(update_ids, UserWord.__name__),
 
 
-def action_event(events, tstamp):
+async def action_event(events, tstamp):
     if not events:
         logger.warning("Empty action events received")
         return
-    logger.info(f"{len(events)} Vocab events received")
+    logger.info(f"{len(events)} action events received")
 
     update_ids = set()
     day_updates = {}
     word_updates = {}
     now = get_event_dates(tstamp)
-    today = datetime.fromtimestamp(now).strftime("%Y%m%d")
+    today = int(datetime.fromtimestamp(now).strftime("%Y%m%d"))
     for event in events:
         user_id = event["user_id"]
         update_ids.add(user_id)
@@ -88,7 +83,7 @@ def action_event(events, tstamp):
         day["nb_seen"] += 1
         day["nb_checked"] += 1
 
-    send_updates(word_updates, day_updates, list(update_ids))
+    await send_updates(word_updates, day_updates, list(update_ids))
     logger.info(f"Actions sent to statsdb for user_ids {list(update_ids)}")
 
 
@@ -132,7 +127,7 @@ def send_day_updates(day_updates, include_success):
     return stmt
 
 
-def vocab_event(events, tstamp):
+async def vocab_event(events, tstamp):
     if not events:
         logger.warning("Empty vocab events received")
         return
@@ -142,7 +137,7 @@ def vocab_event(events, tstamp):
     day_updates = {}
 
     now = get_event_dates(tstamp)
-    today = datetime.fromtimestamp(now).strftime("%Y%m%d")
+    today = int(datetime.fromtimestamp(now).strftime("%Y%m%d"))
     for event in events:
         user_id = event["user_id"]
         update_ids.add(user_id)
@@ -173,11 +168,11 @@ def vocab_event(events, tstamp):
             else:
                 vord["nb_seen_since_last_check"] += v[0]
 
-    send_updates(word_updates, day_updates, list(update_ids))
+    await send_updates(word_updates, day_updates, list(update_ids))
     logger.info(f"Vocabs sent to statsdb for user_ids {list(update_ids)}")
 
 
-def card_event(events, tstamp):
+async def card_event(events, tstamp):
     if not events:
         logger.warning("Empty card events received")
         return
@@ -187,7 +182,7 @@ def card_event(events, tstamp):
     day_updates = {}
     word_updates = {}
     now = get_event_dates(tstamp)
-    today = datetime.fromtimestamp(now).strftime("%Y%m%d")
+    today = int(datetime.fromtimestamp(now).strftime("%Y%m%d"))
 
     for event in events:
         user_id = event["user_id"]
@@ -232,50 +227,52 @@ def card_event(events, tstamp):
             day["nb_success"] += 1
             vord["nb_seen_since_last_check"] += 1
 
-    send_updates(word_updates, day_updates, list(update_ids), True)
+    await send_updates(word_updates, day_updates, list(update_ids), True)
     logger.info(f"Card events sent to statsdb for user_ids {list(update_ids)}")
 
 
-def basic_consume_loop(consumer, topics):
+async def main():
+    consumer = AIOKafkaConsumer(
+        *STATS_TOPICS_TO_CONSUME,
+        bootstrap_servers=settings.KAFKA_BROKER,
+        group_id=CONSUMER_GROUP_ID,
+        auto_offset_reset="earliest",
+    )
+
+    await consumer.start()
     try:
-        consumer.subscribe(topics)
-        while True:
-            msg = consumer.poll(timeout=1.0)
+        async for msg in consumer:
             if msg is None:
+                logging.warning("Got a None message")
                 continue
-
-            if msg.error():
-                if msg.error().code() == KafkaError._PARTITION_EOF:
-                    # End of partition event
-                    logger.error(f"{msg.topic()=}, {msg.partition()=}, {msg.offset()=}")
-                elif msg.error():
-                    raise KafkaException(msg.error())
-            else:
-                try:
-                    if msg.topic() == VOCAB_EVENT_TOPIC_NAME:
-                        logger.info(f"Received vocab_event_topic message: {msg.timestamp()}")
-                        vocab_event(orjson.loads(msg.value().decode("utf-8")), msg.timestamp())
-                    elif msg.topic() == ACTION_EVENT_TOPIC_NAME:
-                        logger.info(f"Received action_event_topic message: {msg.timestamp()} ")
-                        action_event(orjson.loads(msg.value().decode("utf-8")), msg.timestamp())
-                    elif msg.topic() == CARD_EVENT_TOPIC_NAME:
-                        logger.info(f"Received card_event_topic message: {msg.timestamp()} ")
-                        card_event(orjson.loads(msg.value().decode("utf-8")), msg.timestamp())
-                    else:
-                        print(f"Received unknown message: {msg.topic()=}, {msg.value()=}, {msg.timestamp()=}")
-                        continue
-                except orjson.JSONDecodeError as e:
-                    logger.warning(f"Received invalid message: {msg.topic()=}, {msg.value()=}, {msg.timestamp()=}")
-                    logger.error(f"Error processing message: {e}")
-                    traceback.print_exc()
-
+            logger.debug(
+                "{}:{:d}:{:d}: key={} value={} timestamp_ms={}".format(
+                    msg.topic, msg.partition, msg.offset, msg.key, msg.value, msg.timestamp
+                )
+            )
+            try:
+                if msg.topic == VOCAB_EVENT_TOPIC_NAME:
+                    logger.info(f"Received vocab_event_topic message: {msg.timestamp}")
+                    await vocab_event(orjson.loads(msg.value), msg.timestamp)
+                elif msg.topic == ACTION_EVENT_TOPIC_NAME:
+                    logger.info(f"Received action_event_topic message: {msg.timestamp} ")
+                    await action_event(orjson.loads(msg.value), msg.timestamp)
+                elif msg.topic == CARD_EVENT_TOPIC_NAME:
+                    logger.info(f"Received card_event_topic message: {msg.timestamp} ")
+                    await card_event(orjson.loads(msg.value), msg.timestamp)
+                else:
+                    logger.warning(f"Received unknown message: {msg.topic=}, {msg.value=}, {msg.timestamp=}")
+                    continue
+            except orjson.JSONDecodeError as e:
+                logger.warning(f"Received invalid message: {msg.topic=}, {msg.value=}, {msg.timestamp=}")
+                logger.error(f"Error processing message: {e}")
+                traceback.print_exc()
+    except Exception as e:
+        logger.error(f"Error processing message: {e}")
+        traceback.print_exc()
     finally:
-        # Close down consumer to commit final offsets.
-        consumer.close()
+        await consumer.stop()
 
 
 if __name__ == "__main__":
-    c = Consumer(
-        {"bootstrap.servers": settings.KAFKA_BROKER, "group.id": CONSUMER_GROUP_ID, "auto.offset.reset": "earliest"}
-    )
-    basic_consume_loop(c, STATS_TOPICS_TO_CONSUME)
+    asyncio.run(main())
