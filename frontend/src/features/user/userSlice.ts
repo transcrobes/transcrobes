@@ -68,22 +68,26 @@ const logout = createAsyncThunk(`${modulePrefix}/logout`, async (_, { getState }
 
 const refreshToken = createAsyncThunk(`${modulePrefix}/refreshToken`, async (_, { getState }) => {
   const state = getState() as RootState;
-  const res = await fetchRetry(state.userData.baseUrl + REFRESH_TOKEN_PATH, {
-    body: JSON.stringify({ refresh: state.userData.user?.refreshToken }),
-    method: "POST",
-    headers: {
-      Accept: "application/json",
-      "Content-Type": "application/json",
-    },
-  });
-  if (res.ok) {
-    const ret = userFromApiResult(await res.json(), state.userData.username);
-    Cookies.set("refresh", ret.refreshToken);
-    Cookies.set("session", ret.accessToken);
-    return ret;
-  } else {
-    return await doLogin(state.userData.username, state.userData.password, state.userData.baseUrl);
+  let ret: UserDetails | null = null;
+  if (state.userData.user?.refreshToken) {
+    const res = await fetchRetry(state.userData.baseUrl + REFRESH_TOKEN_PATH, {
+      body: JSON.stringify({ refresh: state.userData.user?.refreshToken }),
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+    });
+    if (res.ok) {
+      ret = userFromApiResult(await res.json(), state.userData.username);
+    }
   }
+  if (!ret) {
+    ret = await doLogin(state.userData.username, state.userData.password, state.userData.baseUrl);
+  }
+  Cookies.set("refresh", ret.refreshToken);
+  Cookies.set("session", ret.accessToken);
+  return ret;
 });
 
 const THROTTLE_DELAY_MS = 5000;
