@@ -398,7 +398,8 @@ function setupGraphQLSubscription(
     keepAlive: 10_000,
     on: {
       connected: () => {
-        console.debug("SubscriptionClient.connected for", query);
+        const rematch = query.match(/ {2}subscription onChanged([A-z_]+)/);
+        console.debug("SubscriptionClient.connected for", !rematch || rematch[1]);
       },
       error(error) {
         console.warn("run() got error:", query, error);
