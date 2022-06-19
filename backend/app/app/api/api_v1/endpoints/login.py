@@ -102,15 +102,18 @@ async def access_from_refresh(token: TcToken, expires_delta: timedelta = None) -
 @router.post("/refresh", response_model=schemas.Token)
 async def refresh_token(
     response: Response,
-    refresh: TcToken,
+    refresh_token: TcToken,
 ) -> Any:
     """
     Get a new access token from a refresh
     """
-    token = await access_from_refresh(refresh)
+    token = await access_from_refresh(refresh_token)
     response.set_cookie("session", token)
+    refresh = refresh_token["refresh"]
+    response.set_cookie("session", refresh)
     return {
         "access_token": token,
+        "refresh_token": refresh,
         "token_type": "bearer",
     }
 
