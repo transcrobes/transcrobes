@@ -109,6 +109,10 @@ export default function Textcrobes({ proxy }: Props): ReactElement {
         value: text,
       })
       .then((value) => {
+        if (!value.models) {
+          setError("There was an error while enriching the text.");
+          console.error("There was an error while enriching the text.", value);
+        }
         setModels(value.models);
         const uniqueIds = wordIdsFromModels(value.models);
         ensureDefinitionsLoaded(proxy, [...uniqueIds], store).then(() => {
