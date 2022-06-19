@@ -218,6 +218,9 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
           DEFAULT_RETRIES,
         )
         .then((translation) => {
+          if (typeof translation !== "string" && translation?.detail) {
+            translation = "!!! Error translating, please refresh the page and try again !!!";
+          }
           sendResponse({ source: message.source, type: message.type, value: translation });
         });
     });

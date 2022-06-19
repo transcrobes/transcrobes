@@ -24,6 +24,7 @@ export class Fetcher {
           console.debug(`Attempt number ${attempt + 1}`, response?.url, response?.headers);
         }
         if (attempt >= retries) {
+          // Maybe I should raise here?
           return false;
         }
         if (error !== null) {
