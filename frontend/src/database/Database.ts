@@ -391,15 +391,15 @@ function setupGraphQLSubscription(
   query: string,
   wsEndpointUrl: string,
   jwtAccessToken: string,
+  name: string,
 ) {
   const client = createClient({
     url: wsEndpointUrl,
-    lazy: false,
+    lazy: true, // do NOT put this to true, it will mean many connections fail
     keepAlive: 10_000,
     on: {
       connected: () => {
-        const rematch = query.match(/ {2}subscription onChanged([A-z_]+)/);
-        console.debug("SubscriptionClient.connected for", !rematch || rematch[1]);
+        console.debug("SubscriptionClient.connected for", name);
       },
       error(error) {
         console.warn("run() got error:", query, error);
@@ -425,30 +425,42 @@ function setupGraphQLSubscription(
     };
 
     let unsubscribe = () => {
-      console.log("The unsubscribe has been called");
+      console.log("The unsubscribe has been called for", name);
     };
-
-    await new Promise((resolve, reject) => {
-      unsubscribe = client.subscribe(
-        {
-          query,
-          variables: {
-            token: jwtAccessToken,
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      await new Promise((resolve, reject) => {
+        unsubscribe = client.subscribe(
+          {
+            query,
+            variables: {
+              token: store.getState().userData.user.accessToken,
+            },
           },
-        },
-        {
-          next: onNext,
-          error: (err: any) => {
-            console.log("There was a client.subscribe error", err);
-            reject();
+          {
+            next: onNext,
+            error: (err: any) => {
+              // console.log("There was a client.subscribe error", err);
+              reject(err);
+            },
+            complete: () => {
+              console.log("The client.subscribe completed for", name);
+              resolve(null);
+            },
           },
-          complete: () => {
-            console.log("The client.subscribe completed");
-            resolve(null);
-          },
-        },
-      );
-    });
+        );
+      })
+        .then(() => {
+          console.log("The subscription has been successfully setup for", name);
+        })
+        .catch((err) => {
+          if (err && err.message === EXPIRED_MESSAGE) {
+            store.dispatch(throttledRefreshToken());
+          }
+          console.error("The subscription setup failed for", name, err);
+        });
+      await new Promise((res) => setTimeout(res, 5000));
+    }
   })();
 }
 
@@ -534,7 +546,7 @@ async function loadFromExports(
     for (const [key, state] of replStates.entries()) {
       if (DBCollections[key].subscription) {
         const name = key.charAt(0).toUpperCase() + key.slice(1).replaceAll("_", "");
-        setupGraphQLSubscription(state, changedQuery(name), wsEndpointUrl, accessToken);
+        setupGraphQLSubscription(state, changedQuery(name), wsEndpointUrl, accessToken, name);
       }
     }
   }
