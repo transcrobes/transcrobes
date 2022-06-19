@@ -76,7 +76,6 @@ async def run_migrations_online():
     """
     configuration = config.get_section(config.config_ini_section)
     configuration["sqlalchemy.url"] = get_url()
-    print("i am in alembic-stats", configuration)
     connectable = AsyncEngine(
         engine_from_config(
             configuration,
