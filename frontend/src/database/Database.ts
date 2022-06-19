@@ -222,15 +222,10 @@ function refreshTokenIfRequired(
   }
 }
 
-function setupTwoWayReplication(
-  db: TranscrobesDatabase,
-  colName: DBTwoWayCollectionKeys,
-  syncURL: string,
-  jwtAccessToken: string,
-) {
+function setupTwoWayReplication(db: TranscrobesDatabase, colName: DBTwoWayCollectionKeys, syncURL: string) {
   // set up replication
   console.debug(`Start ${colName} replication`);
-  const headers = getHeaders(jwtAccessToken);
+  const headers = getHeaders(store.getState().userData.user.accessToken);
 
   // WARNING! pushQueryBuilderFromRxSchema modifies the input paramater object in place!
   const pushQuery = pushQueryBuilderFromRxSchema(_.camelCase(colName), clone(DBTwoWayCollections[colName]));
@@ -278,14 +273,9 @@ function setupTwoWayReplication(
   return replicationState;
 }
 
-function setupPullReplication(
-  db: TranscrobesDatabase,
-  colName: DBPullCollectionKeys,
-  syncURL: string,
-  jwtAccessToken: string,
-) {
+function setupPullReplication(db: TranscrobesDatabase, colName: DBPullCollectionKeys, syncURL: string) {
   console.debug("Start pullonly replication", colName);
-  const headers = getHeaders(jwtAccessToken);
+  const headers = getHeaders(store.getState().userData.user.accessToken);
   // WARNING! pullQueryBuilderFromRxSchema modifies the input paramater object in place!
   const col = clone(DBPullCollections[colName]) as any;
 
@@ -390,7 +380,6 @@ function setupGraphQLSubscription(
   replicationState: RxGraphQLReplicationState<any>,
   query: string,
   wsEndpointUrl: string,
-  jwtAccessToken: string,
   name: string,
 ) {
   const client = createClient({
@@ -424,13 +413,10 @@ function setupGraphQLSubscription(
       replicationState.notifyAboutRemoteChange();
     };
 
-    let unsubscribe = () => {
-      console.log("The unsubscribe has been called for", name);
-    };
     // eslint-disable-next-line no-constant-condition
     while (true) {
       await new Promise((resolve, reject) => {
-        unsubscribe = client.subscribe(
+        client.subscribe(
           {
             query,
             variables: {
@@ -477,7 +463,6 @@ async function testQueries(db: TranscrobesDatabase): Promise<DefinitionDocument[
 
 async function loadFromExports(
   config: RxDBDataProviderParams,
-  accessToken: string,
   reinitialise = false,
   progressCallback: (message: string, finished: boolean) => void,
   sw?: ServiceWorkerGlobalScope,
@@ -516,16 +501,10 @@ async function loadFromExports(
   progressCallback("The data files have been loaded into the database : 93% complete", false);
   const replStates = new Map<DBPullCollectionKeys | DBTwoWayCollectionKeys, RxGraphQLReplicationState<any>>();
   for (const col in DBTwoWayCollections) {
-    replStates.set(
-      col as DBTwoWayCollectionKeys,
-      setupTwoWayReplication(db, col as DBTwoWayCollectionKeys, syncURL, accessToken),
-    );
+    replStates.set(col as DBTwoWayCollectionKeys, setupTwoWayReplication(db, col as DBTwoWayCollectionKeys, syncURL));
   }
   for (const col in DBPullCollections) {
-    replStates.set(
-      col as DBPullCollectionKeys,
-      setupPullReplication(db, col as DBPullCollectionKeys, syncURL, accessToken),
-    );
+    replStates.set(col as DBPullCollectionKeys, setupPullReplication(db, col as DBPullCollectionKeys, syncURL));
   }
   // This can take a while. It will freeze on this if no connection (so no good for offline-first)
   // but it won't be up-to-date otherwise...
@@ -546,7 +525,7 @@ async function loadFromExports(
     for (const [key, state] of replStates.entries()) {
       if (DBCollections[key].subscription) {
         const name = key.charAt(0).toUpperCase() + key.slice(1).replaceAll("_", "");
-        setupGraphQLSubscription(state, changedQuery(name), wsEndpointUrl, accessToken, name);
+        setupGraphQLSubscription(state, changedQuery(name), wsEndpointUrl, name);
       }
     }
   }
@@ -581,7 +560,7 @@ async function getDb(
     }
   }
   if (!dbPromise) {
-    dbPromise = loadFromExports(config, userData.user.accessToken, reinitialise, progressCallback);
+    dbPromise = loadFromExports(config, reinitialise, progressCallback);
   }
   const prom = await dbPromise;
   if (!prom) throw Error("DB Promise has not resolved properly");
