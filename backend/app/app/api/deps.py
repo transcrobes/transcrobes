@@ -18,6 +18,8 @@ from starlette.status import HTTP_401_UNAUTHORIZED
 
 logger = logging.getLogger(__name__)
 
+TOKEN_SIGNATURE_HAS_EXPIRED = "token_signature_has_expired"
+
 
 class OAuth2PasswordBearerOrCookie(OAuth2):
     def __init__(
@@ -70,6 +72,11 @@ async def get_current_user(
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[security.ALGORITHM])
         token_data = schemas.TokenPayload(**payload)
+    except jose.exceptions.ExpiredSignatureError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=TOKEN_SIGNATURE_HAS_EXPIRED,
+        )
     except (jwt.JWTError, ValidationError) as ex:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -87,6 +94,11 @@ async def get_current_good_user(
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[security.ALGORITHM])
         token_data = schemas.TokenPayload(**payload)
+    except jose.exceptions.ExpiredSignatureError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=TOKEN_SIGNATURE_HAS_EXPIRED,
+        )
     except (jwt.JWTError, ValidationError) as ex:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -124,6 +136,11 @@ async def get_current_tokenpayload(token: str = Depends(reusable_oauth2)) -> sch
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[security.ALGORITHM])
         token_data = schemas.TokenPayload(**payload)
+    except jose.exceptions.ExpiredSignatureError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=TOKEN_SIGNATURE_HAS_EXPIRED,
+        )
     except (jwt.JWTError, ValidationError) as ex:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -138,7 +155,12 @@ def get_current_good_tokenpayload(token: str = Depends(reusable_oauth2)) -> sche
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[security.ALGORITHM])
         token_data = schemas.TokenPayload(**payload)
-    except (jwt.JWTError, ValidationError, jose.exceptions.ExpiredSignatureError) as ex:
+    except jose.exceptions.ExpiredSignatureError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=TOKEN_SIGNATURE_HAS_EXPIRED,
+        )
+    except (jwt.JWTError, ValidationError) as ex:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Could not validate credentials",

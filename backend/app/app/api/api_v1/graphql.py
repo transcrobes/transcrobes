@@ -35,13 +35,15 @@ from app.models.user import AuthUser
 from app.schemas.files import ProcessData
 from app.worker.faustus import content_process_topic, list_process_topic
 from fastapi.exceptions import HTTPException
+from graphql import GraphQLError
 from sqlalchemy import tuple_
 from sqlalchemy.ext.asyncio.session import AsyncSession
 from sqlalchemy.orm import selectinload
 from sqlalchemy.sql.expression import and_, or_, select, text
 from starlette import status
 from starlette.requests import Request
-from strawberry.types import Info
+from strawberry.types import ExecutionContext, Info
+from strawberry.utils.logging import StrawberryLogger
 from strawberry.utils.str_converters import to_camel_case
 
 logger = logging.getLogger(__name__)
@@ -1206,6 +1208,7 @@ async def get_user(db: AsyncSession, request: Request) -> models.AuthUser:
 def get_user_id_from_token(token: str) -> int:
     try:
         user_id = deps.get_current_good_tokenpayload(token).id
+
     except HTTPException as ex:
         raise Exception(f'{{"statusCode":"{ex.status_code}","detail":"{ex.detail}"}}') from ex
     except Exception as e:
@@ -1642,4 +1645,21 @@ class Subscription:
         return changed_standard(info, token, models.UserDictionary)
 
 
-schema = strawberry.Schema(query=Query, mutation=Mutation, subscription=Subscription)
+EXPIRED_MESSAGE = '{"statusCode":"401","detail":"token_signature_has_expired"}'
+
+
+class TCSchema(strawberry.Schema):
+    def process_errors(
+        self,
+        errors: List[GraphQLError],
+        execution_context: Optional[ExecutionContext] = None,
+    ) -> None:
+        for error in errors:
+            if isinstance(error, GraphQLError) and error.message == EXPIRED_MESSAGE:
+                # This is very normal, so we don't want to log it other than debug.
+                logger.debug(error.message)
+            else:
+                StrawberryLogger.error(error, execution_context)
+
+
+schema = TCSchema(query=Query, mutation=Mutation, subscription=Subscription)

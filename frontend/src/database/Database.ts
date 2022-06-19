@@ -57,6 +57,8 @@ const LOADED_CHAR_QUERY_ENTRY = "代";
 const EXPORTS_LIST_PATH = API_PREFIX + "/enrich/exports.json";
 const HZEXPORTS_LIST_PATH = API_PREFIX + "/enrich/hzexports.json";
 
+const EXPIRED_MESSAGE = '{"statusCode":"401","detail":"token_signature_has_expired"}';
+
 function getDatabaseName(config: RxDBDataProviderParams): string {
   if (config.test) {
     return "tmploadtest";
@@ -205,7 +207,7 @@ function refreshTokenIfRequired(
   try {
     // this is currently a string, but could be made to be json, meaning an elegant parse of the error. But I suck...
     const expiredMessage = error.innerErrors && error.innerErrors[0].message?.toString();
-    if (expiredMessage?.includes('{"statusCode":"403","detail":"Could not validate credentials"}')) {
+    if (expiredMessage?.includes(EXPIRED_MESSAGE)) {
       console.debug("Looks like the token has expired, trying to refresh");
       store.dispatch(throttledRefreshToken());
       // FIXME: this will set rubbish until the refresh actually happens - is this worth trying to improve upon?
