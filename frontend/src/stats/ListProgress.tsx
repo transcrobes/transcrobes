@@ -38,7 +38,7 @@ export function ListProgress({ yIsNumber = false, nbPeriods = 8, periodType = "w
           value: listId,
         });
       setStats(locStats);
-      if (!locStats) return;
+      if (!locStats?.successWords[0]) return;
       const periods: ManipulateType[] = ["month", "week", "day"];
       let currentPeriod = periods.findIndex((value) => value === periodType);
       if (currentPeriod < 0) {
