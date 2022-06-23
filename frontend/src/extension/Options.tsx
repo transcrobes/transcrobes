@@ -212,7 +212,7 @@ export default function Options(): ReactElement {
                     className={classes.controls}
                     required={true}
                     value={username}
-                    label="Username"
+                    label="Email"
                     type="email"
                     variant="filled"
                   />

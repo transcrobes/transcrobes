@@ -50,7 +50,7 @@ function Intro() {
         ), which means you can keep reading your favourite books, watching your favourite movies or doing active
         learning exercises wherever you are, whenever you want. On a mountain or behind a Great Big Firewall, nothing
         should get in the way of your learning! This does mean that the system needs to download and prepare some
-        things, and that is going to take a while (10-20 minutes depending on how fast your phone/tablet/computer is).
+        things, and that is going to take a while (3-10 minutes depending on how fast your phone/tablet/computer is).
       </p>
       <p>
         The system needs to do quite a lot of work (mainly building indexeddb indexes), so don't be alarmed if your

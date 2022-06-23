@@ -7,7 +7,7 @@ export default function Intro({ inited }: { inited: boolean }) {
       <Typography variant="h4">Welcome! It's Transcrobes initialisation time!</Typography>
       <Typography>
         Transcrobes is entirely browser-based but needs to download a lot of reference data in order to save on
-        bandwidth and dramatically improve performance, and that is going to take a while (3-15 minutes, depending on
+        bandwidth and dramatically improve performance, and that is going to take a while (3-10 minutes, depending on
         how fast your phone/tablet/computer is).
       </Typography>
       <Typography>
