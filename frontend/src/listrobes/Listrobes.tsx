@@ -8,7 +8,7 @@ import { useAppDispatch, useAppSelector } from "../app/hooks";
 import { BASIC_GRADES, GRADES } from "../components/Common";
 import HelpButton from "../components/HelpButton";
 import Loading from "../components/Loading";
-import { CARD_TYPES, getCardId, GRADE } from "../database/Schema";
+import { CARD_TYPES, getCardId } from "../database/Schema";
 import { setCardWordsState } from "../features/card/knownCardsSlice";
 import { setLoading } from "../features/ui/uiSlice";
 import { AbstractWorkerProxy } from "../lib/proxies";

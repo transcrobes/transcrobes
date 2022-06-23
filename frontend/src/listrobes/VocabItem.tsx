@@ -74,10 +74,10 @@ export function VocabItem({ index, item, gradeOrder, onMouseOut, onMouseOver, on
   const { classes } = useStyles();
   return (
     <div className={classes.tipText}>
-      <div onClick={handleClick} onMouseEnter={handleMouseOver} onMouseLeave={onMouseOut}>
+      <Box onClick={handleClick} onMouseEnter={handleMouseOver} onMouseLeave={onMouseOut}>
         <MeaningTooltip item={item} />
         <RowItem item={item} gradeOrder={gradeOrder} />
-      </div>
+      </Box>
     </div>
   );
 }

@@ -30,7 +30,7 @@ export function VocabList({
         vocab.map((vocabItem, index) => {
           return (
             <VocabItem
-              key={vocabItem.graph}
+              key={vocabItem.graph + vocab.length}
               item={vocabItem}
               gradeOrder={graderConfig.gradeOrder}
               index={index}
