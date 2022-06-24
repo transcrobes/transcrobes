@@ -1,25 +1,31 @@
 import { useTheme } from "@mui/system";
 import { useEffect, useState } from "react";
 import { useRecordContext } from "react-admin";
-import ContentAnalysis from "../components/ContentAnalysis";
-import { CalculatedContentStats, Content, noop } from "../lib/types";
+import { CalculatedContentStats, noop } from "../lib/types";
+import ContentAnalysis from "./ContentAnalysis";
 
 const DATA_SOURCE = "ContentStatsField";
 
 export function ContentStatsField({ label }: { label?: string }) {
-  const record = useRecordContext<Content>();
+  const record = useRecordContext();
+  let importId = "";
+  if (Object.hasOwn(record, "theImport")) {
+    importId = record.theImport;
+  } else {
+    importId = record.id.toString();
+  }
   const theme = useTheme();
   const [stats, setStats] = useState<CalculatedContentStats | null>();
   const [colour, setColour] = useState(theme.palette.background.default);
   useEffect(() => {
     if (window.componentsConfig.proxy.loaded) {
       (async function () {
-        if (!record.theImport) return;
+        if (!importId) return;
         const locStats: CalculatedContentStats | null =
           await window.componentsConfig.proxy.sendMessagePromise<CalculatedContentStats | null>({
             source: DATA_SOURCE,
             type: "getContentStatsForImport",
-            value: { importId: record.theImport },
+            value: { importId },
           });
         setStats(locStats);
       })();
@@ -27,8 +33,6 @@ export function ContentStatsField({ label }: { label?: string }) {
   }, [window.componentsConfig.proxy.loaded]);
   useEffect(() => {
     if (stats) {
-      console.log("stats.knownChars / stats.chars", stats.knownChars, stats.chars);
-      console.log("stats.knownWords / stats.knownWords", stats.knownWords, stats.knownWords);
       if (
         stats.knownChars / stats.chars < 0.7 ||
         stats.knownWords / stats.knownWords < 0.5 ||

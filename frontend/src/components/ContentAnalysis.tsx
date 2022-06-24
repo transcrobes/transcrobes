@@ -207,7 +207,7 @@ export default function ContentAnalysis(props: Props) {
                   <Typography>Average sentence length (words)</Typography>
                 </Box>
                 <Box>
-                  <Typography>{props.meanSentenceLength ? props.meanSentenceLength.toFixed(1) : "Unknown"}</Typography>
+                  <Typography>{props.meanSentenceLength ? props.meanSentenceLength.toFixed(1) : "N/A"}</Typography>
                 </Box>
               </Box>
             </CardContent>

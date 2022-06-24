@@ -8,6 +8,7 @@ import {
   TextField,
   TopToolbar,
 } from "react-admin";
+import { ContentStatsField } from "../components/ContentStatsField";
 import HelpButton from "../components/HelpButton";
 import { ListEmpty } from "../components/ListEmpty";
 import { ProcessingField } from "../components/ProcessingField";
@@ -34,6 +35,7 @@ export default function ImportList() {
       <Datagrid rowClick="show">
         <TextField source="title" />
         <FunctionField source="processType" render={(record: any) => reverseEnum(PROCESS_TYPE, record.processType)} />
+        <ContentStatsField label="Content Stats" />
         <ProcessingField label="Processing status" />
         <BooleanField source="shared" sortable={false} />
       </Datagrid>

@@ -113,7 +113,7 @@ export function ImportProgress({ stats }: { stats?: ImportFirstSuccessStats | nu
               <td>
                 <span>Avg. sentence length</span>
               </td>
-              <td>{stats.meanSentenceLength ? stats.meanSentenceLength.toFixed(1) : "Unknown"}</td>
+              <td>{stats.meanSentenceLength ? stats.meanSentenceLength.toFixed(1) : "N/A"}</td>
             </tr>
           </tbody>
         </table>

@@ -6,7 +6,7 @@ import { ProcessingField } from "../components/ProcessingField";
 import { CONTENT_TYPE, DOCS_DOMAIN, reverseEnum } from "../lib/types";
 import ActionButton from "./ActionButton";
 import CacheSwitch from "./CacheSwitch";
-import { ContentStatsField } from "./ContentStatsField";
+import { ContentStatsField } from "../components/ContentStatsField";
 
 function ListActions({ empty }: { empty?: boolean }) {
   return (
