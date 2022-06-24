@@ -488,10 +488,7 @@ async def vocabulary_from_model(model):
     # bytes, not chars, at least for now!
 
     # this allows analysing pure CoreNLP models and enriched models
-    sentences = model.get("s") or model.get("sentences")
-    if not sentences:
-        sentences = list(chain(*[m.get("s") or m for m in model.values()]))
-
+    sentences = get_sentences_from_model(model)
     pos_tag = "pos"
     vocabulary = VocabularyCounter()
     for sentence in sentences:
@@ -538,10 +535,23 @@ async def analysis_from_model(model, process_type):
     return await asyncio.gather(*awaitables)
 
 
+def get_sentences_from_model(model):
+    sentences = model.get("s") or model.get("sentences")
+    if not sentences:
+        sentences = list(chain(*[m.get("s") or m for m in model.values()]))
+    return sentences
+
+
 async def process(flat_models, process_type):
     vocabulary = []
     grammar_rules = []
-    model_stats = [await analysis_from_model(model, process_type) for model in flat_models]
+    model_stats = []
+    sentenceLengths = []
+    for model in flat_models:
+        sentences = get_sentences_from_model(model)
+        for s in sentences:
+            sentenceLengths.append(len(s.get("t") or s["tokens"]))
+        model_stats.append(await analysis_from_model(model, process_type))
     for model_stat in model_stats:
         for stat in model_stat:
             if isinstance(stat, VocabularyCounter):
@@ -551,7 +561,8 @@ async def process(flat_models, process_type):
     merged_vocabulary = sum(vocabulary or [], VocabularyCounter())
     merged_grammar_rules = sum(grammar_rules or [], GrammarRuleCounter())
 
-    analysis = {}
+    analysis = {"sentenceLengths": sentenceLengths}
+
     if process_type in [Import.VOCABULARY_ONLY, Import.VOCABULARY_GRAMMAR]:
         # TODO: optimise
         frequency_buckets = defaultdict(list)
@@ -649,7 +660,7 @@ async def get_analysis_from_csv(an_import: Import, manager: EnrichmentManager):
         "vocabulary": {
             "buckets": {"1": list(all_words)},
             "counts": {"1": len(all_words)},
-        }
+        },
     }
 
 

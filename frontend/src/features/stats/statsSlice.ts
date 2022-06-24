@@ -1,6 +1,6 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { toEnrich } from "../../lib/funclib";
-import { ContentStats, ModelType, SerialisableStringSet } from "../../lib/types";
+import { ContentStats, MIN_LENGTH_FOR_SENTENCE, ModelType, SerialisableStringSet } from "../../lib/types";
 
 const initialState: ContentStats = {
   knownChars: {},
@@ -22,7 +22,7 @@ const statsSlice = createSlice({
       action: PayloadAction<{ model: ModelType; knownWords: SerialisableStringSet; knownChars: SerialisableStringSet }>,
     ) {
       for (const sentence of action.payload.model.s) {
-        if (sentence.t.length > 5) {
+        if (sentence.t.length >= MIN_LENGTH_FOR_SENTENCE) {
           state.sentenceLengths[sentence.t.length] = (state.sentenceLengths[sentence.t.length] || 0) + 1;
         }
         for (const word of sentence.t) {

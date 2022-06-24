@@ -14,14 +14,13 @@ import * as data from "../lib/data";
 import { intervalCollection, NAME_PREFIX } from "../lib/interval/interval-decorator";
 import { fetchPlus } from "../lib/libMethods";
 import {
-  DayCardWords,
   DEFAULT_RETRIES,
   EventData,
   EVENT_QUEUE_PROCESS_FREQ,
   IS_DEV,
   ONE_YEAR_IN_SECS,
   PUSH_FILES_PROCESS_FREQ,
-  SerialisableStringSet,
+  SerialisableDayCardWords,
   UserDefinitionType,
   WEBPUB_CACHE_NAME,
 } from "../lib/types";
@@ -29,7 +28,7 @@ import {
 const VERSION = "v2";
 
 // FIXME: move to redux!!! or something less nasty!!!
-let dayCardWords: DayCardWords | null;
+let dayCardWords: SerialisableDayCardWords | null;
 const dictionaries: Record<string, Record<string, UserDefinitionType>> = {};
 let db: TranscrobesDatabase | null;
 let url: URL;
@@ -92,7 +91,7 @@ async function loadDb(
 async function getLocalCardWords(message: EventData, sw: ServiceWorkerGlobalScope) {
   if (!dayCardWords) {
     const [ldb] = await loadDb(message, sw);
-    const val = await data.getCardWords(ldb);
+    const val = await data.getSerialisableCardWords(ldb);
     dayCardWords = val;
   }
   return dayCardWords;
@@ -256,42 +255,12 @@ export function manageEvent(sw: ServiceWorkerGlobalScope, event: ExtendableMessa
     case "heartbeat":
       postIt(event, { source: message.source, type: message.type, value: dayjs().format() });
       break;
-    case "getCardWords":
-      getLocalCardWords(message, sw).then((dayCW) => {
-        postIt(event, {
-          source: message.source,
-          type: message.type,
-          // convert to arrays or Set()s get silently purged in chrome extensions, so
-          // need to mirror here for the same return types... Because JS is sooooooo awesome!
-          value: {
-            allCardWordGraphs: Array.from(dayCW.allCardWordGraphs),
-            knownCardWordGraphs: Array.from(dayCW.knownCardWordGraphs),
-            knownWordIdsCounter: dayCW.knownWordIdsCounter,
-          },
-        });
-      });
-      break;
     case "getSerialisableCardWords":
       getLocalCardWords(message, sw).then((dayCW) => {
-        const knownCardWordGraphs: SerialisableStringSet = {};
-        const allCardWordGraphs: SerialisableStringSet = {};
-        for (const value of dayCW.knownCardWordGraphs) {
-          knownCardWordGraphs[value] = null;
-        }
-        for (const value of dayCW.allCardWordGraphs) {
-          allCardWordGraphs[value] = null;
-        }
-
         postIt(event, {
           source: message.source,
           type: message.type,
-          // convert to arrays or Set()s get silently purged in chrome extensions, so
-          // need to mirror here for the same return types... Because JS is sooooooo awesome!
-          value: {
-            allCardWordGraphs: allCardWordGraphs,
-            knownCardWordGraphs: knownCardWordGraphs,
-            knownWordIdsCounter: dayCW.knownWordIdsCounter,
-          },
+          value: dayCW,
         });
       });
       break;
@@ -362,6 +331,16 @@ export function manageEvent(sw: ServiceWorkerGlobalScope, event: ExtendableMessa
             });
           },
         );
+      });
+      break;
+
+    case "getContentStatsForImport":
+      loadDb(message, sw).then(([ldb, msg]) => {
+        getLocalCardWords(message, sw).then((dayCW) => {
+          data.getContentStatsForImport(ldb, msg.value, dayCW).then((result) => {
+            postIt(event, { source: msg.source, type: msg.type, value: result });
+          });
+        });
       });
       break;
     // The following devalidate the dayCardWords "cache", so setting to null

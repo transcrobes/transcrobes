@@ -1,5 +1,6 @@
 import dayjs from "dayjs";
 import draftToHtml from "draftjs-to-html";
+import _ from "lodash";
 import LZString from "lz-string";
 import { clone, isRxDocument } from "rxdb";
 import { MangoQuery, RxStorageBulkWriteError } from "rxdb/dist/types/types";
@@ -33,11 +34,11 @@ import { getFileStorage, IDBFileStorage } from "./IDBFileStorage";
 import { cleanAnalysis, fetchPlus, shortMeaning, simpOnly, sortByWcpm } from "./libMethods";
 import { practice } from "./review";
 import {
+  CalculatedContentStats,
   CardType,
   CharacterType,
   ContentConfigType,
   DailyReviewables,
-  DayCardWords,
   DayModelStatsType,
   DefaultExportDetails,
   DefinitionType,
@@ -50,10 +51,13 @@ import {
   ListFirstSuccessStats,
   PracticeDetailsType,
   PROCESSING,
+  PythonCounter,
   RecentSentencesStoredType,
   RecentSentencesType,
   RepetrobesActivityConfigType,
   SelectableListElementType,
+  SerialisableDayCardWords,
+  SerialisableStringSet,
   ShortChar,
   ShortWord,
   UserDefinitionType,
@@ -188,6 +192,70 @@ async function getGraphs(db: TranscrobesDatabase, wordIds: string[]): Promise<Ma
   return graphs;
 }
 
+export async function getContentStatsForImport(
+  db: TranscrobesDatabase,
+  { importId, analysisString }: { importId?: string; analysisString?: string },
+  cardWords: SerialisableDayCardWords,
+): Promise<CalculatedContentStats | null> {
+  let analysis: ImportAnalysis;
+  if (analysisString) {
+    analysis = JSON.parse(analysisString);
+  } else if (importId) {
+    const theImport = (await db.imports.findByIds([importId])).get(importId);
+    if (!theImport?.analysis || theImport.analysis.length === 0) return null;
+    analysis = JSON.parse(theImport.analysis);
+  } else {
+    throw new Error("At least one of importId or analysisString must be provided");
+  }
+  // FIXME: hard-coded fromLang
+  const buckets = cleanAnalysis(analysis, "zh-Hans");
+  const allWords: PythonCounter = {};
+  let wordsTypes = 0;
+  let words = 0;
+  let allChars = "";
+
+  for (const [nbOccurances, wordList] of Object.entries(buckets)) {
+    for (const word of wordList) {
+      allWords[word] = parseInt(nbOccurances);
+    }
+    words += parseInt(nbOccurances) * wordList.length;
+    wordsTypes += wordList.length;
+    allChars += wordList.join("").repeat(parseInt(nbOccurances));
+  }
+  const chars = allChars.length;
+  const allCharCounts = pythonCounter(allChars);
+  const charsTypes = Object.keys(allCharCounts).length;
+  let knownCharsTypes = 0;
+  let knownChars = 0;
+  for (const [char, count] of Object.entries(allCharCounts)) {
+    if (Object.hasOwn(cardWords.knownCardWordChars, char)) {
+      knownCharsTypes++;
+      knownChars += count;
+    }
+  }
+
+  let knownWordsTypes = 0;
+  let knownWords = 0;
+  for (const [word, count] of Object.entries(allWords)) {
+    if (Object.hasOwn(cardWords.knownCardWordGraphs, word)) {
+      knownWordsTypes++;
+      knownWords += count;
+    }
+  }
+  const meanSentenceLength = _.mean(analysis.sentenceLengths);
+  return {
+    chars,
+    knownChars,
+    charsTypes,
+    knownCharsTypes,
+    words,
+    knownWords,
+    wordsTypes,
+    knownWordsTypes,
+    meanSentenceLength,
+  };
+}
+
 export async function getFirstSuccessStatsForImport(
   db: TranscrobesDatabase,
   { importId, analysisString }: { importId?: string; analysisString?: string },
@@ -239,6 +307,7 @@ export async function getFirstSuccessStatsForImport(
   successChars.sort((a, b) => a.firstSuccess - b.firstSuccess);
   successWords.sort((a, b) => a.firstSuccess - b.firstSuccess);
 
+  const meanSentenceLength = _.mean(analysis.sentenceLengths);
   return {
     successChars,
     successWords,
@@ -246,6 +315,7 @@ export async function getFirstSuccessStatsForImport(
     nbTotalWords,
     nbUniqueCharacters,
     nbUniqueWords,
+    meanSentenceLength,
   };
 }
 
@@ -315,7 +385,7 @@ export async function getFirstSuccessStatsForList(
   };
 }
 
-export async function getCardWords(db: TranscrobesDatabase): Promise<DayCardWords> {
+export async function getSerialisableCardWords(db: TranscrobesDatabase): Promise<SerialisableDayCardWords> {
   // FIXME:
   // Is this the best way to do this?
   // Basically, there are three states:
@@ -338,18 +408,23 @@ export async function getCardWords(db: TranscrobesDatabase): Promise<DayCardWord
   );
 
   const allCardWords = await db.definitions.findByIds(allCardWordIds);
-  const allCardWordGraphs = new Set<string>();
-  const knownCardWordGraphs = new Set<string>();
+  const allCardWordGraphs: SerialisableStringSet = {};
+  const knownCardWordGraphs: SerialisableStringSet = {};
+  const knownCardWordChars: SerialisableStringSet = {};
   for (const [wordId, word] of allCardWords) {
-    allCardWordGraphs.add(word.graph);
+    allCardWordGraphs[word.graph] = null;
     if (knownWordIds.has(wordId)) {
-      knownCardWordGraphs.add(word.graph);
+      for (const char of word.graph) {
+        knownCardWordChars[char] = null;
+      }
+      knownCardWordGraphs[word.graph] = null;
     }
   }
 
   return {
-    knownCardWordGraphs: knownCardWordGraphs,
-    allCardWordGraphs: allCardWordGraphs,
+    knownCardWordGraphs,
+    knownCardWordChars,
+    allCardWordGraphs,
     knownWordIdsCounter: pythonCounter(knownWordIds),
   };
 }

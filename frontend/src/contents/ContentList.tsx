@@ -6,6 +6,7 @@ import { ProcessingField } from "../components/ProcessingField";
 import { CONTENT_TYPE, DOCS_DOMAIN, reverseEnum } from "../lib/types";
 import ActionButton from "./ActionButton";
 import CacheSwitch from "./CacheSwitch";
+import { ContentStatsField } from "./ContentStatsField";
 
 function ListActions({ empty }: { empty?: boolean }) {
   return (
@@ -47,6 +48,7 @@ export default function ContentList() {
         </ReferenceField>
         <ProcessingField label="Processing status" />
         <FunctionField source="contentType" render={(record: any) => reverseEnum(CONTENT_TYPE, record.contentType)} />
+        <ContentStatsField label="Content Stats" />
         <ActionButton label="Action" />
         <CacheSwitch label="Offline?" />
       </Datagrid>

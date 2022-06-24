@@ -109,6 +109,12 @@ export function ImportProgress({ stats }: { stats?: ImportFirstSuccessStats | nu
               </td>
               <td>{stats.nbTotalCharacters}</td>
             </tr>
+            <tr>
+              <td>
+                <span>Avg. sentence length</span>
+              </td>
+              <td>{stats.meanSentenceLength ? stats.meanSentenceLength.toFixed(1) : "Unknown"}</td>
+            </tr>
           </tbody>
         </table>
       </Grid>

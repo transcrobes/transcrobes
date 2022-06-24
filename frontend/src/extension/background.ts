@@ -7,16 +7,15 @@ import { setUser, throttledRefreshToken } from "../features/user/userSlice";
 import * as data from "../lib/data";
 import * as utils from "../lib/libMethods";
 import {
-  DayCardWords,
   DEFAULT_RETRIES,
   EventData,
   EVENT_QUEUE_PROCESS_FREQ,
-  SerialisableStringSet,
+  SerialisableDayCardWords,
   UserDefinitionType,
 } from "../lib/types";
 
 let db: TranscrobesDatabase;
-let dayCardWords: DayCardWords | null;
+let dayCardWords: SerialisableDayCardWords | null;
 const dictionaries: Record<string, Record<string, UserDefinitionType>> = {};
 let eventQueueTimer: number | undefined;
 
@@ -31,7 +30,7 @@ async function getLocalCardWords(message: EventData) {
     return Promise.resolve(dayCardWords);
   } else {
     const ldb = await loadDb(console.debug, message);
-    const val = await data.getCardWords(ldb);
+    const val = await data.getSerialisableCardWords(ldb);
     dayCardWords = val;
     return Promise.resolve(dayCardWords);
   }
@@ -124,34 +123,10 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
     });
   } else if (message.type === "getSerialisableCardWords") {
     getLocalCardWords(message).then((dayCW) => {
-      const knownCardWordGraphs: SerialisableStringSet = {};
-      const allCardWordGraphs: SerialisableStringSet = {};
-      for (const value of dayCW.knownCardWordGraphs) {
-        knownCardWordGraphs[value] = null;
-      }
-      for (const value of dayCW.allCardWordGraphs) {
-        allCardWordGraphs[value] = null;
-      }
       sendResponse({
         source: message.source,
         type: message.type,
-        value: {
-          allCardWordGraphs: allCardWordGraphs,
-          knownCardWordGraphs: knownCardWordGraphs,
-          knownWordIdsCounter: dayCW.knownWordIdsCounter,
-        },
-      });
-    });
-  } else if (message.type === "getCardWords") {
-    getLocalCardWords(message).then((dayCW) => {
-      sendResponse({
-        source: message.source,
-        type: message.type,
-        value: {
-          allCardWordGraphs: Array.from(dayCW.allCardWordGraphs),
-          knownCardWordGraphs: Array.from(dayCW.knownCardWordGraphs),
-          knownWordIdsCounter: dayCW.knownWordIdsCounter,
-        },
+        value: dayCW,
       });
     });
   } else if (message.type === "submitLookupEvents") {
@@ -196,9 +171,9 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
     loadDb(console.debug, message).then((ldb) => {
       getLocalCardWords(message).then((dayCW) => {
         data.practiceCardsForWord(ldb, practiceDetails).then((values) => {
-          dayCW.allCardWordGraphs.add(wordInfo.graph);
+          dayCW.allCardWordGraphs[wordInfo.graph] = null;
           if (grade > GRADE.UNKNOWN) {
-            dayCW.knownCardWordGraphs.add(wordInfo.graph);
+            dayCW.knownCardWordGraphs[wordInfo.graph] = null;
             dayCW.knownWordIdsCounter[wordInfo.wordId] = dayCW.knownWordIdsCounter[wordInfo.wordId]
               ? dayCW.knownWordIdsCounter[wordInfo.wordId] + 1
               : 1;

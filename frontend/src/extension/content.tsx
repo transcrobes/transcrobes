@@ -10,7 +10,7 @@ import { ETFStyles, ETFStylesProps } from "../components/Common";
 import EnrichedTextFragment from "../components/content/etf/EnrichedTextFragment";
 import Mouseover from "../components/content/td/Mouseover";
 import TokenDetails from "../components/content/td/TokenDetails";
-import ContentAnalysis from "../components/ContentAnalysis";
+import ContentAnalysisBrocrobes from "./ContentAnalysisBrocrobes";
 import Loading from "../components/Loading";
 import { setCardWordsState } from "../features/card/knownCardsSlice";
 import { getRefreshedState } from "../features/content/contentSlice";
@@ -125,7 +125,7 @@ proxy.sendMessagePromise<UserState>({ source: DATA_SOURCE, type: "getUser", valu
             <ScopedCssBaseline>
               <TokenDetails readerConfig={readerConfig} />
               <Mouseover readerConfig={readerConfig} />
-              {readerConfig.analysisPosition !== "none" && <ContentAnalysis />}
+              {readerConfig.analysisPosition !== "none" && <ContentAnalysisBrocrobes />}
             </ScopedCssBaseline>
           </ThemeProvider>
         </Provider>,

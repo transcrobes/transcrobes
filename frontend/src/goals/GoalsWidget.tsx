@@ -2,7 +2,7 @@ import { Box, Button, Grid, Link } from "@mui/material";
 import { ReactElement, useEffect, useState } from "react";
 import { GoalDocument } from "../database/Schema";
 import { ComponentsConfig } from "../lib/complexTypes";
-import { DayCardWords, STATUS, WordlistType } from "../lib/types";
+import { SerialisableDayCardWords, STATUS, WordlistType } from "../lib/types";
 import GoalIcon from "@mui/icons-material/TrackChanges";
 
 interface Props {
@@ -24,9 +24,9 @@ export default function GoalsWidget({ config, inited }: Props): ReactElement {
   useEffect(() => {
     (async function () {
       if (!inited) return;
-      const userWords = await config.proxy.sendMessagePromise<DayCardWords>({
+      const userWords = await config.proxy.sendMessagePromise<SerialisableDayCardWords>({
         source: DATA_SOURCE,
-        type: "getCardWords",
+        type: "getSerialisableCardWords",
         value: {},
       });
 

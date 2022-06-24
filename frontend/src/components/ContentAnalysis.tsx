@@ -1,5 +1,5 @@
 import CloseIcon from "@mui/icons-material/Close";
-import { Card, CardContent, CardHeader, Typography, useTheme } from "@mui/material";
+import { Card, CardContent, CardHeader, Typography } from "@mui/material";
 import Button from "@mui/material/Button";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
@@ -14,11 +14,8 @@ import TableContainer from "@mui/material/TableContainer";
 import TableRow from "@mui/material/TableRow";
 import { TransitionProps } from "@mui/material/transitions";
 import { Box } from "@mui/system";
-import _ from "lodash";
 import * as React from "react";
-import { useAppSelector } from "../app/hooks";
-import { EXTENSION_READER_ID } from "../features/content/extensionReaderSlice";
-import { ContentStats, DOCS_DOMAIN, PythonCounter } from "../lib/types";
+import { CalculatedContentStats, DOCS_DOMAIN } from "../lib/types";
 import HelpButton from "./HelpButton";
 
 const Transition = React.forwardRef(function Transition(
@@ -30,148 +27,87 @@ const Transition = React.forwardRef(function Transition(
   return <Slide direction="down" ref={ref} {...props} />;
 });
 
-function sumit(pyCount: PythonCounter | undefined) {
-  return Object.values(pyCount || {}).reduce((a, b) => a + b, 0);
-}
-
 function format(num: number) {
   return isNaN(num) ? "" : new Intl.NumberFormat("default", { style: "percent" }).format(num);
 }
 
-export default function ContentAnalysis() {
+interface Props extends CalculatedContentStats {
+  colour: string;
+  leftButtonRadii: string;
+  rightButtonRadii: string;
+  boxRadii: string;
+  showRemove: boolean;
+  setRemoved: (removed: boolean) => void;
+}
+
+export default function ContentAnalysis(props: Props) {
+  const helpUrl = `//${DOCS_DOMAIN}/page/software/learn/content-stats/`;
   const [open, setOpen] = React.useState(false);
-  const [removed, setRemoved] = React.useState(false);
-  const outsideStats = useAppSelector((state) => state.stats);
-  const readerConfig = useAppSelector((state) => state.extensionReader[EXTENSION_READER_ID]);
-
-  const [knownChars, setKnownChars] = React.useState(0);
-  const [chars, setChars] = React.useState(0);
-  const [knownWords, setKnownWords] = React.useState(0);
-  const [words, setWords] = React.useState(0);
-  const [knownCharsTypes, setKnownCharsTypes] = React.useState(0);
-  const [charsTypes, setCharsTypes] = React.useState(0);
-  const [knownWordsTypes, setKnownWordsTypes] = React.useState(0);
-  const [wordsTypes, setWordsTypes] = React.useState(0);
-  const [medianLength, setMedianLength] = React.useState(0);
-
-  const theme = useTheme();
-  const [colour, setColour] = React.useState(theme.palette.success.main);
-
-  const debounce = React.useCallback(
-    _.debounce(
-      (stats: ContentStats) => {
-        const kc = sumit(stats.knownChars);
-        const c = sumit(stats.chars);
-        const kw = sumit(stats.knownWords);
-        const w = sumit(stats.words);
-        const kct = Object.keys(stats.knownChars).length;
-        const ct = Object.keys(stats.chars).length;
-        const kwt = Object.keys(stats.knownWords).length;
-        const wt = Object.keys(stats.words).length;
-        // FIXME: there is a more efficient way to do this
-        const ml = _.mean(Object.entries(stats.sentenceLengths).flatMap(([x, y]) => Array(y).fill(parseInt(x)))) || 0;
-        setKnownChars(kc);
-        setChars(c);
-        setKnownWords(kw);
-        setWords(w);
-        setKnownCharsTypes(kct);
-        setCharsTypes(ct);
-        setKnownWordsTypes(kwt);
-        setWordsTypes(wt);
-        setMedianLength(ml);
-        if (kc / c < 0.7 || kw / w < 0.5 || ml > 40) {
-          setColour(theme.palette.warning.main);
-        } else if (kc / c < 0.8 || kw / w < 0.8 || ml > 30) {
-          setColour(theme.palette.info.main);
-        }
-      },
-      1000,
-      { maxWait: 2000 },
-    ),
-    [],
-  );
-
-  React.useEffect(() => {
-    debounce(outsideStats);
-  }, [
-    outsideStats.chars,
-    outsideStats.knownChars,
-    outsideStats.knownWords,
-    outsideStats.sentenceLengths,
-    outsideStats.words,
-  ]);
-
-  function handleClickOpen() {
+  function handleClickOpen(event: React.MouseEvent<HTMLButtonElement>) {
+    event.stopPropagation();
     setOpen(true);
+    return false;
   }
 
-  function handleClose() {
+  function handleClose(event: React.MouseEvent<HTMLButtonElement>) {
+    event.stopPropagation();
     setOpen(false);
+    return false;
   }
 
   function score() {
-    const charTypes = knownCharsTypes / charsTypes || 0;
-    const wordTypes = knownWordsTypes / wordsTypes || 0;
-    const charTokens = knownChars / chars || 0;
-    const wordTokens = knownWords / words || 0;
+    const charTypes = props.knownCharsTypes / props.charsTypes || 0;
+    const wordTypes = props.knownWordsTypes / props.wordsTypes || 0;
+    const charTokens = props.knownChars / props.chars || 0;
+    const wordTokens = props.knownWords / props.words || 0;
     return `${(charTypes * 100).toFixed()}:${(wordTypes * 100).toFixed()}:${(charTokens * 100).toFixed()}:${(
       wordTokens * 100
-    ).toFixed()}:${medianLength.toFixed()}`;
+    ).toFixed()}:${props.meanSentenceLength ? props.meanSentenceLength.toFixed() : "?"}`;
   }
 
-  const helpUrl = `//${DOCS_DOMAIN}/page/software/learn/brocrobes/`;
-  const tr = readerConfig.analysisPosition === "top-right";
-  const boxRadii = tr ? "0px 10px 0px 10px" : "10px 0px 10px 0px";
-  const leftButtonRadii = tr ? "0px 0px 0px 10px" : "10px 0px 0px 0px";
-  const rightButtonRadii = tr ? "0px 0px 10px 0px" : "0px 10px 0px 0px";
-  const vertPosition = tr ? { top: 0 } : { bottom: 0 };
-  return !removed ? (
-    <Box
-      style={{
-        zIndex: 1000,
-        position: "fixed",
-        right: "0",
-        ...vertPosition,
-      }}
-    >
+  return (
+    <>
       <Box
         style={{
           zIndex: 1000,
-          borderRadius: boxRadii,
+          borderRadius: props.boxRadii,
         }}
       >
         <Button
           variant="contained"
           style={{
             zIndex: 1000,
-            backgroundColor: colour,
-            borderRadius: leftButtonRadii,
+            backgroundColor: props.colour,
+            borderRadius: props.leftButtonRadii,
             padding: "0px 6px 0px 6px",
             margin: 0,
+            width: "120px",
           }}
           onClick={handleClickOpen}
         >
           {score()}
         </Button>
-        <Button
-          variant="contained"
-          style={{
-            zIndex: 1000,
-            backgroundColor: colour,
-            padding: "6px 4px 6px 4px",
-            margin: 0,
-            minWidth: 0,
-            borderRadius: rightButtonRadii,
-          }}
-          onClick={() => setRemoved(true)}
-        >
-          <CloseIcon
+        {props.showRemove && (
+          <Button
+            variant="contained"
             style={{
-              padding: 0,
+              zIndex: 1000,
+              backgroundColor: props.colour,
+              padding: "6px 4px 6px 4px",
               margin: 0,
+              minWidth: 0,
+              borderRadius: props.rightButtonRadii,
             }}
-          />
-        </Button>
+            onClick={() => props.setRemoved(true)}
+          >
+            <CloseIcon
+              style={{
+                padding: 0,
+                margin: 0,
+              }}
+            />
+          </Button>
+        )}
       </Box>
       <Dialog
         open={open}
@@ -207,18 +143,18 @@ export default function ContentAnalysis() {
                     Number of characters
                   </TableCell>
                   <TableCell align="right">
-                    {knownCharsTypes} / {charsTypes}
+                    {props.knownCharsTypes} / {props.charsTypes}
                   </TableCell>
-                  <TableCell align="right">{format(knownCharsTypes / charsTypes)}</TableCell>
+                  <TableCell align="right">{format(props.knownCharsTypes / props.charsTypes)}</TableCell>
                 </TableRow>
                 <TableRow sx={{ "&:last-child td, &:last-child th": { border: 0 } }}>
                   <TableCell component="th" scope="row">
                     Number of words
                   </TableCell>
                   <TableCell align="right">
-                    {knownWordsTypes} / {wordsTypes}
+                    {props.knownWordsTypes} / {props.wordsTypes}
                   </TableCell>
-                  <TableCell align="right">{format(knownWordsTypes / wordsTypes)}</TableCell>
+                  <TableCell align="right">{format(props.knownWordsTypes / props.wordsTypes)}</TableCell>
                 </TableRow>
               </TableBody>
             </Table>
@@ -244,18 +180,18 @@ export default function ContentAnalysis() {
                     Number of characters
                   </TableCell>
                   <TableCell align="right">
-                    {knownChars} / {chars}
+                    {props.knownChars} / {props.chars}
                   </TableCell>
-                  <TableCell align="right">{format(knownChars / chars)}</TableCell>
+                  <TableCell align="right">{format(props.knownChars / props.chars)}</TableCell>
                 </TableRow>
                 <TableRow sx={{ "&:last-child td, &:last-child th": { border: 0 } }}>
                   <TableCell component="th" scope="row">
                     Number of words
                   </TableCell>
                   <TableCell align="right">
-                    {knownWords} / {words}
+                    {props.knownWords} / {props.words}
                   </TableCell>
-                  <TableCell align="right">{format(knownWords / words)}</TableCell>
+                  <TableCell align="right">{format(props.knownWords / props.words)}</TableCell>
                 </TableRow>
               </TableBody>
             </Table>
@@ -271,7 +207,7 @@ export default function ContentAnalysis() {
                   <Typography>Average sentence length (words)</Typography>
                 </Box>
                 <Box>
-                  <Typography>{medianLength.toFixed(1)}</Typography>
+                  <Typography>{props.meanSentenceLength ? props.meanSentenceLength.toFixed(1) : "Unknown"}</Typography>
                 </Box>
               </Box>
             </CardContent>
@@ -283,8 +219,6 @@ export default function ContentAnalysis() {
           </Button>
         </DialogActions>
       </Dialog>
-    </Box>
-  ) : (
-    <></>
+    </>
   );
 }

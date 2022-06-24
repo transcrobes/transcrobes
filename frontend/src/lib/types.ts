@@ -82,6 +82,8 @@ export const MAX_IMPORT_SIZE_BYTES = 15000000;
 
 export const MIN_KNOWN_BEFORE_ADVANCED = 500;
 
+export const MIN_LENGTH_FOR_SENTENCE = 5;
+
 export type KnownLanguage = "en" | "zh-Hans";
 export type InputLanguage = "zh-Hans";
 export type CornerPosition = "none" | "top-left" | "top-right" | "bottom-left" | "bottom-right";
@@ -785,29 +787,36 @@ export type PythonCounter = {
   [key: string]: number;
 };
 
-export type DayCardWords = {
-  knownCardWordGraphs: Set<string>;
-  allCardWordGraphs: Set<string>;
-  knownWordIdsCounter: PythonCounter;
-};
-
 export type SerialisableStringSet = {
   [key: string]: null;
 };
 
 export type SerialisableDayCardWords = {
   knownCardWordGraphs: SerialisableStringSet;
+  knownCardWordChars: SerialisableStringSet;
   allCardWordGraphs: SerialisableStringSet;
   knownWordIdsCounter: PythonCounter;
 };
 
-export type ContentStats = {
+export interface CalculatedContentStats {
+  knownChars: number;
+  chars: number;
+  knownWords: number;
+  words: number;
+  knownCharsTypes: number;
+  charsTypes: number;
+  knownWordsTypes: number;
+  wordsTypes: number;
+  meanSentenceLength: number;
+}
+
+export interface ContentStats {
   knownChars: PythonCounter;
   chars: PythonCounter;
   knownWords: PythonCounter;
   words: PythonCounter;
   sentenceLengths: PythonCounter;
-};
+}
 
 export type GradesType = {
   id: string;
@@ -916,7 +925,8 @@ export type RecentSentencesType = {
 
 export type ImportAnalysis = {
   vocabulary: { buckets: { [key: string]: string[] }; counts: { [key: string]: number } };
-  grammar_rules: { [key: string]: number };
+  sentenceLengths?: number[];
+  grammar_rules?: { [key: string]: number };
 };
 
 export type FirstSuccess = { firstSuccess: number; nbOccurrences: number };
@@ -934,6 +944,7 @@ export type ImportFirstSuccessStats = {
   nbTotalWords: number;
   nbUniqueCharacters: number;
   nbTotalCharacters: number;
+  meanSentenceLength?: number;
 };
 
 export type ListFirstSuccessStats = {

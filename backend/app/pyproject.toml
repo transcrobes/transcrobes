@@ -1,13 +1,13 @@
 [tool.poetry]
 name = "transcrobes"
-version = "0.16.0"
+version = "0.17.0"
 description = ""
 authors = ["Anton Melser <anton@transcrob.es>"]
 license = "AGPLv3"
 
 [tool.poetry.dependencies]
 python = "^3.10"
-uvicorn = {version = "^0.17.4", extras = ["standard"]}
+uvicorn = {extras = ["standard"], version = "^0.18.1"}
 fastapi = "^0.78.0"
 python-multipart = "^0.0.5"
 email-validator = "^1.1.3"
