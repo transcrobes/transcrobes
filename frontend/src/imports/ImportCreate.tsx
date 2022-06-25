@@ -11,11 +11,15 @@ export default function ImportCreate() {
     >
       <SimpleForm>
         <Typography sx={{ paddingBottom: "1em" }}>
-          Please check the{" "}
+          You can import{" "}
+          <Typography component={"span"} sx={{ fontWeight: "bold" }}>
+            .csv, .txt, .srt / .vtt and .epub
+          </Typography>{" "}
+          files. Please check the dedicated{" "}
           <a target="_blank" href={`//${DOCS_DOMAIN}/page/software/configure/imports/`}>
             Online Help
           </a>{" "}
-          for information about supported import formats!
+          for more information about supported import formats!
         </Typography>
 
         <TextInput label="Import name" source="title" validate={[required()]} />

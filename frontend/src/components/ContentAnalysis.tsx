@@ -81,7 +81,7 @@ export default function ContentAnalysis(props: Props) {
             borderRadius: props.leftButtonRadii,
             padding: "0px 6px 0px 6px",
             margin: 0,
-            width: "120px",
+            minWidth: "120px",
           }}
           onClick={handleClickOpen}
         >
