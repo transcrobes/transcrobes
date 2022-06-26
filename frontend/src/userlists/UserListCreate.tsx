@@ -35,7 +35,7 @@ export default function UserListCreate() {
         <NumberInput label="Minimum absolute freq." min={-1} source="minimumAbsFrequency" step={1} defaultValue={-1} />
         <NumberInput label="Minimum document freq." min={-1} source="minimumDocFrequency" step={1} defaultValue={-1} />
         <SelectInput
-          label="Ordery by"
+          label="Order by"
           source="orderBy"
           validate={[required()]}
           choices={[
