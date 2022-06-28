@@ -1,4 +1,4 @@
-import { Button } from "@mui/material";
+import { Box, Button } from "@mui/material";
 import dayjs from "dayjs";
 import { ReactElement } from "react";
 import { $enum } from "ts-enum-util";
@@ -7,6 +7,7 @@ import { ThinHR } from "../components/Common";
 import DefinitionGraph from "../components/DefinitionGraph";
 import DefinitionTranslations from "../components/DefinitionTranslations";
 import DW from "../components/DiscoverableWord";
+import { Frequency } from "../components/Frequency";
 import Header from "../components/Header";
 import PosItem from "../components/PosItem";
 import PracticerInput from "../components/PracticerInput";
@@ -18,6 +19,7 @@ import {
   CharacterType,
   DefinitionType,
   EMPTY_CARD,
+  FrequencyType,
   PosSentences,
   SortableListElementType,
   WordModelStatsType,
@@ -331,10 +333,7 @@ function WordMetadata({ definition }: { definition: DefinitionType }): ReactElem
           </span>
         </div>
         <div className={classes.infoBox}>
-          <span className={classes.fieldName}>Freq: </span>
-          <span>
-            {definition.frequency && definition.frequency.wcpm ? definition.frequency.wcpm : "No frequency data"}
-          </span>
+          <Frequency frequency={definition.frequency} />
         </div>
       </div>
     </>

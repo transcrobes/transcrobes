@@ -650,6 +650,14 @@ export type UserDefinitionType = {
   sounds?: string;
 };
 
+//{"pinyin": "de/dí/dì", "wcpm": "50155.13", "wcdp": "100", "pos": ".u.n.", "pos_freq": ".1682369.161."}
+export type FrequencyType = {
+  wcpm: string;
+  wcdp: string;
+  pos: string;
+  pos_freq: string;
+};
+
 export type DefinitionType = {
   id: string;
   graph: string;
@@ -657,8 +665,7 @@ export type DefinitionType = {
   sound: string[];
   synonyms: SynonymType[];
   providerTranslations: ProviderTranslationType[];
-  //{"pinyin": "de/dí/dì", "wcpm": "50155.13", "wcdp": "100", "pos": ".u.n.", "pos_freq": ".1682369.161."}
-  frequency: { wcpm: string; wcdp: string; pos: string; pos_freq: string };
+  frequency: FrequencyType;
   hsk: { levels: number[] };
 };
 

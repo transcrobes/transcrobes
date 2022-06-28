@@ -1,5 +1,6 @@
 import { ReactElement } from "react";
 import { DefinitionType } from "../../../lib/types";
+import { Frequency } from "../../Frequency";
 
 type Props = { definition: DefinitionType };
 
@@ -9,15 +10,10 @@ export default function Infos({ definition }: Props): ReactElement {
       ? `HSK: ${definition.hsk.levels.join(", ")}`
       : "No HSK found";
 
-  // const vals = `Frequency: wcpm: ${frq.wcpm}, wcdp: ${frq.wcdp}, pos: ${frq.pos}, pos freq: ${frq.posFreq}`;
-  const frq =
-    definition.frequency && definition.frequency.wcpm
-      ? `Frequency: wcpm: ${definition.frequency.wcpm}, wcdp: ${definition.frequency.wcdp}`
-      : "No Frequencies found";
   return (
     <>
       <div>{hsk}</div>
-      <div>{frq}</div>
+      <Frequency frequency={definition.frequency} compact />
     </>
   );
 }
