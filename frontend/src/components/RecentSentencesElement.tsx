@@ -1,3 +1,4 @@
+import { Box } from "@mui/system";
 import { ReactElement } from "react";
 import { DEFAULT_RECENTS_READER_CONFIG_STATE } from "../features/content/simpleReaderSlice";
 import { toPosLabels } from "../lib/libMethods";
@@ -45,7 +46,7 @@ export default function RecentSentencesElement({ recentPosSentences, onDelete, s
           })}
         <Mouseover readerConfig={DEFAULT_RECENTS_READER_CONFIG_STATE} />
       </div>
-      {!recentPosSentences && <div>No recent phrases found</div>}
+      {!recentPosSentences && <Box sx={{ marginLeft: "1em" }}>No recent phrases found</Box>}
     </>
   );
 }

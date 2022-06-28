@@ -77,8 +77,10 @@ export function VocabRevisor({
           const now = Date.now() + Math.random();
           sent.sentence.t.forEach((t) => {
             if (t.l === lemma && t.pos === pos) {
-              t.style = { color: theme.palette.success.main, "font-weight": "bold" };
-              t.de = true;
+              if (!t.style) {
+                t.style = { color: theme.palette.success.main, "font-weight": "bold" };
+                t.de = true;
+              }
             }
           });
           sent.modelId = now;
