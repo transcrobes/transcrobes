@@ -103,7 +103,11 @@ export default function Meaning({
         onClick={handleClickOpen}
       >
         <MeaningText defaultElements={posTrans} card={card} />
-        {showSynonyms && <SynonymsText synonyms={definition.synonyms} />}
+        {showSynonyms && (
+          <>
+            <SynonymsText synonyms={definition.synonyms} showHr />
+          </>
+        )}
       </div>
       <Popover
         id="mouse-over-popover"

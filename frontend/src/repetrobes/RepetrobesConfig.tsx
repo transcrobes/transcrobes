@@ -264,7 +264,7 @@ export default function RepetrobesConfig({ activityConfig, onConfigChange }: Pro
         <div className={classes.multiselect}>
           <Typography>Preferred meaning provider</Typography>
           <DictionaryChooser
-            selected={activityConfig.translationProviderOrder}
+            selected={activityConfig.translationProviderOrder || {}}
             onSelectionChange={(value) => {
               onConfigChange({ ...activityConfig, translationProviderOrder: value });
             }}

@@ -10,7 +10,7 @@ const DATA_SOURCE = "repetrobes/funclib.ts";
 const DEFAULT_ITEM_ORDERING: WordOrdering = "Personal"; // repeated from listrobes, show this be the same?
 const DEFAULT_ONLY_SELECTED_WORDLIST_REVISIONS = false;
 const DEFAULT_QUESTION_SHOW_SYNONYMS = false;
-const DEFAULT_QUESTION_SHOW_PROGRESS = false;
+const DEFAULT_QUESTION_SHOW_PROGRESS = true;
 const DEFAULT_QUESTION_SHOW_L2_LENGTH_HINT = false;
 const DEFAULT_ANSWER_SHOW_RECENTS = false;
 const DEFAULT_DAY_STARTS_HOUR = 0;
@@ -33,7 +33,7 @@ export const EMPTY_ACTIVITY = {
   showL2LengthHint: DEFAULT_QUESTION_SHOW_L2_LENGTH_HINT,
   activeCardTypes: [],
   todayStarts: 0,
-  translationProviderOrder: {},
+  translationProviderOrder: undefined,
 } as RepetrobesActivityConfigType;
 
 export async function getUserConfig(proxy: ServiceWorkerProxy): Promise<RepetrobesActivityConfigType> {

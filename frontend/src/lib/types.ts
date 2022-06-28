@@ -756,7 +756,7 @@ export type RepetrobesActivityConfigType = {
   showSynonyms: boolean;
   showL2LengthHint: boolean;
   activeCardTypes: SelectableListElementType[];
-  translationProviderOrder: Record<string, number>;
+  translationProviderOrder?: Record<string, number>;
 };
 
 export type DayModelStatsType = {

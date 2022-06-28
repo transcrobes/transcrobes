@@ -108,10 +108,7 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
         ...conf,
         translationProviderOrder:
           conf.translationProviderOrder ||
-          Object.keys(defaultProviderOrder).reduce(
-            (acc, next, ind) => ({ ...acc, [next]: ind }),
-            {} as Record<string, number>,
-          ),
+          defaultProviderOrder.reduce((acc, next, ind) => ({ ...acc, [next]: ind }), {} as Record<string, number>),
       } as RepetrobesActivityConfigType;
       const reviewLists = await proxy.sendMessagePromise<DailyReviewables>({
         source: DATA_SOURCE,
@@ -139,6 +136,7 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
   useEffect(() => {
     (async () => {
       if (!configIsUsable(stateActivityConfig)) {
+        console.log("Activity config is not usable, not doing anything", stateActivityConfig);
         dispatch(setLoading(true));
         return;
       }
@@ -150,6 +148,7 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
     if (!proxy.loaded) return;
     (async () => {
       if (!configIsUsable(stateActivityConfig)) {
+        console.log("Activity config is not usable, not doing anything", stateActivityConfig);
         dispatch(setLoading(true));
         return;
       }

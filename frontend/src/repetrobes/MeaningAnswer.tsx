@@ -30,9 +30,7 @@ export default function MeaningAnswer({
               Say it!
             </Button>
           </CentredFlex>
-          <CentredFlex>
-            {showRecents && <RecentSentencesElement recentPosSentences={recentSentences} />}
-          </CentredFlex>
+          <CentredFlex>{showRecents && <RecentSentencesElement recentPosSentences={recentSentences} />}</CentredFlex>
         </>
       )}
     </div>

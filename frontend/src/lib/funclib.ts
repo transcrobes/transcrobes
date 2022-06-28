@@ -129,16 +129,12 @@ export function validInt(value: any, minValue?: number, maxValue?: number): bool
 
 export function configIsUsable(activityConfig: RepetrobesActivityConfigType): boolean {
   return (
-    activityConfig.wordLists.length > 0 &&
+    (activityConfig.systemWordSelection || activityConfig.wordLists.filter((wl) => wl.selected).length > 0) &&
     activityConfig.activeCardTypes.filter((ct) => ct.selected).length > 0 &&
-    !isNaN(activityConfig.dayStartsHour) &&
-    !isNaN(activityConfig.badReviewWaitSecs) &&
-    !isNaN(activityConfig.maxNew) &&
-    !isNaN(activityConfig.maxRevisions) &&
-    typeof activityConfig.dayStartsHour === "number" &&
-    typeof activityConfig.badReviewWaitSecs === "number" &&
-    typeof activityConfig.maxNew === "number" &&
-    typeof activityConfig.maxRevisions === "number"
+    validInt(activityConfig.dayStartsHour) &&
+    validInt(activityConfig.badReviewWaitSecs) &&
+    validInt(activityConfig.maxNew) &&
+    validInt(activityConfig.maxRevisions)
   );
 }
 
