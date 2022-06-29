@@ -160,7 +160,7 @@ async function cacheExports(
     data = await fetchPlus(exportFilesListURL);
   } catch (error: any) {
     progressCallback(
-      "There was an error downloading the data files. Please try again in a few minutes and if you get this message again, contact Transcrobes support: ERROR!",
+      "There was an error downloading the data files. Please completely close your browser and try again in a few minutes and if you get this message again, contact Transcrobes support: ERROR!",
       false,
     );
     console.error(error);
@@ -171,15 +171,15 @@ async function cacheExports(
   let hanziList;
   try {
     hanziList = await fetchPlus(hanziExportFilesListURL);
+    data.push(...hanziList);
   } catch (error: any) {
     progressCallback(
-      "There was an error downloading the data files. Please try again in a few minutes and if you get this message again, contact Transcrobes support: ERROR!",
+      "There was an error downloading the data files. Please completely close your browser and try again in a few minutes and if you get this message again, contact Transcrobes support: ERROR!",
       false,
     );
     console.error(error);
     throw new Error(error);
   }
-  data.push(...hanziList);
 
   const entryBlock = async (url: string, origin: string) => {
     let response;
