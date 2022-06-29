@@ -11,7 +11,8 @@ import { HEADER_HEIGHT } from "../common/types";
 import BookReaderLauncher from "./BookReaderConfigLauncher";
 import TableOfContentsLauncher from "./TableOfContentsLauncher";
 import { WebpubManifest } from "./WebpubManifestTypes/WebpubManifest";
-import { DOCS_DOMAIN } from "../../lib/types";
+import { BOOCROBES_YT_VIDEO, DOCS_DOMAIN } from "../../lib/types";
+import WatchDemo from "../../components/WatchDemo";
 
 interface Props {
   manifest: WebpubManifest;
@@ -47,6 +48,7 @@ export default function Header({ manifest }: Props): React.ReactElement {
       <Box display="flex">
         <TableOfContentsLauncher manifest={manifest} />
         <BookReaderLauncher />
+        <WatchDemo url={BOOCROBES_YT_VIDEO} size="large" />
         <HelpButton url={helpUrl} size="large" />
         <Button
           size="large"

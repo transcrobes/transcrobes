@@ -12,13 +12,15 @@ import { ContentStatsField } from "../components/ContentStatsField";
 import HelpButton from "../components/HelpButton";
 import { ListEmpty } from "../components/ListEmpty";
 import { ProcessingField } from "../components/ProcessingField";
-import { DOCS_DOMAIN, PROCESS_TYPE, reverseEnum } from "../lib/types";
+import WatchDemo from "../components/WatchDemo";
+import { DOCS_DOMAIN, IMPORTS_YT_VIDEO, PROCESS_TYPE, reverseEnum } from "../lib/types";
 
 function ListActions({ empty }: { empty?: boolean }) {
   return (
     <TopToolbar>
       {!empty && <CreateButton />}
       {!empty && <SortButton fields={["createdAt", "title", "processing"]} />}
+      <WatchDemo url={IMPORTS_YT_VIDEO} />
       <HelpButton url={`//${DOCS_DOMAIN}/page/software/configure/imports/`} />
     </TopToolbar>
   );

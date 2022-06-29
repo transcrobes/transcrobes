@@ -1,9 +1,10 @@
-import { ReactElement } from "react";
 import { Card, CardContent, CardHeader, Typography } from "@mui/material";
-import { makeStyles } from "tss-react/mui";
+import { ReactElement } from "react";
 import { TopToolbar } from "react-admin";
+import { makeStyles } from "tss-react/mui";
 import HelpButton from "./components/HelpButton";
-import { DOCS_DOMAIN } from "./lib/types";
+import WatchDemo from "./components/WatchDemo";
+import { BROCROBES_YT_VIDEO, DOCS_DOMAIN } from "./lib/types";
 
 const useStyles = makeStyles()({
   toolbar: {
@@ -19,6 +20,7 @@ export default function Brocrobes(): ReactElement {
     <>
       <TopToolbar className={classes.toolbar}>
         <CardHeader title="Brocrobes" />
+        <WatchDemo url={BROCROBES_YT_VIDEO} />
         <HelpButton url={helpUrl} />
       </TopToolbar>
       <Card>

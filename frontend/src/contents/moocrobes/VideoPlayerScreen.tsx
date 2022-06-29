@@ -1,12 +1,13 @@
 import { Container } from "@mui/material";
-import { makeStyles } from "tss-react/mui";
 import Button from "@mui/material/Button";
 import { ReactElement, useEffect, useRef, useState } from "react";
 import { TopToolbar, useGetOne } from "react-admin";
 import { useParams } from "react-router-dom";
+import { makeStyles } from "tss-react/mui";
 import { store } from "../../app/createStore";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import HelpButton from "../../components/HelpButton";
+import WatchDemo from "../../components/WatchDemo";
 import { getRefreshedState } from "../../features/content/contentSlice";
 import {
   DEFAULT_VIDEO_READER_CONFIG_STATE,
@@ -16,7 +17,15 @@ import {
 import { ensureDefinitionsLoaded } from "../../lib/dictionary";
 import { getSubsURL, missingWordIdsFromModels } from "../../lib/funclib";
 import { fetchPlus } from "../../lib/libMethods";
-import { Content, ContentParams, ContentProps, DOCS_DOMAIN, KeyedModels, SUBS_DATA_SUFFIX } from "../../lib/types";
+import {
+  Content,
+  ContentParams,
+  ContentProps,
+  DOCS_DOMAIN,
+  KeyedModels,
+  MOOCROBES_YT_VIDEO,
+  SUBS_DATA_SUFFIX,
+} from "../../lib/types";
 import VideoPlayer, { VideoPlayerHandle } from "./VideoPlayer";
 import VideoReaderConfigLauncher from "./VideoReaderConfigLauncher";
 
@@ -75,6 +84,8 @@ export default function VideoPlayerScreen({ proxy }: ContentProps): ReactElement
             }
           }}
         />
+
+        <WatchDemo url={MOOCROBES_YT_VIDEO} />
         <HelpButton url={helpUrl} />
       </TopToolbar>
       {!fileURL ? (

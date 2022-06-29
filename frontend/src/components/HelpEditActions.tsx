@@ -8,7 +8,9 @@ import {
   useEditContext,
   useResourceDefinition,
 } from "react-admin";
+import { ExtendedActionProps } from "../lib/types";
 import HelpButton from "./HelpButton";
+import WatchDemo from "./WatchDemo";
 
 const sanitizeRestProps = ({
   basePath = null,
@@ -23,8 +25,9 @@ export const HelpEditActions = ({
   className,
   helpUrl,
   helpLabel,
+  ytUrl,
   ...rest
-}: EditActionsProps & { helpUrl: string; helpLabel?: string }): ReactElement => {
+}: EditActionsProps & ExtendedActionProps): ReactElement => {
   const { record } = useEditContext(rest);
   const { hasShow, hasList, hasCreate } = useResourceDefinition(rest);
 
@@ -33,6 +36,7 @@ export const HelpEditActions = ({
       {hasCreate && <CreateButton />}
       {hasShow && <ShowButton record={record} />}
       {hasList && <ListButton />}
+      {ytUrl && <WatchDemo url={ytUrl} />}
       <HelpButton url={helpUrl} text={helpLabel} />
     </TopToolbar>
   );

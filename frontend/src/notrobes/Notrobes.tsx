@@ -19,6 +19,7 @@ import {
   CharacterType,
   DefinitionType,
   DOCS_DOMAIN,
+  NOTROBES_YT_VIDEO,
   PosSentence,
   PosSentences,
   RecentSentencesType,
@@ -34,6 +35,7 @@ import {
 } from "../lib/types";
 import ShortWordList from "./ShortWordList";
 import Word from "./Word";
+import WatchDemo from "../components/WatchDemo";
 
 let timeoutId: number;
 const MIN_LOOKED_AT_EVENT_DURATION = 2000; // ms
@@ -561,6 +563,7 @@ function Notrobes({ proxy, url }: Props): ReactElement {
   return (
     <>
       <TopToolbar className={classes.toolbar}>
+        <WatchDemo url={NOTROBES_YT_VIDEO} />
         <HelpButton url={helpUrl} />
       </TopToolbar>
       <Container maxWidth="md">

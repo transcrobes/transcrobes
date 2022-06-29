@@ -3,7 +3,7 @@ import { BooleanField, FunctionField, Show, SimpleShowLayout, TextField } from "
 import { useParams } from "react-router-dom";
 import { HelpShowActions } from "../components/HelpShowActions";
 import { ProcessingField } from "../components/ProcessingField";
-import { DOCS_DOMAIN, ImportFirstSuccessStats, PROCESS_TYPE, reverseEnum } from "../lib/types";
+import { DOCS_DOMAIN, ImportFirstSuccessStats, IMPORTS_YT_VIDEO, PROCESS_TYPE, reverseEnum } from "../lib/types";
 import { ImportProgress } from "./ImportProgress";
 
 const DATA_SOURCE = "ImportShow.tsx";
@@ -25,7 +25,11 @@ export default function ImportShow() {
     }
   }, [window.componentsConfig.proxy.loaded]);
   return (
-    <Show actions={<HelpShowActions helpUrl={`//${DOCS_DOMAIN}/page/software/configure/imports/`} />}>
+    <Show
+      actions={
+        <HelpShowActions helpUrl={`//${DOCS_DOMAIN}/page/software/configure/imports/`} ytUrl={IMPORTS_YT_VIDEO} />
+      }
+    >
       <SimpleShowLayout>
         <TextField source="id" />
         <TextField source="title" />

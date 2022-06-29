@@ -14,6 +14,7 @@ import Mouseover from "../../components/content/td/Mouseover";
 import TokenDetails from "../../components/content/td/TokenDetails";
 import HelpButton from "../../components/HelpButton";
 import Loading from "../../components/Loading";
+import WatchDemo from "../../components/WatchDemo";
 import { getRefreshedState } from "../../features/content/contentSlice";
 import {
   DEFAULT_TEXT_READER_CONFIG_STATE,
@@ -26,7 +27,14 @@ import { ImportProgress } from "../../imports/ImportProgress";
 import { ensureDefinitionsLoaded } from "../../lib/dictionary";
 import { wordIdsFromModels } from "../../lib/funclib";
 import { ServiceWorkerProxy } from "../../lib/proxies";
-import { DOCS_DOMAIN, EnrichedHtmlModels, ImportFirstSuccessStats, KeyedModels, noop } from "../../lib/types";
+import {
+  DOCS_DOMAIN,
+  EnrichedHtmlModels,
+  ImportFirstSuccessStats,
+  KeyedModels,
+  noop,
+  TEXTCROBES_YT_VIDEO,
+} from "../../lib/types";
 import ContentConfigLauncherDrawer from "./TextReaderConfigLauncher";
 
 type Props = {
@@ -152,6 +160,7 @@ export default function Textcrobes({ proxy }: Props): ReactElement {
     <div>
       <TopToolbar className={classes.toolbar}>
         <ContentConfigLauncherDrawer classes={classes} readerConfig={readerConfig} actions={simpleReaderActions} />
+        <WatchDemo url={TEXTCROBES_YT_VIDEO} />
         <HelpButton url={helpUrl} />
       </TopToolbar>
       {error && <div className={classes.error}>{error}</div>}

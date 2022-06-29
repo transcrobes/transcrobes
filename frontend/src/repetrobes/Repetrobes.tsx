@@ -24,6 +24,7 @@ import {
   RecentSentencesStoredType,
   RecentSentencesType,
   RepetrobesActivityConfigType,
+  REPETROBES_YT_VIDEO,
   ReviewablesInfoType,
   UserListWordType,
   USER_STATS_MODE,
@@ -33,6 +34,7 @@ import { EMPTY_ACTIVITY, getUserConfig } from "./funclib";
 import Progress from "./Progress";
 import RepetrobesConfigLauncher from "./RepetrobesConfigLauncher";
 import VocabRevisor from "./VocabRevisor";
+import WatchDemo from "../components/WatchDemo";
 
 const DATA_SOURCE = "Repetrobes.tsx";
 
@@ -550,6 +552,7 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
               possibleRevisionsToday={daState.possibleRevisionsToday}
             />
           )}
+          <WatchDemo url={REPETROBES_YT_VIDEO} />
           <HelpButton url={helpUrl} />
         </div>
       </TopToolbar>

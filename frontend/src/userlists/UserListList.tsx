@@ -14,13 +14,15 @@ import {
 import HelpButton from "../components/HelpButton";
 import { ListEmpty } from "../components/ListEmpty";
 import { ProcessingField } from "../components/ProcessingField";
-import { DOCS_DOMAIN, PROCESSING } from "../lib/types";
+import WatchDemo from "../components/WatchDemo";
+import { DOCS_DOMAIN, PROCESSING, USERLISTS_YT_VIDEO } from "../lib/types";
 
 function ListActions({ empty, createDisabled }: { empty?: boolean; createDisabled?: boolean }) {
   return (
     <TopToolbar>
       {!empty && !createDisabled && <CreateButton />}
       {!empty && <SortButton fields={["createdAt", "title", "processing"]} />}
+      <WatchDemo url={USERLISTS_YT_VIDEO} />
       <HelpButton url={`//${DOCS_DOMAIN}/page/software/configure/wordlists/`} />
     </TopToolbar>
   );

@@ -8,6 +8,7 @@ import { useAppDispatch, useAppSelector } from "../app/hooks";
 import { BASIC_GRADES, GRADES } from "../components/Common";
 import HelpButton from "../components/HelpButton";
 import Loading from "../components/Loading";
+import WatchDemo from "../components/WatchDemo";
 import { CARD_TYPES, getCardId } from "../database/Schema";
 import { setCardWordsState } from "../features/card/knownCardsSlice";
 import { setLoading } from "../features/ui/uiSlice";
@@ -18,6 +19,7 @@ import {
   EMPTY_CARD,
   GraderConfig,
   GradesType,
+  LISTROBES_YT_VIDEO,
   MIN_KNOWN_BEFORE_ADVANCED,
   SelectableListElementType,
   SerialisableDayCardWords,
@@ -211,6 +213,7 @@ export function Listrobes({ proxy }: Props): ReactElement {
     <>
       <TopToolbar className={classes.toolbar}>
         <ListrobesConfigLauncher graderConfig={graderConfig} onConfigChange={handleConfigChange} />
+        <WatchDemo url={LISTROBES_YT_VIDEO} />
         <HelpButton url={helpUrl} />
       </TopToolbar>
       {!graderConfig.isAdvanced && <BasicGradeChooser graderConfig={graderConfig} setGraderConfig={setGraderConfig} />}

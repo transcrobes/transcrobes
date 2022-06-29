@@ -16,6 +16,7 @@ import { store } from "../app/createStore";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
 import HelpButton from "../components/HelpButton";
 import Loading from "../components/Loading";
+import WatchDemo from "../components/WatchDemo";
 import { getUserDexie, isInitialisedAsync, setInitialisedAsync } from "../database/authdb";
 import { getDb } from "../database/Database";
 import { TranscrobesDatabase } from "../database/Schema";
@@ -32,7 +33,7 @@ import { setUser, throttledLogin, updateBaseUrl, updatePassword, updateUsername 
 import { darkTheme, lightTheme } from "../layout/themes";
 import { refreshDictionaries } from "../lib/dictionary";
 import { BackgroundWorkerProxy, setPlatformHelper } from "../lib/proxies";
-import { DOCS_DOMAIN, IS_DEV, SITE_DOMAIN } from "../lib/types";
+import { BROCROBES_YT_VIDEO, DOCS_DOMAIN, IS_DEV, SITE_DOMAIN } from "../lib/types";
 import { RxDBDataProviderParams } from "../ra-data-rxdb";
 import Initialisation from "./components/Initialisation";
 import Intro from "./components/Intro";
@@ -188,6 +189,7 @@ export default function Options(): ReactElement {
   }
 
   const helpUrl = `http://${DOCS_DOMAIN}/page/software/install/clients/brocrobes/`;
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
@@ -236,16 +238,20 @@ export default function Options(): ReactElement {
                   />
                 </FormGroup>
               </div>
-              <Box>
+              <Box
+                sx={{
+                  width: "100%",
+                }}
+              >
                 <Box
                   sx={{
                     width: "100%",
                     display: "inline-flex",
-                    textAlign: "right",
-                    justifyContent: "flex-end",
+                    justifyContent: "space-between",
                     padding: "1em",
                   }}
                 >
+                  <WatchDemo url={BROCROBES_YT_VIDEO} />
                   <HelpButton url={helpUrl} />
                 </Box>
                 {inited && (

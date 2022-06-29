@@ -1,13 +1,15 @@
 import { Typography } from "@mui/material";
 import { BooleanInput, Create, FileField, FileInput, required, SelectInput, SimpleForm, TextInput } from "react-admin";
 import { HelpCreateActions } from "../components/HelpCreateActions";
-import { DOCS_DOMAIN, MAX_IMPORT_SIZE_BYTES, PROCESS_TYPE } from "../lib/types";
+import { DOCS_DOMAIN, IMPORTS_YT_VIDEO, MAX_IMPORT_SIZE_BYTES, PROCESS_TYPE } from "../lib/types";
 
 export default function ImportCreate() {
   return (
     <Create
       redirect="list"
-      actions={<HelpCreateActions helpUrl={`//${DOCS_DOMAIN}/page/software/configure/imports/`} />}
+      actions={
+        <HelpCreateActions helpUrl={`//${DOCS_DOMAIN}/page/software/configure/imports/`} ytUrl={IMPORTS_YT_VIDEO} />
+      }
     >
       <SimpleForm>
         <Typography sx={{ paddingBottom: "1em" }}>

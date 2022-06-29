@@ -84,6 +84,17 @@ export const MIN_KNOWN_BEFORE_ADVANCED = 500;
 
 export const MIN_LENGTH_FOR_SENTENCE = 5;
 
+export const SIGNUP_YT_VIDEO = "https://youtu.be/XwZNzFw51lA";
+export const BROCROBES_YT_VIDEO = "https://youtu.be/bKLxXEml_sA";
+export const IMPORTS_YT_VIDEO = "https://youtu.be/w7OhcIU-WAM";
+export const USERLISTS_YT_VIDEO = "https://youtu.be/Q5h0HcgY0j4";
+export const NOTROBES_YT_VIDEO = "https://youtu.be/9AfRj55RcEE";
+export const LISTROBES_YT_VIDEO = "https://youtu.be/l3zKi-J6coU";
+export const REPETROBES_YT_VIDEO = "https://youtu.be/BADUoTtrML0";
+export const TEXTCROBES_YT_VIDEO = "https://youtu.be/TUskK-mtz_c";
+export const MOOCROBES_YT_VIDEO = "https://youtu.be/eHGY8JtRGH4";
+export const BOOCROBES_YT_VIDEO = "https://youtu.be/-TDHhtdP-Xk";
+
 export type KnownLanguage = "en" | "zh-Hans";
 export type InputLanguage = "zh-Hans";
 export type CornerPosition = "none" | "top-left" | "top-right" | "bottom-left" | "bottom-right";
@@ -726,6 +737,12 @@ export type UserListPositionType = {
   listId: string;
   position: number;
 };
+
+export interface ExtendedActionProps {
+  helpUrl: string;
+  helpLabel?: string;
+  ytUrl?: string;
+}
 
 export type UserListWordType = { [key: string]: UserListPositionType[] };
 

@@ -10,13 +10,15 @@ import {
 } from "react-admin";
 import { HelpCreateActions } from "../components/HelpCreateActions";
 import { GRADE, KNOWLEDGE_UNSET } from "../database/Schema";
-import { DOCS_DOMAIN, PROCESSING, STATUS } from "../lib/types";
+import { DOCS_DOMAIN, PROCESSING, STATUS, USERLISTS_YT_VIDEO } from "../lib/types";
 
 export default function UserListCreate() {
   return (
     <Create
       redirect="list"
-      actions={<HelpCreateActions helpUrl={`//${DOCS_DOMAIN}/page/software/configure/wordlists/`} />}
+      actions={
+        <HelpCreateActions helpUrl={`//${DOCS_DOMAIN}/page/software/configure/wordlists/`} ytUrl={USERLISTS_YT_VIDEO} />
+      }
     >
       <SimpleForm>
         <TextInput label="List name" source="title" validate={[required()]} />

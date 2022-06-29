@@ -13,7 +13,8 @@ import { OnChange } from "react-final-form-listeners";
 import { Link } from "react-router-dom";
 import { makeStyles } from "tss-react/mui";
 import PasswordStrengthBar from "../components/PasswordStrengthBar";
-import { DOCS_DOMAIN } from "../lib/types";
+import WatchDemo from "../components/WatchDemo";
+import { DOCS_DOMAIN, SIGNUP_YT_VIDEO } from "../lib/types";
 
 const emailRegex =
   /[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?/;
@@ -38,7 +39,8 @@ const useStyles = makeStyles()((theme) => ({
   avatar: {
     margin: "1em",
     display: "flex",
-    justifyContent: "center",
+    alignItems: "center",
+    justifyContent: "space-around",
   },
   icon: {
     backgroundColor: theme.palette.secondary.main,
@@ -174,6 +176,7 @@ export default function Signup(): ReactElement {
                 <Avatar className={classes.icon}>
                   <AddIcon />
                 </Avatar>
+                <WatchDemo url={SIGNUP_YT_VIDEO} size="large" />
               </div>
               {!creationSent && (
                 <>
