@@ -124,7 +124,7 @@ async def definition(  # pylint: disable=R0914
         sound = await manager.transliterator().transliterate(db, word)
         for x in manager.secondary():
             if not sound or len(hanzi_chars.findall(sound)) != 0:
-                sound = await x.sound_for(token)
+                sound = await x.sound_for(db, token)
             json_definition["defs"][x.name()] = clean_definitions(await x.get_standardised_defs(db, token))
 
         json_definition["p"] = " ".join("?", len(word)) if len(hanzi_chars.findall(sound)) != 0 else sound
