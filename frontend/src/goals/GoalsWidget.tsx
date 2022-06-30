@@ -1,4 +1,4 @@
-import { Box, Button, Grid, Link } from "@mui/material";
+import { Box, Button, Grid, LinearProgress, Link } from "@mui/material";
 import { ReactElement, useEffect, useState } from "react";
 import { GoalDocument } from "../database/Schema";
 import { ComponentsConfig } from "../lib/complexTypes";
@@ -74,39 +74,52 @@ export default function GoalsWidget({ config, inited }: Props): ReactElement {
   type RowProps = {
     name: string;
     goalId: string;
-    percent: string;
+    percent: number;
   };
 
   function FormRow({ name, goalId, percent }: RowProps) {
     return (
       <>
-        <Grid item>
+        <Grid item xs={4} md={2} key={goalId + "name"}>
           <Link href={`#/goals/${goalId}/show`} sx={{ textDecoration: "none" }}>
             {name}
           </Link>
         </Grid>
-        <Grid item>
+        <Grid item xs={6} md={4} key={goalId + "progress"}>
           <Link href={`#/goals/${goalId}/show`}>
-            <progress id={goalId} value={percent} max="100">
-              {percent}%
-            </progress>
+            <LinearProgress
+              color="success"
+              sx={{
+                height: "10px",
+                borderRadius: "5px",
+                margin: "0 5px",
+              }}
+              variant="determinate"
+              value={percent}
+            />
           </Link>
         </Grid>
-        <Grid item>
+        <Grid item xs={2} md={6} key={goalId + "percent"}>
           <Link href={`#/goals/${goalId}/show`} sx={{ textDecoration: "none" }}>
-            {percent}%
+            {percent.toFixed(2)}%
           </Link>
         </Grid>
       </>
     );
   }
   return (
-    <Box sx={{ padding: "20px" }}>
-      {goals.map((x) => (
-        <Grid key={x.goalId} container justifyContent="flex-start" spacing={2}>
-          <FormRow name={x.name} goalId={x.goalId} percent={x.percent.toFixed(2)} />
-        </Grid>
-      ))}
+    <Box sx={{ padding: { xs: "5px", md: "20px" } }}>
+      <Grid
+        container
+        alignContent="center"
+        alignItems="center"
+        justifyContent="flex-start"
+        sx={{ padding: { xs: "4px", md: "12px" } }}
+      >
+        {goals.map((x) => (
+          <FormRow key={x.goalId} name={x.name} goalId={x.goalId} percent={x.percent} />
+        ))}
+      </Grid>
       {goals.length === 0 && (
         <Link href={`#/goals`} sx={{ textDecoration: "none" }}>
           <Button startIcon={<GoalIcon />}>Create Goals now</Button>
