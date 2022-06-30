@@ -1,5 +1,6 @@
 import { Typography } from "@mui/material";
 import {
+  BooleanField,
   CreateButton,
   Datagrid,
   Link,
@@ -60,6 +61,7 @@ export default function GoalList() {
         <ReferenceField source="parent" reference="goals" sortable={false} link="show">
           <TextField source="title" />
         </ReferenceField>
+        <BooleanField source="status" label="Active" looseValue />
         <TextField source="priority" />
       </Datagrid>
     </List>

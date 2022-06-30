@@ -64,6 +64,9 @@ export default function GoalsWidget({ config, inited }: Props): ReactElement {
           });
         }
       }
+      goalPercents.sort((a, b) => a.name.localeCompare(b.name));
+      // or by percent
+      // goalPercents.sort((a, b) => a.percent - b.percent);
       setGoals(goalPercents);
     })();
   }, []);

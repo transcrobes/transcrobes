@@ -1,4 +1,4 @@
-import { ReferenceField, Show, SimpleShowLayout, TextField } from "react-admin";
+import { BooleanField, ReferenceField, Show, SimpleShowLayout, TextField } from "react-admin";
 import { HelpShowActions } from "../components/HelpShowActions";
 import { DOCS_DOMAIN } from "../lib/types";
 import { ListProgress } from "../stats/ListProgress";
@@ -17,6 +17,7 @@ export default function GoalShow() {
           <TextField source="title" />
         </ReferenceField>
         <TextField source="priority" />
+        <BooleanField source="status" label="Active" looseValue />
         <hr />
         <h3>Progress</h3>
         <ListProgress />

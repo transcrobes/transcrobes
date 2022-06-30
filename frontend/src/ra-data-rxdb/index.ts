@@ -5,6 +5,7 @@ import { v4 as uuidv4 } from "uuid";
 import { getDb } from "../database/Database";
 import { getNamedFileStorage } from "../lib/data";
 import { TranscrobesCollectionsKeys, TranscrobesDatabase } from "../database/Schema";
+import dayjs from "dayjs";
 
 type DbDataProvider = DataProvider & { db: () => Promise<TranscrobesDatabase> };
 
@@ -100,7 +101,7 @@ export default function RxDBProvider(params: RxDBDataProviderParams): DbDataProv
         insert.id = uuidv4();
       }
       // this is nasty - they get updated properly server side but we need one here for
-      // the list views ordered by createdAt, or the don't appear
+      // the list views ordered by createdAt, or they don't appear
       if (
         ["imports", "contents", "goals", "userlists", "usersurveys"].includes(resource) &&
         (!("createdAt" in insert) || !insert.createdAt)
@@ -126,6 +127,14 @@ export default function RxDBProvider(params: RxDBDataProviderParams): DbDataProv
       const one = await db[resource].findOne({ selector: { id: { $eq: params.id.toString() } } }).exec();
       if (one) {
         delete params.data.id; // FIXME: there must be a less nasty way...
+        // I guess this could be done on the server? Should it be?
+        if ("status" in params.data && "status" in params.previousData) {
+          if (!!params.data.status && !params.previousData.status) {
+            params.data["activateDate"] = dayjs().valueOf() / 1000;
+          } else if (!params.data.status && !!params.previousData.status) {
+            params.data["deactivateDate"] = dayjs().valueOf() / 1000;
+          }
+        }
         const res = await one.atomicPatch(params.data);
         return { data: res.toJSON() };
       } else {

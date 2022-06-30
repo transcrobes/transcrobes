@@ -1,4 +1,13 @@
-import { Create, NumberInput, ReferenceInput, required, SelectInput, SimpleForm, TextInput } from "react-admin";
+import {
+  BooleanInput,
+  Create,
+  NumberInput,
+  ReferenceInput,
+  required,
+  SelectInput,
+  SimpleForm,
+  TextInput,
+} from "react-admin";
 import { HelpCreateActions } from "../components/HelpCreateActions";
 import { DOCS_DOMAIN } from "../lib/types";
 
@@ -20,6 +29,13 @@ export default function GoalCreate() {
         <ReferenceInput label="Parent" source="parent" reference="goals">
           <SelectInput optionText="title" />
         </ReferenceInput>
+        <BooleanInput
+          label="Active"
+          source="status"
+          defaultValue={1}
+          format={(v) => (v ? true : false)}
+          parse={(v) => (v ? 1 : 0)}
+        />
       </SimpleForm>
     </Create>
   );
