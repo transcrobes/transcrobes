@@ -11,6 +11,7 @@ import posixpath
 import re
 import shutil
 from collections import ChainMap, Counter, defaultdict
+from copy import deepcopy
 from datetime import datetime
 from itertools import chain
 from pathlib import Path
@@ -103,7 +104,7 @@ def make_toc_item(epub, it, manager: EnrichmentManager):
 
 
 def make_manifest_text(content: Content, processed_chapters):  # noqa:C901  # pylint: disable=R0912
-    data = WEBPUB_SKELETON
+    data = deepcopy(WEBPUB_SKELETON)
     # {
     #   "@context": "https://readium.org/webpub-manifest/context.jsonld",
     #
@@ -159,7 +160,7 @@ def make_manifest_text(content: Content, processed_chapters):  # noqa:C901  # py
 
 
 def make_manifest(epub: Epub, manager: EnrichmentManager):  # noqa:C901  # pylint: disable=R0912
-    data = WEBPUB_SKELETON
+    data = deepcopy(WEBPUB_SKELETON)
 
     # METADATA
     for k, v in epub.meta.items():
