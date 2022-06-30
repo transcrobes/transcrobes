@@ -10,8 +10,8 @@ export default function GoalShow() {
         <TextField source="id" />
         <TextField source="title" />
         <TextField source="description" />
-        <ReferenceField source="userList" reference="userlists" link="show">
-          <TextField source="title" />
+        <ReferenceField source="userList" reference="wordlists" link={false}>
+          <TextField source="name" />
         </ReferenceField>
         <ReferenceField source="parent" reference="goals" link="show">
           <TextField source="title" />

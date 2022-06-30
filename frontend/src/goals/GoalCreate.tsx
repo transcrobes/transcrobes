@@ -1,6 +1,6 @@
 import { Create, NumberInput, ReferenceInput, required, SelectInput, SimpleForm, TextInput } from "react-admin";
 import { HelpCreateActions } from "../components/HelpCreateActions";
-import { DOCS_DOMAIN, PROCESSING, STATUS } from "../lib/types";
+import { DOCS_DOMAIN } from "../lib/types";
 
 export default function GoalCreate() {
   return (
@@ -10,13 +10,12 @@ export default function GoalCreate() {
         <TextInput label="Goal description" multiline source="description" />
         <NumberInput max={10} min={1} defaultValue={5} source="priority" step={1} validate={[required()]} />
         <ReferenceInput
-          sort={{ field: "title", order: "ASC" }}
+          sort={{ field: "name", order: "ASC" }}
           label="User list"
           source="userList"
-          reference="userlists"
-          filter={{ status: STATUS.ACTIVE, processing: PROCESSING.FINISHED }}
+          reference="wordlists"
         >
-          <SelectInput validate={[required()]} optionText="title" />
+          <SelectInput validate={[required()]} optionText="name" />
         </ReferenceInput>
         <ReferenceInput label="Parent" source="parent" reference="goals">
           <SelectInput optionText="title" />

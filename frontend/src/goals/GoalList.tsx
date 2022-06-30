@@ -54,8 +54,8 @@ export default function GoalList() {
     <List empty={<EmtpyList />} actions={<ListActions />} sort={{ field: "createdAt", order: "DESC" }}>
       <Datagrid rowClick="show">
         <TextField source="title" />
-        <ReferenceField source="userList" reference="userlists" link="show">
-          <TextField source="title" />
+        <ReferenceField source="userList" reference="wordlists" link={false}>
+          <TextField source="name" />
         </ReferenceField>
         <ReferenceField source="parent" reference="goals" sortable={false} link="show">
           <TextField source="title" />

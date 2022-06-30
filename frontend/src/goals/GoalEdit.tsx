@@ -23,9 +23,9 @@ export default function GoalEdit() {
           sort={{ field: "title", order: "ASC" }}
           label="User list"
           source="userList"
-          reference="userlists"
+          reference="wordlists"
         >
-          <SelectInput validate={[required()]} optionText="title" />
+          <SelectInput validate={[required()]} optionText="name" />
         </ReferenceInput>
         <ReferenceInput label="Parent" source="parent" reference="goals">
           <SelectInput optionText="title" />
