@@ -60,13 +60,6 @@ export function VocabRevisor({
     currentCard?.dueDate,
     currentCard?.updatedAt,
     dayjs().unix(),
-    dayjs(currentCard?.dueDate),
-    dayjs(currentCard?.updatedAt),
-    dayjs.tz.guess(),
-    dayjs(currentCard?.dueDate || 0 * 1000)
-      .tz(dayjs.tz.guess())
-      .format("YYYY-MM-DD HH:mm:ss"),
-    dayjs().tz(dayjs.tz.guess()).format("YYYY-MM-DD HH:mm:ss"),
   );
   const loading = useAppSelector((state) => state.ui.loading);
   if (recentPosSentences && definition) {

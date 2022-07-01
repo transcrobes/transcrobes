@@ -1107,10 +1107,23 @@ export async function getSRSReviews(
   // we actually need to know all the words that have been reviewed today, so
   // even though we can use these for revisions, we still need them...
   // Remove all of the existing cards of type PHRASE that no longer have any recentSentences
+  // and don't have any *other* cards for the word
   for (const ec of existingCards.values()) {
     if (ec.cardType() === CARD_TYPES.PHRASE.toString() && !recentSentences.has(ec.wordId())) {
       existingCards.delete(ec.id);
-      allWordIdsForExistingCards.delete(ec.wordId());
+      const otherCardTypes = $enum(CARD_TYPES)
+        .getValues()
+        .filter((x) => x !== CARD_TYPES.PHRASE);
+      let hasOtherExistingCard = false;
+      for (const cardType of otherCardTypes) {
+        if (existingCards.has(getCardId(ec.wordId(), cardType))) {
+          hasOtherExistingCard = true;
+          break;
+        }
+      }
+      if (!hasOtherExistingCard) {
+        allWordIdsForExistingCards.delete(ec.wordId());
+      }
     }
   }
 
