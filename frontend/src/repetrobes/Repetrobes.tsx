@@ -124,7 +124,7 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
       debug("Config set up, about to get the next practice item", tempState);
       nextPractice(tempState, activityConfigNew).then((practiceOut) => {
         const partial = { ...tempState, ...practiceOut };
-        debug("The partial state is", partial);
+        console.log("Setting loading and the partial state is", partial);
         dispatch(setLoading(!(!!partial.currentCard && !!partial.definition)));
         setDaState({
           ...daState,
@@ -142,6 +142,7 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
         dispatch(setLoading(true));
         return;
       }
+      console.log("daState seems to have changed so setting loading", daState.currentCard, daState.definition);
       dispatch(setLoading(!(!!daState.currentCard && !!daState.definition)));
     })();
   }, [daState]);
@@ -166,6 +167,11 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
       };
       const practiceOut = await nextPractice(tempState, stateActivityConfig);
       const partial = { ...tempState, ...practiceOut };
+      console.log(
+        "proxy.loaded, stateActivityConfig seems to have changed so setting loading",
+        daState.currentCard,
+        daState.definition,
+      );
       dispatch(setLoading(!(!!daState.currentCard && !!daState.definition)));
       setDaState({ ...daState, ...partial });
     })();
@@ -486,6 +492,7 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
   async function handlePractice(wordIdStr: string, grade: number): Promise<void> {
     const { currentCard, definition } = daState;
     const { badReviewWaitSecs } = stateActivityConfig;
+    console.log("Doing a handlePractice, so setting loading to true");
     dispatch(setLoading(true));
 
     if (!definition || wordIdStr !== getWordId(currentCard!)) throw new Error("Invalid state, no definition");
@@ -520,6 +527,7 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
     };
     const nextState = await nextPractice(newState, stateActivityConfig);
     setShowAnswer(false);
+    console.log("Done a handlePractice, so setting loading to undefined");
     dispatch(setLoading(undefined));
     setDaState({ ...nextState });
   }
