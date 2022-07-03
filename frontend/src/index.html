@@ -14,7 +14,14 @@
   </title>
   <script>
     import('https://cdn.skypack.dev/detect-browser@5').then(({ detect }) => {
-      if (!['yandexbrowser', 'edge-chromium', 'chrome', 'opera-mini', 'opera'].includes(detect().name)) {
+      const browser = detect();
+      let supported = false;
+      if (['yandexbrowser', 'edge-chromium', 'chrome', 'opera-mini', 'opera'].includes(browser.name)) {
+        supported = true;
+      } else if (browser.name === 'firefox' && browser.os !== 'Android OS') {
+        supported = true;
+      }
+      if (!supported) {
         location.href = '/static/unsupported.html';
       }
     });
