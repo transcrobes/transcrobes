@@ -1,7 +1,6 @@
-import { Button } from "@mui/material";
 import { ReactElement } from "react";
 import RecentSentencesElement from "../components/RecentSentencesElement";
-import { say } from "../lib/funclib";
+import SayIt from "../components/SayIt";
 import { CardType, DefinitionType, PosSentences } from "../lib/types";
 import { CentredFlex, StyledAnswer } from "./Common";
 
@@ -26,9 +25,7 @@ export default function MeaningAnswer({
         <>
           <CentredFlex>
             <StyledAnswer> {definition.sound} </StyledAnswer>
-            <Button onClick={() => say(definition.graph)} variant="contained" color="primary">
-              Say it!
-            </Button>
+            <SayIt graph={definition.graph} />
           </CentredFlex>
           <CentredFlex>{showRecents && <RecentSentencesElement recentPosSentences={recentSentences} />}</CentredFlex>
         </>

@@ -1,9 +1,8 @@
-import { CentredFlex, MeaningWrapper, CommonAnswerProps, StyledAnswer } from "./Common";
 import { ReactElement } from "react";
-import { Button } from "@mui/material";
 import Meaning from "../components/Meaning";
 import RecentSentencesElement from "../components/RecentSentencesElement";
-import { say } from "../lib/funclib";
+import SayIt from "../components/SayIt";
+import { CentredFlex, CommonAnswerProps, MeaningWrapper, StyledAnswer } from "./Common";
 
 export default function GraphAnswer({
   card,
@@ -22,9 +21,7 @@ export default function GraphAnswer({
         <>
           <CentredFlex>
             <StyledAnswer> {definition.sound} </StyledAnswer>
-            <Button onClick={() => say(definition.graph)} variant="contained" color="primary">
-              Say it!
-            </Button>
+            <SayIt graph={definition.graph} />
           </CentredFlex>
           <MeaningWrapper>
             <Meaning

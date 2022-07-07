@@ -155,7 +155,7 @@
     "react-dom": "^18.1.0",
     "react-final-form": "^6.5.9",
     "react-final-form-listeners": "^1.0.3",
-    "react-hook-form-mui": "^3.7.0",
+    "react-hook-form-mui": "^4.1.0",
     "react-jss": "^10.9.0",
     "react-player": "^2.9.0",
     "react-redux": "^8.0.1",

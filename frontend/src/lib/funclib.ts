@@ -197,10 +197,10 @@ function exitFullscreen(doc: Document): void {
   }
 }
 
-function getVoices(): Promise<SpeechSynthesisVoice[]> {
+export function getVoices(): Promise<SpeechSynthesisVoice[]> {
   return new Promise((resolve) => {
     let voices = speechSynthesis.getVoices();
-    if (voices.length) {
+    if (voices.length > 0) {
       resolve(voices);
       return;
     }
@@ -222,11 +222,15 @@ export function say(text: string, voice?: SpeechSynthesisVoice, lang = "zh-CN"):
     utterance.voice = voice;
     synth.speak(utterance);
   } else {
-    getVoices().then((voices) => {
-      utterance.voice =
-        voices.filter((x) => x.lang === lang && !x.localService)[0] || voices.filter((x) => x.lang === lang)[0];
-      synth.speak(utterance);
-    });
+    getVoices()
+      .then((voices) => {
+        utterance.voice =
+          voices.filter((x) => x.lang === lang && !x.localService)[0] || voices.filter((x) => x.lang === lang)[0];
+        synth.speak(utterance);
+      })
+      .catch((error) => {
+        console.log("error", error);
+      });
   }
 }
 

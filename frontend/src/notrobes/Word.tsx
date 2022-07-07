@@ -1,4 +1,3 @@
-import { Box, Button } from "@mui/material";
 import dayjs from "dayjs";
 import { ReactElement } from "react";
 import { $enum } from "ts-enum-util";
@@ -12,14 +11,13 @@ import Header from "../components/Header";
 import PosItem from "../components/PosItem";
 import PracticerInput from "../components/PracticerInput";
 import RecentSentencesElement from "../components/RecentSentencesElement";
+import SayIt from "../components/SayIt";
 import { CARD_TYPES, getCardId, getCardType } from "../database/Schema";
-import { say } from "../lib/funclib";
 import {
   CardType,
   CharacterType,
   DefinitionType,
   EMPTY_CARD,
-  FrequencyType,
   PosSentences,
   SortableListElementType,
   WordModelStatsType,
@@ -43,7 +41,6 @@ const useStyles = makeStyles()({
     display: "flex",
     justifyContent: "center",
   },
-  soundButton: { marginLeft: ".5em" },
   infoBox: {
     margin: "0.7em",
   },
@@ -84,11 +81,7 @@ function WordInfo({ definition, characters, meaningCard, onCardFrontUpdate }: Wo
         <div className={classes.soundBoxOuter}>
           <div className={classes.soundBoxInner}>
             <Sound definition={definition} />
-            <div className={classes.soundButton}>
-              <Button onClick={() => say(definition.graph)} variant="contained" color="primary">
-                Say it!
-              </Button>
-            </div>
+            <SayIt graph={definition.graph} />
           </div>
         </div>
         {/*
