@@ -24,7 +24,7 @@ export default function Help(): ReactElement {
           </Typography>
           <Typography style={{ padding: "1em" }}>
             For anything not covered in the online documentation or for any comments, questions or suggestions about the
-            software, theories or the research, please contant the Lead Researcher and developer, Anton Melser (
+            software, theories or the research, please contact the Lead Researcher and developer, Anton Melser (
             {ADMIN_EMAILS.join(" or ")})
           </Typography>
           <Typography style={{ padding: "1em" }}>

@@ -24,7 +24,7 @@ alembic = "^1.6.5"
 SQLAlchemy = {extras = ["mypy"], version = "^1.4.23"}
 python-jose = "^3.3.0"
 asyncpg = "^0.25.0"
-strawberry-graphql = "^0.116.2"
+strawberry-graphql = "^0.117.0"
 aiohttp-retry = "^2.4.5"
 aiohttp = "^3.7.4"
 webvtt-py = "^0.4.6"
