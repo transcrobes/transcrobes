@@ -32,6 +32,7 @@ from app.data.models import (
     FINISHED,
     MANIFEST_JSON,
     PARSE_JSON_SUFFIX,
+    REQUESTED,
     SRT_EXTENTION,
     VTT_EXTENTION,
     WEBVTT_FILE,
@@ -44,6 +45,7 @@ from app.models.migrated import Content, Import, UserList
 from app.models.user import absolute_imports_path
 from app.ndutils import flatten, lemma
 from app.schemas.files import ProcessData
+from app.worker.faustus import content_process_topic
 from app.zhhans import CORENLP_IGNORABLE_POS
 from bs4 import BeautifulSoup
 from dawn.epub import Epub
@@ -694,7 +696,11 @@ async def process_import(file_event: ProcessData):
                     ensure_ascii=False,
                     separators=(",", ":"),
                 )
+                await content_process_topic.send(value=ProcessData(type="content", id=an_import.content.id))
+                an_import.content.processing = REQUESTED
+                db.add(an_import.content)
             an_import.processing = FINISHED
+
         except Exception as ex:  # pylint: disable=W0703
             an_import.processing = ERROR
             logger.exception("Error processing import %s, %s", an_import.id, ex)

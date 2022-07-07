@@ -19,7 +19,7 @@ function ListActions({ empty }: { empty?: boolean }) {
 
 function EmtpyList() {
   return (
-    <ListEmpty actions={<ListActions empty />}>
+    <ListEmpty createDisabled actions={<ListActions empty />}>
       <Typography
         sx={{
           fontSize: "1.5rem",
