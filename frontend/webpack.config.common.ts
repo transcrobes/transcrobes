@@ -160,7 +160,7 @@ export function loadJavaScript(): webpack.Configuration {
   };
 }
 
-export function generateSourceMaps({ type }: { type: string }): webpack.Configuration {
+export function generateSourceMaps({ type }: { type: string | false }): webpack.Configuration {
   return { devtool: type };
 }
 
