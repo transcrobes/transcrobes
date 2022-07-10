@@ -3,7 +3,6 @@ import dayjs from "dayjs";
 import timezone from "dayjs/plugin/timezone";
 import utc from "dayjs/plugin/utc";
 import { ReactElement } from "react";
-import { useAppSelector } from "../app/hooks";
 import PracticerInput from "../components/PracticerInput";
 import { getWordId } from "../database/Schema";
 import { ServiceWorkerProxy } from "../lib/proxies";
@@ -25,6 +24,7 @@ interface Props {
   proxy: ServiceWorkerProxy;
   theme: Theme;
   showAnswer: boolean;
+  loading: boolean;
   currentCard: CardType | null;
   definition: DefinitionType | null;
   characters: CharacterType[] | null;
@@ -37,6 +37,7 @@ interface Props {
 
 export function VocabRevisor({
   showAnswer,
+  loading,
   currentCard,
   definition,
   characters,
@@ -61,7 +62,6 @@ export function VocabRevisor({
     currentCard?.updatedAt,
     dayjs().unix(),
   );
-  const loading = useAppSelector((state) => state.ui.loading);
   if (recentPosSentences && definition) {
     Object.entries(recentPosSentences.posSentences).forEach(([pos, s]) => {
       const lemma = definition.graph;

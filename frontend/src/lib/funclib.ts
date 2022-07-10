@@ -127,10 +127,13 @@ export function validInt(value: any, minValue?: number, maxValue?: number): bool
   );
 }
 
-export function configIsUsable(activityConfig: RepetrobesActivityConfigType): boolean {
+export function configIsUsable(activityConfig: RepetrobesActivityConfigType): boolean | undefined {
+  if (activityConfig.wordLists === undefined || activityConfig.activeCardTypes === undefined) {
+    return undefined;
+  }
   return (
-    (activityConfig.systemWordSelection || activityConfig.wordLists.filter((wl) => wl.selected).length > 0) &&
-    activityConfig.activeCardTypes.filter((ct) => ct.selected).length > 0 &&
+    (activityConfig.systemWordSelection || (activityConfig.wordLists || []).filter((wl) => wl.selected).length > 0) &&
+    (activityConfig.activeCardTypes || []).filter((ct) => ct.selected).length > 0 &&
     validInt(activityConfig.dayStartsHour) &&
     validInt(activityConfig.badReviewWaitSecs) &&
     validInt(activityConfig.maxNew) &&

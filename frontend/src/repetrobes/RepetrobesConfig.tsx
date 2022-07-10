@@ -66,7 +66,7 @@ export default function RepetrobesConfig({ activityConfig, onConfigChange }: Pro
     // I am not intelligent enough to know what I need to do here...
     const selectedLists = sls as any[];
     const selectedMap = new Map(selectedLists.map((x) => [x.value, x]));
-    const newWordLists = _.cloneDeep(activityConfig.wordLists);
+    const newWordLists = _.cloneDeep(activityConfig.wordLists || []);
     for (const wordList of newWordLists) {
       wordList.selected = selectedMap.has(wordList.value);
     }
@@ -83,7 +83,7 @@ export default function RepetrobesConfig({ activityConfig, onConfigChange }: Pro
     // I am not intelligent enough to know what I need to do here...
     const selectedTypes = sts as any[];
     const selectedMap = new Map(selectedTypes.map((x) => [x.value, x]));
-    const newCardTypes = _.cloneDeep(activityConfig.activeCardTypes);
+    const newCardTypes = _.cloneDeep(activityConfig.activeCardTypes || []);
     for (const cardType of newCardTypes) {
       cardType.selected = selectedMap.has(cardType.value);
     }
@@ -133,7 +133,7 @@ export default function RepetrobesConfig({ activityConfig, onConfigChange }: Pro
         <Select
           styles={colourStyles}
           onChange={handleCardTypesChange}
-          defaultValue={activityConfig.activeCardTypes.filter((x) => x.selected)}
+          defaultValue={(activityConfig.activeCardTypes || []).filter((x) => x.selected)}
           isMulti
           name="activeCardTypes"
           options={activityConfig.activeCardTypes}
@@ -234,10 +234,10 @@ export default function RepetrobesConfig({ activityConfig, onConfigChange }: Pro
               <Select
                 styles={colourStyles}
                 onChange={handleWordListsChange}
-                defaultValue={activityConfig.wordLists.filter((x) => x.selected)}
+                defaultValue={(activityConfig.wordLists || []).filter((x) => x.selected)}
                 isMulti
                 name="wordLists"
-                options={activityConfig.wordLists.sort((a, b) => a.label.localeCompare(b.label))}
+                options={(activityConfig.wordLists || []).sort((a, b) => a.label.localeCompare(b.label))}
                 className={classes.multiselect}
               />
             </div>

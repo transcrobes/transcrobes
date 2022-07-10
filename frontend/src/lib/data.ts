@@ -1038,7 +1038,7 @@ async function getPotentialWordIds(
     }
     return potentialWordIds;
   } else {
-    const selectedLists = activityConfig.wordLists.filter((x) => x.selected).map((x) => x.value);
+    const selectedLists = (activityConfig.wordLists || []).filter((x) => x.selected).map((x) => x.value);
     // wordIds that *haven't* already been reviewed today and are in the right lists
     // so this is BOTH the possible new words *and* reviews
     const selectedListsWordIds = await db.wordlists.findByIds(selectedLists);
@@ -1080,7 +1080,7 @@ export async function getSRSReviews(
   for (const wordId of potentialWordIds) {
     if (allKnownWordIds.has(wordId) || todaysStudiedWords.has(wordId)) potentialWordIds.delete(wordId);
   }
-  const selectedTypes = activityConfig.activeCardTypes.filter((ac) => ac.selected).map((act) => `${act.value}`);
+  const selectedTypes = (activityConfig.activeCardTypes || []).filter((ac) => ac.selected).map((act) => `${act.value}`);
 
   // Map of all the possible wordIds, with a set of all possible types
   let potentialCardsMap = new Map<string, Set<string>>();

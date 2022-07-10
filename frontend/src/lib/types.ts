@@ -765,14 +765,14 @@ export type RepetrobesActivityConfigType = {
   newCardOrdering: WordOrdering;
   dayStartsHour: number;
   systemWordSelection: boolean;
-  wordLists: SelectableListElementType[];
+  wordLists?: SelectableListElementType[];
   todayStarts: number;
   onlySelectedWordListRevisions: boolean;
   showProgress: boolean;
   showRecents: boolean;
   showSynonyms: boolean;
   showL2LengthHint: boolean;
-  activeCardTypes: SelectableListElementType[];
+  activeCardTypes?: SelectableListElementType[];
   translationProviderOrder?: Record<string, number>;
 };
 

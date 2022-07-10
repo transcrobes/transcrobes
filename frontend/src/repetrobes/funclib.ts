@@ -26,12 +26,12 @@ export const EMPTY_ACTIVITY = {
   newCardOrdering: DEFAULT_ITEM_ORDERING,
   onlySelectedWordListRevisions: DEFAULT_ONLY_SELECTED_WORDLIST_REVISIONS,
   dayStartsHour: DEFAULT_DAY_STARTS_HOUR,
-  wordLists: [],
+  wordLists: undefined,
   showProgress: DEFAULT_QUESTION_SHOW_PROGRESS,
   showSynonyms: DEFAULT_QUESTION_SHOW_SYNONYMS,
   showRecents: DEFAULT_ANSWER_SHOW_RECENTS,
   showL2LengthHint: DEFAULT_QUESTION_SHOW_L2_LENGTH_HINT,
-  activeCardTypes: [],
+  activeCardTypes: undefined,
   todayStarts: 0,
   translationProviderOrder: undefined,
 } as RepetrobesActivityConfigType;
@@ -49,7 +49,7 @@ export async function getUserConfig(proxy: ServiceWorkerProxy): Promise<Repetrob
       type: "getDefaultWordLists",
       value: {},
     });
-    conf.wordLists.map((wl) => wordListMap.set(wl.label, wl));
+    conf.wordLists?.map((wl) => wordListMap.set(wl.label, wl));
     conf.wordLists = wordLists.map((wl) => wordListMap.get(wl.label) || wl);
     conf.activeCardTypes = Array.from($enum(CARD_TYPES).entries())
       .filter(([_l, v]) => !((v as any) instanceof Function))
@@ -57,7 +57,8 @@ export async function getUserConfig(proxy: ServiceWorkerProxy): Promise<Repetrob
         return {
           label: label,
           value: value.toString(),
-          selected: conf.activeCardTypes.filter((ct) => ct.value === value.toString() && ct.selected).length > 0,
+          selected:
+            (conf.activeCardTypes || []).filter((ct) => ct.value === value.toString() && ct.selected).length > 0,
         };
       });
     conf.todayStarts = (

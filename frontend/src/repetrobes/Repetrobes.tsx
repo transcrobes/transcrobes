@@ -1,14 +1,14 @@
 import { useTheme } from "@mui/material";
-import { makeStyles } from "tss-react/mui";
 import dayjs from "dayjs";
 import _ from "lodash";
 import { ReactElement, useEffect, useRef, useState } from "react";
 import { TopToolbar } from "react-admin";
+import { makeStyles } from "tss-react/mui";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
 import HelpButton from "../components/HelpButton";
-import Loading from "../components/Loading";
+import { Loading } from "../components/Loading";
+import WatchDemo from "../components/WatchDemo";
 import { getCardId, getCardType, getWordId, GRADE } from "../database/Schema";
-import { setLoading } from "../features/ui/uiSlice";
 import { setSettingsValue } from "../lib/appSettings";
 import { configIsUsable, recentSentencesFromLZ } from "../lib/funclib";
 import { ServiceWorkerProxy } from "../lib/proxies";
@@ -34,7 +34,6 @@ import { EMPTY_ACTIVITY, getUserConfig } from "./funclib";
 import Progress from "./Progress";
 import RepetrobesConfigLauncher from "./RepetrobesConfigLauncher";
 import VocabRevisor from "./VocabRevisor";
-import WatchDemo from "../components/WatchDemo";
 
 const DATA_SOURCE = "Repetrobes.tsx";
 
@@ -76,8 +75,10 @@ interface RepetrobesProps {
 function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
   const [showAnswer, setShowAnswer] = useState<boolean>(false);
   const [userListWords, setUserListWords] = useState<UserListWordType>({});
-
+  const [loadingMessage, setLoadingMessage] = useState<string>("");
+  const [firstLoad, setFirstLoad] = useState<boolean>(true);
   const [daState, setDaState] = useState<ReviewablesInfoType>(EMPTY_STATE);
+  const [loading, setLoading] = useState<boolean>(false);
   const [stateActivityConfig, setStateActivityConfig] = useState<RepetrobesActivityConfigType>(EMPTY_ACTIVITY);
 
   const defaultProviderOrder = useAppSelector((state) => state.userData.user.translationProviders);
@@ -125,7 +126,8 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
       nextPractice(tempState, activityConfigNew).then((practiceOut) => {
         const partial = { ...tempState, ...practiceOut };
         console.log("Setting loading and the partial state is", partial);
-        dispatch(setLoading(!(!!partial.currentCard && !!partial.definition)));
+        setLoadingMessage("");
+        setLoading(!(!!partial.currentCard && !!partial.definition));
         setDaState({
           ...daState,
           ...partial,
@@ -137,22 +139,34 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
 
   useEffect(() => {
     (async () => {
-      if (!configIsUsable(stateActivityConfig)) {
-        console.log("Activity config is not usable, not doing anything", stateActivityConfig);
-        dispatch(setLoading(true));
+      const usable = configIsUsable(stateActivityConfig);
+      if (!usable) {
+        console.log(
+          "Activity config is not usable after daState change, not doing anything",
+          stateActivityConfig,
+          firstLoad,
+        );
+        setLoadingMessage(usable === undefined ? "" : "Settings incomplete, please configure");
+        setLoading(true);
         return;
       }
       console.log("daState seems to have changed so setting loading", daState.currentCard, daState.definition);
-      dispatch(setLoading(!(!!daState.currentCard && !!daState.definition)));
+      setLoading(!(!!daState.currentCard && !!daState.definition));
     })();
   }, [daState]);
 
   useEffect(() => {
     if (!proxy.loaded) return;
     (async () => {
-      if (!configIsUsable(stateActivityConfig)) {
-        console.log("Activity config is not usable, not doing anything", stateActivityConfig);
-        dispatch(setLoading(true));
+      const usable = configIsUsable(stateActivityConfig);
+      if (!usable) {
+        console.log(
+          "Activity config is not usable after proxy.loaded, stateActivityConfig, not doing anything",
+          stateActivityConfig,
+          firstLoad,
+        );
+        setLoadingMessage(usable === undefined ? "" : "Settings incomplete, please configure");
+        setLoading(true);
         return;
       }
       const reviewLists = await proxy.sendMessagePromise<DailyReviewables>({
@@ -172,8 +186,10 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
         daState.currentCard,
         daState.definition,
       );
-      dispatch(setLoading(!(!!daState.currentCard && !!daState.definition)));
+      setLoadingMessage("");
+      setLoading(!(!!daState.currentCard && !!daState.definition));
       setDaState({ ...daState, ...partial });
+      setFirstLoad(false);
     })();
   }, [proxy.loaded, stateActivityConfig]);
 
@@ -197,7 +213,8 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
 
   function handleConfigChange(activityConfig: RepetrobesActivityConfigType) {
     if (!_.isEqual(activityConfig, stateActivityConfig)) {
-      dispatch(setLoading(true));
+      setLoadingMessage("");
+      setLoading(true);
       setStateActivityConfig(activityConfig);
       setSettingsValue("repetrobes", "config", JSON.stringify(activityConfig));
     }
@@ -209,7 +226,7 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
     const wId = getWordId(card);
     if (!userListWords[wId]) return true;
     const lists = new Set<string>(userListWords[wId].map((l) => l.listId));
-    for (const dalist of activityConfig.wordLists.filter((wl) => wl.selected)) {
+    for (const dalist of (activityConfig.wordLists || []).filter((wl) => wl.selected)) {
       if (lists.has(dalist.value)) {
         return false;
       }
@@ -245,7 +262,9 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
     existingCards: Map<string, CardType>,
     activityConfig: RepetrobesActivityConfigType,
   ): Map<string, CardType> {
-    const potentialTypes = activityConfig.activeCardTypes.filter((x) => x.selected).map((x) => x.value.toString());
+    const potentialTypes = (activityConfig.activeCardTypes || [])
+      .filter((x) => x.selected)
+      .map((x) => x.value.toString());
 
     const validExisting: Map<string, CardType> = new Map<string, CardType>();
     for (const [k, v] of existingCards) {
@@ -493,7 +512,8 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
     const { currentCard, definition } = daState;
     const { badReviewWaitSecs } = stateActivityConfig;
     console.log("Doing a handlePractice, so setting loading to true");
-    dispatch(setLoading(true));
+    setLoadingMessage("");
+    setLoading(true);
 
     if (!definition || wordIdStr !== getWordId(currentCard!)) throw new Error("Invalid state, no definition");
 
@@ -528,7 +548,8 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
     const nextState = await nextPractice(newState, stateActivityConfig);
     setShowAnswer(false);
     console.log("Done a handlePractice, so setting loading to undefined");
-    dispatch(setLoading(undefined));
+    setLoadingMessage("");
+    setLoading(false);
     setDaState({ ...nextState });
   }
   function posSentencesFromRecent(theState: ReviewablesInfoType): RecentSentencesType | null {
@@ -564,22 +585,25 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
           <HelpButton url={helpUrl} />
         </div>
       </TopToolbar>
-      <Loading />
-      <div>
-        <VocabRevisor
-          proxy={proxy}
-          theme={theme}
-          showAnswer={showAnswer}
-          activityConfig={stateActivityConfig}
-          currentCard={daState.currentCard}
-          characters={daState.characters}
-          definition={daState.definition}
-          recentPosSentences={posSentencesFromRecent(daState)}
-          onCardFrontUpdate={handleCardFrontUpdate}
-          onPractice={handlePractice}
-          onShowAnswer={handleShowAnswer}
-        />
-      </div>
+      <Loading show={firstLoad || loading} message={loadingMessage} />
+      {!firstLoad && (
+        <div>
+          <VocabRevisor
+            loading={loading}
+            proxy={proxy}
+            theme={theme}
+            showAnswer={showAnswer}
+            activityConfig={stateActivityConfig}
+            currentCard={daState.currentCard}
+            characters={daState.characters}
+            definition={daState.definition}
+            recentPosSentences={posSentencesFromRecent(daState)}
+            onCardFrontUpdate={handleCardFrontUpdate}
+            onPractice={handlePractice}
+            onShowAnswer={handleShowAnswer}
+          />
+        </div>
+      )}
       <div ref={windowEndRef} />
     </div>
   );
