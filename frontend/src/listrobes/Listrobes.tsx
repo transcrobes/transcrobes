@@ -29,6 +29,7 @@ import {
 } from "../lib/types";
 import BasicGradeChooser from "./BasicGradeChooser";
 import ListrobesConfigLauncher from "./ListrobesConfigLauncher";
+import MinEntryComplete from "./MinEntryComplete";
 import { VocabList } from "./VocabList";
 
 const DATA_SOURCE = "listrobes.jsx";
@@ -63,6 +64,7 @@ export function Listrobes({ proxy }: Props): ReactElement {
   const [vocab, setVocab] = useState<VocabReview[]>([]);
   const dispatch = useAppDispatch();
   const wordsCount = useAppSelector((state) => Object.keys(state.knownCards.allCardWordGraphs || {}).length);
+  const [lastWordsCount, setLastWordsCount] = useState(wordsCount);
   const isAdvanced = wordsCount > MIN_KNOWN_BEFORE_ADVANCED;
 
   const [graderConfig, setGraderConfig] = useState<GraderConfig>({
@@ -168,6 +170,7 @@ export function Listrobes({ proxy }: Props): ReactElement {
     dispatch(setLoading(true));
     const newCards = [];
     const consultedDefinitions = [];
+    setLastWordsCount(wordsCount);
     for (const word of vocab) {
       if (word.lookedUp) {
         consultedDefinitions.push({ target_word: word.graph, target_sentence: "" });
@@ -217,6 +220,7 @@ export function Listrobes({ proxy }: Props): ReactElement {
         <HelpButton url={helpUrl} />
       </TopToolbar>
       {!graderConfig.isAdvanced && <BasicGradeChooser graderConfig={graderConfig} setGraderConfig={setGraderConfig} />}
+      {wordsCount >= MIN_KNOWN_BEFORE_ADVANCED && lastWordsCount < MIN_KNOWN_BEFORE_ADVANCED && <MinEntryComplete />}
       <Container maxWidth="lg">
         <Loading />
         <div className={classes.columnList}>

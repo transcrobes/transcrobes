@@ -20,15 +20,23 @@ function getOrder(grades: GradesType[], value: string) {
 
 export default function BasicGradeChooser({ graderConfig, setGraderConfig }: Props) {
   const theme = useTheme();
-  const completedPercent = useAppSelector((state) => {
-    return new Intl.NumberFormat("default", { style: "percent" }).format(
-      Math.min(Object.keys(state.knownCards.allCardWordGraphs || {}).length / MIN_KNOWN_BEFORE_ADVANCED, 1),
+  const message = useAppSelector((state) => {
+    const completed = Math.min(
+      Object.keys(state.knownCards.allCardWordGraphs || {}).length / MIN_KNOWN_BEFORE_ADVANCED,
+      1,
     );
+    if (completed === 1) {
+      return "Minimum training completed. Continue training or start using the platform!";
+    } else {
+      return `Tell the system about the words you know (${new Intl.NumberFormat("default", { style: "percent" }).format(
+        completed,
+      )} complete)`;
+    }
   });
 
   return (
     <Box sx={{ marginInline: "auto", textAlign: "center" }}>
-      <Typography variant="h6">Tell the system about the words you know ({completedPercent} complete)</Typography>
+      <Typography variant="h6">{message}</Typography>
       <ToggleButtonGroup
         exclusive
         value={graderConfig.gradeOrder[0].id}

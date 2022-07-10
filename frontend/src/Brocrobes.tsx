@@ -4,7 +4,7 @@ import { TopToolbar } from "react-admin";
 import { makeStyles } from "tss-react/mui";
 import HelpButton from "./components/HelpButton";
 import WatchDemo from "./components/WatchDemo";
-import { BROCROBES_YT_VIDEO, DOCS_DOMAIN } from "./lib/types";
+import { BROCROBES_WEB_STORE_URL, BROCROBES_YT_VIDEO, DOCS_DOMAIN } from "./lib/types";
 
 const useStyles = makeStyles()({
   toolbar: {
@@ -31,11 +31,7 @@ export default function Brocrobes(): ReactElement {
           </Typography>
           <Typography paragraph={true}>
             You can download Brocrobes on the{" "}
-            <a
-              target="_blank"
-              rel="noopener noreferrer"
-              href="https://chrome.google.com/webstore/detail/brocrobes/akeangohpdjllngpjiodmebgfhejbbpo?hl=en-GB"
-            >
+            <a target="_blank" rel="noopener noreferrer" href={BROCROBES_WEB_STORE_URL}>
               Chrome Web Store
             </a>
           </Typography>

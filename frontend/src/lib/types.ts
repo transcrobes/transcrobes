@@ -95,6 +95,9 @@ export const TEXTCROBES_YT_VIDEO = "https://youtu.be/TUskK-mtz_c";
 export const MOOCROBES_YT_VIDEO = "https://youtu.be/eHGY8JtRGH4";
 export const BOOCROBES_YT_VIDEO = "https://youtu.be/-TDHhtdP-Xk";
 
+export const BROCROBES_WEB_STORE_URL =
+  "https://chrome.google.com/webstore/detail/brocrobes/akeangohpdjllngpjiodmebgfhejbbpo?hl=en-GB";
+
 export type KnownLanguage = "en" | "zh-Hans";
 export type InputLanguage = "zh-Hans";
 export type CornerPosition = "none" | "top-left" | "top-right" | "bottom-left" | "bottom-right";
