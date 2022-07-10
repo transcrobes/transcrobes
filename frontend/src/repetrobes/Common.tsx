@@ -17,7 +17,14 @@ export default function QuestionDefinitionGraph({
   // the min char size should allow 4 on an old iphone before scrollbars appear
   const newDim = Math.max(72, Math.min(150, dimensions.width / characters.length - 18));
   return (
-    <DefinitionGraph characters={characters} showAnswer={showAnswer} charHeight={newDim} charWidth={newDim} newTab />
+    <DefinitionGraph
+      title="Remember the word and draw it here with a mouse or touchscreen, or even better use a pen and paper!"
+      characters={characters}
+      showAnswer={showAnswer}
+      charHeight={newDim}
+      charWidth={newDim}
+      newTab
+    />
   );
 }
 export const CentredFlex = styled("div")(() => ({
@@ -28,7 +35,7 @@ export const CentredFlex = styled("div")(() => ({
 }));
 
 export const GraphSoundQuestionStyle = styled("div")(({ theme }) => ({
-  [theme.breakpoints.down('md')]: {
+  [theme.breakpoints.down("md")]: {
     fontSize: "3em",
     padding: "0.1em",
   },
@@ -43,7 +50,7 @@ export const StyledAnswer = styled("div")(({ theme }) => ({
   justifyContent: "center",
   alignItems: "center",
   fontSize: "2em",
-  [theme.breakpoints.down('md')]: {
+  [theme.breakpoints.down("md")]: {
     padding: "0.3em",
   },
   [theme.breakpoints.up("sm")]: {
@@ -53,7 +60,7 @@ export const StyledAnswer = styled("div")(({ theme }) => ({
 
 export const StyledQuestion = styled("div")(({ theme }) => ({
   fontSize: "2em",
-  [theme.breakpoints.down('md')]: {
+  [theme.breakpoints.down("md")]: {
     padding: "0.3em",
   },
   [theme.breakpoints.up("sm")]: {
@@ -63,7 +70,7 @@ export const StyledQuestion = styled("div")(({ theme }) => ({
 
 export const MeaningWrapper = styled("div")(({ theme }) => ({
   display: "block",
-  [theme.breakpoints.down('md')]: {
+  [theme.breakpoints.down("md")]: {
     padding: "0.2em",
   },
   [theme.breakpoints.up("sm")]: {

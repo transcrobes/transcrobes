@@ -9,7 +9,7 @@ type Props = {
 };
 
 export default function SayIt({ graph, lang = "zh-CN" }: Props) {
-  const [voice, setVoice] = useState<SpeechSynthesisVoice | null>(null);
+  const [voice, setVoice] = useState<SpeechSynthesisVoice | undefined>(undefined);
   useEffect(() => {
     getVoices()
       .then((voices) => {
@@ -21,13 +21,14 @@ export default function SayIt({ graph, lang = "zh-CN" }: Props) {
         console.log("error", error);
       });
   });
-  return voice ? (
-    <Box sx={{ marginLeft: ".5em" }}>
-      <Button onClick={() => say(graph, voice, lang)} variant="contained" color="primary">
+  return (
+    <Box
+      title={!voice ? "No Mandarin speech support installed" : "Click to say the word in Mandarin"}
+      sx={{ marginLeft: ".5em" }}
+    >
+      <Button disabled={!voice} onClick={() => say(graph, voice, lang)} variant="contained" color="primary">
         Say it!
       </Button>
     </Box>
-  ) : (
-    <></>
   );
 }

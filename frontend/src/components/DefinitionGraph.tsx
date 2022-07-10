@@ -18,6 +18,7 @@ interface Props {
   charWidth?: number;
   charHeight?: number;
   newTab?: boolean;
+  title?: string;
 }
 
 export default function DefinitionGraph({
@@ -26,6 +27,7 @@ export default function DefinitionGraph({
   charHeight,
   charWidth,
   newTab,
+  title,
 }: Props): ReactElement {
   const [toAnimate, setToAnimate] = useState(characters.map(() => 0));
   const { classes } = useStyles();
@@ -42,7 +44,7 @@ export default function DefinitionGraph({
     setToAnimate(toAnimateUpdate);
   }
   return (
-    <div>
+    <div title={title}>
       <div className={classes.centred}>
         {characters
           .filter((x) => !!x)
