@@ -6,17 +6,17 @@ import { GraphSoundQuestionStyle } from "./Common";
 interface GraphQuestionProps {
   card: CardType;
   characters: CharacterType[];
+  word?: string;
 }
 
-export default function GraphQuestion({ card, characters }: GraphQuestionProps): ReactElement {
+export default function GraphQuestion({ card, characters, word }: GraphQuestionProps): ReactElement {
   return (
     <GraphSoundQuestionStyle>
-      {" "}
       {card && card.front ? (
         card.front
       ) : (
-        <QuestionDefinitionGraph characters={characters} showAnswer={true} />
-      )}{" "}
+        <QuestionDefinitionGraph word={word} characters={characters} showAnswer={true} />
+      )}
     </GraphSoundQuestionStyle>
   );
 }

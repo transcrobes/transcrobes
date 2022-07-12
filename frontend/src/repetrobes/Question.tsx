@@ -33,6 +33,7 @@ interface QuestionProps {
   recentSentences: PosSentences | null;
   showSynonyms: boolean;
   showL2LengthHint: boolean;
+  showNormalFont?: boolean;
   showAnswer: boolean;
   premature: boolean;
   translationProviderOrder: Record<string, number>;
@@ -46,6 +47,7 @@ export default function Question({
   recentSentences,
   showSynonyms,
   showL2LengthHint,
+  showNormalFont,
   showAnswer,
   premature,
   translationProviderOrder,
@@ -53,14 +55,24 @@ export default function Question({
 }: QuestionProps): ReactElement {
   const { classes } = useStyles({ premature });
   const cardType = getCardType(card);
+  const word = showNormalFont ? definition.graph : undefined;
   return (
     <div className={classes.question}>
-      {(cardType === CARD_TYPES.GRAPH.toString() && <GraphQuestion card={card} characters={characters} />) ||
+      {(cardType === CARD_TYPES.GRAPH.toString() && (
+        <GraphQuestion word={word} card={card} characters={characters} />
+      )) ||
         (cardType === CARD_TYPES.SOUND.toString() && (
-          <SoundQuestion card={card} definition={definition} characters={characters} showAnswer={showAnswer} />
+          <SoundQuestion
+            word={word}
+            card={card}
+            definition={definition}
+            characters={characters}
+            showAnswer={showAnswer}
+          />
         )) ||
         (cardType === CARD_TYPES.MEANING.toString() && (
           <MeaningQuestion
+            word={word}
             translationProviderOrder={translationProviderOrder}
             card={card}
             definition={definition}
@@ -72,7 +84,12 @@ export default function Question({
           />
         )) ||
         (cardType === CARD_TYPES.PHRASE.toString() && (
-          <PhraseQuestion recentSentences={recentSentences} showAnswer={showAnswer} characters={characters} />
+          <PhraseQuestion
+            word={word}
+            recentSentences={recentSentences}
+            showAnswer={showAnswer}
+            characters={characters}
+          />
         ))}
     </div>
   );

@@ -140,6 +140,13 @@ export default function RepetrobesConfig({ activityConfig, onConfigChange }: Pro
         />
       </div>
       <TCCheckbox
+        name="showNormalFont"
+        className={classes.checkbox}
+        label="Also show graphs with normal font"
+        isSelected={activityConfig.showNormalFont}
+        onCheckboxChange={handleSimpleChange}
+      />
+      <TCCheckbox
         name="showSynonyms"
         className={classes.checkbox}
         label="Show meaning question L2 synonyms"

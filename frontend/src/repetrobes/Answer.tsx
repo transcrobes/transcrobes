@@ -27,6 +27,7 @@ interface AnswerProps {
   recentSentences: PosSentences | null;
   showSynonyms: boolean;
   showRecents: boolean;
+  showNormalFont?: boolean;
   translationProviderOrder: Record<string, number>;
   onCardFrontUpdate: (card: CardType) => void;
 }
@@ -37,6 +38,7 @@ export default function Answer({
   recentSentences,
   showSynonyms,
   showRecents,
+  showNormalFont,
   translationProviderOrder,
   onCardFrontUpdate,
 }: AnswerProps): ReactElement {

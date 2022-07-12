@@ -50,7 +50,7 @@ export function VocabRevisor({
   function handlePractice(wordId: string, grade: number) {
     onPractice(wordId, grade);
   }
-  const { showSynonyms, showL2LengthHint, showRecents } = activityConfig;
+  const { showSynonyms, showL2LengthHint, showRecents, showNormalFont } = activityConfig;
   const premature = currentCard && currentCard?.dueDate > dayjs().unix();
   const theme = useTheme();
   console.log(
@@ -104,6 +104,7 @@ export function VocabRevisor({
             recentSentences={recentPosSentences?.posSentences || null}
             showSynonyms={showSynonyms}
             showL2LengthHint={showL2LengthHint}
+            showNormalFont={showNormalFont}
             showAnswer={showAnswer}
             onCardFrontUpdate={onCardFrontUpdate}
           />
@@ -116,6 +117,7 @@ export function VocabRevisor({
                 recentSentences={recentPosSentences?.posSentences || null}
                 showSynonyms={showSynonyms}
                 showRecents={showRecents}
+                showNormalFont={showNormalFont}
                 onCardFrontUpdate={onCardFrontUpdate}
               />
               <div style={{ display: "flex", justifyContent: "center" }}>

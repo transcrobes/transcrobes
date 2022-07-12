@@ -8,16 +8,23 @@ interface SoundQuestionProps {
   definition: DefinitionType;
   characters: CharacterType[];
   showAnswer: boolean;
+  word?: string;
 }
 
-export default function SoundQuestion({ card, definition, characters, showAnswer }: SoundQuestionProps): ReactElement {
+export default function SoundQuestion({
+  card,
+  definition,
+  characters,
+  showAnswer,
+  word,
+}: SoundQuestionProps): ReactElement {
   return (
     <GraphSoundQuestionStyle>
       <CentredFlex>{card && card.front ? card.front : definition.sound}</CentredFlex>
       <CentredFlex>
         <SayIt graph={definition.graph} />
       </CentredFlex>
-      <QuestionDefinitionGraph characters={characters} showAnswer={showAnswer} />
+      <QuestionDefinitionGraph word={word} characters={characters} showAnswer={showAnswer} />
     </GraphSoundQuestionStyle>
   );
 }

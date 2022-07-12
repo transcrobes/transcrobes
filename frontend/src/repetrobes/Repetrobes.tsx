@@ -4,7 +4,7 @@ import _ from "lodash";
 import { ReactElement, useEffect, useRef, useState } from "react";
 import { TopToolbar } from "react-admin";
 import { makeStyles } from "tss-react/mui";
-import { useAppDispatch, useAppSelector } from "../app/hooks";
+import { useAppSelector } from "../app/hooks";
 import HelpButton from "../components/HelpButton";
 import { Loading } from "../components/Loading";
 import WatchDemo from "../components/WatchDemo";
@@ -85,7 +85,6 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
 
   const windowEndRef = useRef<HTMLDivElement>(null);
   const windowBeginRef = useRef<HTMLDivElement>(null);
-  const dispatch = useAppDispatch();
   useEffect(() => {
     if (windowBeginRef.current && windowEndRef.current) {
       (showAnswer ? windowEndRef.current : windowBeginRef.current).scrollIntoView({

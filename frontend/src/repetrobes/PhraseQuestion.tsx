@@ -6,15 +6,16 @@ import Mouseover from "../components/content/td/Mouseover";
 import RecentSentenceExample from "../components/RecentSentenceExample";
 import { DEFAULT_RECENTS_READER_CONFIG_STATE } from "../features/content/simpleReaderSlice";
 import { toPosLabels } from "../lib/libMethods";
-import { CharacterType, PosSentence, PosSentences, TreebankPosType, ZH_TB_POS_LABELS } from "../lib/types";
+import { CharacterType, PosSentence, PosSentences, TreebankPosType } from "../lib/types";
 import QuestionDefinitionGraph from "./Common";
 
 interface Props {
   recentSentences: PosSentences | null;
   characters: CharacterType[];
   showAnswer: boolean;
+  word?: string;
 }
-export default function PhraseQuestion({ recentSentences, showAnswer, characters }: Props): ReactElement {
+export default function PhraseQuestion({ recentSentences, showAnswer, characters, word }: Props): ReactElement {
   const [current, setCurrent] = useState(0);
   const [sentences, setSentences] = useState<[TreebankPosType, PosSentence][]>([]);
   if (recentSentences) {
@@ -52,7 +53,7 @@ export default function PhraseQuestion({ recentSentences, showAnswer, characters
           )}
         </Grid>
       )) || <div>Nothing found</div>}
-      {showAnswer && <QuestionDefinitionGraph characters={characters} showAnswer={showAnswer} />}
+      {showAnswer && <QuestionDefinitionGraph word={word} characters={characters} showAnswer={showAnswer} />}
       <Mouseover readerConfig={DEFAULT_RECENTS_READER_CONFIG_STATE} />
     </div>
   );
