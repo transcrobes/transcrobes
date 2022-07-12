@@ -27,7 +27,7 @@ function EmtpyList() {
         }}
         variant="body1"
       >
-        You first need to <Link to="/imports">import content files</Link> first, then they will appear here.
+        <Link to="/imports">Imported content</Link> will appear here.
       </Typography>
     </ListEmpty>
   );
