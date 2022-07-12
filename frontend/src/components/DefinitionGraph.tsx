@@ -37,7 +37,7 @@ export default function DefinitionGraph({
     setToAnimate(toAnimateUpdate);
   }
 
-  function onChildAnimateFinished(index: number, character: CharacterType) {
+  function onChildAnimateFinished(index: number) {
     const toAnimateUpdate = [...toAnimate];
     toAnimateUpdate[index] = 0;
     toAnimateUpdate[index + 1] = 1;
