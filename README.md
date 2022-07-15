@@ -4,99 +4,76 @@
 
 ## Learn Chinese on the live site!
 
-[Sign up for an account](https://am.transcrob.es/#/signup) and super-charge your Chinese learning as part of the City University of Hong Kong "Meaningful IO" research project.
+Just want to learn Chinese? [Sign up for an account](https://am.transcrob.es/#/signup) and super-charge your Chinese learning as part of the City University of Hong Kong "Meaningful IO" research project.
 
 ## Introduction
 
-Transcrob.es is an implementation of the Meaningful IO hypothesis - that language is more about identity, more about learning a a new way of being than it is about learning a theoretical set of rules. Learning the supposed rules can be useful for most people at some point but is definitely not "the point of learning a language". However, "learning the rules" is often the point of traditional, exam-focused language courses (like you might have to sit at high school or university, or for an internationally recognised qualification), which is very important for many learners at certain points in their learning journeys. The key practical difference between `transcrobes` and other learning platforms is that exam-focused learning is just _one_ possible goal, and the best way to learn is by creating synergies between all of the goals learners might have (pass year 10 exam, read the Harry Potter novels, watch all the My Little Pony series, learn the words of all the Metallica songs...).
+Transcrob.es is an implementation of the Meaningful IO hypothesis - that language is more about identity, more about learning a new way of being than it is about learning a theoretical set of rules. Learning the supposed rules can be useful for most people at some point but is definitely not "the point of learning a language". However, "learning the rules" is often the point of traditional, exam-focused language courses (like you might have to sit at high school or university, or for an internationally recognised qualification), which is very important for many learners at certain points in their learning journeys. The key practical difference between `transcrobes` and other learning platforms is that exam-focused learning is just _one_ possible goal, and the best way to learn is by creating synergies between all of the goals learners might have (pass year 10 exam, read the Harry Potter novels, watch all the My Little Pony series, learn the words of all the Metallica songs...).
 
 > :warning: `transcrobes` currently only supports learning simplified Mandarin Chinese for native/highly competent speakers of English. Other languages will follow.
+
+## IMPORTANT, DEVELOPERS READ THIS FIRST
+
+Transcrobes has a LOT of heavy-duty moving parts, both in development and production. There is no practical way around this, at least at this stage, if we want to have high-performance, high-quality software. There are several very large images (Chinese NLP models, database, etc) - you will need _at least_ 5GB of free disk space. Your machine will need _at least_ 8GB of RAM, 16GB is better to avoid any risk of swapping and if you want to run all this in a VM, 32GB better still.
+
+It takes a while to set up but once it is, development and iterating is very quick and painless.
+
+Before you try and set up and run locally, you should [get in touch via one of the means in the documentation](https://transcrob.es/page/development/). Because there are so many moving parts, the setup instructions (below) may not be completely up-to-date, so please avoid any frustration and wasted time and [get in touch before you start](https://transcrob.es/page/development/).
+
+Developing for Transcrobes is designed to be done locally with `docker-compose` and deploying to production on `kubernetes`. `podman`'s `docker-compose` compatibility-layer can be made to work but is far too flaky to be officially supported and definitely only works when run as root.
 
 ## Technical notes
 
 This project was originally bootstraped from the [tiangolo/full-stack-fastapi-postgresql](https://github.com/tiangolo/full-stack-fastapi-postgresql) Github repo. However, it has undergone very significant changes (like using `react` and not `vue` for the frontend) and many things have been tweaked as a result.
 
-Unlike the initial template, this project is intended to be deployed to production on `kubernetes`, _not_ `docker-swarm`. You can find the deployment project [here](https://github.com/transcrobes/charts). `kubernetes` is currently the only supported deployment platform for `transcrobes`.
+Unlike the initial template, this project is intended to be deployed to production on `kubernetes`, _not_ `docker-swarm`. You can find the deployment project [here](https://github.com/transcrobes/charts). `kubernetes` is currently the only supported production deployment platform for `transcrobes`.
 
 The supported versions of the two project languages (`python` and `nodejs`) are provided in the `.tool-versions` file. This file can be used by [`asdf`](https://asdf-vm.com/), and that is (definitely) the recommended way of developing for this project.
 
 ## Backend Requirements
 
+You will need to install these on your development machine. All commands listed here should be run on `bash` (they might work elsewhere but aren't supported).
+
 - [Docker](https://www.docker.com/).
 - [Docker Compose](https://docs.docker.com/compose/install/).
 - [Poetry](https://python-poetry.org/) for Python package and environment management.
+- Python 3.10+
 
 ## Frontend Requirements
 
-- Node.js (with `npm`).
+- Node.js 16+ (with `npm`).
 
-## Backend local development
+## Run the backend locally
 
-- Start the stack with Docker Compose:
+You _need_ to make a copy of `docker-compose.override.yml.example` to `docker-compose.override.yml` and enable at least `nginx` to listen on a port on your machine so you can access the site locally. It doesn't have to be the default port `80` but has only been thoroughly tested with that. See
+
+You _need_ to make a copy of `.env.example` to `.env`. The superadmin user (which you set in the `.env` file with `FIRST_SUPERUSER` and `FIRST_SUPERUSER_PASSWORD`) is created by default, and you can use that as a learner also.
+
+You currently _need_ a Microsoft Azure Text Translator API key, and while they give you up to 2 million characters of lookup/translation free every month, it does require a valid, "proper" credit card (you can't use temporary/obfuscated numbers). If you sign up for the free tier they will NOT charge you if you hit the limit - they will stop translating. For them to charge your card you _need_ to manually change to a different tier. It's also MS we're talking about here, so they aren't going to try anything dodgy (as much as they were horrible in the past, their Azure service is _very_ hard to fault...). If you know about Marian NMT and want to contribute a CPU optimised build and Mandarin to English model, that would be very welcome indeed!
+
+The maintainer has a couple of keys that can be used for development purposes if you don't have a credit card or refuse to give it to MS. [Get in touch if you need an API key](https://transcrob.es/page/development/).
+
+You don't _need_ to change any of the other defaults.
+
+If you want to create a "normal" user/learner account, you _need_ to put in SMTP details. Any service that allows you to use standard SMTP should work, provided that can deliver to your desired destination email account. In theory, you could create an account with a fake SMTP and then manually update the database to validate the email address but you are probably better just using the default `admin` account until you can do that yourself!
+
+You _should_ also make copies of `frontend/.env.production.local.example` to `frontend/.env.production.local` and `frontend/.env.development.local.example` to `frontend/.env.development.local`. But again, you don't _need_ to change any of the defaults.
+
+## Build the initial base images
+
+The base images need to be built and then rebuilt again later when deps update.
+
+```bash
+set -e; for i in base backend web worker sworker backups; do bash scripts/build-${i}.sh; done
+```
+
+Start the stack with Docker Compose:
 
 ```bash
 docker-compose up -d
 ```
 
-## Temporary hack for local access
-
-In order to access the sites via `http://localhost` you will need to add the following stanza to the `nginx.conf` file (in Debian/Ubuntu):
-
-```
-...
-http {
-    map $http_upgrade $connection_upgrade {
-        default upgrade;
-        '' close;
-    }
-...
-```
-
-And to activate the following virtualhost:
-
-```
-## Default server configuration
-#
-server {
-        listen 80 default_server;
-        root /var/www/html;
-
-        server_name _;
-
-        location ~ ^/(api|docs|redoc|subscriptions|api/graphql)(.*) {
-                proxy_pass http://127.0.0.1:8880/$1$2;
-
-                client_max_body_size 50M;
-                proxy_read_timeout 3600s;
-                proxy_send_timeout 3600s;
-                proxy_force_ranges on;
-
-                proxy_http_version 1.1;
-                proxy_set_header Upgrade $http_upgrade;
-                proxy_set_header Connection $connection_upgrade;
-                proxy_set_header Host $host;
-        }
-        location / {
-                client_max_body_size 50M;
-                proxy_pass http://127.0.0.1:5000/;
-                proxy_read_timeout 60s;
-                proxy_send_timeout 60s;
-                proxy_force_ranges on;
-        }
-}
-```
-
-This will be migrated to nice `docker-compose` soon.
-
-- Now you can open your browser and interact with these URLs:
-
-Frontend: See the end of this document
-
-Backend, automatic interactive documentation with Swagger UI (from the OpenAPI backend): http://localhost/docs
-
-Alternative automatic documentation with ReDoc (from the OpenAPI backend): http://localhost/redoc
-
-**Note**: The first time you start your stack, it might take a minute for it to be ready. While the backend waits for the database to be ready and configures everything. You can check the logs to monitor it.
+**Note**: The first time you start your stack, it will take several minutes for it to be ready. You will definitely need to run `docker-compose up -d` at least a couple of times before all images start properly (some images report ready before they truly are).
 
 To check the logs, run:
 
@@ -110,60 +87,91 @@ To check the logs of a specific service, add the name of the service, e.g.:
 docker-compose logs backend
 ```
 
-If your Docker is not running in `localhost` (the URLs above wouldn't work) check the sections below on **Development with Docker Toolbox** and **Development with a custom IP**.
+## Run the platform services
+
+Once everything _appears_ properly started, you will then have to stop everything and start it again (it's not _actually_ properly started...).
+
+```bash
+docker-compose down
+docker-compose up -d  # and again, you might need to run this a couple of times to get all containers started
+```
+
+Once you see all services report `up-to-date` when you execute `docker-compose up -d`, you should be finally good to go.
+
+Obviously none of this is necessary when deployed to `kubernetes`, which is a proper container orchestrator! Originally development was attempted pointing to a `microk8s` (and later `k3s`) but it wasn't nearly as practical day-to-day and is constantly using a lot of CPU.
+
+## Database bootstrap
+
+You now need to seed the database with the initial dictionary data and some default wordlists, etc. This was originally provided publicly but keeping things up-to-date was far, far too much work. [Get in touch with the maintainer who will provide postgres sql dumps to import](https://transcrob.es/page/development/). Publicly available dumps will be made available if significant interest materialises and resources permit. You will get an archive with several `.sql` files which you extract and then:
+
+```bash
+for i in *.sql; do psql -p 15432 -U postgres tcapp < $i; done
+```
+
+This assumes you have `psql` installed locally on the development machine. Adapt this if you want to use the postgres server container `psql`.
+
+## Server initilisation
+
+You can now open your browser and interact with the backend. Automatic interactive documentation with the Swagger UI (from the OpenAPI backend): http://localhost/docs
+
+You should now log in to this interface with the admin user using the Swagger UI (top right of the screen "Authorize"), and then navigate to http://localhost/docs#/enrich/api_regenerate_all_api_v1_enrich_regenerate_all_get.
+
+Learners download an initial, pregenerated copy of a lot of dictionary-type resources (so almost everything can work offline), and these are pregenerated on a daily basis via an internal cron (you _don't_ need to set this up). Because it hasn't already been generated, you can manually force generation of these with this interface. After logging in as an admin, simply click the "Try it out" button for `/api/v1/enrich/regenerate_all`, then click the "Execute" button. This might take up to a couple of minutes to finish.
+
+Frontend: See the end of this document
 
 ## Backend local development, additional details
 
 ### General workflow
 
+Because developers can get pretty exotic with their tastes, it is impossible to cater to everyone. If you know what you're doing, then you should be able to work out how to do anything your preferred way.
+
+The maintainer uses [asdf](https://asdf-vm.com/), which allows for very easy, isolated management of all the languages used for the project. The project includes a `.tool-versions` file that contains the currently supported versions of `python` and `node`. These will very likely be the latest supported `lts` versions.
+
 By default, the dependencies are managed with [Poetry](https://python-poetry.org/), go there and install it.
 
-From `./backend/app/` you can install all the dependencies with:
+From the repo root you can install all the backend dependencies with:
 
 ```console
-$ poetry install
+poetry install
 ```
 
 Then you can start a shell session with the new environment with:
 
 ```console
-$ poetry shell
+poetry shell
 ```
 
-Next, open your editor at `./backend/app/` (instead of the project root: `./`), so that you see an `./app/` directory with your code inside. That way, your editor will be able to find all the imports, etc. Make sure your editor uses the environment you just created with Poetry.
+Development works well with VSCode which, whether you like it or not, has [become a kind of defacto standard for web development](https://survey.stackoverflow.co/2022/#most-popular-technologies-new-collab-tools).
 
-Modify or add SQLAlchemy models in `./backend/app/app/models/`, Pydantic schemas in `./backend/app/app/schemas/`, API endpoints in `./backend/app/app/api/`, CRUD (Create, Read, Update, Delete) utils in `./backend/app/app/crud/`. The easiest might be to copy the ones for Items (models, endpoints, and CRUD utils) and update them to your needs.
+> :exclamation: the project contains soft links from `./pyproject.toml` and `./poetry.lock` to real files in `./backend/app/`, making it easy to open `vscode` at the root and to have both the backend and frontend open and pointing to the right language envs (`node` and `python`).
 
-Add and modify tasks for the Faust worker in `./backend/app/app/fworker.py`.
+Make sure your editor uses the environment you just created with Poetry.
 
-If you need to install any additional package to the worker, add it to the file `./backend/app/faustworker.dockerfile`.
+Modify or add SQLAlchemy models in `./backend/app/app/models/`, Pydantic schemas in `./backend/app/app/schemas/`, API endpoints in `./backend/app/app/api/`, CRUD (Create, Read, Update, Delete) utils in `./backend/app/app/crud/`.
 
-### Docker Compose Override
+Add and modify tasks for the Faust worker in `./backend/app/app/fworker.py`, and for the stats worker in `./backend/app/app/fworker.py`.
 
-During development, you can change Docker Compose settings that will only affect the local development environment, in the file `docker-compose.override.yml`.
+If you need to install any additional package to the either of the workers, add it to the relevant `dockerfile` (at the project root, see `Dockerfile.*`).
 
-The changes to that file only affect the local development environment, not the production environment. So, you can add "temporary" changes that help the development workflow.
+### Docker Compose and overrides
 
-For example, the directory with the backend code is mounted as a Docker "host volume", mapping the code you change live to the directory inside the container. That allows you to test your changes right away, without having to build the Docker image again. It should only be done during development, for production, you should build the Docker image with a recent version of the backend code. But during development, it allows you to iterate very fast.
+During development, you can change Docker Compose settings outside `git` that only affect the local development environment, in the file `docker-compose.override.yml`. There is a default example with `docker-compose.override.yml.example` which you can copy that exposes the ports of most services, including `nginx` on port 80. Your `docker` will obviously require the permissions to do that. The ports are not exposed by default to reduce the likelihood of conflicting with an existing open port. While it should work fine if you expose on another port, only port `80` has been thoroughly tested.
 
-There is also a command override that runs `/start-reload.sh` (included in the base image) instead of the default `/start.sh` (also included in the base image). It starts a single server process (instead of multiple, as would be for production) and reloads the process whenever the code changes. Have in mind that if you have a syntax error and save the Python file, it will break and exit, and the container will stop. After that, you can restart the container by fixing the error and running again:
-
-```console
-$ docker-compose up -d
-```
+The directory with the backend code is mounted as a Docker "host volume", mapping the code you change live to the directory inside the container. That allows you to test your changes right away, without having to build the Docker image again.
 
 There is also a commented out `command` override, you can uncomment it and comment the default one. It makes the backend container run a process that does "nothing", but keeps the container alive. That allows you to get inside your running container and execute commands inside, for example a Python interpreter to test installed dependencies, or start the development server that reloads when it detects changes, or start a Jupyter Notebook session.
 
-To get inside the container with a `bash` session you can start the stack with:
+To get inside one of the containers with a `bash` session you can start the stack with:
 
-```console
-$ docker-compose up -d
+```bash
+docker-compose up -d
 ```
 
 and then `exec` inside the running container:
 
 ```console
-$ docker-compose exec backend bash
+docker-compose exec backend bash
 ```
 
 You should see an output like:
@@ -177,7 +185,7 @@ that means that you are in a `bash` session inside your container, as a `root` u
 There you can use the script `/start-reload.sh` to run the debug live reloading server. You can run that script from inside the container with:
 
 ```console
-$ bash /start-reload.sh
+bash /start-reload.sh
 ```
 
 ...it will look like:
@@ -192,66 +200,9 @@ Nevertheless, if it doesn't detect a change but a syntax error, it will just sto
 
 ...this previous detail is what makes it useful to have the container alive doing nothing and then, in a Bash session, make it run the live reload server.
 
-### Backend tests
+### Test Coverage
 
-> :warning: **THE FOLLOWING HAS NOT BEEN PROPERLY VALIDATED**
-
-To test the backend run:
-
-```console
-$ DOMAIN=backend sh ./scripts/test.sh
-```
-
-The file `./scripts/test.sh` has the commands to generate a testing `docker-stack.yml` file, start the stack and test it.
-
-The tests run with Pytest, modify and add tests to `./backend/app/app/tests/`.
-
-#### Local tests
-
-Start the stack with this command:
-
-```Bash
-DOMAIN=backend sh ./scripts/test-local.sh
-```
-
-The `./backend/app` directory is mounted as a "host volume" inside the docker container (set in the file `docker-compose.dev.volumes.yml`).
-You can rerun the test on live code:
-
-```Bash
-docker-compose exec backend /app/tests-start.sh
-```
-
-#### Test running stack
-
-If your stack is already up and you just want to run the tests, you can use:
-
-```bash
-docker-compose exec backend /app/tests-start.sh
-```
-
-That `/app/tests-start.sh` script just calls `pytest` after making sure that the rest of the stack is running. If you need to pass extra arguments to `pytest`, you can pass them to that command and they will be forwarded.
-
-For example, to stop on first error:
-
-```bash
-docker-compose exec backend bash /app/tests-start.sh -x
-```
-
-#### Test Coverage
-
-Because the test scripts forward arguments to `pytest`, you can enable test coverage HTML report generation by passing `--cov-report=html`.
-
-To run the local tests with coverage HTML reports:
-
-```Bash
-DOMAIN=backend sh ./scripts/test-local.sh --cov-report=html
-```
-
-To run the tests in a running stack with coverage HTML reports:
-
-```bash
-docker-compose exec backend bash /app/tests-start.sh --cov-report=html
-```
+There was quite good test coverage in a previous version (based on `Django`) but since then unit tests have not been actively developed. This is obviously extremely suboptimal and the maintainer is fully prepared for any and all insults that any serious engineer might want to throw his way...
 
 ### Migrations
 
@@ -259,51 +210,41 @@ As during local development your app directory is mounted as a volume inside the
 
 Make sure you create a "revision" of your models and that you "upgrade" your database with that revision every time you change them. As this is what will update the tables in your database. Otherwise, your application will have errors.
 
-- Start an interactive session in the backend container:
+If you create a new model in `./backend/app/app/models/`, make sure to import it in `./backend/app/app/db/base.py`, that Python module (`base.py`) that imports all the models will be used by Alembic.
 
-```console
-$ docker-compose exec backend bash
+After changing a model (for example, adding a column), inside the container, create a revision, e.g.:
+
+```bash
+docker-compose run backend alembic -c alembic.main.ini revision --autogenerate -m "A descriptive message"
 ```
 
-- If you created a new model in `./backend/app/app/models/`, make sure to import it in `./backend/app/app/db/base.py`, that Python module (`base.py`) that imports all the models will be used by Alembic.
+Commit to the git repository the files generated in the alembic directory.
 
-- After changing a model (for example, adding a column), inside the container, create a revision, e.g.:
+After creating the revision, run the migration in the database (this is what will actually change the database):
 
-```console
-$ alembic revision --autogenerate -m "Add column last_name to User model"
+```bash
+docker-compose run backend alembic upgrade head
 ```
 
-- Commit to the git repository the files generated in the alembic directory.
+Alternatively, you can restart the backend with
 
-- After creating the revision, run the migration in the database (this is what will actually change the database):
-
-```console
-$ alembic upgrade head
+```bash
+docker-compose restart backend
 ```
 
-If you don't want to use migrations at all, uncomment the line in the file at `./backend/app/app/db/init_db.py` with:
+The (completely separate) stats database uses a separate `alembic` `ini` file, `alembic.stats.ini`, and if you update a stats model (see `app/app/models.stats.py`) then you should run an update using this ini file, like so:
 
-```python
-Base.metadata.create_all(bind=engine)
+```bash
+docker-compose run backend alembic -c alembic.stats.ini revision --autogenerate -m "A descriptive stats message"
 ```
-
-and comment the line in the file `prestart.sh` that contains:
-
-```console
-$ alembic upgrade head
-```
-
-If you don't want to start with the default models and want to remove them / modify them, from the beginning, without having any previous revision, you can remove the revision files (`.py` Python files) under `./backend/app/alembic/versions/`. And then create a first migration as described above.
-
-Check all the corresponding available URLs in the section at the end.
 
 ## Frontend development
 
-- Enter the `frontend` directory, install the NPM packages and start the live server using the `npm` scripts:
+Enter the `frontend` directory, install the NPM packages and start the live server using the `npm` scripts:
 
 ```bash
 cd frontend
-npm install
+npm install --legacy-peer-deps
 npm run build:dev
 ```
 

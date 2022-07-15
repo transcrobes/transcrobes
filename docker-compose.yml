@@ -2,8 +2,6 @@ version: "3.9"
 services:
   nginx:
     image: nginx:latest
-    ports:
-      - 80:80
     volumes:
       - ./frontend/nginx.conf:/etc/nginx/conf.d/default.conf:ro
     extra_hosts:
@@ -18,10 +16,7 @@ services:
       - .env
     environment:
       - PGDATA=/var/lib/postgresql/data/pgdata
-
   statsdb:
-    ports:
-      - "15433:5432"
     image: postgres:14
     volumes:
       - app-statsdb-data:/var/lib/postgresql/data
@@ -41,8 +36,6 @@ services:
 
   zookeeper:
     image: docker.io/bitnami/zookeeper:latest
-    ports:
-      - "2181:2181"
     volumes:
       - "app-zookeeper_data:/bitnami"
     environment:
@@ -70,6 +63,8 @@ services:
       - kafka
     volumes:
       - app-files-data:/media
+      - ./backend/app:/app
+      - ./frontend/dist:/fapp
     env_file:
       - .env
     environment:
@@ -81,8 +76,11 @@ services:
       context: .
       dockerfile: Dockerfile.web
       args:
-        INSTALL_DEV: ${INSTALL_DEV-false}
+        INSTALL_DEV: ${INSTALL_DEV-true}
         TRANSCROBES_DOCKER_REPO: ${TRANSCROBES_DOCKER_REPO-transcrobes}
+
+    # command: bash -c "while true; do sleep 1; done"  # Infinite loop to keep container live doing nothing
+    command: /bin/bash /start-reload.sh
 
   sworker:
     image: "${DOCKER_IMAGE_SWORKER?Variable not set}:${TAG-latest}"
@@ -107,7 +105,7 @@ services:
       context: .
       dockerfile: Dockerfile.sworker
       args:
-        INSTALL_DEV: ${INSTALL_DEV-false}
+        INSTALL_DEV: ${INSTALL_DEV-true}
         TRANSCROBES_DOCKER_REPO: ${TRANSCROBES_DOCKER_REPO-transcrobes}
 
   faustworker:
@@ -115,6 +113,7 @@ services:
     volumes:
       - app-files-data:/media
       - app-stats-data:/data
+      - ./backend/app:/app
     depends_on:
       - db
       - kafka
@@ -125,11 +124,10 @@ services:
       - SERVER_HOST=https://${DOMAIN?Variable not set}
       # Allow explicit env var override for tests
       - SMTP_HOST=${SMTP_HOST?Variable not set}
+      - RUN=faust worker -A app.fworker -l info
     build:
-      context: .
-      dockerfile: Dockerfile.worker
       args:
-        INSTALL_DEV: ${INSTALL_DEV-false}
+        INSTALL_DEV: ${INSTALL_DEV-true}
         TRANSCROBES_DOCKER_REPO: ${TRANSCROBES_DOCKER_REPO-transcrobes}
 
   # frontend:
