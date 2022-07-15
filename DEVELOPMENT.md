@@ -138,13 +138,13 @@ Make sure your editor uses the environment you just created with Poetry.
 
 Modify or add SQLAlchemy models in `./backend/app/app/models/`, Pydantic schemas in `./backend/app/app/schemas/`, API endpoints in `./backend/app/app/api/`, CRUD (Create, Read, Update, Delete) utils in `./backend/app/app/crud/`.
 
-Add and modify tasks for the Faust worker in `./backend/app/app/fworker.py`, and for the stats worker in `./backend/app/app/fworker.py`.
+Add and modify tasks for the Faust worker in `./backend/app/app/fworker.py`, and for the stats worker in `./backend/app/app/sworker.py`.
 
-If you need to install any additional package to the either of the workers, add it to the relevant `dockerfile` (at the project root, see `Dockerfile.*`).
+If you need to install any additional system package to the either of the workers, add it to the relevant `dockerfile` (at the project root, see `Dockerfile.*`).
 
 ### Docker Compose and overrides
 
-During development, you can change Docker Compose settings outside `git` that only affect the local development environment, in the file `docker-compose.override.yml`. There is a default example with `docker-compose.override.yml.example` which you can copy that exposes the ports of most services, including `nginx` on port 80. Your `docker` will obviously require the permissions to do that. The ports are not exposed by default to reduce the likelihood of conflicting with an existing open port. While it should work fine if you expose on another port, only port `80` has been thoroughly tested.
+During development, you can change Docker Compose settings outside `git` that only affect the local development environment in `docker-compose.override.yml`. There is a default example with `docker-compose.override.yml.example` which you can copy that exposes the ports of most services, including `nginx` on port 80. Your `docker` will obviously require the permissions to do that. The ports are not exposed by default to reduce the likelihood of conflicting with an existing open port on your workstation. While it should work fine if you expose on another port, only port `80` has been thoroughly tested.
 
 The directory with the backend code is mounted as a Docker "host volume", mapping the code you change live to the directory inside the container. That allows you to test your changes right away, without having to build the Docker image again.
 
@@ -182,7 +182,7 @@ docker-compose restart backend
 
 Which will also run the upgrade.
 
-The (completely separate) stats database uses a separate `alembic` `ini` file, `alembic.stats.ini`, and if you update a stats model (see `app/app/models.stats.py`) then you should run an update using this ini file, like so:
+The (completely separate) stats database uses a separate `alembic` `ini` file, `alembic.stats.ini`, and if you update a stats model (see `app/app/models/stats.py`) then you should run an update using this ini file, like so:
 
 ```bash
 docker-compose run backend alembic -c alembic.stats.ini revision --autogenerate -m "A descriptive stats message"
@@ -200,8 +200,10 @@ npm install --legacy-peer-deps
 npm run build:dev
 ```
 
-Then open your browser at http://localhost
+Then open your browser at http://localhost. Any changes to frontend code will cause a recompile to start.
 
 Notice that this live server is not running inside Docker, it is for local development, and that is the recommended workflow.
 
 Check the file `package.json` to see other available options.
+
+> :exclamation: Yes, frontend compile time is _embarassingly_ slow (minimum of 20-30s for dev mode, up to 2mins for prod). Sigh. `webpack` is very slow, that's life. Many, many entire days were spent trying to get everything working properly using various other systems (`vite`, `parcel`) but they are either written by ayatollahs who will never make any compromises (like `vite`) or are only half-baked/abandoned (like `parcel`), and definitely nothing has the support that `webpack` has everywhere. It _might_ be possible to migrate to something but the maintainer has used up all his JS frustration budget for the next couple of years... If you can guarantee to support and maintain it, any other system would be a welcome change!
