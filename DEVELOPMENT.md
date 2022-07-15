@@ -20,7 +20,7 @@ The supported versions of the two project languages (`python` and `nodejs`) are 
 
 ## Backend Requirements
 
-You will need to install these on your development machine. All commands listed here should be run on `bash` (they might work elsewhere but aren't supported).
+You will need to install the following on your development machine and be familiar with how they work. All commands listed here should be run on `bash` (they might work elsewhere but aren't supported).
 
 - [Docker](https://www.docker.com/).
 - [Docker Compose](https://docs.docker.com/compose/install/).
@@ -52,7 +52,7 @@ You _should_ also make copies of `frontend/.env.production.local.example` to `fr
 The base images need to be built and then rebuilt again later when deps update.
 
 ```bash
-set -e; for i in base backend web worker sworker backups; do bash scripts/build-${i}.sh; done
+set -e; for i in base backend web worker sworker backups; do TRANSCROBES_DOCKER_REPO=transcrobes bash scripts/build-${i}.sh; done
 ```
 
 Start the stack with Docker Compose:
