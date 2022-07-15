@@ -77,6 +77,12 @@ docker-compose logs backend
 
 ## Run the platform services
 
+First create a couple of directories:
+
+```bash
+mkdir -p frontend/dist/{site,static}
+```
+
 Once everything _appears_ properly started, you will then have to stop everything and start it again (it's not _actually_ properly started...).
 
 ```bash
@@ -93,7 +99,7 @@ Obviously none of this is necessary when deployed to `kubernetes`, which is a pr
 You now need to seed the database with the initial dictionary data and some default wordlists, etc. This was originally provided publicly but keeping things up-to-date was far, far too much work. [Get in touch with the maintainer who will provide postgres sql dumps to import](https://transcrob.es/page/development/). Publicly available dumps will be made available if significant interest materialises and resources permit. You will get an archive with several `.sql` files which you extract and then:
 
 ```bash
-for i in *.sql; do psql -p 15432 -U postgres tcapp < $i; done
+for i in *.sql; do psql -h localhost -p 15432 -U postgres tcapp < $i; done
 ```
 
 This assumes you have `psql` installed locally on the development machine and have copied the default `.example` files and not changed them. Adapt this if you want to use the postgres server container `psql`.
@@ -106,7 +112,7 @@ You should now log in to this interface with the admin user using the Swagger UI
 
 Learners download an initial, pregenerated copy of a lot of dictionary-type resources (so almost everything can work offline), and these are pregenerated on a daily basis via an internal cron (you _don't_ need to set this up). Because it hasn't already been generated, you can manually force generation of these with this interface. After logging in as an admin, simply click the "Try it out" button for `/api/v1/enrich/regenerate_all`, then click the "Execute" button. This might take up to a couple of minutes to finish.
 
-Frontend: See the end of this document
+Frontend: See [the end of this document](#frontend-development)
 
 ## Backend local development, additional details
 
