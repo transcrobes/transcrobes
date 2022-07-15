@@ -55,6 +55,7 @@ services:
       - KAFKA_CFG_MESSAGE_MAX_BYTES=5242880
     depends_on:
       - zookeeper
+
   backend:
     image: "${DOCKER_IMAGE_BACKEND?Variable not set}:${TAG-latest}"
     depends_on:
@@ -78,8 +79,6 @@ services:
       args:
         INSTALL_DEV: ${INSTALL_DEV-true}
         TRANSCROBES_DOCKER_REPO: ${TRANSCROBES_DOCKER_REPO-transcrobes}
-
-    # command: bash -c "while true; do sleep 1; done"  # Infinite loop to keep container live doing nothing
     command: /bin/bash /start-reload.sh
 
   sworker:
