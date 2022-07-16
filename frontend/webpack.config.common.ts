@@ -187,20 +187,7 @@ export function loadSVGR(): webpack.Configuration {
         {
           test: /\.svg$/,
           issuer: /\.tsx?$/,
-          use: ["@svgr/webpack", "asset"],
-        },
-      ],
-    },
-  };
-}
-
-export function loadSVG(): webpack.Configuration {
-  return {
-    module: {
-      rules: [
-        {
-          test: /\.svg$/,
-          use: ["asset"],
+          use: ["@svgr/webpack"],
         },
       ],
     },

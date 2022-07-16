@@ -107,6 +107,7 @@
     "@openreplay/tracker": "^3.5.2",
     "@openreplay/tracker-redux": "^3.4.8",
     "@reduxjs/toolkit": "^1.7.1",
+    "@svgr/webpack": "^6.2.1",
     "@use-it/event-listener": "^0.1.6",
     "axios": "^0.25.0",
     "axios-retry": "^3.2.4",

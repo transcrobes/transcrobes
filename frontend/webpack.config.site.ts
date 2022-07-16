@@ -47,7 +47,6 @@ const commonConfig = merge<Configuration>([
   parts.loadTypescript(),
   parts.loadImages(),
   parts.loadSVGR(),
-  parts.loadSVG(),
   parts.clean(),
 ]);
 

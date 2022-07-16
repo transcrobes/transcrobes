@@ -84,6 +84,7 @@ export const MIN_KNOWN_BEFORE_ADVANCED = 500;
 
 export const MIN_LENGTH_FOR_SENTENCE = 5;
 
+export const YOUTUBE_CHANNEL = "https://www.youtube.com/channel/UCEXMQOmPKNM1wIWZb3ceG-A";
 export const SIGNUP_YT_VIDEO = "https://youtu.be/XwZNzFw51lA";
 export const BROCROBES_YT_VIDEO = "https://youtu.be/bKLxXEml_sA";
 export const IMPORTS_YT_VIDEO = "https://youtu.be/w7OhcIU-WAM";
