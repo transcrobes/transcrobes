@@ -3,10 +3,11 @@ import { Datagrid, FunctionField, Link, List, ReferenceField, SortButton, TextFi
 import HelpButton from "../components/HelpButton";
 import { ListEmpty } from "../components/ListEmpty";
 import { ProcessingField } from "../components/ProcessingField";
-import { CONTENT_TYPE, DOCS_DOMAIN, reverseEnum } from "../lib/types";
+import { CONTENT_TYPE, DOCS_DOMAIN, IS_DEV, reverseEnum } from "../lib/types";
 import ActionButton from "./ActionButton";
 import CacheSwitch from "./CacheSwitch";
 import { ContentStatsField } from "../components/ContentStatsField";
+import { ContentStatsAccuracyField } from "../components/ContentStatsAccuracyField";
 
 function ListActions({ empty }: { empty?: boolean }) {
   return (
@@ -49,6 +50,7 @@ export default function ContentList() {
         <ProcessingField label="Processing status" />
         <FunctionField source="contentType" render={(record: any) => reverseEnum(CONTENT_TYPE, record.contentType)} />
         <ContentStatsField label="Content Stats" />
+        {IS_DEV && <ContentStatsAccuracyField label="Accuracy" />}
         <ActionButton label="Action" />
         <CacheSwitch label="Offline?" />
       </Datagrid>

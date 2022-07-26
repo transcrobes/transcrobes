@@ -271,6 +271,14 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
         sendResponse({ source: message.source, type: message.type, value: result });
       });
     });
+  } else if (message.type === "getContentAccuracyStatsForImport") {
+    loadDb(console.debug, message).then((ldb) => {
+      getLocalCardWords(message).then((dayCW) => {
+        data.getContentAccuracyStatsForImport(ldb, message.value, dayCW).then((result) => {
+          sendResponse({ source: message.source, type: message.type, value: result });
+        });
+      });
+    });
   } else {
     console.warn("An unknown message type was submitted!", message);
   }

@@ -816,6 +816,10 @@ export type PythonCounter = {
   [key: string]: number;
 };
 
+export type DictionaryCounter = {
+  [key: string]: [string, number];
+};
+
 export type SerialisableStringSet = {
   [key: string]: null;
 };
@@ -825,6 +829,14 @@ export type SerialisableDayCardWords = {
   knownCardWordChars: SerialisableStringSet;
   allCardWordGraphs: SerialisableStringSet;
   knownWordIdsCounter: PythonCounter;
+};
+
+export type AnalysisAccuracy = {
+  allWords: DictionaryCounter;
+  foundWords: PythonCounter;
+  notFoundWords: PythonCounter;
+  knownFoundWords: PythonCounter;
+  knownNotFoundWords: PythonCounter;
 };
 
 export interface CalculatedContentStats {
@@ -953,7 +965,12 @@ export type RecentSentencesType = {
 };
 
 export type ImportAnalysis = {
-  vocabulary: { buckets: { [key: string]: string[] }; counts: { [key: string]: number } };
+  vocabulary: {
+    // {\"1\":[\"H．E．F．史拉轰\",\"K书\",\"X光\",\"z字形\"], "2": ["..."]...
+    buckets: { [nb_occurrences: string]: string[] };
+    // {\"1\":7055,\"2\":2200,\"4\":738,\"3\":1129,...
+    counts: { [nb_occurrences: string]: number };
+  };
   sentenceLengths?: number[];
   grammar_rules?: { [key: string]: number };
 };

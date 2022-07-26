@@ -122,11 +122,12 @@ export default function ContentAnalysis(props: Props) {
             justifyContent: "space-between",
             alignItems: "center",
           }}
+          onClick={(event) => event.stopPropagation()}
         >
           <Typography marginRight={6}>Personalised analysis</Typography>
           <HelpButton url={helpUrl} />
         </DialogTitle>
-        <DialogContent>
+        <DialogContent onClick={(event) => event.stopPropagation()}>
           <TableContainer component={Paper}>
             <CardHeader title="Different items (types)" />
             <Table aria-label="simple table">

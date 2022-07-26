@@ -33,12 +33,14 @@ import {
   ComponentClass,
   ComponentFunction,
   DOCS_DOMAIN,
+  IS_DEV,
   KeyedModels,
   ModelType,
   SerialisableDayCardWords,
   SerialisableStringSet,
   UserState,
 } from "../lib/types";
+import ContentAnalysisAccuracyBrocrobes from "./ContentAnalysisAccuracyBrocrobes";
 
 const DATA_SOURCE = "content.ts";
 const KEEPALIVE_QUERY_FREQUENCY_MS = 5000;
@@ -126,6 +128,7 @@ proxy.sendMessagePromise<UserState>({ source: DATA_SOURCE, type: "getUser", valu
               <TokenDetails readerConfig={readerConfig} />
               <Mouseover readerConfig={readerConfig} />
               {readerConfig.analysisPosition !== "none" && <ContentAnalysisBrocrobes />}
+              {IS_DEV && <ContentAnalysisAccuracyBrocrobes proxy={proxy} />}
             </ScopedCssBaseline>
           </ThemeProvider>
         </Provider>,

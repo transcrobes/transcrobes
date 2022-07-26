@@ -343,6 +343,15 @@ export function manageEvent(sw: ServiceWorkerGlobalScope, event: ExtendableMessa
         });
       });
       break;
+    case "getContentAccuracyStatsForImport":
+      loadDb(message, sw).then(([ldb, msg]) => {
+        getLocalCardWords(message, sw).then((dayCW) => {
+          data.getContentAccuracyStatsForImport(ldb, msg.value, dayCW).then((result) => {
+            postIt(event, { source: msg.source, type: msg.type, value: result });
+          });
+        });
+      });
+      break;
     // The following devalidate the dayCardWords "cache", so setting to null
     case "practiceCardsForWord":
     case "addOrUpdateCardsForWord":

@@ -42,6 +42,7 @@ import {
   DayModelStatsType,
   DefaultExportDetails,
   DefinitionType,
+  DictionaryCounter,
   ExportDetails,
   FirstSuccess,
   GraderConfig,
@@ -190,6 +191,73 @@ async function getGraphs(db: TranscrobesDatabase, wordIds: string[]): Promise<Ma
     graphs.set(def.id, def.graph);
   }
   return graphs;
+}
+
+export async function getContentAccuracyStatsForImport(
+  db: TranscrobesDatabase,
+  {
+    importId,
+    analysisString,
+    allWordsInput,
+  }: { importId?: string; analysisString?: string; allWordsInput?: PythonCounter },
+  cardWords: SerialisableDayCardWords,
+) {
+  const defs = new Map<string, DefinitionDocument>();
+  for (const def of await db.definitions.find().exec()) {
+    defs.set(def.graph, def);
+  }
+
+  const allWords: DictionaryCounter = {};
+  if (allWordsInput) {
+    for (const [word, nbOccurrences] of Object.entries(allWordsInput)) {
+      allWords[word] = [defs.get(word)?.id || "", nbOccurrences];
+    }
+  } else {
+    let analysis: ImportAnalysis;
+    if (analysisString) {
+      analysis = JSON.parse(analysisString);
+    } else if (importId) {
+      const theImport = (await db.imports.findByIds([importId])).get(importId);
+      if (!theImport?.analysis || theImport.analysis.length === 0) return null;
+      analysis = JSON.parse(theImport.analysis);
+    } else {
+      throw new Error("At least one of importId or analysisString must be provided");
+    }
+    const buckets = cleanAnalysis(analysis, "zh-Hans");
+    for (const [nbOccurrences, wordList] of Object.entries(buckets)) {
+      for (const word of wordList) {
+        allWords[word] = [defs.get(word)?.id || "", parseInt(nbOccurrences)];
+      }
+    }
+  }
+  const foundWords: PythonCounter = {};
+  const notFoundWords: PythonCounter = {};
+  const knownFoundWords: PythonCounter = {};
+  const knownNotFoundWords: PythonCounter = {};
+  for (const [word, [, nbOccurances]] of Object.entries(allWords)) {
+    const def = defs.get(word);
+    let found = false;
+    if (def) {
+      for (const prov of def.providerTranslations) {
+        if (prov.provider !== "fbk" && prov.posTranslations.length > 0) {
+          found = true;
+          break;
+        }
+      }
+    }
+    if (found) {
+      foundWords[word] = nbOccurances;
+      if (word in cardWords.knownCardWordGraphs) {
+        knownFoundWords[word] = nbOccurances;
+      }
+    } else {
+      notFoundWords[word] = nbOccurances;
+      if (word in cardWords.knownCardWordGraphs) {
+        knownNotFoundWords[word] = nbOccurances;
+      }
+    }
+  }
+  return { allWords, foundWords, notFoundWords, knownFoundWords, knownNotFoundWords };
 }
 
 export async function getContentStatsForImport(

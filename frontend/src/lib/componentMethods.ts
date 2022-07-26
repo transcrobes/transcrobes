@@ -48,6 +48,7 @@ export async function getL1(
 
   return gloss || defaultL1;
 }
+
 export async function getSound(token: TokenType, definitions: DefinitionsState): Promise<string> {
   let gloss = "";
   if (token.p) {

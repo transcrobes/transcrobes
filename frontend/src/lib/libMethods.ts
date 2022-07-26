@@ -262,6 +262,10 @@ export function simpOnly(query: string, fromLang: InputLanguage): boolean {
   return toEnrich(query, fromLang) && query === query.replace(/[\x00-\x7F]/g, "");
 }
 
+export function sumValues(pyCount: PythonCounter | undefined) {
+  return Object.values(pyCount || {}).reduce((a, b) => a + b, 0);
+}
+
 export function cleanAnalysis(
   analysis: ImportAnalysis,
   keepLang: InputLanguage = "zh-Hans",

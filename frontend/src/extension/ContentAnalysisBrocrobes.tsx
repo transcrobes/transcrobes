@@ -5,13 +5,10 @@ import * as React from "react";
 import { useAppSelector } from "../app/hooks";
 import ContentAnalysis from "../components/ContentAnalysis";
 import { EXTENSION_READER_ID } from "../features/content/extensionReaderSlice";
-import { ContentStats, PythonCounter } from "../lib/types";
+import { sumValues } from "../lib/libMethods";
+import { ContentStats } from "../lib/types";
 
-function sumit(pyCount: PythonCounter | undefined) {
-  return Object.values(pyCount || {}).reduce((a, b) => a + b, 0);
-}
-
-export default function ContentAnalysisRedux() {
+export default function ContentAnalysisBrocrobes() {
   const [removed, setRemoved] = React.useState(false);
   const outsideStats = useAppSelector((state) => state.stats);
   const readerConfig = useAppSelector((state) => state.extensionReader[EXTENSION_READER_ID]);
@@ -32,10 +29,10 @@ export default function ContentAnalysisRedux() {
   const debounce = React.useCallback(
     _.debounce(
       (stats: ContentStats) => {
-        const kc = sumit(stats.knownChars);
-        const c = sumit(stats.chars);
-        const kw = sumit(stats.knownWords);
-        const w = sumit(stats.words);
+        const kc = sumValues(stats.knownChars);
+        const c = sumValues(stats.chars);
+        const kw = sumValues(stats.knownWords);
+        const w = sumValues(stats.words);
         const kct = Object.keys(stats.knownChars).length;
         const ct = Object.keys(stats.chars).length;
         const kwt = Object.keys(stats.knownWords).length;
