@@ -284,11 +284,13 @@ body {
 
 :root[style*="readium-night-on"] *:not(a) {
   /* color: inherit !important; */
-  background-color: transparent !important;
+  /* background-color: transparent !important; */
+  background-color: transparent;
   border-color: currentColor !important;
 }
 
 :root[style*="readium-night-on"] *:not(a):not(.tcrobe-word):not(.tcrobe-gloss) {
+  background-color: transparent !important;
   color: inherit !important;
 }
 

@@ -280,7 +280,8 @@ math {
 
 :root {
   color: var(--RS__textColor) !important;
-  background-color: var(--RS__backgroundColor) !important;
+  /* background-color: var(--RS__backgroundColor) !important; */
+  background-color: var(--RS__backgroundColor);
 }
 
 /* Note: Though `::selection` was present in drafts of CSS Selectors Level 3, it was removed during the Candidate Recommendation phase because its behavior was under-specified (especially with nested elements) and interoperability wasn’t achieved. Source: https://developer.mozilla.org/en-US/docs/Web/CSS/::selection */

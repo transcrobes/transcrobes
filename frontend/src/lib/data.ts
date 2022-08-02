@@ -92,6 +92,7 @@ export async function pushFiles(url: URL, username: string): Promise<{ status: "
     if (result.status === "success") {
       await fileStore.remove(cacheFiles[f]);
     } else {
+      console.error(result);
       throw new Error("There was an error pushing an import file");
     }
   }

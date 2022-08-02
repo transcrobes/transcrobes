@@ -8,6 +8,7 @@ import ActionButton from "./ActionButton";
 import CacheSwitch from "./CacheSwitch";
 import { ContentStatsField } from "../components/ContentStatsField";
 import { ContentStatsAccuracyField } from "../components/ContentStatsAccuracyField";
+import { useAppSelector } from "../app/hooks";
 
 function ListActions({ empty }: { empty?: boolean }) {
   return (
@@ -35,6 +36,7 @@ function EmtpyList() {
 }
 
 export default function ContentList() {
+  const user = useAppSelector((state) => state.userData);
   return (
     <List
       queryOptions={{ refetchInterval: 5000 }}
@@ -50,7 +52,7 @@ export default function ContentList() {
         <ProcessingField label="Processing status" />
         <FunctionField source="contentType" render={(record: any) => reverseEnum(CONTENT_TYPE, record.contentType)} />
         <ContentStatsField label="Content Stats" />
-        {IS_DEV && <ContentStatsAccuracyField label="Accuracy" />}
+        {user.showResearchDetails && <ContentStatsAccuracyField label="Accuracy" />}
         <ActionButton label="Action" />
         <CacheSwitch label="Offline?" />
       </Datagrid>

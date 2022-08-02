@@ -132,6 +132,7 @@ function jwtTokenAuthProvider(): AuthProvider {
             username,
             password,
             baseUrl: location.origin,
+            showResearchDetails: false,
             error: false,
             success: true,
             user,

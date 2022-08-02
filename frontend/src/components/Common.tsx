@@ -1,7 +1,7 @@
 import { styled } from "@mui/material";
 import { WithStylesProps } from "react-jss";
 import { hslToHex } from "../lib/funclib";
-import { ReaderState, SEGMENTED_BASE_PADDING } from "../lib/types";
+import { ReaderState, SEGMENTED_BASE_PADDING, UNSURE_ATTRIBUTE } from "../lib/types";
 import CheckIcon from "@mui/icons-material/Check";
 import SentimentSatisfiedIcon from "@mui/icons-material/SentimentSatisfied";
 import SentimentVeryDissatisfiedIcon from "@mui/icons-material/SentimentVeryDissatisfied";
@@ -10,6 +10,7 @@ import { GRADE } from "../database/Schema";
 import { GradesType } from "../lib/types";
 
 export const DEFAULT_FONT_COLOUR = { h: 0, s: 0, l: 0 };
+export const DEFAULT_GLOSS_BACKGROUND_COLOUR = { h: 0, s: 0, l: 93 };
 
 export const InfoBox = styled("div")(() => ({
   margin: "0.7em",
@@ -45,6 +46,10 @@ export const ETFStyles = {
     fontSize: (props: ReaderState) => `${props.fontSize * 100}%`,
   },
   gloss: {
+    [`&[${UNSURE_ATTRIBUTE}]`]: {
+      backgroundColor: (props: ReaderState) =>
+        props.glossUnsureBackgroundColour ? [hslToHex(props.glossUnsureBackgroundColour), "!important"] : "inherit",
+    },
     color: (props: ReaderState) =>
       props.glossFontColour ? [hslToHex(props.glossFontColour), "!important"] : "inherit",
     fontFamily: (props: ReaderState) =>

@@ -72,6 +72,7 @@ export const HasTextChildren = 16;
 
 export const API_PREFIX = "/api/v1";
 export const DEFAULT_RETRIES = 3;
+export const UNSURE_ATTRIBUTE = "data-unsure";
 export const EVENT_QUEUE_PROCESS_FREQ = 5000; //milliseconds
 export const PUSH_FILES_PROCESS_FREQ = 5000; //milliseconds
 export const ONSCREEN_DELAY_IS_CONSIDERED_READ = 5000; // milliseconds
@@ -314,6 +315,7 @@ export interface ReaderState {
   fontSize: number;
   glossFontSize: number;
   glossFontColour: HslColor | null;
+  glossUnsureBackgroundColour: HslColor | null;
   glossPosition: GlossPosition;
   glossing: USER_STATS_MODE_KEY_VALUES;
   segmentation: boolean;
@@ -333,6 +335,7 @@ export const DEFAULT_READER_CONFIG_STATE: ReaderState = {
   fontColour: null,
   glossFontSize: 0.9,
   glossFontColour: { h: 240, s: 100, l: 70 },
+  glossUnsureBackgroundColour: null,
   glossPosition: "row",
   glossing: USER_STATS_MODE.L1,
   segmentation: true,
@@ -368,6 +371,7 @@ export interface UserState {
   username: string;
   password: string;
   baseUrl: string;
+  showResearchDetails: boolean;
   success: boolean;
   error: boolean;
 }
@@ -387,6 +391,7 @@ export const INITIAL_USERSTATE: UserState = {
   username: "",
   password: "",
   baseUrl: "",
+  showResearchDetails: false,
   success: false,
   error: false,
 };

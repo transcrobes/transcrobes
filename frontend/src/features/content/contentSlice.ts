@@ -96,6 +96,13 @@ export const createGenericSlice = <T extends ReaderState, Reducers extends Slice
         state[action.payload.id] = state[action.payload.id] || defaultValue;
         state[action.payload.id].glossFontColour = action.payload.value;
       },
+      setGlossUnsureBackgroundColour(
+        state: GenericState<T>,
+        action: PayloadAction<ContentConfigPayload<HslColor | null>>,
+      ) {
+        state[action.payload.id] = state[action.payload.id] || defaultValue;
+        state[action.payload.id].glossUnsureBackgroundColour = action.payload.value;
+      },
       setGlossPosition(state: GenericState<T>, action: PayloadAction<ContentConfigPayload<GlossPosition>>) {
         state[action.payload.id] = state[action.payload.id] || defaultValue;
         state[action.payload.id].glossPosition = action.payload.value;

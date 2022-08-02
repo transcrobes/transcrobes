@@ -10,7 +10,6 @@ import { ETFStyles, ETFStylesProps } from "../components/Common";
 import EnrichedTextFragment from "../components/content/etf/EnrichedTextFragment";
 import Mouseover from "../components/content/td/Mouseover";
 import TokenDetails from "../components/content/td/TokenDetails";
-import ContentAnalysisBrocrobes from "./ContentAnalysisBrocrobes";
 import Loading from "../components/Loading";
 import { setCardWordsState } from "../features/card/knownCardsSlice";
 import { getRefreshedState } from "../features/content/contentSlice";
@@ -23,7 +22,7 @@ import {
 import { addModelsToState } from "../features/stats/statsSlice";
 import { setLoading, setTokenDetails } from "../features/ui/uiSlice";
 import { setUser } from "../features/user/userSlice";
-import { popupLightTheme, popupDarkTheme } from "../layout/themes";
+import { popupDarkTheme, popupLightTheme } from "../layout/themes";
 import { ensureDefinitionsLoaded, refreshDictionaries } from "../lib/dictionary";
 import { missingWordIdsFromModels, toEnrich } from "../lib/funclib";
 import { enrichChildren } from "../lib/libMethods";
@@ -33,7 +32,6 @@ import {
   ComponentClass,
   ComponentFunction,
   DOCS_DOMAIN,
-  IS_DEV,
   KeyedModels,
   ModelType,
   SerialisableDayCardWords,
@@ -41,6 +39,7 @@ import {
   UserState,
 } from "../lib/types";
 import ContentAnalysisAccuracyBrocrobes from "./ContentAnalysisAccuracyBrocrobes";
+import ContentAnalysisBrocrobes from "./ContentAnalysisBrocrobes";
 
 const DATA_SOURCE = "content.ts";
 const KEEPALIVE_QUERY_FREQUENCY_MS = 5000;
@@ -128,7 +127,7 @@ proxy.sendMessagePromise<UserState>({ source: DATA_SOURCE, type: "getUser", valu
               <TokenDetails readerConfig={readerConfig} />
               <Mouseover readerConfig={readerConfig} />
               {readerConfig.analysisPosition !== "none" && <ContentAnalysisBrocrobes />}
-              {IS_DEV && <ContentAnalysisAccuracyBrocrobes proxy={proxy} />}
+              {userData.showResearchDetails && <ContentAnalysisAccuracyBrocrobes proxy={proxy} />}
             </ScopedCssBaseline>
           </ThemeProvider>
         </Provider>,

@@ -3,9 +3,9 @@ import { connect } from "inferno-redux";
 import type { RootState } from "../../../app/createStore";
 import {
   BOOK_READER_TYPE,
+  EXTENSION_READER_TYPE,
   SIMPLE_READER_TYPE,
   VIDEO_READER_TYPE,
-  EXTENSION_READER_TYPE,
 } from "../../../features/content/contentSlice";
 import { addDefinitions } from "../../../features/definition/definitionsSlice";
 import { DOMRectangle, setMouseover, setTokenDetails } from "../../../features/ui/uiSlice";
@@ -20,6 +20,7 @@ import {
   ReaderState,
   SentenceType,
   TokenType,
+  UNSURE_ATTRIBUTE,
   USER_STATS_MODE,
 } from "../../../lib/types";
 import { ETFStylesProps } from "../../Common";
@@ -240,6 +241,19 @@ class Entry extends Component<StatedEntryProps, LocalEntryState> {
 
   render(): VNode {
     if (this.props.token.pos || this.props.token.bg) {
+      let isUnsure = false;
+      if (this.props.readerConfig.glossUnsureBackgroundColour) {
+        if (this.state?.gloss && this.props.token.id) {
+          const def = this.context.store.getState().definitions[this.props.token.id] as DefinitionType;
+          if (
+            def &&
+            def.providerTranslations.length > 0 &&
+            def.providerTranslations.flatMap((pt) => (pt.provider !== "fbk" ? pt.posTranslations : [])).length === 0
+          ) {
+            isUnsure = true;
+          }
+        }
+      }
       return createVNode(
         HtmlElement,
         "span",
@@ -262,7 +276,7 @@ class Entry extends Component<StatedEntryProps, LocalEntryState> {
               `${this.props.classes.gloss} tcrobe-gloss`,
               `(${this.state?.gloss})`,
               HasTextChildren,
-              null,
+              isUnsure ? { [UNSURE_ATTRIBUTE]: "" } : null,
               null,
               null,
             ),

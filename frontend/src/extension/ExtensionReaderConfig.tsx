@@ -9,6 +9,7 @@ import {
   EXTENSION_READER_ID,
 } from "../features/content/extensionReaderSlice";
 import { changeTheme } from "../features/themes/themeReducer";
+import { setAndSaveUser } from "../features/user/userSlice";
 import { CornerPosition, ThemeName } from "../lib/types";
 
 export default function ExtensionConfig(): ReactElement {
@@ -17,25 +18,11 @@ export default function ExtensionConfig(): ReactElement {
   const readerConfig = useAppSelector(
     (state) => state.extensionReader[id] || { ...DEFAULT_EXTENSION_READER_CONFIG_STATE },
   );
+  const user = useAppSelector((state) => state.userData);
   const dispatch = useAppDispatch();
   const actions = extensionReaderActions;
   return (
     <div>
-      <Conftainer label="Show Suggestions?" id="oss">
-        <FormControl component="fieldset" sx={{ display: "flex", justifyContent: "flex-start", padding: "0.4em" }}>
-          <FormControlLabel
-            label="Show Suggestions?"
-            control={
-              <Switch
-                checked={!!readerConfig.showSuggestions}
-                onChange={(_e: React.ChangeEvent<HTMLInputElement>, checked: boolean) =>
-                  dispatch(actions.setShowSuggestions({ id, value: checked }))
-                }
-              />
-            }
-          />
-        </FormControl>
-      </Conftainer>
       <Conftainer label="Popup theme mode" id="themeMode">
         <ToggleButtonGroup
           sx={{ width: "100%" }}
@@ -74,6 +61,38 @@ export default function ExtensionConfig(): ReactElement {
           </ToggleButton>
         </ToggleButtonGroup>
       </Conftainer>
+      <Conftainer label="Show Suggestions?" id="oss">
+        <FormControl component="fieldset" sx={{ display: "flex", justifyContent: "flex-start", padding: "0.4em" }}>
+          <FormControlLabel
+            label="Show Suggestions?"
+            control={
+              <Switch
+                checked={!!readerConfig.showSuggestions}
+                onChange={(_e: React.ChangeEvent<HTMLInputElement>, checked: boolean) =>
+                  dispatch(actions.setShowSuggestions({ id, value: checked }))
+                }
+              />
+            }
+          />
+        </FormControl>
+      </Conftainer>
+      {user.user.isAdmin && (
+        <Conftainer label="Show Research Details?" id="oss">
+          <FormControl component="fieldset" sx={{ display: "flex", justifyContent: "flex-start", padding: "0.4em" }}>
+            <FormControlLabel
+              label="Show Research Details?"
+              control={
+                <Switch
+                  checked={!!user.showResearchDetails}
+                  onChange={(_e: React.ChangeEvent<HTMLInputElement>, checked: boolean) =>
+                    dispatch(setAndSaveUser({ ...user, showResearchDetails: checked }))
+                  }
+                />
+              }
+            />
+          </FormControl>
+        </Conftainer>
+      )}
       <ReaderConfig classes={{}} actions={actions} readerConfig={readerConfig} allowMainTextOverride={false} />
     </div>
   );

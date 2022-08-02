@@ -1,4 +1,4 @@
-import { CardHeader, Typography } from "@mui/material";
+import { CardHeader, FormControlLabel, Switch, Typography } from "@mui/material";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
@@ -11,6 +11,7 @@ import { Loading } from "../components/Loading";
 import { clearAuthDatabase } from "../database/authdb";
 import { getDatabaseName } from "../database/Database";
 import { changeTheme } from "../features/themes/themeReducer";
+import { setAndSaveUser } from "../features/user/userSlice";
 import { darkTheme, lightTheme } from "../layout/themes";
 import { AbstractWorkerProxy } from "../lib/proxies";
 import { DOCS_DOMAIN, ThemeName } from "../lib/types";
@@ -124,7 +125,9 @@ function System({ proxy }: Props): ReactElement {
   // const locale = useLocale();
   // const setLocale = useSetLocale();
 
-  const myTheme = useAppSelector((state) => state.theme);
+  const themeName = useAppSelector((state) => state.theme);
+  const user = useAppSelector((state) => state.userData);
+
   const [, setTheme] = useTheme();
   const dispatch = useAppDispatch();
 
@@ -133,7 +136,9 @@ function System({ proxy }: Props): ReactElement {
     setTheme(mode === "dark" ? darkTheme : lightTheme);
     return dispatch(changeTheme(mode));
   }
-
+  function handleShowResearchUpdate(show: boolean) {
+    return dispatch(setAndSaveUser({ ...user, showResearchDetails: show }));
+  }
   return (
     <div>
       <TopToolbar className={classes.toolbar}>
@@ -166,24 +171,33 @@ function System({ proxy }: Props): ReactElement {
       <Card>
         <Title title={translate("pos.configuration")} />
         <CardContent>
-          <div className={classes.label}>{translate("pos.theme.name")}</div>
-          <Button
-            variant="contained"
-            className={classes.button}
-            color={myTheme === "light" ? "primary" : undefined}
-            onClick={() => handleUpdate("light")}
-          >
-            {translate("pos.theme.light")}
-          </Button>
-          <Button
-            variant="contained"
-            className={classes.button}
-            color={myTheme === "dark" ? "primary" : undefined}
-            onClick={() => handleUpdate("dark")}
-          >
-            {translate("pos.theme.dark")}
-          </Button>
+          <FormControlLabel
+            control={
+              <Switch
+                defaultChecked={themeName === "dark"}
+                onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+                  handleUpdate(event.target.checked ? "dark" : "light")
+                }
+              />
+            }
+            label="Dark Mode"
+          />
         </CardContent>
+        {user.user.isAdmin && (
+          <CardContent>
+            <FormControlLabel
+              control={
+                <Switch
+                  defaultChecked={user.showResearchDetails}
+                  onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+                    handleShowResearchUpdate(event.target.checked)
+                  }
+                />
+              }
+              label="Show research details"
+            />
+          </CardContent>
+        )}
         {/* no translations for now
             <CardContent>
                 <div className={classes.label}>{translate('pos.language')}</div>

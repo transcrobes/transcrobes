@@ -4,7 +4,11 @@ import React, { ReactElement, useCallback } from "react";
 import { HslColor } from "react-colorful";
 import { makeStyles } from "tss-react/mui";
 import { useAppDispatch } from "../../app/hooks";
-import { Conftainer as BasicConftainer, DEFAULT_FONT_COLOUR } from "../../components/Common";
+import {
+  Conftainer as BasicConftainer,
+  DEFAULT_FONT_COLOUR,
+  DEFAULT_GLOSS_BACKGROUND_COLOUR,
+} from "../../components/Common";
 import Conftainer from "../../components/Conftainer";
 import DictionaryChooser from "../../components/DictionaryChooser";
 import FivePercentFineControl from "../../components/FivePercentFineControl";
@@ -59,6 +63,12 @@ export default function ContentConfig({
   const changeGlossFontColour = useCallback(
     _.debounce((value: HslColor) => {
       dispatch(actions.setGlossFontColour({ id, value }));
+    }, 250),
+    [],
+  );
+  const changeGlossUnsureBackgroundColour = useCallback(
+    _.debounce((value: HslColor) => {
+      dispatch(actions.setGlossUnsureBackgroundColour({ id, value }));
     }, 250),
     [],
   );
@@ -163,6 +173,36 @@ export default function ContentConfig({
           )}
         </FormControl>
       </Conftainer>
+      <Conftainer label="Override Unsure Gloss Background Colour" id="ougbc">
+        <FormControl component="fieldset" className={classes.fontColour || localClasses.fontColour}>
+          <FormControlLabel
+            label="Override unsure gloss background colour"
+            control={
+              <Switch
+                checked={!!readerConfig.glossUnsureBackgroundColour}
+                onChange={(event: React.ChangeEvent<HTMLInputElement>, checked: boolean) =>
+                  dispatch(
+                    actions.setGlossUnsureBackgroundColour({
+                      id,
+                      value: checked ? DEFAULT_GLOSS_BACKGROUND_COLOUR : null,
+                    }),
+                  )
+                }
+              />
+            }
+          />
+          {!!readerConfig.glossUnsureBackgroundColour && (
+            <BasicConftainer>
+              <FontColour
+                value={readerConfig.glossUnsureBackgroundColour}
+                label=""
+                className={localClasses.fineControlIcons}
+                onValueChange={changeGlossUnsureBackgroundColour}
+              />
+            </BasicConftainer>
+          )}
+        </FormControl>
+      </Conftainer>
       <Conftainer label="Segmentation" id="segmentation">
         <ToggleButtonGroup
           className={classes.button || localClasses.button}
@@ -197,7 +237,6 @@ export default function ContentConfig({
           </ToggleButton>
         </ToggleButtonGroup>
       </Conftainer>
-
       <Conftainer label="Collect recent phrases" id="collectRecents">
         <ToggleButtonGroup
           className={classes.button || localClasses.button}
@@ -215,7 +254,6 @@ export default function ContentConfig({
           </ToggleButton>
         </ToggleButtonGroup>
       </Conftainer>
-
       <Conftainer label="Strict Provider Ordering" id="strictProvider">
         <ToggleButtonGroup
           className={classes.button || localClasses.button}
@@ -233,7 +271,6 @@ export default function ContentConfig({
           </ToggleButton>
         </ToggleButtonGroup>
       </Conftainer>
-
       <Conftainer label="Dictionary Providers" id="dictProviders">
         <DictionaryChooser
           selected={readerConfig.translationProviderOrder}
