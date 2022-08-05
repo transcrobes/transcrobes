@@ -28,7 +28,6 @@ strawberry-graphql = "^0.123.2"
 aiohttp-retry = "^2.4.5"
 aiohttp = "^3.7.4"
 webvtt-py = "^0.4.6"
-broadcaster = { git = "https://github.com/transcrobes/broadcaster.git", branch = "pg_reliability", extras = ["postgres"] }
 dawn = "^0.11.0"
 bs4 = "^0.0.1"
 aiokafka = "^0.7.1"

@@ -4,9 +4,8 @@ import { Configuration, DefinePlugin } from "webpack";
 import { merge } from "webpack-merge";
 import HtmlWebpackPlugin from "html-webpack-plugin";
 import CopyPlugin from "copy-webpack-plugin";
-
-// FIXME: why can't I do an import of this?
-const { mode } = require("webpack-nano/argv");
+import argv from "webpack-nano/argv";
+const mode = argv["mode"] as "production" | "development";
 
 function page({ title }: { title: string }) {
   return {
@@ -46,6 +45,7 @@ const commonConfig = merge<Configuration>([
   loadStaticResources("", ""),
   parts.loadCSS(),
   parts.loadTypescript(),
+  parts.reactDndHack(),
   parts.clean(),
 ]);
 

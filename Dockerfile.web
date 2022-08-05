@@ -7,7 +7,7 @@ LABEL maintainer="Anton Melser <anton@transcrob.es>"
 
 WORKDIR /app
 COPY ./frontend/package*.json /app/
-RUN npm install --legacy-peer-deps
+RUN npm install
 
 COPY ./frontend/ /app/
 
