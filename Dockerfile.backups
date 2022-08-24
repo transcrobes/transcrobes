@@ -1,6 +1,9 @@
 FROM postgres:14
 LABEL maintainer="Anton Melser <anton@transcrob.es>"
 
+ARG SOURCES_OVERRIDE=
+RUN bash -c "if [ ! -z $SOURCES_OVERRIDE ] ; then echo 'deb $SOURCES_OVERRIDE bullseye main' > /etc/apt/sources.list; echo 'deb $SOURCES_OVERRIDE bullseye-updates main' >> /etc/apt/sources.list ; fi"
+
 RUN apt-get update && apt-get install -y \
   xz-utils \
   tar \

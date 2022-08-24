@@ -4,6 +4,9 @@ LABEL maintainer="Anton Melser <anton@transcrob.es>"
 
 WORKDIR /app/
 
+ARG SOURCES_OVERRIDE=
+RUN bash -c "if [ ! -z $SOURCES_OVERRIDE ] ; then echo 'deb $SOURCES_OVERRIDE bullseye main' > /etc/apt/sources.list; echo 'deb $SOURCES_OVERRIDE bullseye-updates main' >> /etc/apt/sources.list ; fi"
+
 RUN apt-get update && apt-get upgrade -y && apt-get install -y \
   libmagic1 git make build-essential wget curl libgflags-dev libsnappy-dev \
   zlib1g-dev libbz2-dev liblz4-dev libzstd-dev libmagic-dev \
@@ -12,7 +15,7 @@ RUN apt-get update && apt-get upgrade -y && apt-get install -y \
 RUN /usr/local/bin/python -m pip install --upgrade pip
 
 # Install Poetry
-RUN curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | POETRY_HOME=/opt/poetry python && \
+RUN curl -sSL https://install.python-poetry.org | POETRY_HOME=/opt/poetry python3 - && \
   cd /usr/local/bin && \
   ln -s /opt/poetry/bin/poetry && \
   poetry config virtualenvs.create false
