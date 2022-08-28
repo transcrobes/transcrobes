@@ -8,7 +8,7 @@ import {
   DraggableLocation,
   NotDraggingStyle,
   DraggingStyle,
-} from "react-beautiful-dnd";
+} from "@hello-pangea/dnd";
 import { useAppSelector } from "../app/hooks";
 import { reorderArray } from "../lib/funclib";
 import { DNDItemType } from "../lib/types";

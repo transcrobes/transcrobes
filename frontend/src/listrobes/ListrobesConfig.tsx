@@ -1,7 +1,7 @@
 import { Box, FormControlLabel, Switch, TextField, Theme, useTheme } from "@mui/material";
 import _ from "lodash";
 import { ReactElement } from "react";
-import { DragDropContext, Draggable, Droppable, DropResult } from "react-beautiful-dnd";
+import { DragDropContext, Draggable, Droppable, DropResult } from "@hello-pangea/dnd";
 import Select, { StylesConfig } from "react-select";
 import { makeStyles } from "tss-react/mui";
 import WordOrderSelector from "../components/WordOrderSelector";
