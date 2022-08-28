@@ -51,7 +51,7 @@
   "devDependencies": {
     "@babel/core": "^7.15.5",
     "@babel/preset-react": "^7.14.5",
-    "@types/chrome": "^0.0.193",
+    "@types/chrome": "^0.0.195",
     "@types/d3-array": "^3.0.2",
     "@types/debounce": "^1.2.1",
     "@types/dotenv-webpack": "^7.0.3",
@@ -121,7 +121,7 @@
     "draftjs-to-html": "^0.9.1",
     "fetch-retry": "^5.0.1",
     "final-form": "^4.20.7",
-    "framer-motion": "^6.3.3",
+    "framer-motion": "^7.2.1",
     "graphql": "^15.5.3",
     "graphql-ws": "^5.9.0",
     "hanzi-writer": "^3.2.0",
@@ -166,7 +166,7 @@
     "rxjs": "^7.3.1",
     "survey-react": "^1.9.31",
     "ts-enum-util": "^4.0.2",
-    "tss-react": "^3.6.2",
+    "tss-react": "^4.0.0",
     "unidecode": "^0.1.8",
     "use-resize-observer": "^9.0.0",
     "uuid": "^8.3.2",
@@ -176,5 +176,10 @@
     "workbox-routing": "^6.3.0",
     "workbox-window": "^6.3.0",
     "zxcvbn": "^4.4.2"
+  },
+  "overrides": {
+    "use-memo-one": {
+      "react": "^16.8.0 || ^17.0.0 || ^18.0.0"
+    }
   }
 }
