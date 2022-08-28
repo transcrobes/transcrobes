@@ -3,10 +3,10 @@ import HtmlWebpackPlugin from "html-webpack-plugin";
 import * as path from "path";
 import { Configuration, DefinePlugin } from "webpack";
 import { merge } from "webpack-merge";
+import argv from "webpack-nano/argv";
 import * as parts from "./webpack.config.common";
 
-// FIXME: why can't I do an import of this?
-const { mode } = require("webpack-nano/argv");
+const mode = argv["mode"] as "production" | "development";
 
 function page({ title, description }: { title: string; description: string }) {
   return {

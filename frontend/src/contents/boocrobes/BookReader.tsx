@@ -88,7 +88,7 @@ export default function BookReader({ proxy }: ContentProps): ReactElement {
 
   const url = new URL(`/api/v1/data/content/${id}/manifest.json`, window.location.href);
   const [manifest, setManifest] = useState<WebpubManifest>();
-  const [error, setError] = useState<Error | undefined>(undefined);
+  const [, setError] = useState<Error | undefined>(undefined);
   const [reader, setReader] = useState<any | undefined>(undefined);
   const containerRef = useRef<HTMLDivElement>(null);
   const dispatch = useAppDispatch();

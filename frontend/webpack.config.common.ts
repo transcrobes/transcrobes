@@ -40,8 +40,8 @@ export function config(mode: "production" | "development"): webpack.Configuratio
     ],
   };
   if (mode === "development") {
-    out.resolve.alias = out.resolve.alias || {};
-    out.resolve.alias["inferno"] = "inferno/dist/index.dev.esm.js";
+    out.resolve!.alias = out.resolve!.alias || {};
+    out.resolve!.alias["inferno"] = "inferno/dist/index.dev.esm.js";
   }
   return out;
 }
@@ -168,7 +168,7 @@ export function attachRevision(): webpack.Configuration {
   return {
     plugins: [
       new webpack.BannerPlugin({
-        banner: new GitRevisionPlugin().version(),
+        banner: new GitRevisionPlugin().version() || "",
       }),
     ],
   };
