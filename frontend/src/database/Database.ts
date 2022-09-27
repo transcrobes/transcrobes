@@ -1,5 +1,5 @@
 import _ from "lodash";
-import { addRxPlugin, clone, createRxDatabase, isRxDatabaseFirstTimeInstantiated, removeRxDatabase } from "rxdb";
+import { addRxPlugin, clone, createRxDatabase, removeRxDatabase } from "rxdb";
 import { RxDBDevModePlugin } from "rxdb/plugins/dev-mode";
 import { getRxStorageDexie } from "rxdb/plugins/dexie";
 import { RxDBMigrationPlugin } from "rxdb/plugins/migration";
