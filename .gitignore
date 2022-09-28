@@ -9,3 +9,4 @@ dist
 .env.local
 .env
 docker-compose.override.yml
+*.egg-info

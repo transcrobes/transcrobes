@@ -13,4 +13,5 @@ BASE_DIR=$(dirname $SCRIPT_DIR)
 echo "Building image ${MAIN_IMAGE} with context $BASE_DIR with docker file $BASE_DIR/Dockerfile"
 
 docker build $BASE_DIR -f $BASE_DIR/Dockerfile.base -t ${MAIN_IMAGE} -t ${LATEST_IMAGE} \
-  --build-arg ENVIRONMENT=${ENVIRONMENT} --build-arg SOURCES_OVERRIDE=${SOURCES_OVERRIDE}
+  --build-arg ENVIRONMENT=${ENVIRONMENT} --build-arg SOURCES_OVERRIDE=${SOURCES_OVERRIDE} \
+  --build-arg PIP_OVERRIDE=${PIP_OVERRIDE}
