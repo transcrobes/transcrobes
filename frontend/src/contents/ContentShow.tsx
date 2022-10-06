@@ -3,7 +3,7 @@ import { BooleanField, FunctionField, ReferenceField, Show, SimpleShowLayout, Te
 import { useParams } from "react-router-dom";
 import { HelpShowActions } from "../components/HelpShowActions";
 import { ProcessingField } from "../components/ProcessingField";
-import { ImportProgress } from "../imports/ImportProgress";
+import { DocumentProgress } from "../components/DocumentProgress";
 import { Content, CONTENT_TYPE, DOCS_DOMAIN, ImportFirstSuccessStats, reverseEnum } from "../lib/types";
 import ActionButton from "./ActionButton";
 import CacheSwitch from "./CacheSwitch";
@@ -50,7 +50,7 @@ export default function ContentShow() {
         <CacheSwitch label="Offline?" />
         <hr />
         <h3>Progress</h3>
-        <ImportProgress stats={stats} />
+        <DocumentProgress stats={stats} />
       </SimpleShowLayout>
     </Show>
   );

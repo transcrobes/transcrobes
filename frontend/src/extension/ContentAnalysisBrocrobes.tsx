@@ -4,9 +4,8 @@ import _ from "lodash";
 import * as React from "react";
 import { useAppSelector } from "../app/hooks";
 import ContentAnalysis from "../components/ContentAnalysis";
-import { EXTENSION_READER_ID } from "../features/content/extensionReaderSlice";
 import { sumValues } from "../lib/libMethods";
-import { ContentStats } from "../lib/types";
+import { ContentStats, EXTENSION_READER_ID } from "../lib/types";
 
 export default function ContentAnalysisBrocrobes() {
   const [removed, setRemoved] = React.useState(false);

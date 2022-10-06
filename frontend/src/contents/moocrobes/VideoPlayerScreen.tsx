@@ -9,11 +9,7 @@ import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import HelpButton from "../../components/HelpButton";
 import WatchDemo from "../../components/WatchDemo";
 import { getRefreshedState } from "../../features/content/contentSlice";
-import {
-  DEFAULT_VIDEO_READER_CONFIG_STATE,
-  videoReaderActions,
-  VideoReaderState,
-} from "../../features/content/videoReaderSlice";
+import { videoReaderActions } from "../../features/content/videoReaderSlice";
 import { ensureDefinitionsLoaded } from "../../lib/dictionary";
 import { getSubsURL, missingWordIdsFromModels } from "../../lib/funclib";
 import { fetchPlus } from "../../lib/libMethods";
@@ -21,10 +17,12 @@ import {
   Content,
   ContentParams,
   ContentProps,
+  DEFAULT_VIDEO_READER_CONFIG_STATE,
   DOCS_DOMAIN,
   KeyedModels,
   MOOCROBES_YT_VIDEO,
   SUBS_DATA_SUFFIX,
+  VideoReaderState,
 } from "../../lib/types";
 import VideoPlayer, { VideoPlayerHandle } from "./VideoPlayer";
 import VideoReaderConfigLauncher from "./VideoReaderConfigLauncher";

@@ -13,12 +13,7 @@ import TokenDetails from "../components/content/td/TokenDetails";
 import Loading from "../components/Loading";
 import { setCardWordsState } from "../features/card/knownCardsSlice";
 import { getRefreshedState } from "../features/content/contentSlice";
-import {
-  DEFAULT_EXTENSION_READER_CONFIG_STATE,
-  extensionReaderActions,
-  ExtensionReaderState,
-  EXTENSION_READER_ID,
-} from "../features/content/extensionReaderSlice";
+import { extensionReaderActions } from "../features/content/extensionReaderSlice";
 import { addModelsToState } from "../features/stats/statsSlice";
 import { setLoading, setTokenDetails } from "../features/ui/uiSlice";
 import { setUser } from "../features/user/userSlice";
@@ -31,7 +26,10 @@ import { observerFunc } from "../lib/stats";
 import {
   ComponentClass,
   ComponentFunction,
+  DEFAULT_EXTENSION_READER_CONFIG_STATE,
   DOCS_DOMAIN,
+  ExtensionReaderState,
+  EXTENSION_READER_ID,
   KeyedModels,
   ModelType,
   SerialisableDayCardWords,

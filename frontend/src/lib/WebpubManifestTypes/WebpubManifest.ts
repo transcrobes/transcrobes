@@ -1,7 +1,7 @@
 /**
  * Type definitions for a manifest
  */
-import { ReadiumWebpubContext } from "../../common/types";
+import { ReadiumWebpubContext } from "../types";
 import { Metadata } from "./Metadata";
 import { ReadiumLink } from "./ReadiumLink";
 

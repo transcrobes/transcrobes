@@ -1,11 +1,10 @@
-import { makeStyles } from "tss-react/mui";
 import { ReactElement, useRef } from "react";
 import { useParams } from "react-router-dom";
+import { makeStyles } from "tss-react/mui";
 import { store } from "../../app/createStore";
 import { useAppSelector, useJssStyles } from "../../app/hooks";
 import { enrichETFElements } from "../../components/content/etf/EnrichedTextFragment";
-import { DEFAULT_VIDEO_READER_CONFIG_STATE, VideoReaderState } from "../../features/content/videoReaderSlice";
-import { ContentParams, KeyedModels } from "../../lib/types";
+import { ContentParams, DEFAULT_VIDEO_READER_CONFIG_STATE, KeyedModels, VideoReaderState } from "../../lib/types";
 
 interface Props {
   models: KeyedModels;

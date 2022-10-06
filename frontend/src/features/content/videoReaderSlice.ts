@@ -1,40 +1,13 @@
 import { PayloadAction } from "@reduxjs/toolkit";
-import { SubPosition } from "../../contents/common/types";
-import { DEFAULT_READER_CONFIG_STATE, GenericState, ReaderState } from "../../lib/types";
-import { ContentConfigPayload, createGenericSlice, VIDEO_READER_TYPE } from "./contentSlice";
-
-type TimeDisplayFormat = "remaining" | "normal";
-
-export interface VideoReaderState extends ReaderState {
-  volume: number;
-  played: number;
-  muted: boolean;
-  timeDisplayFormat: TimeDisplayFormat;
-  playbackRate: number;
-  subPlaybackRate: number;
-  subBoxWidth: number;
-  subDelay: number;
-  subPosition: SubPosition;
-  readerType: typeof VIDEO_READER_TYPE;
-}
-
-export const DEFAULT_VIDEO_READER_CONFIG_STATE: VideoReaderState = {
-  ...DEFAULT_READER_CONFIG_STATE,
-  id: "",
-  fontSize: 1.5,
-  fontColour: { h: 0, s: 0, l: 100 },
-  glossFontColour: { h: 0, s: 0, l: 100 },
-  playbackRate: 1.0,
-  subPlaybackRate: 1.0,
-  subBoxWidth: 0.8,
-  subDelay: 0,
-  subPosition: "bottom",
-  volume: 1,
-  played: 0,
-  timeDisplayFormat: "normal",
-  muted: false,
-  readerType: VIDEO_READER_TYPE,
-};
+import {
+  DEFAULT_VIDEO_READER_CONFIG_STATE,
+  GenericState,
+  SubPosition,
+  TimeDisplayFormat,
+  VideoReaderState,
+  VIDEO_READER_TYPE,
+} from "../../lib/types";
+import { ContentConfigPayload, createGenericSlice } from "./contentSlice";
 
 const videoReaderSlice = createGenericSlice({
   name: VIDEO_READER_TYPE,

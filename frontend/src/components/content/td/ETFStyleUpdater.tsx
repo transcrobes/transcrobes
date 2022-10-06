@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useAppSelector } from "../../../app/hooks";
-import { DEFAULT_BOOK_READER_CONFIG_STATE } from "../../../features/content/bookReaderSlice";
+import { DEFAULT_BOOK_READER_CONFIG_STATE } from "../../../lib/types";
 
 type Props = {
   sheet: any;

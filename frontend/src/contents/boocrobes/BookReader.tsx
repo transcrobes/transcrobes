@@ -11,25 +11,26 @@ import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import Mouseover from "../../components/content/td/Mouseover";
 import TokenDetails from "../../components/content/td/TokenDetails";
 import Loading from "../../components/Loading";
-import {
-  bookReaderActions,
-  BookReaderState,
-  DEFAULT_BOOK_READER_CONFIG_STATE,
-} from "../../features/content/bookReaderSlice";
+import { bookReaderActions } from "../../features/content/bookReaderSlice";
 import { getRefreshedState } from "../../features/content/contentSlice";
 import { fetcher } from "../../lib/fetcher";
-import { ContentParams, ContentProps } from "../../lib/types";
+import {
+  BOOCROBES_HEADER_HEIGHT,
+  BookReaderState,
+  ContentParams,
+  ContentProps,
+  DEFAULT_BOOK_READER_CONFIG_STATE,
+} from "../../lib/types";
+import { WebpubManifest } from "../../lib/WebpubManifestTypes/WebpubManifest";
 import {
   ColorMode,
   D2ColorMode,
   DEFAULT_HEIGHT,
   DEFAULT_SHOULD_GROW_WHEN_SCROLLING,
   FOOTER_HEIGHT,
-  HEADER_HEIGHT,
 } from "../common/types";
 import Header from "./Header";
 import injectables from "./injectables";
-import { WebpubManifest } from "./WebpubManifestTypes/WebpubManifest";
 
 declare global {
   interface Window {
@@ -148,9 +149,9 @@ export default function BookReader({ proxy }: ContentProps): ReactElement {
         injectables: injectables,
         injectablesFixed: [],
         attributes: {
-          navHeight: HEADER_HEIGHT,
+          navHeight: BOOCROBES_HEADER_HEIGHT,
           // + 20 as an extra buffer on mobile
-          margin: HEADER_HEIGHT + 20,
+          margin: BOOCROBES_HEADER_HEIGHT + 20,
         },
         rights: {
           /**

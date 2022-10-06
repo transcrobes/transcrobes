@@ -66,16 +66,6 @@ class AuthUser(Base):
 
     # user config as json, think about turning this into real json
     config = Column(Text, nullable=False, default="")
-    # FIXME: implement these
-    # default_segment = Column(Boolean, nullable=False)
-    # default_glossing = Column(Integer, nullable=False)
-    # reading_mode = Column(String(100), nullable=False)
-    # font_size_percent = Column(Integer, nullable=False)
-    # subtitle_default_segment = Column(Boolean, nullable=False)
-    # subtitle_default_glossing = Column(Integer, nullable=False)
-    # media_mode = Column(String(100), nullable=False)
-    # subtitle_box_width_percent = Column(Integer, nullable=False)
-    # subtitle_font_size_percent = Column(Integer, nullable=False)
 
     @property
     def lang_pair(self) -> str:

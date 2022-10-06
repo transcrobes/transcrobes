@@ -15,8 +15,8 @@ import { Button as RAButton } from "react-admin";
 import { useParams } from "react-router-dom";
 import { makeStyles } from "tss-react/mui";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
-import { DEFAULT_VIDEO_READER_CONFIG_STATE, videoReaderActions } from "../../features/content/videoReaderSlice";
-import { ContentParams } from "../../lib/types";
+import { videoReaderActions } from "../../features/content/videoReaderSlice";
+import { ContentParams, DEFAULT_VIDEO_READER_CONFIG_STATE } from "../../lib/types";
 import { VideoReaderConfigProps } from "./VideoReaderConfig";
 import VideoConfigLauncher from "./VideoReaderConfigLauncher";
 

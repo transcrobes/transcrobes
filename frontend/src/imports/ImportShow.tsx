@@ -4,7 +4,7 @@ import { useParams } from "react-router-dom";
 import { HelpShowActions } from "../components/HelpShowActions";
 import { ProcessingField } from "../components/ProcessingField";
 import { DOCS_DOMAIN, ImportFirstSuccessStats, IMPORTS_YT_VIDEO, PROCESS_TYPE, reverseEnum } from "../lib/types";
-import { ImportProgress } from "./ImportProgress";
+import { DocumentProgress } from "../components/DocumentProgress";
 
 const DATA_SOURCE = "ImportShow.tsx";
 
@@ -40,7 +40,7 @@ export default function ImportShow() {
         <BooleanField source="shared" />
         <hr />
         <h3>Progress</h3>
-        <ImportProgress stats={stats} />
+        <DocumentProgress stats={stats} />
       </SimpleShowLayout>
     </Show>
   );

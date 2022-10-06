@@ -3,14 +3,10 @@ import React, { ReactElement } from "react";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
 import Conftainer from "../components/Conftainer";
 import ReaderConfig from "../contents/common/ReaderConfig";
-import {
-  DEFAULT_EXTENSION_READER_CONFIG_STATE,
-  extensionReaderActions,
-  EXTENSION_READER_ID,
-} from "../features/content/extensionReaderSlice";
+import { extensionReaderActions } from "../features/content/extensionReaderSlice";
 import { changeTheme } from "../features/themes/themeReducer";
 import { setAndSaveUser } from "../features/user/userSlice";
-import { CornerPosition, ThemeName } from "../lib/types";
+import { CornerPosition, DEFAULT_EXTENSION_READER_CONFIG_STATE, EXTENSION_READER_ID, ThemeName } from "../lib/types";
 
 export default function ExtensionConfig(): ReactElement {
   const id = EXTENSION_READER_ID;

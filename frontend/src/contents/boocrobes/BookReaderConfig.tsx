@@ -1,12 +1,12 @@
-import { makeStyles } from "tss-react/mui";
 import { ToggleButton, ToggleButtonGroup } from "@mui/material";
 import { useParams } from "react-router-dom";
+import { makeStyles } from "tss-react/mui";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import Conftainer from "../../components/Conftainer";
-import { bookReaderActions, DEFAULT_BOOK_READER_CONFIG_STATE } from "../../features/content/bookReaderSlice";
-import { ContentParams } from "../../lib/types";
-import ReaderConfig from "../common/ReaderConfig";
 import FivePercentFineControl from "../../components/FivePercentFineControl";
+import { bookReaderActions } from "../../features/content/bookReaderSlice";
+import { ContentParams, DEFAULT_BOOK_READER_CONFIG_STATE } from "../../lib/types";
+import ReaderConfig from "../common/ReaderConfig";
 
 const useStyles = makeStyles()((theme) => {
   return {

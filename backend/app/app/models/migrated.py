@@ -357,7 +357,7 @@ class UserList(DetailedMixin, Base):
             ),
             data,
         )
-        # Get the ID for each word from the reference table (currently enrich_bingapilookup)
+        # Get the ID for each word from the reference table (currently bingapilookup)
         await db.execute(
             text(
                 f"""UPDATE {temp_table}

@@ -3,9 +3,6 @@ import { ExpirationPlugin } from "workbox-expiration";
 import { registerRoute } from "workbox-routing";
 import { CacheFirst, StaleWhileRevalidate } from "workbox-strategies";
 import { store } from "../app/createStore";
-import { ReadiumLink } from "../contents/boocrobes/WebpubManifestTypes/ReadiumLink";
-import { WebpubManifest } from "../contents/boocrobes/WebpubManifestTypes/WebpubManifest";
-import { PublicationConfig } from "../contents/common/types";
 import { getUserDexie } from "../database/authdb";
 import { getDb, unloadDatabaseFromMemory } from "../database/Database";
 import { TranscrobesDatabase } from "../database/Schema";
@@ -19,11 +16,14 @@ import {
   EVENT_QUEUE_PROCESS_FREQ,
   IS_DEV,
   ONE_YEAR_IN_SECS,
+  PublicationConfig,
   PUSH_FILES_PROCESS_FREQ,
   SerialisableDayCardWords,
   UserDefinitionType,
   WEBPUB_CACHE_NAME,
 } from "../lib/types";
+import { ReadiumLink } from "../lib/WebpubManifestTypes/ReadiumLink";
+import { WebpubManifest } from "../lib/WebpubManifestTypes/WebpubManifest";
 
 const VERSION = "v2";
 

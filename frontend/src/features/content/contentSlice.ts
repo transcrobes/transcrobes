@@ -4,18 +4,17 @@ import _ from "lodash";
 import { HslColor } from "react-colorful";
 import { AbstractWorkerProxy, platformHelper } from "../../lib/proxies";
 import {
+  BOOK_READER_TYPE,
   ContentConfigType,
+  EXTENSION_READER_TYPE,
   FontFamily,
   FontFamilyChinese,
   GenericState,
   GlossPosition,
   ReaderState,
+  SIMPLE_READER_TYPE,
+  VIDEO_READER_TYPE,
 } from "../../lib/types";
-
-export const VIDEO_READER_TYPE = "videoReader";
-export const BOOK_READER_TYPE = "bookReader";
-export const SIMPLE_READER_TYPE = "simpleReader";
-export const EXTENSION_READER_TYPE = "extensionReader";
 
 export function handleConfigUpdate<T extends ReaderState>(newConfig: T, id: string, proxy: AbstractWorkerProxy): void {
   const configToSave: ContentConfigType = {

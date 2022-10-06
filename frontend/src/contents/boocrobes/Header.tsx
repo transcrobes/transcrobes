@@ -1,18 +1,17 @@
-import { Box, Link } from "@mui/material";
-import { useTheme } from "@mui/material/styles";
 import Fullscreen from "@mui/icons-material/Fullscreen";
 import FullscreenExit from "@mui/icons-material/FullscreenExit";
 import HomeIcon from "@mui/icons-material/Home";
+import { Box, Link } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import React from "react";
 import { Button } from "react-admin";
 import HelpButton from "../../components/HelpButton";
+import WatchDemo from "../../components/WatchDemo";
 import useFullscreen from "../../hooks/useFullscreen";
-import { HEADER_HEIGHT } from "../common/types";
+import { BOOCROBES_HEADER_HEIGHT, BOOCROBES_YT_VIDEO, DOCS_DOMAIN } from "../../lib/types";
+import { WebpubManifest } from "../../lib/WebpubManifestTypes/WebpubManifest";
 import BookReaderLauncher from "./BookReaderConfigLauncher";
 import TableOfContentsLauncher from "./TableOfContentsLauncher";
-import { WebpubManifest } from "./WebpubManifestTypes/WebpubManifest";
-import { BOOCROBES_YT_VIDEO, DOCS_DOMAIN } from "../../lib/types";
-import WatchDemo from "../../components/WatchDemo";
 
 interface Props {
   manifest: WebpubManifest;
@@ -34,7 +33,7 @@ export default function Header({ manifest }: Props): React.ReactElement {
         alignContent: "space-between",
         justifyContent: "space-between",
         position: "sticky",
-        height: `${HEADER_HEIGHT}px`,
+        height: `${BOOCROBES_HEADER_HEIGHT}px`,
         color: theme.palette.getContrastText(theme.palette.background.default),
         bgcolor: theme.palette.background.default,
       }}

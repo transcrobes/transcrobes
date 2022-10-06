@@ -12,28 +12,26 @@ import Conftainer from "../../components/Conftainer";
 import { enrichETFElements } from "../../components/content/etf/EnrichedTextFragment";
 import Mouseover from "../../components/content/td/Mouseover";
 import TokenDetails from "../../components/content/td/TokenDetails";
+import { DocumentProgress } from "../../components/DocumentProgress";
 import HelpButton from "../../components/HelpButton";
 import Loading from "../../components/Loading";
 import WatchDemo from "../../components/WatchDemo";
 import { getRefreshedState } from "../../features/content/contentSlice";
-import {
-  DEFAULT_TEXT_READER_CONFIG_STATE,
-  simpleReaderActions,
-  SimpleReaderState,
-  TEXT_READER_ID,
-} from "../../features/content/simpleReaderSlice";
+import { simpleReaderActions } from "../../features/content/simpleReaderSlice";
 import { setLoading } from "../../features/ui/uiSlice";
-import { ImportProgress } from "../../imports/ImportProgress";
 import { ensureDefinitionsLoaded } from "../../lib/dictionary";
 import { wordIdsFromModels } from "../../lib/funclib";
 import { ServiceWorkerProxy } from "../../lib/proxies";
 import {
+  DEFAULT_TEXT_READER_CONFIG_STATE,
   DOCS_DOMAIN,
   EnrichedHtmlModels,
   ImportFirstSuccessStats,
   KeyedModels,
   noop,
+  SimpleReaderState,
   TEXTCROBES_YT_VIDEO,
+  TEXT_READER_ID,
 } from "../../lib/types";
 import ContentConfigLauncherDrawer from "./TextReaderConfigLauncher";
 
@@ -181,7 +179,7 @@ export default function Textcrobes({ proxy }: Props): ReactElement {
       </div>
       <br />
       <div ref={divRef} />
-      {stats && <ImportProgress stats={stats} />}
+      {stats && <DocumentProgress stats={stats} />}
       <TokenDetails readerConfig={readerConfig} />
       <Mouseover readerConfig={readerConfig} />
       <Loading position="relative" top="0px" />

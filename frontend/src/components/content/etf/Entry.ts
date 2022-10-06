@@ -1,17 +1,13 @@
 import { Component, createVNode, VNode } from "inferno";
 import { connect } from "inferno-redux";
 import type { RootState } from "../../../app/createStore";
-import {
-  BOOK_READER_TYPE,
-  EXTENSION_READER_TYPE,
-  SIMPLE_READER_TYPE,
-  VIDEO_READER_TYPE,
-} from "../../../features/content/contentSlice";
 import { addDefinitions } from "../../../features/definition/definitionsSlice";
 import { DOMRectangle, setMouseover, setTokenDetails } from "../../../features/ui/uiSlice";
 import { eventCoordinates, getNormalGloss, getWord, isNumberToken } from "../../../lib/componentMethods";
 import {
+  BOOK_READER_TYPE,
   DefinitionType,
+  EXTENSION_READER_TYPE,
   GLOSS_NUMBER_NOUNS,
   HasTextChildren,
   HasVNodeChildren,
@@ -19,9 +15,11 @@ import {
   MultipleChildren,
   ReaderState,
   SentenceType,
+  SIMPLE_READER_TYPE,
   TokenType,
   UNSURE_ATTRIBUTE,
   USER_STATS_MODE,
+  VIDEO_READER_TYPE,
 } from "../../../lib/types";
 import { ETFStylesProps } from "../../Common";
 

@@ -1,8 +1,7 @@
 import { Box } from "@mui/system";
 import { ReactElement } from "react";
-import { DEFAULT_RECENTS_READER_CONFIG_STATE } from "../features/content/simpleReaderSlice";
 import { toPosLabels } from "../lib/libMethods";
-import { PosSentence, PosSentences, TreebankPosType } from "../lib/types";
+import { DEFAULT_RECENTS_READER_CONFIG_STATE, PosSentence, PosSentences, TreebankPosType } from "../lib/types";
 import { InfoBox, ThinHR } from "./Common";
 import Mouseover from "./content/td/Mouseover";
 import Header from "./Header";

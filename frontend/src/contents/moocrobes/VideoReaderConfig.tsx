@@ -1,15 +1,14 @@
-import { makeStyles } from "tss-react/mui";
 import { ToggleButton, ToggleButtonGroup } from "@mui/material";
 import React, { ReactElement } from "react";
 import { useParams } from "react-router-dom";
+import { makeStyles } from "tss-react/mui";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import Conftainer from "../../components/Conftainer";
 import FivePercentFineControl from "../../components/FivePercentFineControl";
-import { DEFAULT_VIDEO_READER_CONFIG_STATE, videoReaderActions } from "../../features/content/videoReaderSlice";
+import { videoReaderActions } from "../../features/content/videoReaderSlice";
 import { isOnFullscreen } from "../../hooks/useFullscreen";
-import { ContentParams } from "../../lib/types";
+import { ContentParams, DEFAULT_VIDEO_READER_CONFIG_STATE, SubPosition } from "../../lib/types";
 import ReaderConfig from "../common/ReaderConfig";
-import { SubPosition } from "../common/types";
 import PlaybackRate from "./PlaybackRate";
 import SubDelay from "./SubDelay";
 import SubPlaybackRate from "./SubPlaybackRate";

@@ -1,5 +1,5 @@
-import { Box, Drawer, MenuItem, MenuList } from "@mui/material";
 import TocIcon from "@mui/icons-material/Toc";
+import { Box, Drawer, MenuItem, MenuList } from "@mui/material";
 import React, { ReactElement } from "react";
 import { Button } from "react-admin";
 import { useParams } from "react-router-dom";
@@ -7,8 +7,8 @@ import { useAppDispatch } from "../../app/hooks";
 import { bookReaderActions } from "../../features/content/bookReaderSlice";
 import useWindowDimensions from "../../hooks/WindowDimensions";
 import { ContentParams } from "../../lib/types";
-import { ReadiumLink } from "./WebpubManifestTypes/ReadiumLink";
-import { WebpubManifest } from "./WebpubManifestTypes/WebpubManifest";
+import { ReadiumLink } from "../../lib/WebpubManifestTypes/ReadiumLink";
+import { WebpubManifest } from "../../lib/WebpubManifestTypes/WebpubManifest";
 
 type Props = {
   manifest: WebpubManifest;

@@ -3,9 +3,8 @@ import _ from "lodash";
 import * as React from "react";
 import { useAppSelector } from "../app/hooks";
 import ContentAnalysisAccuracy from "../components/ContentAnalysisAccuracy";
-import { EXTENSION_READER_ID } from "../features/content/extensionReaderSlice";
 import { BackgroundWorkerProxy } from "../lib/proxies";
-import { AnalysisAccuracy, ContentStats } from "../lib/types";
+import { AnalysisAccuracy, ContentStats, EXTENSION_READER_ID } from "../lib/types";
 
 export default function ContentAnalysisAccuracyBrocrobes({ proxy }: { proxy: BackgroundWorkerProxy }) {
   const outsideStats = useAppSelector((state) => state.stats);

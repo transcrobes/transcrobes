@@ -1,11 +1,15 @@
-import { FontFamily, FontFamilyChinese, GlossPosition, ThemeName } from "../../lib/types";
-
-export const ReadiumWebpubContext = "http://readium.org/webpub/default.jsonld";
+import {
+  FontFamily,
+  FontFamilyChinese,
+  GlossPosition,
+  BOOCROBES_HEADER_HEIGHT,
+  ThemeName,
+  PublicationConfig,
+} from "../../lib/types";
 
 // we have to set a constant height to make this work with R2D2BC
-export const HEADER_HEIGHT = 48;
 export const FOOTER_HEIGHT = 48;
-export const CHROME_HEIGHT = HEADER_HEIGHT + FOOTER_HEIGHT;
+export const CHROME_HEIGHT = BOOCROBES_HEADER_HEIGHT + FOOTER_HEIGHT;
 
 export const DEFAULT_HEIGHT = `calc(100vh - ${CHROME_HEIGHT}px)`;
 export const DEFAULT_SHOULD_GROW_WHEN_SCROLLING = true;
@@ -34,18 +38,6 @@ export type PrecachePublicationsMessage = {
   publications: PublicationConfig[];
 };
 
-// "above" ?
-export type SubPosition = "top" | "bottom" | "under";
-
 export type WebReaderSWConfig = {
   cacheExpirationSeconds?: number;
-};
-
-export type PublicationConfig = {
-  manifestUrl: string;
-  proxyUrl?: string;
-  // users can pass in a list of additonal urls
-  // we will route with a stale-while-revalidate
-  // strategy. Useful in CPW for the heavy fulfillment link.
-  swrUrls?: string[];
 };

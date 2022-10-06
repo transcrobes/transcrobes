@@ -1,4 +1,3 @@
-// import { Record as RARecord, Identifier } from "react-admin";
 import { RaRecord, Identifier } from "react-admin";
 import { HslColor } from "react-colorful";
 
@@ -99,6 +98,19 @@ export const BOOCROBES_YT_VIDEO = "https://youtu.be/-TDHhtdP-Xk";
 
 export const BROCROBES_WEB_STORE_URL =
   "https://chrome.google.com/webstore/detail/brocrobes/akeangohpdjllngpjiodmebgfhejbbpo?hl=en-GB";
+
+// Boocrobes, required in many places
+export const BOOCROBES_HEADER_HEIGHT = 48;
+export const ReadiumWebpubContext = "http://readium.org/webpub/default.jsonld";
+
+export type PublicationConfig = {
+  manifestUrl: string;
+  proxyUrl?: string;
+  // users can pass in a list of additonal urls
+  // we will route with a stale-while-revalidate
+  // strategy. Useful in CPW for the heavy fulfillment link.
+  swrUrls?: string[];
+};
 
 export type KnownLanguage = "en" | "zh-Hans";
 export type InputLanguage = "zh-Hans";
@@ -304,7 +316,17 @@ export interface GenericState<T extends ReaderState> {
   [key: string]: T;
 }
 
-export type ReaderType = "simpleReader" | "videoReader" | "bookReader" | "extensionReader";
+export const BOOK_READER_TYPE = "bookReader";
+export const EXTENSION_READER_TYPE = "extensionReader";
+export const SIMPLE_READER_TYPE = "simpleReader";
+export const VIDEO_READER_TYPE = "videoReader";
+
+export type ReaderType = "bookReader" | "extensionReader" | "simpleReader" | "videoReader";
+
+export const TEXT_READER_ID = "textReader";
+export const WEB_READER_ID = "webReader";
+export const RECENTS_READER_ID = "recentsReader";
+export const EXTENSION_READER_ID = "extensionReader";
 
 export interface ReaderState {
   id: string;
@@ -324,6 +346,18 @@ export interface ReaderState {
   clickable: boolean;
   translationProviderOrder: Record<string, number>;
   strictProviderOrdering: boolean;
+}
+
+export interface BookReaderState extends ReaderState {
+  fontColour: HslColor | null;
+  pageMargins: number;
+  isScrolling: boolean;
+  currentTocUrl: string | null;
+  atStart: boolean;
+  atEnd: boolean;
+  // location?: Locator | undefined;
+  location?: any | undefined;
+  readerType: typeof BOOK_READER_TYPE;
 }
 
 export const DEFAULT_READER_CONFIG_STATE: ReaderState = {
@@ -347,6 +381,97 @@ export const DEFAULT_READER_CONFIG_STATE: ReaderState = {
     {} as Record<string, number>,
   ),
   strictProviderOrdering: false,
+};
+
+export const DEFAULT_BOOK_READER_CONFIG_STATE: BookReaderState = {
+  ...DEFAULT_READER_CONFIG_STATE,
+  id: "",
+  readerType: BOOK_READER_TYPE,
+  pageMargins: 1,
+  isScrolling: false,
+  currentTocUrl: null,
+  atStart: true,
+  atEnd: false,
+  location: undefined,
+};
+
+export interface ExtensionReaderState extends ReaderState {
+  showSuggestions: boolean;
+  analysisPosition: CornerPosition;
+  themeName: ThemeName;
+  readerType: typeof EXTENSION_READER_TYPE;
+}
+
+export const DEFAULT_EXTENSION_READER_CONFIG_STATE: ExtensionReaderState = {
+  ...DEFAULT_READER_CONFIG_STATE,
+  id: EXTENSION_READER_ID,
+  showSuggestions: true,
+  analysisPosition: "top-right",
+  themeName: "light",
+  readerType: EXTENSION_READER_TYPE,
+};
+
+export interface SimpleReaderState extends ReaderState {
+  readerType: typeof SIMPLE_READER_TYPE;
+}
+
+export const DEFAULT_WEB_READER_CONFIG_STATE: SimpleReaderState = {
+  ...DEFAULT_READER_CONFIG_STATE,
+  id: WEB_READER_ID,
+  readerType: SIMPLE_READER_TYPE,
+};
+
+export const DEFAULT_TEXT_READER_CONFIG_STATE: SimpleReaderState = {
+  ...DEFAULT_READER_CONFIG_STATE,
+  id: TEXT_READER_ID,
+  readerType: SIMPLE_READER_TYPE,
+};
+
+export const DEFAULT_RECENTS_READER_CONFIG_STATE: SimpleReaderState = {
+  ...DEFAULT_READER_CONFIG_STATE,
+  id: RECENTS_READER_ID,
+  readerType: SIMPLE_READER_TYPE,
+  clickable: false,
+  glossing: USER_STATS_MODE.NO_GLOSS,
+  segmentation: true,
+  collectRecents: false,
+  mouseover: true,
+};
+
+// "above" ?
+export type SubPosition = "top" | "bottom" | "under";
+
+export type TimeDisplayFormat = "remaining" | "normal";
+
+export interface VideoReaderState extends ReaderState {
+  volume: number;
+  played: number;
+  muted: boolean;
+  timeDisplayFormat: TimeDisplayFormat;
+  playbackRate: number;
+  subPlaybackRate: number;
+  subBoxWidth: number;
+  subDelay: number;
+  subPosition: SubPosition;
+  readerType: typeof VIDEO_READER_TYPE;
+}
+
+export const DEFAULT_VIDEO_READER_CONFIG_STATE: VideoReaderState = {
+  ...DEFAULT_READER_CONFIG_STATE,
+  id: "",
+  fontSize: 1.5,
+  fontColour: { h: 0, s: 0, l: 100 },
+  glossFontColour: { h: 0, s: 0, l: 100 },
+  playbackRate: 1.0,
+  subPlaybackRate: 1.0,
+  subBoxWidth: 0.8,
+  subDelay: 0,
+  subPosition: "bottom",
+  volume: 1,
+  played: 0,
+  timeDisplayFormat: "normal",
+  muted: false,
+  readerType: VIDEO_READER_TYPE,
 };
 
 export interface ComponentsAppConfig extends ReaderState {

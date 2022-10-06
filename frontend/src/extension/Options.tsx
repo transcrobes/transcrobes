@@ -21,19 +21,22 @@ import { getUserDexie, isInitialisedAsync, setInitialisedAsync } from "../databa
 import { getDb } from "../database/Database";
 import { TranscrobesDatabase } from "../database/Schema";
 import { getRefreshedState } from "../features/content/contentSlice";
-import {
-  DEFAULT_EXTENSION_READER_CONFIG_STATE,
-  extensionReaderActions,
-  ExtensionReaderState,
-  EXTENSION_READER_ID,
-} from "../features/content/extensionReaderSlice";
+import { extensionReaderActions } from "../features/content/extensionReaderSlice";
 import { changeTheme } from "../features/themes/themeReducer";
 import { setLoading } from "../features/ui/uiSlice";
 import { setUser, throttledLogin, updateBaseUrl, updatePassword, updateUsername } from "../features/user/userSlice";
 import { darkTheme, lightTheme } from "../layout/themes";
 import { refreshDictionaries } from "../lib/dictionary";
 import { BackgroundWorkerProxy, setPlatformHelper } from "../lib/proxies";
-import { BROCROBES_YT_VIDEO, DOCS_DOMAIN, IS_DEV, SITE_DOMAIN } from "../lib/types";
+import {
+  BROCROBES_YT_VIDEO,
+  DEFAULT_EXTENSION_READER_CONFIG_STATE,
+  DOCS_DOMAIN,
+  ExtensionReaderState,
+  EXTENSION_READER_ID,
+  IS_DEV,
+  SITE_DOMAIN,
+} from "../lib/types";
 import { RxDBDataProviderParams } from "../ra-data-rxdb";
 import Initialisation from "./components/Initialisation";
 import Intro from "./components/Intro";

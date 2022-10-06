@@ -16,7 +16,7 @@ type GraphData = {
   wordTokens: number;
 };
 
-export function ImportProgress({ stats }: { stats?: ImportFirstSuccessStats | null }): ReactElement {
+export function DocumentProgress({ stats }: { stats?: ImportFirstSuccessStats | null }): ReactElement {
   const [data, setData] = useState<GraphData[]>([]);
   // FIXME: currently the word tokens data are only shown if
   // stats && stats.nbTotalWords !== stats.nbUniqueWords but we still calculate them

@@ -1,7 +1,7 @@
-import { HEADER_HEIGHT } from "../contents/common/types";
 import { bestGuess, complexPosToSimplePosLabels, filterKnown, toSimplePos } from "./libMethods";
 import { platformHelper } from "./proxies";
 import {
+  BOOCROBES_HEADER_HEIGHT,
   DefinitionsState,
   DefinitionType,
   EventCoordinates,
@@ -179,7 +179,7 @@ export async function getPopoverText(
 export function eventCoordinates(event: React.MouseEvent<HTMLElement>): EventCoordinates {
   return {
     eventX: window.frameElement ? event.clientX : event.pageX,
-    eventY: window.frameElement ? event.clientY + HEADER_HEIGHT : event.pageY,
+    eventY: window.frameElement ? event.clientY + BOOCROBES_HEADER_HEIGHT : event.pageY,
   };
 }
 
@@ -211,7 +211,7 @@ export function positionPopup(
   }
   let translateDown = 20;
   if (window.frameElement) {
-    translateDown += HEADER_HEIGHT;
+    translateDown += BOOCROBES_HEADER_HEIGHT;
   }
   position.top = `${eventY + translateDown}px`;
   return position;

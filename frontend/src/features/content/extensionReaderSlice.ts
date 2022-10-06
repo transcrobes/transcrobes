@@ -1,23 +1,13 @@
-import { ContentConfigPayload, createGenericSlice, EXTENSION_READER_TYPE } from "./contentSlice";
 import { PayloadAction } from "@reduxjs/toolkit";
-import { CornerPosition, DEFAULT_READER_CONFIG_STATE, GenericState, ReaderState, ThemeName } from "../../lib/types";
-
-export interface ExtensionReaderState extends ReaderState {
-  showSuggestions: boolean;
-  analysisPosition: CornerPosition;
-  themeName: ThemeName;
-  readerType: typeof EXTENSION_READER_TYPE;
-}
-export const EXTENSION_READER_ID = "extensionReader";
-
-export const DEFAULT_EXTENSION_READER_CONFIG_STATE: ExtensionReaderState = {
-  ...DEFAULT_READER_CONFIG_STATE,
-  id: EXTENSION_READER_ID,
-  showSuggestions: true,
-  analysisPosition: "top-right",
-  themeName: "light",
-  readerType: EXTENSION_READER_TYPE,
-};
+import {
+  CornerPosition,
+  DEFAULT_EXTENSION_READER_CONFIG_STATE,
+  ExtensionReaderState,
+  EXTENSION_READER_TYPE,
+  GenericState,
+  ThemeName,
+} from "../../lib/types";
+import { ContentConfigPayload, createGenericSlice } from "./contentSlice";
 
 const extensionReaderSlice = createGenericSlice({
   name: EXTENSION_READER_TYPE,

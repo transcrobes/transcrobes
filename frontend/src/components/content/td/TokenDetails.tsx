@@ -1,18 +1,17 @@
-import { makeStyles } from "tss-react/mui";
+import { Box } from "@mui/system";
 import { ReactElement, useEffect, useState } from "react";
-import { IS_EXT, PopupPosition, ReaderState } from "../../../lib/types";
+import { makeStyles } from "tss-react/mui";
+import useResizeObserver from "use-resize-observer";
+import { useAppSelector } from "../../../app/hooks";
+import { getWord, positionPopup } from "../../../lib/componentMethods";
+import { originalSentenceFromTokens } from "../../../lib/funclib";
+import { bestGuess } from "../../../lib/libMethods";
+import { platformHelper } from "../../../lib/proxies";
+import { ExtensionReaderState, IS_EXT, PopupPosition, ReaderState } from "../../../lib/types";
+import ReaderConfigProvider from "../../ReaderConfigProvider";
+import Container from "./Container";
 import Extras from "./Extras";
 import Header from "./Header";
-import { getWord, positionPopup } from "../../../lib/componentMethods";
-import Container from "./Container";
-import { bestGuess } from "../../../lib/libMethods";
-import { useAppSelector } from "../../../app/hooks";
-import useResizeObserver from "use-resize-observer";
-import { originalSentenceFromTokens } from "../../../lib/funclib";
-import { platformHelper } from "../../../lib/proxies";
-import ReaderConfigProvider from "../../ReaderConfigProvider";
-import { ExtensionReaderState } from "../../../features/content/extensionReaderSlice";
-import { Box } from "@mui/system";
 
 export type Props = {
   readerConfig: ReaderState;

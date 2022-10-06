@@ -1,32 +1,7 @@
-import { BOOK_READER_TYPE, ContentConfigPayload, createGenericSlice } from "./contentSlice";
 import { PayloadAction } from "@reduxjs/toolkit";
-import { HslColor } from "react-colorful";
+import { ContentConfigPayload, createGenericSlice } from "./contentSlice";
 // import { Locator } from "@d-i-t-a/reader";
-import { DEFAULT_READER_CONFIG_STATE, GenericState, ReaderState } from "../../lib/types";
-
-export interface BookReaderState extends ReaderState {
-  fontColour: HslColor | null;
-  pageMargins: number;
-  isScrolling: boolean;
-  currentTocUrl: string | null;
-  atStart: boolean;
-  atEnd: boolean;
-  // location?: Locator | undefined;
-  location?: any | undefined;
-  readerType: typeof BOOK_READER_TYPE;
-}
-
-export const DEFAULT_BOOK_READER_CONFIG_STATE: BookReaderState = {
-  ...DEFAULT_READER_CONFIG_STATE,
-  id: "",
-  readerType: BOOK_READER_TYPE,
-  pageMargins: 1,
-  isScrolling: false,
-  currentTocUrl: null,
-  atStart: true,
-  atEnd: false,
-  location: undefined,
-};
+import { BookReaderState, BOOK_READER_TYPE, DEFAULT_BOOK_READER_CONFIG_STATE, GenericState } from "../../lib/types";
 
 const bookReaderSlice = createGenericSlice({
   name: BOOK_READER_TYPE,

@@ -4,9 +4,14 @@ import { ReactElement, useEffect, useState } from "react";
 import { InfoBox } from "../components/Common";
 import Mouseover from "../components/content/td/Mouseover";
 import RecentSentenceExample from "../components/RecentSentenceExample";
-import { DEFAULT_RECENTS_READER_CONFIG_STATE } from "../features/content/simpleReaderSlice";
 import { toPosLabels } from "../lib/libMethods";
-import { CharacterType, PosSentence, PosSentences, TreebankPosType } from "../lib/types";
+import {
+  CharacterType,
+  DEFAULT_RECENTS_READER_CONFIG_STATE,
+  PosSentence,
+  PosSentences,
+  TreebankPosType,
+} from "../lib/types";
 import QuestionDefinitionGraph from "./Common";
 
 interface Props {
