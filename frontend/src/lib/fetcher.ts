@@ -31,11 +31,12 @@ export class Fetcher {
           return true;
         } else if (response && response.status >= 400) {
           if (response.status === 401 || response.status === 403) {
-            store.dispatch(throttledRefreshToken());
+            store.dispatch(throttledRefreshToken() as any);
             return false; // we have a bad token, no point trying again as we can't update it now...
           }
           return true;
         }
+        return false;
       },
     });
   }

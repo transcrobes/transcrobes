@@ -1,7 +1,7 @@
 // Taken from https://github.com/lannex/react-password-strength-bar/commits/v0.4.0
 // to avoid having a <React18 dependency
 import React, { Fragment, CSSProperties, ReactNode } from "react";
-import zxcvbn from "zxcvbn";
+import zxcvbn, { ZXCVBNResult } from "zxcvbn";
 
 interface PasswordStrengthBarItemProps {
   score: number;
@@ -110,7 +110,7 @@ class PasswordStrengthBar extends React.Component<PasswordStrengthBarProps, Pass
 
   private setScore = (): void => {
     const { password, minLength, userInputs, onChangeScore } = this.props;
-    let result = null;
+    let result: ZXCVBNResult | null = null;
     let score = 0;
     let feedback: PasswordFeedback = {};
     if (password.length >= minLength!) {

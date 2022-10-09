@@ -1,4 +1,4 @@
-import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { AnyAction, createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import jwtDecode from "jwt-decode";
 import type { RootState } from "../../app/createStore";
 import { setUserDexie } from "../../database/authdb";
@@ -40,6 +40,7 @@ const fetchRetry = fetchBuilder(fetch, {
       console.log(`Retrying, attempt number ${attempt + 1}`, response, error);
       return true;
     }
+    return false;
   },
 });
 

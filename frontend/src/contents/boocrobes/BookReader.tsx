@@ -1,4 +1,4 @@
-import D2Reader from "@d-i-t-a/reader";
+import D2Reader from "../../r2d2bc";
 import KeyboardArrowLeftIcon from "@mui/icons-material/KeyboardArrowLeft";
 import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
 import { Box, createTheme, StyledEngineProvider, ThemeProvider } from "@mui/material";
@@ -31,6 +31,7 @@ import {
 } from "../common/types";
 import Header from "./Header";
 import injectables from "./injectables";
+import { intervalCollection } from "../../lib/interval/interval-decorator";
 
 declare global {
   interface Window {
@@ -90,7 +91,7 @@ export default function BookReader({ proxy }: ContentProps): ReactElement {
   const url = new URL(`/api/v1/data/content/${id}/manifest.json`, window.location.href);
   const [manifest, setManifest] = useState<WebpubManifest>();
   const [, setError] = useState<Error | undefined>(undefined);
-  const [reader, setReader] = useState<any | undefined>(undefined);
+  const [reader, setReader] = useState<D2Reader | undefined>(undefined);
   const containerRef = useRef<HTMLDivElement>(null);
   const dispatch = useAppDispatch();
   const readerConfig = useAppSelector((state) => state.bookReader[id] || DEFAULT_BOOK_READER_CONFIG_STATE);
@@ -124,6 +125,15 @@ export default function BookReader({ proxy }: ContentProps): ReactElement {
         });
     }
   }, [id, userData]);
+  useEffect(() => {
+    return () => {
+      if (reader) {
+        // we only assign once, so we can remove the event listener here, as this is only on unmount
+        // we might still have one in dev due to strict mode but that's fine
+        reader.stop();
+      }
+    };
+  }, [reader]);
 
   useEffect(() => {
     if (!proxy.loaded || !manifest) {
@@ -144,14 +154,14 @@ export default function BookReader({ proxy }: ContentProps): ReactElement {
         pageMargins: conf.pageMargins,
       };
       window.transcrobesStore = store;
+
       const reader = await D2Reader.load({
         url,
         injectables: injectables,
         injectablesFixed: [],
         attributes: {
           navHeight: BOOCROBES_HEADER_HEIGHT,
-          // + 20 as an extra buffer on mobile
-          margin: BOOCROBES_HEADER_HEIGHT + 20,
+          margin: 0,
         },
         rights: {
           /**
@@ -162,10 +172,8 @@ export default function BookReader({ proxy }: ContentProps): ReactElement {
         } as any,
         userSettings: userSettings,
         api: {
-          // getContent: getContent,
           updateCurrentLocation: async (loc: any) => {
             // This is needed so that setBookBoundary has the updated "reader" value.
-            // dispatch({ type: "LOCATION_CHANGED", location: loc });
             dispatch(bookReaderActions.setLocationChanged({ id, value: loc }));
             return loc;
           },
@@ -181,7 +189,7 @@ export default function BookReader({ proxy }: ContentProps): ReactElement {
         reader.goTo(readerConfig.location);
         // FIXME: am i necessary?
         // D2Reader.applyUserSettings({ fontSize: readerConfig.fontSize * 100 });
-        D2Reader.applyUserSettings({ fontSize: 100 });
+        reader.applyUserSettings({ fontSize: 100 });
       }
       // This is a hack to make sure that the D2Reader resizes after all the web components have
       // been loaded. If not, in scrolling mode, the size (and so end of the iframe viewport gets finalised
@@ -192,40 +200,39 @@ export default function BookReader({ proxy }: ContentProps): ReactElement {
       // for the moment it will suffice.
       // There might be a prettier way of doing this without setting the fontSize to itself, but I couldn't
       // find it.
-      const interval = setInterval(() => {
+      setInterval(() => {
         if (reader) {
-          reader.settings.isPaginated().then((paginated: any) => {
-            if (!paginated) {
-              if (window.etfLoaded && window.etfLoaded.delete("loaded")) {
-                // D2Reader.applyUserSettings({ fontSize: readerConfig.fontSize * 100 });
-                D2Reader.applyUserSettings({ fontSize: 100 });
-              }
+          if (reader.currentSettings.verticalScroll) {
+            if (window.etfLoaded && window.etfLoaded.delete("loaded")) {
+              reader.applyUserSettings({ fontSize: 100 });
             }
-            setLoaded(true);
-          });
+          }
         }
-      }, 1000);
-      return () => clearInterval(interval);
+        setLoaded(true);
+      }, 1000) as unknown as number;
     })();
     return () => {
       window.etfLoaded = undefined;
-      D2Reader.unload();
+      intervalCollection.removeAll();
+      reader?.stop();
     };
   }, [proxy.loaded, manifest]);
 
   useEffect(() => {
-    if (loaded) {
-      D2Reader.applyUserSettings({ fontFamily: `${readerConfig.fontFamily},${readerConfig.fontFamilyChinese}` });
+    if (loaded && reader) {
+      reader.applyUserSettings({ fontFamily: `${readerConfig.fontFamily},${readerConfig.fontFamilyChinese}` });
     }
   }, [readerConfig.fontFamily, readerConfig.fontFamilyChinese]);
 
   useEffect(() => {
-    D2Reader.scroll(readerConfig.isScrolling);
+    if (loaded && reader) {
+      reader.scroll(readerConfig.isScrolling);
+    }
   }, [readerConfig.isScrolling]);
 
   useEffect(() => {
-    if (loaded) {
-      D2Reader.applyUserSettings({ pageMargins: readerConfig.pageMargins });
+    if (loaded && reader) {
+      reader.applyUserSettings({ pageMargins: readerConfig.pageMargins });
     }
   }, [readerConfig.pageMargins]);
 
@@ -234,33 +241,33 @@ export default function BookReader({ proxy }: ContentProps): ReactElement {
     if (!readerConfig.location || !reader) return;
     setBookBoundary(reader, dispatch, id);
   }, [readerConfig.location, reader, readerConfig.isScrolling, readerConfig.glossing, readerConfig.segmentation]);
+
   useEffect(() => {
     if (readerConfig.currentTocUrl && reader) {
       const toto = { href: readerConfig.currentTocUrl } as any;
       reader.goTo(toto);
-      // D2Reader.applyUserSettings({ fontSize: readerConfig.fontSize * 100 });
-      D2Reader.applyUserSettings({ fontSize: 100 });
+      reader.applyUserSettings({ fontSize: 100 });
     }
   }, [readerConfig.currentTocUrl]);
 
   // prev and next page functions
   const goForward = useCallback(async () => {
     if (!reader) return;
-    const isLastPage = await reader.atEnd();
+    const isLastPage = reader.atEnd;
     reader.nextPage();
     if (isLastPage) {
       // FIXME: This will not work for links containing sub-links
       // b/c reader.nextPage saves the raw toc link without the elementID
-      dispatch(bookReaderActions.setCurrentTocUrl({ id, value: reader.mostRecentNavigatedTocItem() }));
+      dispatch(bookReaderActions.setCurrentTocUrl({ id, value: reader.mostRecentNavigatedTocItem }));
     }
   }, [reader]);
 
   const goBackward = useCallback(async () => {
     if (!reader) return;
-    const isFirstPage = await reader.atStart();
+    const isFirstPage = await reader.atStart;
     reader.previousPage();
     if (isFirstPage) {
-      dispatch(bookReaderActions.setCurrentTocUrl({ id, value: reader.mostRecentNavigatedTocItem() }));
+      dispatch(bookReaderActions.setCurrentTocUrl({ id, value: reader.mostRecentNavigatedTocItem }));
     }
   }, [reader]);
 

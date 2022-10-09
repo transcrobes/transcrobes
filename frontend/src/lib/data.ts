@@ -34,6 +34,7 @@ import { getFileStorage, IDBFileStorage } from "./IDBFileStorage";
 import { cleanAnalysis, fetchPlus, shortMeaning, simpOnly, sortByWcpm } from "./libMethods";
 import { practice } from "./review";
 import {
+  ActionEvent,
   CalculatedContentStats,
   CardType,
   CharacterType,
@@ -847,7 +848,7 @@ export async function submitLookupEvents(
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
   { lemmaAndContexts, userStatsMode, source }: { lemmaAndContexts: any; userStatsMode: number; source: string },
 ): Promise<boolean> {
-  const events = [];
+  const events: ActionEvent[] = [];
   for (const lemmaAndContext of lemmaAndContexts) {
     events.push({
       type: "bc_word_lookup",
@@ -878,7 +879,7 @@ export async function addOrUpdateCardsForWord(
   db: TranscrobesDatabase,
   { wordId, grade }: { wordId: string; grade: number },
 ): Promise<CardType[]> {
-  const cards = [];
+  const cards: CardType[] = [];
   for (const cardType of $enum(CARD_TYPES).getValues()) {
     const cardId = getCardId(wordId, cardType);
     const existing = await db.cards.findOne(cardId).exec();

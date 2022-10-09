@@ -8,14 +8,14 @@ import { Workbox } from "workbox-window";
 import { getUserDexie, isInitialisedAsync } from "../database/authdb";
 import knownCardsReducer from "../features/card/knownCardsSlice";
 import bookReaderReducer from "../features/content/bookReaderSlice";
+import extensionReaderReducer from "../features/content/extensionReaderSlice";
 import simpleReaderReducer from "../features/content/simpleReaderSlice";
 import videoReaderReducer from "../features/content/videoReaderSlice";
-import extensionReaderReducer from "../features/content/extensionReaderSlice";
 import definitionsReducer from "../features/definition/definitionsSlice";
+import dictionaryReducer from "../features/dictionary/dictionarySlice";
+import statsReducer from "../features/stats/statsSlice";
 import themeReducer from "../features/themes/themeReducer";
 import uiReducer from "../features/ui/uiSlice";
-import statsReducer from "../features/stats/statsSlice";
-import dictionaryReducer from "../features/dictionary/dictionarySlice";
 import userSliceReducer, { doLogin, setAndSaveUser, throttledLogout } from "../features/user/userSlice";
 import { ComponentsConfig } from "../lib/complexTypes";
 import { ServiceWorkerProxy, setPlatformHelper } from "../lib/proxies";
@@ -64,7 +64,12 @@ let theme: ThemeName = "light";
 
 if (typeof window !== "undefined") {
   if (!(window.chrome && chrome.runtime && chrome.runtime.id)) {
-    const wb = new Workbox("/service-worker.js");
+    let wb: Workbox;
+    if (import.meta.env.DEV) {
+      wb = new Workbox("/dev-sw.js?dev-sw", { scope: "/", type: "module" });
+    } else {
+      wb = new Workbox("/service-worker.js");
+    }
     wb.register({ immediate: true });
     history = createHashHistory();
     authProvider = jwtTokenAuthProvider();
@@ -80,47 +85,19 @@ if (typeof window !== "undefined") {
 }
 
 const preloadedState = { theme };
-
-function createStore({ authProvider, dataProvider }: CreateStoreProps) {
-  const reducer = combineReducers({
-    videoReader: videoReaderReducer,
-    bookReader: bookReaderReducer,
-    extensionReader: extensionReaderReducer,
-    simpleReader: simpleReaderReducer,
-    theme: themeReducer,
-    knownCards: knownCardsReducer,
-    definitions: definitionsReducer,
-    ui: uiReducer,
-    stats: statsReducer,
-    dictionary: dictionaryReducer,
-    userData: userSliceReducer,
-  });
-
-  if (dataProvider && authProvider) {
-    const store = configureStore({
-      reducer,
-      middleware: (getDefaultMiddleware) =>
-        getDefaultMiddleware({
-          serializableCheck: false,
-        }),
-      preloadedState,
-      devTools: process.env.NODE_ENV !== "production",
-    });
-
-    return store;
-  } else {
-    const store = configureStore({
-      reducer,
-      middleware: (getDefaultMiddleware) =>
-        getDefaultMiddleware({
-          serializableCheck: false,
-        }),
-      preloadedState,
-      devTools: process.env.NODE_ENV !== "production",
-    });
-    return store;
-  }
-}
+const reducer = combineReducers({
+  videoReader: videoReaderReducer,
+  bookReader: bookReaderReducer,
+  extensionReader: extensionReaderReducer,
+  simpleReader: simpleReaderReducer,
+  theme: themeReducer,
+  knownCards: knownCardsReducer,
+  definitions: definitionsReducer,
+  ui: uiReducer,
+  stats: statsReducer,
+  dictionary: dictionaryReducer,
+  userData: userSliceReducer,
+});
 
 function jwtTokenAuthProvider(): AuthProvider {
   return {
@@ -145,7 +122,7 @@ function jwtTokenAuthProvider(): AuthProvider {
     },
     logout: async () => {
       console.debug("throttledLogout action dispatched");
-      store.dispatch(throttledLogout());
+      store.dispatch(throttledLogout() as any);
 
       return Promise.resolve();
     },
@@ -218,13 +195,16 @@ function createOptionsFromJWTToken():
   };
 }
 
-// export default createStore;
-export const store = createStore({
-  authProvider,
-  dataProvider,
-  // history,
+export const store = configureStore({
+  reducer,
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware({
+      serializableCheck: false,
+    }),
+  preloadedState,
+  devTools: process.env.NODE_ENV !== "production",
 });
 
 export type AdminStore = typeof store;
 export type AppDispatch = typeof store.dispatch;
-export type RootState = ReturnType<typeof store.getState>;
+export type RootState = ReturnType<typeof reducer>;

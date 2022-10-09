@@ -1,33 +1,47 @@
 {
   "compilerOptions": {
-    "importHelpers": true,
-    "removeComments": true,
-    "types": [
-      "chrome"
-    ],
-    "target": "es2017",
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext"
-    ],
-    "skipLibCheck": true,
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
+
     "strict": true,
+    // they didn't have
+    "strictPropertyInitialization": false,
+    "noImplicitAny": false,
+    // "strictNullChecks": true,
+    // "noImplicitThis": true,
+
+    // alwaysStrict
+    // strictBindCallApply
+    // strictFunctionTypes
+    // useUnknownInCatchVariables
+
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+
+    "experimentalDecorators": true,
+    "noEmitOnError": true,
+    "sourceMap": true,
+    "declaration": true,
+    "preserveConstEnums": true,
+    "esModuleInterop": true,
+
+    "target": "ESNext",
+    "lib": ["DOM", "DOM.Iterable", "ESNext", "WebWorker"],
+    "allowJs": false,
+    "skipLibCheck": true,
+    "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
-    "noFallthroughCasesInSwitch": false,
-    "module": "esnext",
-    "moduleResolution": "node",
+    "module": "ESNext",
+    "moduleResolution": "Node",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "noEmit": false,
+    "noEmit": true,
     "jsx": "react-jsx",
-    "sourceMap": true,
-    "allowJs": false,
-    "noImplicitAny": true,
-    "noImplicitThis": true,
-    "strictNullChecks": true
+    "types": [
+      "chrome",
+      "vite-plugin-pwa",
+      "vite-plugin-pwa/client",
+      "vite-plugin-svgr/client",
+      "@crxjs/vite-plugin/client"
+    ]
   },
-  "include": ["src", "src/decs.d.ts"]
+  "include": ["./src"]
 }

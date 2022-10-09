@@ -28,6 +28,7 @@ import { refreshDictionaries } from "./lib/dictionary";
 import { IS_DEV, SerialisableDayCardWords } from "./lib/types";
 import Listrobes from "./listrobes/Listrobes";
 import Notrobes from "./notrobes/Notrobes";
+import ReloadPrompt from "./ReloadPrompt";
 import Repetrobes from "./repetrobes/Repetrobes";
 import Stats from "./stats/Stats";
 import surveys from "./surveys";

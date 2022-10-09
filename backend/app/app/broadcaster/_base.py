@@ -22,28 +22,28 @@ class Unsubscribed(Exception):
 
 class Broadcast:
     def __init__(self, url: str):
-        from broadcaster._backends.base import BroadcastBackend
+        from ._backends.base import BroadcastBackend
 
         parsed_url = urlparse(url)
         self._backend: BroadcastBackend
         self._subscribers: Dict[str, Any] = {}
         if parsed_url.scheme == "redis":
-            from broadcaster._backends.redis import RedisBackend
+            from ._backends.redis import RedisBackend
 
             self._backend = RedisBackend(url)
 
         elif parsed_url.scheme in ("postgres", "postgresql"):
-            from broadcaster._backends.postgres import PostgresBackend
+            from ._backends.postgres import PostgresBackend
 
             self._backend = PostgresBackend(url)
 
         if parsed_url.scheme == "kafka":
-            from broadcaster._backends.kafka import KafkaBackend
+            from ._backends.kafka import KafkaBackend
 
             self._backend = KafkaBackend(url)
 
         elif parsed_url.scheme == "memory":
-            from broadcaster._backends.memory import MemoryBackend
+            from ._backends.memory import MemoryBackend
 
             self._backend = MemoryBackend(url)
 

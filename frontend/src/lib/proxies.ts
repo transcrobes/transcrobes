@@ -260,6 +260,7 @@ class BackgroundWorkerProxy extends AbstractWorkerProxy {
           mwc.callback.name,
         );
       }
+      return "";
     });
   }
 

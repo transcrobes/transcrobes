@@ -1,3 +1,4 @@
+// import { Record as RARecord, Identifier } from "react-admin";
 import { RaRecord, Identifier } from "react-admin";
 import { HslColor } from "react-colorful";
 
@@ -537,11 +538,13 @@ export const SUBS_DATA_SUFFIX = ".data.json";
 export const ONE_YEAR_IN_SECS = 365 * 24 * 60 * 60; // default is only a week
 export const WEBPUB_CACHE_NAME = "webpub-cache";
 export const PRECACHE_PUBLICATIONS = "PRECACHE_PUBLICATIONS";
-export const IS_DEV = process.env.NODE_ENV === "development";
-export const IS_EXT = process.env.PLATFORM === "extension";
-export const DOCS_DOMAIN = process.env.DOCS_DOMAIN || "localhost:1313";
-export const SITE_DOMAIN = process.env.SITE_DOMAIN || "localhost";
-export const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || "admin@example.com").split(",").map((x) => x.trim());
+export const IS_DEV = import.meta.env.DEV;
+export const IS_EXT = import.meta.env.PLATFORM === "extension";
+export const DOCS_DOMAIN = import.meta.env.VITE_DOCS_DOMAIN || "localhost:1313";
+export const SITE_DOMAIN = import.meta.env.VITE_SITE_DOMAIN || "localhost";
+export const ADMIN_EMAILS = (import.meta.env.VITE_ADMIN_EMAILS || "admin@example.com")
+  .split(",")
+  .map((x: string) => x.trim());
 
 // each logging line will be prepended with the service worker version
 function dolog(
@@ -614,16 +617,29 @@ export type ThemeName = "light" | "dark";
 export const APPLICATION_NAMES = ["repetrobes", "listrobes", "notrobes", "brocrobes"] as const;
 export type TCApplication = typeof APPLICATION_NAMES[number];
 
-// FIXME: can these really be used???
-// interface Event {
-//   type: string;
-//   data: any;
-//   source: string;
-//   user_stats_mode: number;
-// }
-// export interface ActionEvent extends Event {}
-// export interface VocabEvent extends Event {}
-// export interface CardEvent extends Event {}
+export interface ActionEventData {
+  target_word: string;
+  target_sentence: string;
+}
+export interface VocabEventData {
+  target_word: string;
+  target_sentence: string;
+}
+export interface CardEventData {
+  target_word: string;
+  target_sentence: string;
+}
+
+interface Event {
+  type: string;
+  data: ActionEventData | VocabEventData | CardEventData;
+  source: string;
+  userStatsMode: number;
+}
+
+export interface ActionEvent extends Event {}
+export interface VocabEvent extends Event {}
+export interface CardEvent extends Event {}
 
 export type EventQueueType = {
   id: string;

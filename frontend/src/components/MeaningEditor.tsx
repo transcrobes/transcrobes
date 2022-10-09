@@ -1,5 +1,5 @@
 import { ContentState, convertToRaw } from "draft-js";
-import MUIRichTextEditor from "mui-rte";
+import MUIRichTextEditor from "./mui-rte/MUIRichTextEditor";
 import { ReactElement } from "react";
 
 interface MeaningEditorProps {

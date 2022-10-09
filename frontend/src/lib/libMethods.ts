@@ -48,8 +48,8 @@ export function filterKnown(
     return [];
   } // or null?
 
-  const known = [];
-  const wholeKnownWords = [];
+  const known: string[] = [];
+  const wholeKnownWords: string[] = [];
   for (const word of words) {
     if (word in knownNotes) {
       if (preferWholeKnownWords) {
@@ -196,7 +196,7 @@ function walkNodeTree(root: HTMLElement, options: TreeWalkerMethods) {
     },
   });
 
-  const nodes = [];
+  const nodes: Node[] = [];
   let n;
   while ((n = walker.nextNode())) {
     // options.callback && options.callback(n);

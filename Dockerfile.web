@@ -5,6 +5,8 @@ FROM node:16 as build-stage
 
 LABEL maintainer="Anton Melser <anton@transcrob.es>"
 
+ENV npm_config_registry=$NPM_OVERRIDE
+
 WORKDIR /app
 COPY ./frontend/package*.json /app/
 RUN npm install
@@ -16,7 +18,6 @@ ARG ENVIRONMENT=prod
 RUN npm run build:${ENVIRONMENT}
 
 FROM ${TRANSCROBES_DOCKER_REPO:-transcrobes}/transcrobes-backend:${TRANSCROBES_BACKEND_IMAGE_TAG:-latest}
-COPY --from=build-stage /app/dist/static /fapp/static
-COPY --from=build-stage /app/dist/site /fapp/site
+COPY --from=build-stage /app/dist /fapp
 
 CMD ["/bin/bash", "/start-uvicorn.sh"]

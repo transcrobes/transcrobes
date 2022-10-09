@@ -13,12 +13,12 @@ import {
   SerialisableDayCardWords,
   UserDefinitionType,
 } from "../lib/types";
+import scriptPath from "./content?script";
 
 let db: TranscrobesDatabase;
 let dayCardWords: SerialisableDayCardWords | null;
 const dictionaries: Record<string, Record<string, UserDefinitionType>> = {};
 let eventQueueTimer: number | undefined;
-
 // function stopEventsSender(): void {
 //   clearTimeout(eventQueueTimer);
 // }
@@ -65,7 +65,7 @@ async function loadDb(callback: any, message: EventData) {
     // WARNING: MUST NOT SEND A RESPONSE HERE!!!!!
     // sendResponse({source: message.source, type: message.type + "-progress", value: progress});
   };
-  store.dispatch(throttledRefreshToken());
+  store.dispatch(throttledRefreshToken() as any);
 
   const dbConfig = { url: new URL(store.getState().userData.baseUrl), username: store.getState().userData.username };
   const dbHandle = await getDb(dbConfig, progressCallback);
@@ -89,7 +89,7 @@ chrome.action.onClicked.addListener(function (tab) {
       } else {
         chrome.scripting.executeScript({
           target: { tabId: tab.id, allFrames: false },
-          files: ["content-bundle.js"],
+          files: [scriptPath],
         });
       }
     } else {

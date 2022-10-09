@@ -61,8 +61,8 @@ app.add_route(os.path.join(settings.API_V1_STR, "graphql"), graphql)
 
 # Frontend
 # WARNING! This needs to point to a copy of the build directory of the frontend
-app.mount("/static/", StaticFiles(directory="../fapp/static", html=False), name="static")
-app.mount("/", StaticFiles(directory="../fapp/site", html=True), name="site")
+# app.mount("/static/", StaticFiles(directory="../fapp/static", html=False), name="static")
+app.mount("/", StaticFiles(directory="../fapp", html=True), name="site")
 
 for name, pair in settings.LANG_PAIRS.items():
     logging.info("Installing language pair %s with %s", name, pair)

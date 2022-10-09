@@ -5,8 +5,8 @@ import logging
 import typing
 from dataclasses import dataclass
 
+from app.broadcaster import Broadcast
 from app.core.config import settings
-from broadcaster import Broadcast
 from starlette.requests import Request
 from starlette.responses import Response
 from starlette.websockets import WebSocket

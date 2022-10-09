@@ -75,7 +75,7 @@ services:
       - SMTP_HOST=${SMTP_HOST}
     build:
       context: .
-      dockerfile: Dockerfile.web
+      dockerfile: Dockerfile.backend
       args:
         INSTALL_DEV: ${INSTALL_DEV-true}
         TRANSCROBES_DOCKER_REPO: ${TRANSCROBES_DOCKER_REPO-transcrobes}

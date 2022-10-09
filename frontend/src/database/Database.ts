@@ -209,7 +209,7 @@ function refreshTokenIfRequired(
     const expiredMessage = error.innerErrors && error.innerErrors[0].message?.toString();
     if (expiredMessage?.includes(EXPIRED_MESSAGE)) {
       console.debug("Looks like the token has expired, trying to refresh");
-      store.dispatch(throttledRefreshToken());
+      store.dispatch(throttledRefreshToken() as any);
       // FIXME: this will set rubbish until the refresh actually happens - is this worth trying to improve upon?
       replicationState.setHeaders(getHeaders(store.getState().userData.user.accessToken));
     } else {
@@ -397,7 +397,7 @@ function setupGraphQLSubscription(
     retryAttempts: 10_000,
     shouldRetry: () => true,
     connectionParams: () => {
-      store.dispatch(throttledRefreshToken());
+      store.dispatch(throttledRefreshToken() as any);
       const token = store.getState().userData.user.accessToken || "";
       return { token };
     },
@@ -441,7 +441,7 @@ function setupGraphQLSubscription(
         })
         .catch((err) => {
           if (err && err.message === EXPIRED_MESSAGE) {
-            store.dispatch(throttledRefreshToken());
+            store.dispatch(throttledRefreshToken() as any);
           }
           console.error("The subscription setup failed for", name, err);
         });
@@ -556,7 +556,7 @@ async function getDb(
   }
 
   if (!userData.user.accessToken) {
-    store.dispatch(throttledRefreshToken());
+    store.dispatch(throttledRefreshToken() as any);
     if (!userData.user.accessToken) {
       throw new Error("No access token");
     }

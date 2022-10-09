@@ -3,6 +3,7 @@ import dayjs from "dayjs";
 import { throttle } from "lodash";
 import LZString from "lz-string";
 import { HslColor } from "react-colorful";
+import { AnyAction } from "redux";
 import {
   CardType,
   DayStat,
@@ -331,6 +332,7 @@ export function throttleAction(action: any, wait: number, options: any) {
   // provide hook to _.throttle().cancel() to cancel any trailing invocations
   thunk.cancel = throttled.cancel;
   thunk.flush = throttled.flush;
+  thunk.type = action.type;
 
   return thunk;
 }

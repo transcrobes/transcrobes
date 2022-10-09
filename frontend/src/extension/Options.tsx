@@ -101,23 +101,31 @@ export default function Options(): ReactElement {
   const { classes } = useStyles();
   dispatch(setLoading(true));
   useEffect(() => {
+    console.log("i am in options");
     (async () => {
+      console.log("i am in options async");
       dispatch(setUser(await getUserDexie()));
       const userData = store.getState().userData;
       setPassword(userData.password);
       setUsername(userData.username);
       setBaseUrl(userData.baseUrl || DEFAULT_SERVER_URL);
 
+      console.log("i am in options async biz");
       const linit = await isInitialisedAsync(userData.username);
+      console.log("i am in options async biz2");
       setInited(linit);
       let conf: ExtensionReaderState = { ...DEFAULT_EXTENSION_READER_CONFIG_STATE, id };
       if (userData.username && linit) {
+        console.log("i am in options async biz3");
         await proxy.asyncInit({ username: userData.username });
+        console.log("i am in options async biz4");
         await refreshDictionaries(store, proxy);
         conf = await getRefreshedState<ExtensionReaderState>(proxy, DEFAULT_EXTENSION_READER_CONFIG_STATE, id);
       }
+      console.log("i am in options async biz again");
       dispatch(changeTheme(conf.themeName));
       dispatch(extensionReaderActions.setState({ id, value: conf }));
+      console.log("i am in options async biz again again");
       setLoaded(true);
       dispatch(setLoading(false));
     })();
@@ -135,8 +143,10 @@ export default function Options(): ReactElement {
   }, [userData.error]);
 
   useEffect(() => {
+    console.log("i am in options other");
     if (loaded) {
       (async () => {
+        console.log("i am in options other loaded");
         const userData = store.getState().userData;
         setRunning(true);
         if (!userData.user.accessToken) {
@@ -187,7 +197,7 @@ export default function Options(): ReactElement {
     dispatch(updateUsername(values.username));
     dispatch(updatePassword(values.password));
     dispatch(updateBaseUrl(values.baseUrl));
-    dispatch(throttledLogin());
+    dispatch(throttledLogin() as any);
     setMessage("Saving the options, please wait and keep this window open...");
   }
 

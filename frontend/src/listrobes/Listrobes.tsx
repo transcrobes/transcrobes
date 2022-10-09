@@ -15,6 +15,8 @@ import { setLoading } from "../features/ui/uiSlice";
 import { AbstractWorkerProxy } from "../lib/proxies";
 import { practice } from "../lib/review";
 import {
+  ActionEventData,
+  CardType,
   DOCS_DOMAIN,
   EMPTY_CARD,
   GraderConfig,
@@ -168,8 +170,8 @@ export function Listrobes({ proxy }: Props): ReactElement {
 
   async function handleValidate() {
     dispatch(setLoading(true));
-    const newCards = [];
-    const consultedDefinitions = [];
+    const newCards: CardType[] = [];
+    const consultedDefinitions: ActionEventData[] = [];
     setLastWordsCount(wordsCount);
     for (const word of vocab) {
       if (word.lookedUp) {

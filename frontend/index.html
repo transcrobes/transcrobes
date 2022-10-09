@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <link rel="icon" href="/static/favicon.ico" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#000000" />
+  <meta name="description" content="Learn a language doing stuff you love" />
+  <link rel="manifest" href="/static/manifest.json" />
+  <link rel="stylesheet" href="/static/chinese.css">
+  <title> Transcrobes </title>
+  <script>
+    import('https://cdn.skypack.dev/detect-browser@5').then(({ detect }) => {
+      const browser = detect();
+      let supported = false;
+      if (['yandexbrowser', 'edge-chromium', 'chrome', 'opera-mini', 'opera'].includes(browser.name)) {
+        supported = true;
+      } else if (browser.name === 'firefox' && browser.os !== 'Android OS') {
+        supported = true;
+      }
+      if (!supported) {
+        location.href = '/static/unsupported.html';
+      }
+    });
+  </script>
+</head>
+
+<body>
+  <noscript>You need to enable JavaScript to run this app.</noscript>
+  <div id="root"></div>
+  <script type="module" src="/src/index.tsx"></script>
+</body>
+
+</html>

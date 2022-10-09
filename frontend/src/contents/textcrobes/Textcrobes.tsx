@@ -2,7 +2,7 @@ import { createTheme, StyledEngineProvider, ThemeProvider } from "@mui/material"
 import { EditorState } from "draft-js";
 import { stateToHTML } from "draft-js-export-html";
 import "draft-js/dist/Draft.css";
-import MUIRichTextEditor from "mui-rte";
+import MUIRichTextEditor from "../../components/mui-rte/MUIRichTextEditor";
 import { ReactElement, useEffect, useRef, useState } from "react";
 import { TopToolbar } from "react-admin";
 import { makeStyles } from "tss-react/mui";

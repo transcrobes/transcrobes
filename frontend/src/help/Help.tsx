@@ -1,12 +1,13 @@
 import TwitterIcon from "@mui/icons-material/Twitter";
 import YouTubeIcon from "@mui/icons-material/YouTube";
-import { CardHeader, IconButton, SvgIcon, Typography } from "@mui/material";
+import { CardHeader, SvgIcon, Typography } from "@mui/material";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import { ReactElement } from "react";
 import { Button as RAButton, Title, useTranslate } from "react-admin";
 import { ADMIN_EMAILS, DOCS_DOMAIN, YOUTUBE_CHANNEL } from "../lib/types";
-import DiscordIcon from "../svg/Discord.svg";
+import { ReactComponent as DiscordIcon } from "../svg/Discord.svg";
+
 export default function Help(): ReactElement {
   const translate = useTranslate();
 

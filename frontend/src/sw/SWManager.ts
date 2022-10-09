@@ -356,6 +356,7 @@ export function manageEvent(sw: ServiceWorkerGlobalScope, event: ExtendableMessa
     case "practiceCardsForWord":
     case "addOrUpdateCardsForWord":
     case "updateCard":
+    // @ts-ignore - actually here we DO want to use the default case
     case "createCards":
       dayCardWords = null; // simpler to set to null rather than try and merge lots
     // eslint-disable-next-line no-fallthrough

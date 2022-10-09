@@ -104,7 +104,7 @@ function ResetPassword(): ReactElement {
   const dispatch = useAppDispatch();
 
   useEffect(() => {
-    dispatch(throttledLogout());
+    dispatch(throttledLogout() as any);
     removeCookie("refresh");
     removeCookie("session");
 

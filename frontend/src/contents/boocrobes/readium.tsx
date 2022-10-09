@@ -2,11 +2,9 @@ import { createComponentVNode, render } from "inferno";
 import { Provider as InfernoProvider } from "inferno-redux";
 import jss from "jss";
 import preset from "jss-preset-default";
-import { createRoot } from "react-dom/client";
-import { Provider } from "react-redux";
+import watch from "redux-watch";
 import { ETFStyles } from "../../components/Common";
 import EnrichedTextFragment from "../../components/content/etf/EnrichedTextFragment";
-import ETFStyleUpdater from "../../components/content/td/ETFStyleUpdater";
 import { setLoading, setTokenDetails } from "../../features/ui/uiSlice";
 import { ensureDefinitionsLoaded } from "../../lib/dictionary";
 import { missingWordIdsFromModels, tokensInModel } from "../../lib/funclib";
@@ -101,20 +99,22 @@ loadSettingsFromParentFrame();
 
 const uniqueIds = missingWordIdsFromModels(currentModels, definitions);
 
+let w = watch(store.getState, "bookReader");
+store.subscribe(
+  w((newVal) => {
+    sheet.update(newVal[bookId]);
+  }),
+);
+
 ensureDefinitionsLoaded(proxy, [...uniqueIds], store).then(() => {
   const container = document.body.appendChild(document.createElement("div"));
-  createRoot(container!).render(
-    <Provider store={store}>
-      <ETFStyleUpdater sheet={sheet} id={bookId} />
-    </Provider>,
-  );
   if (tokensInModel(currentModels) > MAX_TOKENS_FOR_PRE_ENRICHMENT) {
     for (const etf of document.getElementsByTagName("enriched-text-fragment")) {
       if (!etf.id) continue;
       transcroberObserver.observe(etf);
     }
   } else {
-    for (const etf of document.getElementsByTagName("enriched-text-fragment")) {
+    for (const etf of document.getElementsByTagName("enriched-text-fragment") as HTMLCollectionOf<HTMLElement>) {
       if (!etf.id) continue;
       etf.innerHTML = "";
       readObserver.observe(etf);
@@ -141,8 +141,12 @@ ensureDefinitionsLoaded(proxy, [...uniqueIds], store).then(() => {
         }),
         etf,
       );
+      (etf.dataset as any).tced = "true";
     }
   }
   store.dispatch(setLoading(undefined));
   console.debug("Finished setting up elements for readium");
+  if (window.parent.etfLoaded) {
+    window.parent.etfLoaded.add("loaded");
+  }
 });
