@@ -493,9 +493,6 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, Props>(
                           components={{
                             ValueLabel: ValueLabelComponent,
                           }}
-                          // ValueLabelComponent={(props: ValueLabelProps) => (
-                          //   <ValueLabelComponent {...props} value={parseFloat(elapsedTime)} />
-                          // )}
                           value={readerConfig.played * 100}
                           onChange={(_e: any, newValue: any) => {
                             const newPlayed = Array.isArray(newValue) ? newValue[0] : newValue / 100;

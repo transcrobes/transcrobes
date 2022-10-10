@@ -14,7 +14,6 @@ export const muiCache = createCache({
 });
 
 createRoot(document.getElementById("root")!).render(
-  // FIXME: turn on StrictMode when the new react-beautiful-dnd is released
   <StrictMode>
     <Provider store={store}>
       <CssBaseline />
@@ -22,5 +21,6 @@ createRoot(document.getElementById("root")!).render(
         <App config={window.componentsConfig} />
       </CacheProvider>
     </Provider>
+    ,
   </StrictMode>,
 );

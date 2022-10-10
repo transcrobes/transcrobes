@@ -10,3 +10,4 @@ dist
 .env
 docker-compose.override.yml
 *.egg-info
+.venv

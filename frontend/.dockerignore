@@ -4,6 +4,7 @@
 **/extbuild/
 **/extdist/
 **/dev-dist/
+**/dist/
 
 **/tmp/
 **/.vscode

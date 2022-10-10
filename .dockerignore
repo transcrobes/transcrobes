@@ -4,12 +4,15 @@ extdist
 frontend/build/
 frontend/builddev/
 frontend/extbuild/
+frontend/dist/
+frontend/extdist/
 
 **/node_modules/
 
 **/tmp/
 **/.vscode
 **/.env
+**/.venv
 **/cookiecutter-config-file.yml
 **/.git
 
@@ -20,6 +23,7 @@ frontend/extbuild/
 **/*.pyo
 **/*.pyd
 **/.Python
+**/*.egg-info
 **/env
 **/pip-log.txt
 **/pip-delete-this-directory.txt

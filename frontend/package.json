@@ -48,7 +48,7 @@
     "@openreplay/tracker": "^4.1.5",
     "@reduxjs/toolkit": "^1.8.6",
     "@use-it/event-listener": "^0.1.7",
-    "axios": "^0.25.0",
+    "axios": "^1.1.2",
     "browserslist-useragent-regexp": "^3.0.2",
     "classnames": "^2.3.2",
     "cssesc": "^3.0.0",
@@ -63,7 +63,7 @@
     "graphql": "^16.6.0",
     "graphql-ws": "^5.11.2",
     "hanzi-writer": "^3.3.0",
-    "immutable": "^3.8.2",
+    "immutable": "^4.1.0",
     "inferno": "^8.0.3",
     "inferno-redux": "^8.0.3",
     "js-cookie": "^3.0.1",
@@ -86,7 +86,7 @@
     "react-final-form": "^6.5.9",
     "react-hook-form-mui": "^5.7.2",
     "react-jss": "^10.9.1",
-    "react-player": "^2.11.0",
+    "react-player": "2.10.1",
     "react-redux": "^8.0.4",
     "react-router": "^6.3.0",
     "react-router-config": "^5.1.1",
@@ -143,5 +143,16 @@
     "workbox-precaching": "^6.5.4",
     "workbox-routing": "^6.5.4",
     "workbox-window": "^6.5.4"
+  },
+  "overrides": {
+    "draft-js": {
+      "immutable": "^3.0.0 || ^4.0.0"
+    },
+    "draft-js-export-html": {
+      "immutable": "^3.0.0 || ^4.0.0"
+    },
+    "draftjs-to-html": {
+      "immutable": "^3.0.0 || ^4.0.0"
+    }
   }
 }
