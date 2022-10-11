@@ -4,7 +4,7 @@ import { stateToHTML } from "draft-js-export-html";
 import "draft-js/dist/Draft.css";
 import MUIRichTextEditor from "../../components/mui-rte/MUIRichTextEditor";
 import { ReactElement, useEffect, useRef, useState } from "react";
-import { TopToolbar } from "react-admin";
+import { TopToolbar, useTranslate } from "react-admin";
 import { makeStyles } from "tss-react/mui";
 import { store } from "../../app/createStore";
 import { useAppDispatch, useAppSelector, useJssStyles } from "../../app/hooks";
@@ -20,7 +20,7 @@ import { getRefreshedState } from "../../features/content/contentSlice";
 import { simpleReaderActions } from "../../features/content/simpleReaderSlice";
 import { setLoading } from "../../features/ui/uiSlice";
 import { ensureDefinitionsLoaded } from "../../lib/dictionary";
-import { wordIdsFromModels } from "../../lib/funclib";
+import { isScriptioContinuo, wordIdsFromModels } from "../../lib/funclib";
 import { ServiceWorkerProxy } from "../../lib/proxies";
 import {
   DEFAULT_TEXT_READER_CONFIG_STATE,
@@ -58,6 +58,7 @@ export default function Textcrobes({ proxy }: Props): ReactElement {
   const [models, setModels] = useState<KeyedModels | null>(null);
   const [stats, setStats] = useState<ImportFirstSuccessStats>();
   const [error, setError] = useState("");
+  const translate = useTranslate();
 
   const divRef = useRef<HTMLDivElement>(null);
   const id = TEXT_READER_ID;
@@ -65,9 +66,10 @@ export default function Textcrobes({ proxy }: Props): ReactElement {
   const dispatch = useAppDispatch();
   const readerConfig = useAppSelector((state) => state.simpleReader[id] || DEFAULT_TEXT_READER_CONFIG_STATE);
   const themeName = useAppSelector((state) => state.theme);
+  const fromLang = useAppSelector((state) => state.userData.user.fromLang);
 
   const { classes } = useStyles();
-  const etfClasses = useJssStyles(readerConfig);
+  const etfClasses = useJssStyles({ ...readerConfig, scriptioContinuo: isScriptioContinuo(fromLang) });
 
   const theme = createTheme({
     palette: {
@@ -116,7 +118,7 @@ export default function Textcrobes({ proxy }: Props): ReactElement {
       })
       .then((value) => {
         if (!value.models) {
-          setError("There was an error while enriching the text.");
+          setError(translate("screens.textcrobes.enrich_error"));
           console.error("There was an error while enriching the text.", value);
         }
         setModels(value.models);
@@ -129,7 +131,7 @@ export default function Textcrobes({ proxy }: Props): ReactElement {
           .sendMessagePromise<ImportFirstSuccessStats>({
             source: DATA_SOURCE,
             type: "getFirstSuccessStatsForImport",
-            value: { analysisString: value.analysis },
+            value: { analysisString: value.analysis, fromLang },
           })
           .then((locStats) => setStats(locStats));
       });
@@ -145,11 +147,7 @@ export default function Textcrobes({ proxy }: Props): ReactElement {
     const paste = event.clipboardData.getData("text");
     const currentLength = editorState.getCurrentContent().getPlainText("").length;
     if (currentLength + paste.length > MAX_TEXT_LENGTH) {
-      setError(
-        `The editor has a character limit of ${MAX_TEXT_LENGTH}. Please delete text before adding more.
-        If your text is longer than this, please put the text content in a .txt file in plain text format
-        and import using the import system.`,
-      );
+      setError(translate("screens.textcrobes.input_label", { max_text_length: MAX_TEXT_LENGTH }));
       event.preventDefault();
     }
   }
@@ -163,14 +161,14 @@ export default function Textcrobes({ proxy }: Props): ReactElement {
       </TopToolbar>
       {error && <div className={classes.error}>{error}</div>}
       <div onPaste={(event) => restrictToMaxCharacters(event)}>
-        <Conftainer label="Text to Transcrobe" id="container">
+        <Conftainer label={translate("screens.textcrobes.input_label")} id="container">
           <StyledEngineProvider injectFirst>
             <ThemeProvider theme={theme}>
               <MUIRichTextEditor
                 maxLength={MAX_TEXT_LENGTH}
                 controls={[]}
                 onChange={setEditorState}
-                label="Type something here..."
+                label={translate("screens.textcrobes.type_something_here")}
                 onSave={noop}
               />
             </ThemeProvider>

@@ -1,8 +1,9 @@
 import { AdminStore } from "../app/createStore";
 import { addDefinitions } from "../features/definition/definitionsSlice";
 import { addDictionaryProviders } from "../features/dictionary/dictionarySlice";
+import { getDefaultLanguageDictionaries } from "./libMethods";
 import { AbstractWorkerProxy } from "./proxies";
-import { DefinitionState, DefinitionType, STATUS, UserDefinitionType, UserDictionary } from "./types";
+import { DefinitionState, DefinitionType, STATUS, SystemLanguage, UserDefinitionType, UserDictionary } from "./types";
 
 const DATA_SOURCE = "dictionary";
 
@@ -70,7 +71,7 @@ export async function userDictionaryEntries(proxy: AbstractWorkerProxy, store: A
   return dictionaryEntries;
 }
 
-export async function refreshDictionaries(store: AdminStore, proxy: AbstractWorkerProxy) {
+export async function refreshDictionaries(store: AdminStore, proxy: AbstractWorkerProxy, fromLang: SystemLanguage) {
   const dictionaries = await proxy.sendMessagePromise<UserDictionary[]>({
     source: DATA_SOURCE,
     type: "getAllFromDB",
@@ -81,11 +82,13 @@ export async function refreshDictionaries(store: AdminStore, proxy: AbstractWork
       },
     },
   });
+
   store.dispatch(
-    addDictionaryProviders(
-      dictionaries.reduce((acc, dico) => {
+    addDictionaryProviders({
+      ...getDefaultLanguageDictionaries(fromLang),
+      ...dictionaries.reduce((acc, dico) => {
         return { ...acc, [dico.id]: dico.title };
       }, {} as Record<string, string>),
-    ),
+    }),
   );
 }

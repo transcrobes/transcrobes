@@ -10,6 +10,7 @@ import {
   TextField,
   TopToolbar,
   useGetList,
+  useTranslate,
 } from "react-admin";
 import HelpButton from "../components/HelpButton";
 import { ListEmpty } from "../components/ListEmpty";
@@ -30,6 +31,7 @@ function EmtpyList() {
     pagination: { page: 1, perPage: 1 },
     filter: { processing: PROCESSING.FINISHED },
   });
+  const translate = useTranslate();
   // WARNING, total is WRONG with our driver, so use data instead
   const disableCreate = isLoading || (data || []).length < 1;
   return (
@@ -42,8 +44,11 @@ function EmtpyList() {
           }}
           variant="body1"
         >
-          Goals are created from <Link to="/userlists">lists</Link>. You first need to{" "}
-          <Link to="/userlists">create a list</Link>, then return here.
+          {translate("resources.goals.no_goals_message_a")}
+          <Link to="/userlists">{translate("resources.goals.no_goals_message_b")}</Link>.{" "}
+          {translate("resources.goals.no_goals_message_c")}{" "}
+          <Link to="/userlists">{translate("resources.goals.no_goals_message_d")}</Link>
+          {translate("resources.goals.no_goals_message_e")}
         </Typography>
       )}
     </ListEmpty>
@@ -61,7 +66,7 @@ export default function GoalList() {
         <ReferenceField source="parent" reference="goals" sortable={false} link="show">
           <TextField source="title" />
         </ReferenceField>
-        <BooleanField source="status" label="Active" looseValue />
+        <BooleanField source="status" looseValue />
         <TextField source="priority" />
       </Datagrid>
     </List>

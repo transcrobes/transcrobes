@@ -17,7 +17,7 @@ export default function SynonymsText({ synonyms, showHr }: Props): ReactElement 
       hasSynonyms = true;
       synElements.push(
         <div key={"syn" + posSynonym.posTag}>
-          {toPosLabels(posSynonym.posTag, user?.fromLang || "zh-Hans")}: {posSynonym.values.join(", ")}
+          {toPosLabels(posSynonym.posTag, user.toLang)}: {posSynonym.values.join(", ")}
         </div>,
       );
     }

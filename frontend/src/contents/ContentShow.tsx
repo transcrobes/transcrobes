@@ -1,5 +1,14 @@
 import { useEffect, useState } from "react";
-import { BooleanField, FunctionField, ReferenceField, Show, SimpleShowLayout, TextField, useGetOne } from "react-admin";
+import {
+  BooleanField,
+  FunctionField,
+  ReferenceField,
+  Show,
+  SimpleShowLayout,
+  TextField,
+  useGetOne,
+  useTranslate,
+} from "react-admin";
 import { useParams } from "react-router-dom";
 import { HelpShowActions } from "../components/HelpShowActions";
 import { ProcessingField } from "../components/ProcessingField";
@@ -7,6 +16,7 @@ import { DocumentProgress } from "../components/DocumentProgress";
 import { Content, CONTENT_TYPE, DOCS_DOMAIN, ImportFirstSuccessStats, reverseEnum } from "../lib/types";
 import ActionButton from "./ActionButton";
 import CacheSwitch from "./CacheSwitch";
+import { useAppSelector } from "../app/hooks";
 
 const DATA_SOURCE = "ContentShow.tsx";
 
@@ -14,6 +24,8 @@ export default function ContentShow() {
   const { id = "" } = useParams();
   const { data, isLoading } = useGetOne<Content>("contents", { id });
   const [stats, setStats] = useState<ImportFirstSuccessStats | null>();
+  const fromLang = useAppSelector((state) => state.userData.user.fromLang);
+  const translate = useTranslate();
   useEffect(() => {
     if (window.componentsConfig.proxy.loaded) {
       (async function () {
@@ -22,7 +34,7 @@ export default function ContentShow() {
           await window.componentsConfig.proxy.sendMessagePromise<ImportFirstSuccessStats | null>({
             source: DATA_SOURCE,
             type: "getFirstSuccessStatsForImport",
-            value: { importId: data.theImport },
+            value: { importId: data.theImport, fromLang },
           });
         setStats(locStats);
       })();
@@ -34,22 +46,22 @@ export default function ContentShow() {
         <TextField source="id" />
         <TextField source="title" />
         <TextField source="description" />
-        <ReferenceField label="Source import" source="theImport" reference="imports" link="show">
+        <ReferenceField source="theImport" reference="imports" link="show">
           <TextField source="title" />
         </ReferenceField>
-        <ProcessingField label="Processing status" />
+        <ProcessingField label={translate("resources.contents.processingStatus")} />
         <FunctionField
           source="contentType"
           render={(record: Content) => reverseEnum(CONTENT_TYPE, record.contentType)}
         />
         <TextField source="author" />
         <TextField source="cover" />
-        <TextField label="Language" source="lang" />
+        <TextField source="lang" />
         <BooleanField source="shared" />
-        <ActionButton />
-        <CacheSwitch label="Offline?" />
+        <ActionButton label={translate("resources.contents.action")} />
+        <CacheSwitch label={translate("resources.contents.offline")} />
         <hr />
-        <h3>Progress</h3>
+        <h3>{translate("resources.contents.progress")}</h3>
         <DocumentProgress stats={stats} />
       </SimpleShowLayout>
     </Show>

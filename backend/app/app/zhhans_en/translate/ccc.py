@@ -6,9 +6,9 @@ import os
 import re
 
 from app.enrich.data import PersistenceProvider
-from app.enrich.etypes import EntryDefinition, Token
 from app.enrich.translate import Translator
-from app.models.migrated import ZhhansEnCCCLookup
+from app.etypes import EntryDefinition, Token
+from app.models.lookups import ZhhansEnCCCLookup
 from app.ndutils import lemma
 from app.zhhans import ZH_TB_POS_TO_SIMPLE_POS
 from sqlalchemy.ext.asyncio.session import AsyncSession
@@ -56,12 +56,10 @@ def convertPinyin(s):
 
 
 class ZHHANS_EN_CCCedictTranslator(PersistenceProvider, Translator):
-    SHORT_NAME = "ccc"
     model_type = ZhhansEnCCCLookup
 
     def __init__(self, config):
         super().__init__(config)
-        self.model_type = ZhhansEnCCCLookup
 
     # override PersistenceProvider
     def _load(self) -> WordDictionary:
@@ -102,7 +100,7 @@ class ZHHANS_EN_CCCedictTranslator(PersistenceProvider, Translator):
     # override Translator
     @staticmethod
     def name() -> str:
-        return "ccc"
+        return ZHHANS_EN_CCCedictTranslator.model_type.SHORT_NAME
 
     @staticmethod
     def _decode_phone(s: str) -> str:
@@ -155,14 +153,16 @@ class ZHHANS_EN_CCCedictTranslator(PersistenceProvider, Translator):
         logger.debug("Finishing looking up '%s' in cccedict", lemma(token))
         return std_format
 
-    async def get_standardised_defs(self, db: AsyncSession, token: Token) -> EntryDefinition:
+    async def get_standardised_defs(self, db: AsyncSession, token: Token, all_forms: bool = False) -> EntryDefinition:
         return self._def_from_entry(token, await self._get_def(db, lemma(token)))
 
-    # TODO: investigate git@github.com:wuliang/CedictPlus.git - it has POS. It also hasn't been updated in 6 years...
+    # TODO: investigate git@github.com:wuliang/CedictPlus.git - it has POS. It also hasn't been updated since 2012...
     # override Translator
-    async def get_standardised_fallback_defs(self, db: AsyncSession, token: Token) -> EntryDefinition:
+    async def get_standardised_fallback_defs(
+        self, db: AsyncSession, token: Token, all_forms: bool = False
+    ) -> EntryDefinition:
         # TODO: do something better than this!
-        return await self.get_standardised_defs(db, token)
+        return await self.get_standardised_defs(db, token, all_forms)
 
     # override Translator
     async def pos_synonyms(self, _db: AsyncSession, _token: Token):

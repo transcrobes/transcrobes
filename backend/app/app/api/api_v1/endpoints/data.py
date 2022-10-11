@@ -86,6 +86,11 @@ async def user_events(
     return {"status": "success"}
 
 
+@router.get("/langs", name="langs")
+async def available_languages():
+    return JSONResponse(list(settings.LANG_PAIRS.keys()))
+
+
 @router.get("/content/{resource_path:path}", name="serve_content")
 async def serve_content(  # pylint: disable=R0914  # FIXME: consider reducing
     resource_path: str,

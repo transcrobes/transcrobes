@@ -5,6 +5,24 @@ import { HslColor } from "react-colorful";
 import { CardDocument, CharacterDocument, DefinitionDocument, WordModelStatsDocument } from "../database/Schema";
 import type { ProgressCallbackMessage, ServiceWorkerProxy } from "./proxies";
 
+export const SUBS_DATA_SUFFIX = ".data.json";
+
+export const ONE_YEAR_IN_SECS = 365 * 24 * 60 * 60; // default is only a week
+export const WEBPUB_CACHE_NAME = "webpub-cache";
+export const PRECACHE_PUBLICATIONS = "PRECACHE_PUBLICATIONS";
+export const IS_DEV = import.meta.env.DEV;
+export const IS_EXT = import.meta.env.PLATFORM === "extension";
+export const DOCS_DOMAIN = import.meta.env.VITE_DOCS_DOMAIN || "localhost:1313";
+export const SITE_DOMAIN = import.meta.env.VITE_SITE_DOMAIN || "localhost";
+export const ADMIN_EMAILS = (import.meta.env.VITE_ADMIN_EMAILS || "admin@example.com")
+  .split(",")
+  .map((x: string) => x.trim());
+
+export const LOCALES = [
+  { locale: "en", name: "English" },
+  { locale: "zh-Hans", name: "中文" },
+];
+
 // eslint-disable-next-line @typescript-eslint/no-empty-function
 export function noop(): void {}
 
@@ -73,8 +91,8 @@ export const HasTextChildren = 16;
 export const API_PREFIX = "/api/v1";
 export const DEFAULT_RETRIES = 3;
 export const UNSURE_ATTRIBUTE = "data-unsure";
-export const EVENT_QUEUE_PROCESS_FREQ = 5000; //milliseconds
-export const PUSH_FILES_PROCESS_FREQ = 5000; //milliseconds
+export const EVENT_QUEUE_PROCESS_FREQ = IS_DEV ? 5000 : 30000; //milliseconds
+export const PUSH_FILES_PROCESS_FREQ = IS_DEV ? 5000 : 30000; //milliseconds
 export const ONSCREEN_DELAY_IS_CONSIDERED_READ = 5000; // milliseconds
 export const IDEAL_GLOSS_STRING_LENGTH = 5; // pretty random but https://arxiv.org/pdf/1208.6109.pdf
 export const POPOVER_MIN_LOOKED_AT_EVENT_DURATION = 1500; // milliseconds
@@ -113,8 +131,14 @@ export type PublicationConfig = {
   swrUrls?: string[];
 };
 
-export type KnownLanguage = "en" | "zh-Hans";
-export type InputLanguage = "zh-Hans";
+export const SYSTEM_LANG_TO_LOCALE = {
+  "zh-Hans": "zh-CN",
+  en: "en-GB",
+};
+
+export type SystemLanguage = "en" | "zh-Hans";
+export type KnownLanguage = SystemLanguage;
+export type InputLanguage = SystemLanguage;
 export type CornerPosition = "none" | "top-left" | "top-right" | "bottom-left" | "bottom-right";
 
 const SIMPLE_POS_VALUES = ["ADV", "OTHER", "CONJ", "DET", "NOUN", "VERB", "PREP", "PRON", "ADJ", "MODAL"] as const;
@@ -128,7 +152,53 @@ export function isSimplePOS(value: string): value is SimplePosType {
   return value in SIMPLE_POS_VALUES_OBJ;
 }
 
-const TREEBANK_POS_VALUES = [
+const EN_TREEBANK_POS_VALUES = [
+  "PU",
+  "ADD",
+  "AFX",
+  "GW",
+  "HYPH",
+  "NFP",
+  "XX",
+  "CC",
+  "CD",
+  "DT",
+  "EX",
+  "FW",
+  "IN",
+  "JJ",
+  "JJR",
+  "JJS",
+  "LS",
+  "MD",
+  "NN",
+  "NNS",
+  "NNP",
+  "NNPS",
+  "PDT",
+  "POS",
+  "PRP",
+  "PRP$",
+  "RB",
+  "RBR",
+  "RBS",
+  "RP",
+  "SYM",
+  "TO",
+  "UH",
+  "VB",
+  "VBD",
+  "VBG",
+  "VBN",
+  "VBP",
+  "VBZ",
+  "WDT",
+  "WP",
+  "WP$",
+  "WRB",
+] as const;
+
+const ZH_TREEBANK_POS_VALUES = [
   "AD",
   "AS",
   "BA",
@@ -164,20 +234,77 @@ const TREEBANK_POS_VALUES = [
   "VV",
   "URL",
 ] as const;
-const TREEBANK_POS_VALUES_OBJ = TREEBANK_POS_VALUES.reduce(
+const EN_TREEBANK_POS_VALUES_OBJ = EN_TREEBANK_POS_VALUES.reduce(
   (acc, next) => ({ ...acc, [next]: null }),
   {} as Record<string, null>,
 );
-export type TreebankPosType = typeof TREEBANK_POS_VALUES[number];
+const ZH_TREEBANK_POS_VALUES_OBJ = ZH_TREEBANK_POS_VALUES.reduce(
+  (acc, next) => ({ ...acc, [next]: null }),
+  {} as Record<string, null>,
+);
+export type EnTreebankPosType = typeof EN_TREEBANK_POS_VALUES[number];
+export type ZhTreebankPosType = typeof ZH_TREEBANK_POS_VALUES[number];
 
-export function isTreebankPOS(value: string): value is TreebankPosType {
-  return value in TREEBANK_POS_VALUES_OBJ;
+export type AnyPosType = EnTreebankPosType | ZhTreebankPosType | SimplePosType;
+export type AnyTreebankPosType = EnTreebankPosType | ZhTreebankPosType;
+
+export function isEnTreebankPOS(value: string): value is EnTreebankPosType {
+  return value in EN_TREEBANK_POS_VALUES_OBJ;
+}
+export function isZhTreebankPOS(value: string): value is ZhTreebankPosType {
+  return value in ZH_TREEBANK_POS_VALUES_OBJ;
 }
 export type WordOrdering = "Natural" | "WCPM" | "Personal";
 
 export const USER_DEFINITION_SOUND_SEPARATOR = " ";
 
-export const ZH_TB_POS_TO_SIMPLE_POS: { [key in TreebankPosType]: SimplePosType } = {
+export const EN_TB_POS_TO_SIMPLE_POS: { [key in EnTreebankPosType]: SimplePosType } = {
+  PU: "OTHER", // punctuation
+  ADD: "OTHER", // ???
+  AFX: "OTHER", // affix
+  HYPH: "OTHER", // ???
+  GW: "OTHER", // "goes with"???
+  NFP: "OTHER", // ???
+  XX: "OTHER", // absolutely no idea what this is
+  CC: "CONJ", // Coordinating conjunction
+  CD: "DET", // Cardinal number
+  DT: "DET", // Determiner
+  EX: "OTHER", // Existential _there_
+  FW: "OTHER", // Foreign word
+  IN: "PREP", // Preposition or subordinating conjunction
+  JJ: "ADJ", // Adjective
+  JJR: "ADJ", // Adjective, comparative
+  JJS: "ADJ", // Adjective, superlative
+  LS: "OTHER", // List item marker
+  MD: "OTHER", // Modal
+  NN: "NOUN", // Noun, singular or mass
+  NNS: "NOUN", // Noun, plural
+  NNP: "NOUN", // Proper noun, singular
+  NNPS: "NOUN", // Proper noun, plural
+  PDT: "DET", // Predeterminer
+  POS: "OTHER", // Possessive ending
+  PRP: "PRON", // Personal pronoun
+  PRP$: "PRON", // Possessive pronoun
+  RB: "ADV", // Adverb
+  RBR: "ADV", // Adverb, comparitive
+  RBS: "ADV", // Adverb, superlative
+  RP: "OTHER", // Particle
+  SYM: "OTHER", // Symbol
+  TO: "PREP", // _to_
+  UH: "OTHER", // Interjection
+  VB: "VERB", // Verb, base form
+  VBD: "VERB", // Verb, past tense
+  VBG: "VERB", // Verb, gerund or present participle
+  VBN: "VERB", // Verb, past participle
+  VBP: "VERB", // Verb, non-3rd person singular present
+  VBZ: "VERB", // Verb, 3rd person singular present
+  WDT: "DET", // Wh-determiner
+  WP: "PRON", // Wh-pronoun
+  WP$: "PRON", // Possessive wh-pronoun
+  WRB: "ADV", // Wh-adverb
+};
+
+export const ZH_TB_POS_TO_SIMPLE_POS: { [key in ZhTreebankPosType]: SimplePosType } = {
   // see src/app/zhhans/__init__.py for more details, if that is updated, then this should be too
   // TODO: consider getting/updating this via the API, to guarantee python and js always agree
   AD: "ADV", // adverb
@@ -246,17 +373,168 @@ export const SIMPLE_POS_ENGLISH_NAMES: { [key in SimplePosType]: string } = {
   OTHER: "Other",
 };
 
-export const ZHHANS_EN_DICT_PROVIDERS = {
+export const SIMPLE_POS_CHINESE_NAMES: { [key in SimplePosType]: string } = {
+  NOUN: "名词",
+  VERB: "动词",
+  ADJ: "形容词",
+  ADV: "副词",
+  PREP: "介词",
+  PRON: "代词",
+  CONJ: "连词",
+  DET: "限定词",
+  MODAL: "情态词",
+  OTHER: "其他",
+};
+
+export const BASE_DICT_PROVIDERS = {
   mst: "Bing",
-  ccc: "CC Cedict",
   fbk: "Bing fallback",
 };
-export type ZHHansEnDictProvider = keyof typeof ZHHANS_EN_DICT_PROVIDERS;
-
-export type DictProvider = ZHHansEnDictProvider;
+export const EN_ZHHANS_DICT_PROVIDERS = {
+  ...BASE_DICT_PROVIDERS,
+};
+export const ZHHANS_EN_DICT_PROVIDERS = {
+  ...BASE_DICT_PROVIDERS,
+  ccc: "CC Cedict",
+};
+// unused
+// export type ZHHansEnDictProvider = keyof typeof ZHHANS_EN_DICT_PROVIDERS;
+// export type EnZHHansDictProvider = keyof typeof EN_ZHHANS_DICT_PROVIDERS;
+// export type DictProvider = ZHHansEnDictProvider | EnZHHansDictProvider;
 
 // FIXME: This shouldn't be here...
-export const ZH_TB_POS_LABELS: { [key in TreebankPosType]: string } = {
+export const EN_TB_POS_LABELS_ZH: { [key in EnTreebankPosType]: string } = {
+  PU: "标点",
+  ADD: "其他",
+  AFX: "词缀",
+  HYPH: "连字符",
+  GW: "随之而来",
+  XX: "其他",
+  NFP: "其他",
+  CC: "协调连词",
+  CD: "基数",
+  DT: "决定者",
+  EX: "存在的_there_",
+  FW: "外来词",
+  IN: "介词或从属连词",
+  JJ: "形容词",
+  JJR: "形容词,比较级",
+  JJS: "形容词,最高级",
+  LS: "列表项标记",
+  MD: "模态",
+  NN: "名词,单数或质量",
+  NNS: "名词,复数",
+  NNP: "专有名词,单数",
+  NNPS: "专有名词,复数",
+  PDT: "预定者",
+  POS: "所有格结尾",
+  PRP: "人称代词",
+  PRP$: "所有格代词",
+  RB: "副词",
+  RBR: "副词,比较",
+  RBS: "副词,最高级",
+  RP: "粒子",
+  SYM: "符号",
+  TO: "_to_",
+  UH: "欹",
+  VB: "动词,基本形式",
+  VBD: "动词,过去时",
+  VBG: "动词、动名词或现在分词",
+  VBN: "动词,过去分词",
+  VBP: "动词,非第三人称单数现在时",
+  VBZ: "动词,第三人称单数现在时",
+  WDT: "Wh-确定器",
+  WP: "Wh-代词",
+  WP$: "所有格 wh-代词",
+  WRB: "Wh-副词",
+};
+
+export const EN_TB_POS_LABELS: { [key in EnTreebankPosType]: string } = {
+  PU: "Punctuation",
+  ADD: "Other",
+  AFX: "Affix",
+  GW: "Goes with",
+  XX: "Other",
+  HYPH: "hyphen",
+  NFP: "Other",
+  CC: "Coordinating conjunction",
+  CD: "Cardinal number",
+  DT: "Determiner",
+  EX: "Existential _there_",
+  FW: "Foreign word",
+  IN: "Preposition or subordinating conjunction",
+  JJ: "Adjective",
+  JJR: "Adjective, comparative",
+  JJS: "Adjective, superlative",
+  LS: "List item marker",
+  MD: "Modal",
+  NN: "Noun, singular or mass",
+  NNS: "Noun, plural",
+  NNP: "Proper noun, singular",
+  NNPS: "Proper noun, plural",
+  PDT: "Predeterminer",
+  POS: "Possessive ending",
+  PRP: "Personal pronoun",
+  PRP$: "Possessive pronoun",
+  RB: "Adverb",
+  RBR: "Adverb, comparitive",
+  RBS: "Adverb, superlative",
+  RP: "Particle",
+  SYM: "Symbol",
+  TO: "_to_",
+  UH: "Interjection",
+  VB: "Verb, base form",
+  VBD: "Verb, past tense",
+  VBG: "Verb, gerund or present participle",
+  VBN: "Verb, past participle",
+  VBP: "Verb, non-3rd person singular present",
+  VBZ: "Verb, 3rd person singular present",
+  WDT: "Wh-determiner",
+  WP: "Wh-pronoun",
+  WP$: "Possessive wh-pronoun",
+  WRB: "Wh-adverb",
+};
+
+// FIXME: This shouldn't be here...
+export const ZH_TB_POS_LABELS_ZH: { [key in ZhTreebankPosType]: string } = {
+  AD: "副词", // adverb
+  AS: "方面标记", // aspect marker
+  BA: "把", // in ba-construction ,
+  CC: "并列连词", // coordinating conjunction
+  CD: "基数", // cardinal number
+  CS: "从属连词", // subordinating conjunction
+  DEC: "的-关系从句", // in a relative-clause
+  DEG: "的-联想", // associative
+  DER: "的-动词-的-结果", // in V-de const. and V-de-R
+  DEV: "的-动词前", // before VP
+  DT: "限定词", // determiner
+  ETC: "“等”标记", // for words , ,
+  FW: "外来词", // foreign words
+  IJ: "欹", // interjection
+  JJ: "形容词", // other noun-modifier ,
+  LB: "长的“被”", // in long bei-const ,
+  LC: "定位器", // localizer
+  M: "量词", // measure word
+  MSP: "其他词粒子", // other particle
+  NN: "普通名词", // common noun
+  NR: "专有名词", // proper noun
+  NT: "时间名词", // temporal noun
+  OD: "序数词", // ordinal number
+  ON: "象声词", // onomatopoeia ,
+  P: "介词（不包括“和”）", // preposition excl. and
+  PN: "代词", // pronoun
+  PU: "标点", // punctuation
+  SB: "短的“被”", // in short bei-const ,
+  SP: "词尾粒子", // sentence-final particle
+  VA: "表语形容词", // predicative adjective
+  VC: "系动词",
+  VE: "“有”作为主要动词", // as the main verb
+  VV: "其他动词", // other verb
+  // Others added since then
+  URL: "网址",
+};
+
+export const ZH_TB_POS_LABELS_EN: { [key in ZhTreebankPosType]: string } = {
   AD: "Adverb", // adverb
   AS: "Aspect Marker", // aspect marker
   BA: "BA-construction", // in ba-construction ,
@@ -333,8 +611,8 @@ export interface ReaderState {
   id: string;
   readerType: ReaderType;
   fontColour: HslColor | null;
-  fontFamily: FontFamily;
-  fontFamilyChinese: FontFamilyChinese;
+  fontFamilyGloss: FontFamily | FontFamilyChinese;
+  fontFamilyMain: FontFamily | FontFamilyChinese;
   fontSize: number;
   glossFontSize: number;
   glossFontColour: HslColor | null;
@@ -347,6 +625,10 @@ export interface ReaderState {
   clickable: boolean;
   translationProviderOrder: Record<string, number>;
   strictProviderOrdering: boolean;
+}
+
+export interface LanguagedReaderState extends ReaderState {
+  scriptioContinuo: boolean;
 }
 
 export interface BookReaderState extends ReaderState {
@@ -364,8 +646,8 @@ export interface BookReaderState extends ReaderState {
 export const DEFAULT_READER_CONFIG_STATE: ReaderState = {
   id: "simpleReader",
   readerType: "simpleReader",
-  fontFamily: "Original",
-  fontFamilyChinese: "notasanslight",
+  fontFamilyGloss: "Original",
+  fontFamilyMain: "Original",
   fontSize: 1,
   fontColour: null,
   glossFontSize: 0.9,
@@ -377,7 +659,7 @@ export const DEFAULT_READER_CONFIG_STATE: ReaderState = {
   collectRecents: true,
   mouseover: true,
   clickable: true,
-  translationProviderOrder: Object.keys(ZHHANS_EN_DICT_PROVIDERS).reduce(
+  translationProviderOrder: Object.keys(BASE_DICT_PROVIDERS).reduce(
     (acc, next, ind) => ({ ...acc, [next]: ind }),
     {} as Record<string, number>,
   ),
@@ -490,6 +772,7 @@ export interface UserDetails {
   translationProviders: string[];
   username: string;
   fromLang: InputLanguage;
+  toLang: InputLanguage;
 }
 
 export interface UserState {
@@ -510,6 +793,7 @@ export const DEFAULT_USER: UserDetails = {
   translationProviders: [],
   username: "",
   fromLang: "zh-Hans",
+  toLang: "en",
 };
 
 export const INITIAL_USERSTATE: UserState = {
@@ -532,19 +816,6 @@ export enum PROCESSING {
   FINISHED = 3,
   ERROR = 4,
 }
-
-export const SUBS_DATA_SUFFIX = ".data.json";
-
-export const ONE_YEAR_IN_SECS = 365 * 24 * 60 * 60; // default is only a week
-export const WEBPUB_CACHE_NAME = "webpub-cache";
-export const PRECACHE_PUBLICATIONS = "PRECACHE_PUBLICATIONS";
-export const IS_DEV = import.meta.env.DEV;
-export const IS_EXT = import.meta.env.PLATFORM === "extension";
-export const DOCS_DOMAIN = import.meta.env.VITE_DOCS_DOMAIN || "localhost:1313";
-export const SITE_DOMAIN = import.meta.env.VITE_SITE_DOMAIN || "localhost";
-export const ADMIN_EMAILS = (import.meta.env.VITE_ADMIN_EMAILS || "admin@example.com")
-  .split(",")
-  .map((x: string) => x.trim());
 
 // each logging line will be prepended with the service worker version
 function dolog(
@@ -782,7 +1053,7 @@ export const EMPTY_CARD: CardType = {
 };
 
 type PosValuesType = {
-  posTag: SimplePosType | TreebankPosType;
+  posTag: AnyPosType;
   values: string[];
 };
 
@@ -972,7 +1243,7 @@ export type SerialisableStringSet = {
 
 export type SerialisableDayCardWords = {
   knownCardWordGraphs: SerialisableStringSet;
-  knownCardWordChars: SerialisableStringSet;
+  knownCardWordChars?: SerialisableStringSet;
   allCardWordGraphs: SerialisableStringSet;
   knownWordIdsCounter: PythonCounter;
 };
@@ -986,6 +1257,7 @@ export type AnalysisAccuracy = {
 };
 
 export interface CalculatedContentStats {
+  fromLang: InputLanguage;
   knownChars: number;
   chars: number;
   knownWords: number;
@@ -1013,17 +1285,28 @@ export type GradesType = {
 
 export type TokenType = {
   /**
-   * Token lemma, currently comes from CoreNLP "originalToken field".
+   * Token lemma, currently comes from CoreNLP "lemma" field.
    */
   l: string; // lemma
+  /**
+   * Token word, currently comes from CoreNLP "originalText" field.
+   */
+  w?: string; // word
   /**
    * Token word id (bingapilookup.id)
    */
   id?: string;
   /**
+   * Token word other ids (bingapilookup.id)
+   * These are other words from the lookup that (currently) differ in case from the original form in the source text
+   * or import.
+   * FIXME: this should also have alternative spellings!!!
+   */
+  oids?: string[];
+  /**
    * CoreNLP pos, if absent then the word can't have a meaning == punctuation
    */
-  pos?: TreebankPosType;
+  pos?: AnyTreebankPosType;
   /**
    * "Best Guess" at what the word means in context, in the L1 of the learner
    */
@@ -1036,6 +1319,16 @@ export type TokenType = {
    * User Synonyms, server-side calculated synonyms that the learner already knows
    */
   us?: string[];
+  /**
+   * Before, characters that come before the word in the sentence
+   * This is particularly for spaces
+   */
+  b?: string;
+  /**
+   * After, characters that come before the word in the sentence
+   * This is particularly for spaces
+   */
+  a?: string;
   /**
    * CSS style, TODO: is this horrible???, allow adding style kvs in the data...
    */
@@ -1102,7 +1395,7 @@ export type PosSentence = {
 };
 
 export type PosSentences = {
-  [key in TreebankPosType]?: PosSentence[];
+  [key in AnyTreebankPosType]?: PosSentence[];
 };
 
 export type RecentSentencesType = {
@@ -1152,6 +1445,7 @@ export type GraderConfig = {
   itemOrdering: WordOrdering;
   itemsPerPage: number;
   wordLists: SelectableListElementType[];
+  toLang: SystemLanguage;
 };
 
 export type VocabReview = {

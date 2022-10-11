@@ -5,7 +5,7 @@ import { ComponentsConfig } from "./lib/complexTypes";
 import { useAppSelector } from "./app/hooks";
 import { getUserDexie, isInitialisedAsync } from "./database/authdb";
 import HelpButton from "./components/HelpButton";
-import { TopToolbar } from "react-admin";
+import { TopToolbar, useTranslate } from "react-admin";
 import { ListProgress } from "./stats/ListProgress";
 import { DOCS_DOMAIN } from "./lib/types";
 
@@ -15,6 +15,7 @@ interface Props {
 }
 export default function Dashboard({ config, inited }: Props): ReactElement {
   const username = useAppSelector((state) => state.userData.username);
+  const translate = useTranslate();
   useEffect(() => {
     (async () => {
       if (!username) {
@@ -32,26 +33,29 @@ export default function Dashboard({ config, inited }: Props): ReactElement {
     <>
       <TopToolbar
         sx={{
-          justifyContent: "space-between",
+          justifyContent: "end",
           alignItems: "center",
+          maxHeight: "64px",
         }}
       >
-        <CardHeader title="Welcome to Transcrobes: Learn a language doing something you love" />
         <HelpButton url={helpUrl} />
       </TopToolbar>
+      <CardHeader
+        title={`${translate("pos.dashboard.welcome.title")} ${translate("pos.dashboard.welcome.subtitle")}`}
+      />
       <Box sx={{ marginLeft: "1em" }}>
         <Typography paragraph={true}>
-          Explore the app and get help for each page using the dedicated <HelpButton url={helpUrl} /> button available
-          on every screen.
+          {translate("pos.dashboard.welcome.message_a")} <HelpButton url={helpUrl} />{" "}
+          {translate("pos.dashboard.welcome.message_b")}
         </Typography>
       </Box>
 
       <Card sx={{ marginTop: "1em" }}>
-        <CardHeader title="Goals Progress" />
+        <CardHeader title={translate("pos.dashboard.goals.title")} />
         <GoalsWidget config={config} inited={inited} />
       </Card>
       <Card sx={{ marginTop: "1em" }}>
-        <CardHeader title="Known words and characters (totals)" />
+        <CardHeader title={translate("pos.dashboard.word_chars_progress.title")} />
         <ListProgress yIsNumber={true} nbPeriods={6} periodType="month" />
       </Card>
     </>

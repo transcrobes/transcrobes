@@ -1,7 +1,7 @@
 import { styled } from "@mui/material";
 import { WithStylesProps } from "react-jss";
 import { hslToHex } from "../lib/funclib";
-import { ReaderState, SEGMENTED_BASE_PADDING, UNSURE_ATTRIBUTE } from "../lib/types";
+import { LanguagedReaderState, ReaderState, SEGMENTED_BASE_PADDING, UNSURE_ATTRIBUTE } from "../lib/types";
 import CheckIcon from "@mui/icons-material/Check";
 import SentimentSatisfiedIcon from "@mui/icons-material/SentimentSatisfied";
 import SentimentVeryDissatisfiedIcon from "@mui/icons-material/SentimentVeryDissatisfied";
@@ -37,12 +37,12 @@ export const ETFStyles = {
     // cursor: (props: ReaderState) => (props.clickable ? "pointer" : "auto"),
     cursor: "pointer",
     textIndent: 0,
-    paddingLeft: (props: ReaderState) =>
-      props.segmentation ? (SEGMENTED_BASE_PADDING * props.fontSize * 100) / 100 + "px" : "",
+    paddingLeft: (props: LanguagedReaderState) =>
+      props.scriptioContinuo && props.segmentation ? (SEGMENTED_BASE_PADDING * props.fontSize * 100) / 100 + "px" : "",
   },
   word: {
     color: (props: ReaderState) => (props.fontColour ? [hslToHex(props.fontColour), "!important"] : "inherit"),
-    fontFamily: (props: ReaderState) => props.fontFamilyChinese || "inherit",
+    fontFamily: (props: ReaderState) => props.fontFamilyMain || "inherit",
     fontSize: (props: ReaderState) => `${props.fontSize * 100}%`,
   },
   gloss: {
@@ -53,7 +53,7 @@ export const ETFStyles = {
     color: (props: ReaderState) =>
       props.glossFontColour ? [hslToHex(props.glossFontColour), "!important"] : "inherit",
     fontFamily: (props: ReaderState) =>
-      props.fontFamily && props.fontFamily !== "Original" ? props.fontFamily : "inherit",
+      props.fontFamilyGloss && props.fontFamilyGloss !== "Original" ? props.fontFamilyGloss : "inherit",
     fontSize: (props: ReaderState) => `${props.glossFontSize * props.fontSize * 100}%`,
     verticalAlign: (props: ReaderState) => `${(100 - props.glossFontSize * 100) / 2}%`,
   },
@@ -64,9 +64,18 @@ export interface ETFStylesProps extends WithStylesProps<ETFStylesType> {
   children: React.ReactNode;
 }
 
-const hard = { id: GRADE.HARD.toString(), content: "Add as known (poorly)", icon: <SentimentSatisfiedIcon /> };
-const unknown = { id: GRADE.UNKNOWN.toString(), content: "Plan to learn", icon: <SentimentVeryDissatisfiedIcon /> };
-const good = { id: GRADE.GOOD.toString(), content: "Add as known", icon: <SentimentVerySatisfiedIcon /> };
-const known = { id: GRADE.KNOWN.toString(), content: "Add as known (no revision)", icon: <CheckIcon /> };
+const hard = { id: GRADE.HARD.toString(), content: "widgets.grades.hard", icon: <SentimentSatisfiedIcon /> };
+const unknown = {
+  id: GRADE.UNKNOWN.toString(),
+  content: "widgets.grades.unknown",
+  icon: <SentimentVeryDissatisfiedIcon />,
+};
+const good = { id: GRADE.GOOD.toString(), content: "widgets.grades.good", icon: <SentimentVerySatisfiedIcon /> };
+const known = { id: GRADE.KNOWN.toString(), content: "widgets.grades.known", icon: <CheckIcon /> };
+// const hard = { id: GRADE.HARD.toString(), content: "Add as known (poorly)", icon: <SentimentSatisfiedIcon /> };
+// const unknown = { id: GRADE.UNKNOWN.toString(), content: "Plan to learn", icon: <SentimentVeryDissatisfiedIcon /> };
+// const good = { id: GRADE.GOOD.toString(), content: "Add as known", icon: <SentimentVerySatisfiedIcon /> };
+// const known = { id: GRADE.KNOWN.toString(), content: "Add as known (no revision)", icon: <CheckIcon /> };
+
 export const GRADES: GradesType[] = [hard, unknown, good, known];
 export const BASIC_GRADES: GradesType[] = [good, unknown];

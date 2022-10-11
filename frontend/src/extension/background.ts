@@ -66,8 +66,8 @@ async function loadDb(callback: any, message: EventData) {
     // sendResponse({source: message.source, type: message.type + "-progress", value: progress});
   };
   store.dispatch(throttledRefreshToken() as any);
-
-  const dbConfig = { url: new URL(store.getState().userData.baseUrl), username: store.getState().userData.username };
+  const userData = store.getState().userData;
+  const dbConfig = { url: new URL(userData.baseUrl), username: userData.username, messagesLang: userData.user.toLang };
   const dbHandle = await getDb(dbConfig, progressCallback);
   db = dbHandle;
   self.tcb = db;

@@ -3,7 +3,7 @@ import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import { ReactElement, useState } from "react";
-import { Title, TopToolbar, useTheme, useTranslate } from "react-admin";
+import { Title, TopToolbar, useLocaleState, useTheme, useTranslate } from "react-admin";
 import { makeStyles } from "tss-react/mui";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
 import HelpButton from "../components/HelpButton";
@@ -31,6 +31,7 @@ interface RefreshCacheButtonProps {
 
 function RefreshCacheButton({ onCacheEmptied }: RefreshCacheButtonProps): ReactElement {
   const { classes } = useStyles();
+  const translate = useTranslate();
 
   function handleClick() {
     // WEBPUB_CACHE_NAME
@@ -47,7 +48,7 @@ function RefreshCacheButton({ onCacheEmptied }: RefreshCacheButtonProps): ReactE
   }
   return (
     <Button variant="contained" className={classes.button} color={"primary"} onClick={handleClick}>
-      Refresh Caches (instant)
+      {translate("screens.system.refresh_caches")}
     </Button>
   );
 }
@@ -57,6 +58,7 @@ interface ReloadDBButtonProps {
 }
 function ReloadDBButton({ proxy }: ReloadDBButtonProps): ReactElement {
   const { classes } = useStyles();
+  const translate = useTranslate();
 
   async function handleClick() {
     const username = useAppSelector((state) => state.userData.username);
@@ -69,7 +71,7 @@ function ReloadDBButton({ proxy }: ReloadDBButtonProps): ReactElement {
   }
   return (
     <Button variant="contained" className={classes.button} color={"primary"} onClick={handleClick}>
-      Reload DB (almost instant)
+      {translate("screens.system.reload_db")}
     </Button>
   );
 }
@@ -81,6 +83,7 @@ interface ReinstallDBButtonProps {
 
 function ReinstallDBButton({ beforeReinstall, onDBDeleted }: ReinstallDBButtonProps): ReactElement {
   const { classes } = useStyles();
+  const translate = useTranslate();
   const username = useAppSelector((state) => state.userData.username);
 
   async function handleClick() {
@@ -105,7 +108,7 @@ function ReinstallDBButton({ beforeReinstall, onDBDeleted }: ReinstallDBButtonPr
   }
   return (
     <Button variant="contained" className={classes.button} color={"primary"} onClick={handleClick}>
-      Refresh DB from server (up to 10 mins)
+      {translate("screens.system.refresh_db_from_server")}
     </Button>
   );
 }
@@ -115,16 +118,14 @@ interface Props {
 }
 
 function System({ proxy }: Props): ReactElement {
-  const translate = useTranslate();
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const { classes } = useStyles();
 
   const helpUrl = `//${DOCS_DOMAIN}/page/software/configure/system/`;
 
-  // const locale = useLocale();
-  // const setLocale = useSetLocale();
-
+  const [locale, setLocale] = useLocaleState();
+  const translate = useTranslate();
   const themeName = useAppSelector((state) => state.theme);
   const user = useAppSelector((state) => state.userData);
 
@@ -144,11 +145,11 @@ function System({ proxy }: Props): ReactElement {
       <TopToolbar className={classes.toolbar}>
         <HelpButton url={helpUrl} />
       </TopToolbar>
-      <CardHeader title="Quick-fix actions" />
+      <CardHeader title={translate("screens.system.quickfix_actions")} />
       <Card>
         <Title title={translate("pos.system")} />
         <CardContent>
-          <Loading position="relative" show={loading} message="Deleting the databases" />
+          <Loading position="relative" show={loading} message={translate("screens.system.deleting_database")} />
           <div>
             <RefreshCacheButton onCacheEmptied={(message) => setMessage(message)} />
           </div>
@@ -167,7 +168,7 @@ function System({ proxy }: Props): ReactElement {
         </CardContent>
       </Card>
 
-      <CardHeader title="User preferences" />
+      <CardHeader title={translate("screens.system.user_preferences")} />
       <Card>
         <Title title={translate("pos.configuration")} />
         <CardContent>
@@ -180,7 +181,7 @@ function System({ proxy }: Props): ReactElement {
                 }
               />
             }
-            label="Dark Mode"
+            label={translate("screens.system.dark_mode")}
           />
         </CardContent>
         {user.user.isAdmin && (
@@ -198,26 +199,25 @@ function System({ proxy }: Props): ReactElement {
             />
           </CardContent>
         )}
-        {/* no translations for now
-            <CardContent>
-                <div className={classes.label}>{translate('pos.language')}</div>
-                <Button
-                    variant="contained"
-                    className={classes.button}
-                    color={locale === 'en' ? 'primary' : 'default'}
-                    onClick={() => setLocale('en')}
-                >
-                    en
-                </Button>
-                <Button
-                    variant="contained"
-                    className={classes.button}
-                    color={locale === 'fr' ? 'primary' : 'default'}
-                    onClick={() => setLocale('fr')}
-                >
-                    fr
-                </Button>
-            </CardContent> */}
+        <CardContent>
+          <div className={classes.label}>{translate("pos.language")}</div>
+          <Button
+            variant="contained"
+            className={classes.button}
+            color={locale === "en" ? "info" : "primary"}
+            onClick={() => setLocale("en")}
+          >
+            English
+          </Button>
+          <Button
+            variant="contained"
+            className={classes.button}
+            color={locale === "zh-Hans" ? "info" : "primary"}
+            onClick={() => setLocale("zh-Hans")}
+          >
+            中文
+          </Button>
+        </CardContent>
       </Card>
     </div>
   );

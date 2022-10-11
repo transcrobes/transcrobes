@@ -23,6 +23,7 @@ function userFromApiResult(result: any, username: string): UserDetails {
     trackingEndpoint: token_data.tracking_endpoint,
     translationProviders: token_data.translation_providers,
     fromLang: token_data.lang_pair.split(":")[0],
+    toLang: token_data.lang_pair.split(":")[1],
   };
 }
 

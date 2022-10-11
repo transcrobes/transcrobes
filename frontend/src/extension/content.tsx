@@ -3,6 +3,7 @@ import { createComponentVNode, render } from "inferno";
 import { Provider as InfernoProvider } from "inferno-redux";
 import jss from "jss";
 import preset from "jss-preset-default";
+import { I18nContextProvider } from "react-admin";
 import { createRoot } from "react-dom/client";
 import { Provider } from "react-redux";
 import { AdminStore, store } from "../app/createStore";
@@ -19,8 +20,8 @@ import { setLoading, setTokenDetails } from "../features/ui/uiSlice";
 import { setUser } from "../features/user/userSlice";
 import { popupDarkTheme, popupLightTheme } from "../layout/themes";
 import { ensureDefinitionsLoaded, refreshDictionaries } from "../lib/dictionary";
-import { missingWordIdsFromModels, toEnrich } from "../lib/funclib";
-import { enrichChildren } from "../lib/libMethods";
+import { isScriptioContinuo, missingWordIdsFromModels, toEnrich } from "../lib/funclib";
+import { enrichChildren, getI18nProvider } from "../lib/libMethods";
 import { AbstractWorkerProxy, BackgroundWorkerProxy, setPlatformHelper } from "../lib/proxies";
 import { observerFunc } from "../lib/stats";
 import {
@@ -59,6 +60,7 @@ const models: KeyedModels = {};
 let readerConfig: ExtensionReaderState;
 const getReaderConfig = () => readerConfig;
 const getKnownCards = () => store.getState().knownCards;
+const fromLang = () => store.getState().userData.user.fromLang;
 const knownWords: SerialisableStringSet = {};
 const knownChars: SerialisableStringSet = {};
 
@@ -83,17 +85,19 @@ async function ensureAllLoaded(platformHelper: AbstractWorkerProxy, store: Admin
   });
   store.dispatch(setCardWordsState(value));
   for (const word of Object.keys(value.knownCardWordGraphs)) {
-    if (toEnrich(word)) {
+    if (toEnrich(word, fromLang())) {
       knownWords[word] = null;
     }
-    for (const char of word) {
-      if (toEnrich(char)) {
-        knownChars[char] = null;
+    if (fromLang() === "zh-Hans") {
+      for (const char of word) {
+        if (toEnrich(char, fromLang())) {
+          knownChars[char] = null;
+        }
       }
     }
   }
 
-  await refreshDictionaries(store, platformHelper);
+  await refreshDictionaries(store, platformHelper, fromLang());
 }
 
 proxy.sendMessagePromise<UserState>({ source: DATA_SOURCE, type: "getUser", value: "" }).then((userData) => {
@@ -107,26 +111,34 @@ proxy.sendMessagePromise<UserState>({ source: DATA_SOURCE, type: "getUser", valu
   // FIXME: it is DANGEROUS to use this here, as the async thunks do get and set dexie!!!
   store.dispatch(setUser(userData));
 
+  // FIXME: this is a hack to get the user data into the i18n provider
+  const i18nProvider = getI18nProvider(userData.user.fromLang);
+
   proxy.asyncInit({ username: userData.username }).then(() => {
     ensureAllLoaded(proxy, store).then(() => {
       readerConfig = store.getState().extensionReader[id];
-      enrichChildren(document.body, transcroberObserver, userData.user.fromLang || "zh-Hans");
+      enrichChildren(document.body, transcroberObserver, userData.user.fromLang);
       document.addEventListener("click", () => {
         store.dispatch(setTokenDetails(undefined));
       });
 
       jss.setup(preset());
-      classes = jss.createStyleSheet(ETFStyles, { link: true }).attach().update(readerConfig).classes;
+      classes = jss
+        .createStyleSheet(ETFStyles, { link: true })
+        .attach()
+        .update({ ...readerConfig, scriptioContinuo: isScriptioContinuo(userData.user.fromLang) }).classes;
 
       createRoot(document.body.appendChild(document.createElement("div"))!).render(
         <Provider store={store}>
           <ThemeProvider theme={createTheme(readerConfig.themeName === "dark" ? popupDarkTheme : popupLightTheme)}>
-            <ScopedCssBaseline>
-              <TokenDetails readerConfig={readerConfig} />
-              <Mouseover readerConfig={readerConfig} />
-              {readerConfig.analysisPosition !== "none" && <ContentAnalysisBrocrobes />}
-              {userData.showResearchDetails && <ContentAnalysisAccuracyBrocrobes proxy={proxy} />}
-            </ScopedCssBaseline>
+            <I18nContextProvider value={i18nProvider}>
+              <ScopedCssBaseline>
+                <TokenDetails readerConfig={readerConfig} />
+                <Mouseover readerConfig={readerConfig} />
+                {readerConfig.analysisPosition !== "none" && <ContentAnalysisBrocrobes />}
+                {userData.showResearchDetails && <ContentAnalysisAccuracyBrocrobes proxy={proxy} />}
+              </ScopedCssBaseline>
+            </I18nContextProvider>
           </ThemeProvider>
         </Provider>,
       );
@@ -141,7 +153,6 @@ proxy.sendMessagePromise<UserState>({ source: DATA_SOURCE, type: "getUser", valu
 
 export function onEntryId(entries: IntersectionObserverEntry[]): void {
   if (entries.length === 0) return;
-  const fromLang = store.getState().userData.user.fromLang;
   const loading = store.getState().ui.loading;
 
   entries.forEach((change) => {
@@ -149,7 +160,7 @@ export function onEntryId(entries: IntersectionObserverEntry[]): void {
     if (!change.isIntersecting) return;
     if (element.dataset && element.dataset.tced) return;
     change.target.childNodes.forEach(async (item) => {
-      if (item.nodeType === 3 && item.nodeValue?.trim() && toEnrich(item.nodeValue, fromLang || "zh-Hans")) {
+      if (item.nodeType === 3 && item.nodeValue?.trim() && toEnrich(item.nodeValue, fromLang())) {
         const [data] = await proxy.sendMessagePromise<[ModelType, string]>({
           source: DATA_SOURCE,
           type: "enrichText",
@@ -167,6 +178,7 @@ export function onEntryId(entries: IntersectionObserverEntry[]): void {
               model: data,
               knownWords,
               knownChars,
+              fromLang: fromLang(),
             }),
           );
         }

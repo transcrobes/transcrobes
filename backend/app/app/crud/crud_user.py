@@ -21,6 +21,8 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
             full_name=obj_in.full_name,
             is_superuser=obj_in.is_superuser,
             is_verified=obj_in.is_verified,
+            from_lang=obj_in.from_lang,
+            to_lang=obj_in.to_lang,
         )
         db.add(db_obj)
         await db.commit()

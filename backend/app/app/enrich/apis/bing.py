@@ -46,21 +46,29 @@ class BingAPI(ABC):
         }
         # the max_timeout option is horribly named, it is the wait between attempts, not timeout at all...
         retry_options = ExponentialRetry(attempts=max_attempts, max_timeout=max_wait_between_attempts)
-        async with RetryClient(
-            raise_for_status=True,
-            retry_options=retry_options,
-            connector=aiohttp.TCPConnector(enable_cleanup_closed=True, force_close=True),
-        ) as client:
-            try:
-                async with client.post(
-                    f"{URL_SCHEME}{self._api_host}{path}",
-                    data=req_json.encode("utf-8"),
-                    params=params,
-                    headers=headers,
-                ) as response:
-                    text = await response.text()
-                    logger.debug("Received '%s' back from Bing", text[:100])
-                    return text
-            except aiohttp.client_exceptions.ClientConnectorError:
-                logger.error("Failure to send to Bing API: %s", content)
-                raise
+        conn_retries = 5
+        while True:
+            async with RetryClient(
+                raise_for_status=True,
+                retry_options=retry_options,
+                connector=aiohttp.TCPConnector(enable_cleanup_closed=True, force_close=True),
+            ) as client:
+                try:
+                    logger.info(f"Bing API request {content=}")
+                    async with client.post(
+                        f"{URL_SCHEME}{self._api_host}{path}",
+                        data=req_json.encode("utf-8"),
+                        params=params,
+                        headers=headers,
+                    ) as response:
+                        text = await response.text()
+                        logger.debug("Received '%s' back from Bing", text[:100])
+                        return text
+                except aiohttp.client_exceptions.ClientOSError:
+                    logger.error("Failure to send to Bing API with ClientOSError: %s", content)
+                    conn_retries -= 1
+                    if conn_retries <= 0:
+                        raise
+                except aiohttp.client_exceptions.ClientConnectorError:
+                    logger.error("Failure to send to Bing API: %s", content)
+                    raise

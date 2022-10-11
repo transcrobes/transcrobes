@@ -1,5 +1,6 @@
 import { Box, ToggleButton, ToggleButtonGroup, Typography, useTheme } from "@mui/material";
 import React from "react";
+import { useTranslate } from "react-admin";
 import { useAppSelector } from "../app/hooks";
 import { BASIC_GRADES } from "../components/Common";
 import { GRADE } from "../database/Schema";
@@ -20,17 +21,18 @@ function getOrder(grades: GradesType[], value: string) {
 
 export default function BasicGradeChooser({ graderConfig, setGraderConfig }: Props) {
   const theme = useTheme();
+  const translate = useTranslate();
   const message = useAppSelector((state) => {
     const completed = Math.min(
       Object.keys(state.knownCards.allCardWordGraphs || {}).length / MIN_KNOWN_BEFORE_ADVANCED,
       1,
     );
     if (completed === 1) {
-      return "Minimum training completed. Continue training or start using the platform!";
+      return translate("screens.listrobes.minimum_training_complete");
     } else {
-      return `Tell the system about the words you know (${new Intl.NumberFormat("default", { style: "percent" }).format(
-        completed,
-      )} complete)`;
+      return translate("screens.listrobes.percent_training_complete", {
+        percent_complete: new Intl.NumberFormat("default", { style: "percent" }).format(completed),
+      });
     }
   });
 
@@ -56,7 +58,9 @@ export default function BasicGradeChooser({ graderConfig, setGraderConfig }: Pro
               margin: "4px",
             }}
           >
-            <div>Default {GRADESOBJ[GRADE.GOOD.toString()].content}</div>
+            <div>
+              {translate("general.default")} {translate(GRADESOBJ[GRADE.GOOD.toString()].content)}
+            </div>
             {GRADESOBJ[GRADE.GOOD.toString()].icon}
           </Box>
         </ToggleButton>
@@ -73,7 +77,9 @@ export default function BasicGradeChooser({ graderConfig, setGraderConfig }: Pro
               margin: "4px",
             }}
           >
-            <div>Default {GRADESOBJ[GRADE.UNKNOWN.toString()].content}</div>
+            <div>
+              {translate("general.default")} {translate(GRADESOBJ[GRADE.UNKNOWN.toString()].content)}
+            </div>
             {GRADESOBJ[GRADE.UNKNOWN.toString()].icon}
           </Box>
         </ToggleButton>

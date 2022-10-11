@@ -52,7 +52,10 @@ async def regenerate_all():
 async def regenerate(regen_type: RegenerationType) -> Msg:
     logger.info(f"Attempting to regenerate caches: {regen_type.data_type=}, {regen_type.fakelimit=}")
     if regen_type.data_type in [DataType.both, DataType.definitions]:
-        await regenerate_definitions_jsons_multi(regen_type.fakelimit or 0)
+        logger.info("Starting regen for en to zh-Hans")
+        await regenerate_definitions_jsons_multi(regen_type.fakelimit or 0, from_lang="en", to_lang="zh-Hans")
+        logger.info("Starting regen for zh-Hans to en")
+        await regenerate_definitions_jsons_multi(regen_type.fakelimit or 0, from_lang="zh-Hans", to_lang="en")
     if regen_type.data_type in [DataType.both, DataType.characters]:
         regenerate_character_jsons_multi()
     logger.info("Finished regenerating caches")

@@ -1,9 +1,11 @@
 import { Box } from "@mui/system";
 import { ReactElement } from "react";
+import { useTranslate } from "react-admin";
 import { FrequencyType } from "../lib/types";
 
 export function Frequency({ frequency: fr, compact }: { frequency: FrequencyType; compact?: boolean }): ReactElement {
-  if (!fr) {
+  const translate = useTranslate();
+  if (!fr || !fr.wcpm) {
     return !compact ? <Box sx={{ marginLeft: "1em" }}>No frequencies found</Box> : <></>;
   } else {
     return (
@@ -11,12 +13,16 @@ export function Frequency({ frequency: fr, compact }: { frequency: FrequencyType
         <Box
           component={"span"}
           sx={{ fontWeight: !compact ? "bold" : "normal" }}
-          title="Frequency in the Subtlex Open Subtitles database"
+          title={translate("stats.frequency.description")}
         >
-          Frequency:
+          {translate("stats.frequency.title")}
         </Box>
         {fr.wcpm && (
-          <Box component={!compact ? "div" : "span"} sx={{ marginLeft: "0.7em" }} title="Word Count Per Million">
+          <Box
+            component={!compact ? "div" : "span"}
+            sx={{ marginLeft: "0.7em" }}
+            title={translate("stats.frequency.wcpm_description")}
+          >
             WCPM: {fr.wcpm}
           </Box>
         )}
@@ -24,7 +30,7 @@ export function Frequency({ frequency: fr, compact }: { frequency: FrequencyType
           <Box
             component={!compact ? "div" : "span"}
             sx={{ marginLeft: "0.7em" }}
-            title="Percentage of all films where the word appears"
+            title={translate("stats.frequency.wcdp_description")}
           >
             WCDP: {fr.wcdp}%
           </Box>

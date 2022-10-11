@@ -1,5 +1,6 @@
 import { FormControl, FormControlLabel, Switch, ToggleButton, ToggleButtonGroup } from "@mui/material";
 import React, { ReactElement } from "react";
+import { useTranslate } from "react-admin";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
 import Conftainer from "../components/Conftainer";
 import ReaderConfig from "../contents/common/ReaderConfig";
@@ -16,10 +17,11 @@ export default function ExtensionConfig(): ReactElement {
   );
   const user = useAppSelector((state) => state.userData);
   const dispatch = useAppDispatch();
+  const translate = useTranslate();
   const actions = extensionReaderActions;
   return (
     <div>
-      <Conftainer label="Popup theme mode" id="themeMode">
+      <Conftainer label={translate("screens.extension.popup_theme_mode.title")} id="themeMode">
         <ToggleButtonGroup
           sx={{ width: "100%" }}
           exclusive
@@ -30,14 +32,14 @@ export default function ExtensionConfig(): ReactElement {
           }}
         >
           <ToggleButton sx={{ width: "100%" }} value={"light"}>
-            Light Mode
+            {translate("screens.extension.popup_theme_mode.light_mode")}
           </ToggleButton>
           <ToggleButton sx={{ width: "100%" }} value={"dark"}>
-            Dark Mode
+            {translate("screens.extension.popup_theme_mode.dark_mode")}
           </ToggleButton>
         </ToggleButtonGroup>
       </Conftainer>
-      <Conftainer label="Page analysis" id="pageAnalysis">
+      <Conftainer label={translate("screens.extension.page_analysis.title")} id="pageAnalysis">
         <ToggleButtonGroup
           sx={{ width: "100%" }}
           exclusive
@@ -47,20 +49,20 @@ export default function ExtensionConfig(): ReactElement {
           }}
         >
           <ToggleButton sx={{ width: "100%" }} value={"none"}>
-            Off
+            {translate("screens.extension.page_analysis.off")}
           </ToggleButton>
           <ToggleButton sx={{ width: "100%" }} value={"top-right"}>
-            Top Right
+            {translate("screens.extension.page_analysis.top_right")}
           </ToggleButton>
           <ToggleButton sx={{ width: "100%" }} value={"bottom-right"}>
-            Bottom Right
+            {translate("screens.extension.page_analysis.bottom_right")}
           </ToggleButton>
         </ToggleButtonGroup>
       </Conftainer>
-      <Conftainer label="Show Suggestions?" id="oss">
+      <Conftainer label={translate("screens.extension.show_suggestions")} id="oss">
         <FormControl component="fieldset" sx={{ display: "flex", justifyContent: "flex-start", padding: "0.4em" }}>
           <FormControlLabel
-            label="Show Suggestions?"
+            label={translate("screens.extension.show_suggestions")}
             control={
               <Switch
                 checked={!!readerConfig.showSuggestions}
@@ -73,10 +75,10 @@ export default function ExtensionConfig(): ReactElement {
         </FormControl>
       </Conftainer>
       {user.user.isAdmin && (
-        <Conftainer label="Show Research Details?" id="oss">
+        <Conftainer label={translate("screens.extension.show_research_details")} id="oss">
           <FormControl component="fieldset" sx={{ display: "flex", justifyContent: "flex-start", padding: "0.4em" }}>
             <FormControlLabel
-              label="Show Research Details?"
+              label={translate("screens.extension.show_research_details")}
               control={
                 <Switch
                   checked={!!user.showResearchDetails}

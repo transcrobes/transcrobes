@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+
 from __future__ import annotations
 
 import logging
@@ -7,10 +8,10 @@ import re
 
 import unidecode
 from app.enrich.data import PersistenceProvider
-from app.enrich.etypes import EntryDefinition
 from app.enrich.models import Token
 from app.enrich.translate import Translator
-from app.models.migrated import ZhhansEnABCLookup
+from app.etypes import EntryDefinition
+from app.models.lookups import ZhhansEnABCLookup
 from app.ndutils import lemma
 from app.zhhans_en.translate import decode_phone
 from pinyinsplit import PinyinSplit
@@ -62,13 +63,11 @@ ZH_TB_POS_TO_ABC_POS = {
 
 
 class ZHHANS_EN_ABCDictTranslator(PersistenceProvider, Translator):
-    SHORT_NAME = "abc"
     p = re.compile(r"^(\d*)(\w+)(\S*)\s+(.+)$")
     model_type = ZhhansEnABCLookup
 
     def __init__(self, config):
         super().__init__(config)
-        self.model_type = ZhhansEnABCLookup
 
     # FIXME: this definitely needs to be refactored!
     # FIXME: make this async aiofiles
@@ -157,7 +156,7 @@ class ZHHANS_EN_ABCDictTranslator(PersistenceProvider, Translator):
     # override Metadata
     @staticmethod
     def name() -> str:
-        return ZHHANS_EN_ABCDictTranslator.SHORT_NAME
+        return ZHHANS_EN_ABCDictTranslator.model_type.SHORT_NAME
 
     @staticmethod
     def _decode_pinyin(s: str) -> str:
@@ -212,13 +211,15 @@ class ZHHANS_EN_ABCDictTranslator(PersistenceProvider, Translator):
 
     # TODO: fix the POS correspondences
     # override Translator
-    async def get_standardised_defs(self, db: AsyncSession, token: Token) -> EntryDefinition:
+    async def get_standardised_defs(self, db: AsyncSession, token: Token, all_forms: bool = False) -> EntryDefinition:
         return self._def_from_entry(token, await self._get_def(db, lemma(token)))
 
     # override Translator
-    async def get_standardised_fallback_defs(self, db: AsyncSession, token: Token) -> EntryDefinition:
+    async def get_standardised_fallback_defs(
+        self, db: AsyncSession, token: Token, all_forms: bool = False
+    ) -> EntryDefinition:
         # TODO: do something better than this!
-        return self.get_standardised_defs(db, token)
+        return self.get_standardised_defs(db, token, all_forms)
 
     # override Translator
     async def pos_synonyms(self, _db: AsyncSession, _token: Token):

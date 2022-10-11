@@ -3,6 +3,7 @@ import { bin } from "d3-array";
 import dayjs, { ManipulateType } from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat";
 import { useEffect, useState } from "react";
+import { useTranslate } from "react-admin";
 import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
 import useWindowDimensions from "../hooks/WindowDimensions";
 import { binnedDayData } from "../lib/funclib";
@@ -38,6 +39,7 @@ export function DayProgressRead({ nbPeriods = 8, periodType = 2 }: Props) {
   const [data, setData] = useState<DayGraphData[]>([]);
   const [stats, setStats] = useState<DayModelStatsType[]>();
   const [totals, setTotals] = useState<Totals>({ nbSeen: 0, nbChecked: 0 });
+  const translate = useTranslate();
 
   useEffect(() => {
     (async function () {
@@ -120,7 +122,7 @@ export function DayProgressRead({ nbPeriods = 8, periodType = 2 }: Props) {
           <tbody>
             <tr>
               <td>
-                <span style={{ color: theme.palette.primary.main }}>Nb Seen</span>
+                <span style={{ color: theme.palette.primary.main }}>{translate("stats.nb_seen")}</span>
               </td>
               <td>
                 <span style={{ color: theme.palette.primary.main }}>{totals.nbSeen}</span>
@@ -128,7 +130,7 @@ export function DayProgressRead({ nbPeriods = 8, periodType = 2 }: Props) {
             </tr>
             <tr>
               <td>
-                <span style={{ color: theme.palette.success.light }}>Nb Checked</span>
+                <span style={{ color: theme.palette.success.light }}>{translate("stats.nb_checked")}</span>
               </td>
               <td>
                 <span style={{ color: theme.palette.success.light }}>{totals.nbChecked}</span>
@@ -139,6 +141,6 @@ export function DayProgressRead({ nbPeriods = 8, periodType = 2 }: Props) {
       </Grid>
     </Grid>
   ) : (
-    <div>The stats are still being generated</div>
+    <div>{translate("screens.stats.generating")}</div>
   );
 }

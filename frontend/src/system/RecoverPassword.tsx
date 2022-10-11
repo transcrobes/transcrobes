@@ -12,6 +12,7 @@ import { Link } from "react-router-dom";
 import CircularProgress from "@mui/material/CircularProgress";
 import { TextField } from "@mui/material";
 import { DOCS_DOMAIN } from "../lib/types";
+import { AppBar } from "../components/AppBar";
 
 const useStyles = makeStyles()((theme) => ({
   main: {
@@ -103,63 +104,73 @@ export default function RecoverPassword(): ReactElement {
     }
     return errors;
   }
+  // import {
+  //     AppBar as MuiAppBar,
+  //     AppBarProps as MuiAppBarProps,
+  //     Toolbar,
+  //     Typography,
+  //     useMediaQuery,
+  //     Theme,
+  // } from '@mui/material';
 
   const helpUrl = `//${DOCS_DOMAIN}`;
   return (
-    <Form
-      onSubmit={handleSubmit}
-      validate={validate}
-      render={({ handleSubmit }) => (
-        <form onSubmit={handleSubmit} noValidate>
-          <div className={classes.main}>
-            <Card className={classes.card}>
-              <div className={classes.avatar}>
-                <Avatar className={classes.icon}>
-                  <ReplayIcon />
-                </Avatar>
-              </div>
-              <div className={classes.form}>
-                <div className={classes.input}>
-                  <Field
-                    autoFocus
-                    name="email"
-                    // @ts-ignore
-                    component={renderInput}
-                    label={translate("user.email")}
-                    disabled={loading}
-                  />
+    <div>
+      <Form
+        onSubmit={handleSubmit}
+        validate={validate}
+        render={({ handleSubmit }) => (
+          <form onSubmit={handleSubmit} noValidate>
+            <div className={classes.main}>
+              <Card className={classes.card}>
+                <div className={classes.avatar}>
+                  <Avatar className={classes.icon}>
+                    <ReplayIcon />
+                  </Avatar>
                 </div>
-              </div>
-              <CardActions className={classes.actions}>
-                <Button variant="contained" type="submit" color="primary" disabled={loading} fullWidth>
-                  {loading && <CircularProgress size={25} thickness={2} />}
-                  {translate("user.reset_password.recover")}
-                </Button>
-              </CardActions>
-              <div>
-                <div className={classes.userManagement}>
-                  <Typography>
-                    <Link to="/login">{translate("ra.auth.sign_in")}</Link>
-                  </Typography>
+                <div className={classes.form}>
+                  <div className={classes.input}>
+                    <Field
+                      autoFocus
+                      name="email"
+                      // @ts-ignore
+                      component={renderInput}
+                      label={translate("user.email")}
+                      disabled={loading}
+                    />
+                  </div>
                 </div>
-                <div className={classes.userManagement}>
-                  <Typography>
-                    <Link to="/signup">{translate("user.signup.label")}</Link>
-                  </Typography>
+                <CardActions className={classes.actions}>
+                  <Button variant="contained" type="submit" color="primary" disabled={loading} fullWidth>
+                    {loading && <CircularProgress size={25} thickness={2} />}
+                    {translate("user.reset_password.recover")}
+                  </Button>
+                </CardActions>
+                <div>
+                  <div className={classes.userManagement}>
+                    <Typography>
+                      <Link to="/login">{translate("ra.auth.sign_in")}</Link>
+                    </Typography>
+                  </div>
+                  <div className={classes.userManagement}>
+                    <Typography>
+                      <Link to="/signup">{translate("user.signup.label")}</Link>
+                    </Typography>
+                  </div>
+                  <div className={classes.userManagement}>
+                    <Typography>
+                      <a target={"_blank"} href={helpUrl}>
+                        {translate("user.help.site")}
+                      </a>
+                    </Typography>
+                  </div>
                 </div>
-                <div className={classes.userManagement}>
-                  <Typography>
-                    <a target={"_blank"} href={helpUrl}>
-                      {translate("user.help.site")}
-                    </a>
-                  </Typography>
-                </div>
-              </div>
-            </Card>
-            <Notification />
-          </div>
-        </form>
-      )}
-    />
+              </Card>
+              <Notification />
+            </div>
+          </form>
+        )}
+      />
+    </div>
   );
 }

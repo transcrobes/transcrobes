@@ -14,9 +14,11 @@ from typing import List
 
 from app.core.config import settings
 from app.db.session import async_session
-from app.enrich import latest_character_json_dir_path
+from app.enrich import lang_prefix, latest_character_json_dir_path
 from app.enrich.data import managers
-from app.enrich.models import definition
+from app.enrich.models import definitions
+from app.etypes import LANG_PAIR_SEPARATOR
+from app.models.lookups import BingApiLookup
 from app.models.migrated import CachedDefinition
 from app.models.user import AuthUser
 from github import Github
@@ -32,6 +34,53 @@ async def all_cached_definitions(db: AsyncSession, from_lang: str, to_lang: str)
         select(CachedDefinition).filter_by(from_lang=from_lang, to_lang=to_lang).order_by("cached_date", "word_id")
     )
     return result.scalars().all()
+
+
+async def ensure_cached_definitions(
+    db: AsyncSession,
+    print_progress: bool = True,
+    from_lang: str = "",
+    to_lang: str = "",
+) -> bool:
+    mans = []
+    if from_lang and to_lang:
+        man = managers.get(f"{from_lang}:{to_lang}")
+        if not man:
+            raise Exception("No manager found for this language pair")
+        mans.append(man)
+    else:
+        mans = managers.values()
+
+    for manager in mans:
+        result = await db.execute(
+            select(BingApiLookup)
+            .filter_by(from_lang=manager.from_lang, to_lang=manager.to_lang)
+            .order_by("cached_date", "id")
+        )
+
+        defs_to_cache = result.scalars().all()
+
+        for i, d in enumerate(defs_to_cache):
+            w = d.source_text
+            t = {"word": w, "pos": "NN", "lemma": w}  # fake pos, here we don't care
+            if print_progress and i % 1000 == 0:
+                logger.info(f"{manager.to_lang=}, {manager.from_lang=}, {w=}, {i=}")
+            if not manager.enricher().needs_enriching(t) or manager.enricher().clean_text(w) != w:
+                logger.info(f"Not caching unclean word: {manager.to_lang}, {manager.from_lang}, {w=}, {i=}")
+                continue
+            if not d.response_json:
+                raise Exception(f"Empty response_json: {manager.to_lang}, {manager.from_lang}, {w=}, {i=}")
+
+            obj = json.loads(d.response_json)[0]
+            if obj.get("translations") == []:
+                logger.warning(
+                    f"response_json does not have any defs, ignoring for now: {manager.to_lang}, {manager.from_lang},"
+                    f" {w=}, {i=}"
+                )
+                continue
+            await definitions(db, manager, {"l": w, "pos": "NN"})
+
+    return True
 
 
 async def refresh_cached_definitions(
@@ -50,7 +99,7 @@ async def refresh_cached_definitions(
             logger.info(datetime.datetime.now(), d.id)
         if response_json_match_string not in d.response_json:
             continue
-        await definition(db, manager, {"l": d.source_text, "pos": "NN"}, refresh=True)
+        await definitions(db, manager, {"l": d.source_text, "pos": "NN"}, refresh=True)
     return True
 
 
@@ -97,7 +146,10 @@ async def regenerate_definitions_jsons_multi(  # pylint: disable=R0914
             ua = last_new_definition["updatedAt"]
             wid = last_new_definition["id"]
             provs = "-".join(providers)
-            new_files_dir_path = os.path.join(settings.DEFINITIONS_CACHE_DIR, f"definitions-{ua}-{wid}-{provs}_json")
+            new_files_dir_path = os.path.join(
+                settings.DEFINITIONS_CACHE_DIR,
+                f"{lang_prefix(f'{from_lang}{LANG_PAIR_SEPARATOR}{to_lang}')}definitions-{ua}-{wid}-{provs}_json",
+            )
             tmppath = mkdtemp(dir=settings.DEFINITIONS_CACHE_DIR)
             for i, block in enumerate(chunks(export, settings.DEFINITIONS_PER_CACHE_FILE)):
                 chunkpath = os.path.join(tmppath, f"{i:03d}.json")

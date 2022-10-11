@@ -4,17 +4,19 @@ import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
 import CardActions from "@mui/material/CardActions";
 import CircularProgress from "@mui/material/CircularProgress";
+import MenuItem from "@mui/material/MenuItem";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
-import { ReactElement, useState } from "react";
+import { Select, SelectData } from "mui-rff";
+import { ReactElement, useEffect, useState } from "react";
 import { Notification, useNotify, useTranslate } from "react-admin";
 import { Field, withTypes } from "react-final-form";
-import OnChange from "./OnChange";
 import { Link } from "react-router-dom";
 import { makeStyles } from "tss-react/mui";
 import PasswordStrengthBar from "../components/PasswordStrengthBar";
 import WatchDemo from "../components/WatchDemo";
-import { DOCS_DOMAIN, SIGNUP_YT_VIDEO } from "../lib/types";
+import { DOCS_DOMAIN, LOCALES, SIGNUP_YT_VIDEO } from "../lib/types";
+import OnChange from "./OnChange";
 
 const emailRegex =
   /[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?/;
@@ -69,6 +71,7 @@ interface FormValues {
   email?: string;
   username?: string;
   password?: string;
+  langPair?: string;
   repeatPassword?: string;
   consent?: boolean;
 }
@@ -92,24 +95,67 @@ export default function Signup(): ReactElement {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [emailValid, setEmailValid] = useState(false);
 
+  const [availableLangPairs, setAvailableLangPairs] = useState<SelectData[]>(
+    LOCALES.map((locale) => ({ value: locale.locale, label: locale.name })),
+  );
+
   const translate = useTranslate();
   const { classes } = useStyles();
   const notify = useNotify();
 
+  useEffect(() => {
+    fetch(`${location.origin}/api/v1/data/langs`, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    })
+      .then((res) => {
+        if (res.ok) {
+          return res.json();
+        } else {
+          throw new Error("Error getting the available langs.");
+        }
+      })
+      .catch((error: Error) => {
+        setLoading(false);
+        notify(
+          typeof error === "string"
+            ? error
+            : typeof error === "undefined" || !error.message
+            ? "user.signup.error"
+            : error.message,
+          { type: "warning" },
+        );
+      })
+      .then((data: string[]) => {
+        const newLocales: SelectData[] = [];
+        for (const langPair of data) {
+          const val: SelectData = {
+            value: langPair,
+            label: LOCALES.find((a) => a.locale === langPair.split(":")[0])?.name || "",
+          };
+          newLocales.push(val);
+        }
+        setAvailableLangPairs(newLocales);
+      });
+  }, []);
+
   function handleSubmit(form: FormValues) {
     setLoading(true);
-
+    const newUser = {
+      email: form.email,
+      username: form.email,
+      password: form.password,
+      from_lang: form.langPair?.split(":")[0],
+      to_lang: form.langPair?.split(":")[1],
+    };
     // FIXME: hardcoded url
     fetch(`${location.origin}/api/v1/users/`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        email: form.email,
-        username: form.email,
-        password: form.password,
-      }),
+      body: JSON.stringify(newUser),
     })
       .then((res) => {
         if (res.ok) {
@@ -128,10 +174,6 @@ export default function Signup(): ReactElement {
             ? "user.signup.error"
             : error.message,
           { type: "warning" },
-          // "warning",
-          // {
-          //   _: typeof error === "string" ? error : error && error.message ? error.message : undefined,
-          // },
         );
       });
   }
@@ -168,6 +210,7 @@ export default function Signup(): ReactElement {
     <Form
       onSubmit={handleSubmit}
       validate={validate}
+      initialValues={{ langPair: "en:zh-Hans" }}
       render={({ handleSubmit }) => (
         <form onSubmit={handleSubmit} noValidate>
           <div className={classes.main}>
@@ -180,6 +223,18 @@ export default function Signup(): ReactElement {
               </div>
               {!creationSent && (
                 <>
+                  <div className={classes.form}>
+                    <div className={classes.input}>
+                      <Select
+                        required={true}
+                        disabled={loading}
+                        label={translate("screens.signup.learn")}
+                        name="langPair"
+                        formControlProps={{ margin: "normal" }}
+                        data={availableLangPairs}
+                      ></Select>
+                    </div>
+                  </div>
                   <div className={classes.form}>
                     <div className={classes.input}>
                       <Field
@@ -240,9 +295,9 @@ export default function Signup(): ReactElement {
                     <div className={classes.input}>
                       <Typography>
                         <label>
-                          I agree with the{" "}
+                          {translate("user.signup.consent_a")}{" "}
                           <a href="/static/consent.html" target="_blank">
-                            Research Consent Terms
+                            {translate("user.signup.consent_b")}
                           </a>
                         </label>
                       </Typography>
@@ -270,10 +325,7 @@ export default function Signup(): ReactElement {
               )}
               {creationSent && (
                 <div className={classes.userManagement}>
-                  <Typography>
-                    A validation email has been sent to the email address provided. Please validate this email by
-                    clicking in the link in the email.
-                  </Typography>
+                  <Typography>{translate("user.signup.email_success_long")}</Typography>
                 </div>
               )}
               <div>

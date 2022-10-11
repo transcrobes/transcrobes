@@ -2,7 +2,9 @@ import { Grid } from "@mui/material";
 import { bin } from "d3-array";
 import dayjs from "dayjs";
 import { ReactElement, useEffect, useState } from "react";
+import { useTranslate } from "react-admin";
 import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
+import { useAppSelector } from "../app/hooks";
 import useWindowDimensions from "../hooks/WindowDimensions";
 import { binnedData } from "../lib/funclib";
 import { dateRange } from "../lib/libMethods";
@@ -18,6 +20,8 @@ type GraphData = {
 
 export function DocumentProgress({ stats }: { stats?: ImportFirstSuccessStats | null }): ReactElement {
   const [data, setData] = useState<GraphData[]>([]);
+  const fromLang = useAppSelector((state) => state.userData.user.fromLang);
+  const translate = useTranslate();
   // FIXME: currently the word tokens data are only shown if
   // stats && stats.nbTotalWords !== stats.nbUniqueWords but we still calculate them
   // This is wasteful
@@ -76,8 +80,12 @@ export function DocumentProgress({ stats }: { stats?: ImportFirstSuccessStats | 
           {stats && stats.nbTotalWords !== stats.nbUniqueWords && (
             <Line type="monotone" dataKey="wordTokens" stroke={yellow} />
           )}
-          <Line type="monotone" dataKey="charTypes" stroke={green} />
-          <Line type="monotone" dataKey="charTokens" stroke={pink} />
+          {fromLang === "zh-Hans" && (
+            <>
+              <Line type="monotone" dataKey="charTypes" stroke={green} />
+              <Line type="monotone" dataKey="charTokens" stroke={pink} />
+            </>
+          )}
         </LineChart>
       </Grid>
       <Grid item>
@@ -85,33 +93,37 @@ export function DocumentProgress({ stats }: { stats?: ImportFirstSuccessStats | 
           <tbody>
             <tr>
               <td>
-                <span style={{ color: blue }}>Unique words (types)</span>
+                <span style={{ color: blue }}>{translate("stats.content_progress.words_types")}</span>
               </td>
               <td>{stats.nbUniqueWords}</td>
             </tr>
             {stats.nbTotalWords !== stats.nbUniqueWords && (
               <tr>
                 <td>
-                  <span style={{ color: yellow }}>Total words (tokens)</span>
+                  <span style={{ color: yellow }}>{translate("stats.content_progress.words_tokens")}</span>
                 </td>
                 <td>{stats.nbTotalWords}</td>
               </tr>
             )}
+            {fromLang === "zh-Hans" && (
+              <>
+                <tr>
+                  <td>
+                    <span style={{ color: green }}>{translate("stats.content_progress.chars_types")}</span>
+                  </td>
+                  <td>{stats.nbUniqueCharacters}</td>
+                </tr>
+                <tr>
+                  <td>
+                    <span style={{ color: pink }}>{translate("stats.content_progress.chars_tokens")}</span>
+                  </td>
+                  <td>{stats.nbTotalCharacters}</td>
+                </tr>
+              </>
+            )}
             <tr>
               <td>
-                <span style={{ color: green }}>Unique chars (types)</span>
-              </td>
-              <td>{stats.nbUniqueCharacters}</td>
-            </tr>
-            <tr>
-              <td>
-                <span style={{ color: pink }}>Total chars (tokens)</span>
-              </td>
-              <td>{stats.nbTotalCharacters}</td>
-            </tr>
-            <tr>
-              <td>
-                <span>Avg. sentence length</span>
+                <span>{translate("stats.content_progress.avg_sentence_length")}</span>
               </td>
               <td>{stats.meanSentenceLength ? stats.meanSentenceLength.toFixed(1) : "N/A"}</td>
             </tr>
@@ -120,8 +132,8 @@ export function DocumentProgress({ stats }: { stats?: ImportFirstSuccessStats | 
       </Grid>
     </Grid>
   ) : stats === null ? (
-    <div>There are no import stats available for this content</div>
+    <div>{translate("stats.content_progress.missing_stats")}</div>
   ) : (
-    <div>The stats are still being generated</div>
+    <div>{translate("stats.content_progress.generating_stats")}</div>
   );
 }

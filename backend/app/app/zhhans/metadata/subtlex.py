@@ -8,7 +8,7 @@ from typing import Any
 
 from app.enrich.data import PersistenceProvider
 from app.enrich.metadata import Metadata
-from app.models.migrated import ZhSubtlexLookup
+from app.models.lookups import ZhSubtlexLookup
 from app.zhhans_en.translate import decode_phone  # FIXME: decode_pinyin should not be in a lang_pair
 from sqlalchemy.ext.asyncio.session import AsyncSession
 
@@ -26,7 +26,6 @@ class ZH_SubtlexMetadata(PersistenceProvider, Metadata):
 
     def __init__(self, config):
         super().__init__(config)
-        self.model_type = ZhSubtlexLookup
 
     @staticmethod
     def _decode_pinyin(s: str) -> str:
@@ -128,7 +127,7 @@ class ZH_SubtlexMetadata(PersistenceProvider, Metadata):
     # override Metadata
     @staticmethod
     def name() -> str:
-        return "frq"
+        return ZH_SubtlexMetadata.model_type.SHORT_NAME
 
     # override Metadata
     async def meta_for_word(self, db: AsyncSession, lword: str) -> Any:

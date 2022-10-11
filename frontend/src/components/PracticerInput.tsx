@@ -5,6 +5,7 @@ import SentimentVerySatisfiedIcon from "@mui/icons-material/SentimentVerySatisfi
 import { IconButton, useTheme } from "@mui/material";
 import * as CSS from "csstype";
 import { ReactElement } from "react";
+import { useTranslate } from "react-admin";
 import { makeStyles } from "tss-react/mui";
 import { GRADE } from "../database/Schema";
 
@@ -48,6 +49,7 @@ function PracticerInput({
     onPractice(wordId, grade);
   }
   const theme = useTheme();
+  const translate = useTranslate();
   const { classes } = useStyles({ iconPadding, width });
   const iconSizeStyle = {
     [theme.breakpoints.down("md")]: {
@@ -63,7 +65,7 @@ function PracticerInput({
     <div className={classes.practicerStyle}>
       <IconButton
         className={classes.iconStyle}
-        title="I don't know this word yet"
+        title={translate("widgets.practicerInput.unknown_desc")}
         onClick={() => addOrUpdateCards(GRADE.UNKNOWN)}
         size="large"
       >
@@ -71,7 +73,7 @@ function PracticerInput({
       </IconButton>
       <IconButton
         className={classes.iconStyle}
-        title="I am not confident with this word"
+        title={translate("widgets.practicerInput.hard_desc")}
         onClick={() => addOrUpdateCards(GRADE.HARD)}
         size="large"
       >
@@ -79,7 +81,7 @@ function PracticerInput({
       </IconButton>
       <IconButton
         className={classes.iconStyle}
-        title="I am comfortable with this word"
+        title={translate("widgets.practicerInput.good_desc")}
         onClick={() => addOrUpdateCards(GRADE.GOOD)}
         size="large"
       >
@@ -87,7 +89,7 @@ function PracticerInput({
       </IconButton>
       <IconButton
         className={classes.iconStyle}
-        title="I know this word, I don't need to revise it again"
+        title={translate("widgets.practicerInput.known_desc")}
         onClick={() => addOrUpdateCards(GRADE.KNOWN)}
         size="large"
       >

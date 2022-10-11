@@ -62,7 +62,6 @@ export function enrichETFElements(
       threshold: [1.0],
     },
   );
-
   for (let i = 0; i < elements.length; ++i) {
     const id = elements[i].id;
     if (!id) continue;
@@ -74,6 +73,7 @@ export function enrichETFElements(
     etf.id = id;
     elements[i].replaceWith(etf);
     readObserver.observe(etf);
+
     render(
       createComponentVNode(ComponentClass, Provider, {
         store: store,

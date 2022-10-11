@@ -5,7 +5,7 @@ import logging
 from abc import ABC, abstractmethod
 
 from aiohttp_retry import ExponentialRetry, RetryClient
-from app.enrich.etypes import Model
+from app.etypes import Model
 
 logger = logging.getLogger(__name__)
 
@@ -28,6 +28,7 @@ class ParseProvider(ABC):
 
 
 class HTTPCoreNLPProvider(ParseProvider):
+    # override ParseProvider
     async def parse(
         self,
         text: str,

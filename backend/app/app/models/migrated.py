@@ -12,8 +12,9 @@ from app.data.context import get_broadcast
 from app.data.models import NONE, REQUESTED
 from app.db.base_class import Base
 from app.db.session import async_session
-from app.models.mixins import CachedAPIJSONLookupMixin, DetailedMixin, JSONLookupMixin, RevisionableMixin, utcnow
+from app.models.mixins import CachedAPIJSONLookupMixin, DetailedMixin, RevisionableMixin, utcnow
 from app.models.user import AuthUser, absolute_imports_path, absolute_resources_path
+from app.ndutils import to_import
 from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Index, Integer, String, Text, UniqueConstraint
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.dialects.postgresql import JSONB, UUID
@@ -35,34 +36,6 @@ if TYPE_CHECKING:
 
 def user_resources_path(user: AuthUser, filename: str) -> str:
     return f"user_{user.id}/resources/{filename}"
-
-
-class BingApiLookup(CachedAPIJSONLookupMixin, Base):
-    pass
-
-
-class BingApiTranslation(CachedAPIJSONLookupMixin, Base):
-    pass
-
-
-class BingApiTransliteration(CachedAPIJSONLookupMixin, Base):
-    pass
-
-
-class ZhHskLookup(JSONLookupMixin, Base):
-    pass
-
-
-class ZhSubtlexLookup(JSONLookupMixin, Base):
-    pass
-
-
-class ZhhansEnABCLookup(JSONLookupMixin, Base):
-    pass
-
-
-class ZhhansEnCCCLookup(JSONLookupMixin, Base):
-    pass
 
 
 class Card(RevisionableMixin, Base):
@@ -105,8 +78,6 @@ class Card(RevisionableMixin, Base):
     first_revision_date = Column(DateTime(True))
     last_revision_date = Column(DateTime(True))
     first_success_date = Column(DateTime(True))
-
-    # my changes
     user = relationship("AuthUser", back_populates="cards")
 
 
@@ -142,6 +113,8 @@ class Survey(DetailedMixin, Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     survey_json = Column(JSONB(astext_type=Text()), nullable=False)
     is_obligatory = Column(Boolean, nullable=False, default=False)
+    from_lang = Column(String(20), nullable=False, default="zh-Hans", server_default="zh-Hans")
+    to_lang = Column(String(20), nullable=False, default="en", server_default="en")
 
 
 class GrammarRule(Base):
@@ -268,6 +241,7 @@ class UserListDict(TypedDict, total=False):
     import_frequency: int
     word_id: int
     freq: float
+    import_order: int
 
 
 class UserList(DetailedMixin, Base):
@@ -293,11 +267,11 @@ class UserList(DetailedMixin, Base):
     order_by = Column(Integer, nullable=False, default=ABSOLUTE_FREQUENCY)
     words_are_known = Column(Boolean, nullable=False, default=False)
     word_knowledge = Column(Integer, nullable=True, default=KNOWLEDGE_UNSET)
+    from_lang = Column(String(20), nullable=False, default="zh-Hans", server_default="zh-Hans")
 
     the_import = relationship("Import")
 
-    def filter_words(self, import_frequencies):
-        from app.ndutils import is_useful_character  # pylint:disable=C0415
+    def filter_words(self, import_frequencies, from_lang: str):
 
         # FIXME: nasty hardcoding
         # abs_frequency_table = manager.metadata()[1]  # 0 = HSK, 1 = Subtlex
@@ -314,12 +288,14 @@ class UserList(DetailedMixin, Base):
                 #     if not abs_frequency or abs_frequency[0]['wcpm'] < self.minimum_abs_frequency:
                 #         continue
 
-                if self.only_simplifieds:
-                    for character in word:
-                        if is_useful_character(character):
-                            new_list.append(word)
-                            break
-            word_list += [(freq, word) for word in new_list]
+                # if self.only_simplifieds:  # always true, so remove
+                # for character in word:
+                #     if is_useful_character(character, from_lang):
+                #         new_list.append(word)
+                #         break
+                if to_import(word, from_lang):
+                    new_list.append(word)
+            word_list += [(freq, word, i) for i, word in enumerate(new_list)]
 
         return word_list
 
@@ -327,16 +303,14 @@ class UserList(DetailedMixin, Base):
         self, db: AsyncSession, manager: EnrichmentManager
     ):  # noqa:C901 # pylint: disable=R0914,R0915
         import_frequencies = json.loads(self.the_import.analysis)
-        word_list = self.filter_words(import_frequencies)
-
+        word_list = self.filter_words(import_frequencies, self.from_lang)
         logger.info(
             f"Processing {len(word_list)} words in update_list_words"
             f" for UserList {self.id} for user {self.created_by.username}"
         )
-
         data: List[UserListDict] = []
-        for freq, word in word_list:
-            data.append(UserListDict(word=word, import_frequency=int(freq)))
+        for freq, word, i in word_list:
+            data.append(UserListDict(word=word, import_frequency=int(freq), import_order=i))
 
         temp_table = f"import_{self.id}".replace("-", "_")
 
@@ -344,7 +318,8 @@ class UserList(DetailedMixin, Base):
             CREATE TEMP TABLE {temp_table} (word text,
                                             import_frequency int,
                                             word_id int null,
-                                            freq float null
+                                            freq float null,
+                                            import_order int null
                                             )"""
 
         # FIXME: this algorithm needs some serious optimisation!!!
@@ -352,8 +327,8 @@ class UserList(DetailedMixin, Base):
         await db.execute(
             text(
                 f"""
-            INSERT INTO {temp_table} (word, import_frequency) values (:word, :import_frequency)
-        """
+            INSERT INTO {temp_table} (word, import_frequency, import_order)
+            values (:word, :import_frequency, :import_order)"""
             ),
             data,
         )
@@ -369,13 +344,14 @@ class UserList(DetailedMixin, Base):
             ),
             {"from_lang": manager.from_lang, "to_lang": manager.to_lang},
         )
-
+        # Get the frequency for each word from the reference table (currently manager.from_lang + subtlexlookup)
+        short_code = manager.from_lang.split("-")[0]
         await db.execute(
             text(
                 f"""UPDATE {temp_table}
-                SET freq = ((zhsubtlexlookup.response_json::json->0)::jsonb->>'wcpm')::float
-                FROM zhsubtlexlookup
-                WHERE word = zhsubtlexlookup.source_text"""
+                SET freq = (({short_code}subtlexlookup.response_json::json->0)::jsonb->>'wcpm')::float
+                FROM {short_code}subtlexlookup
+                WHERE word = {short_code}subtlexlookup.source_text"""
             )
         )
 
@@ -428,9 +404,9 @@ class UserList(DetailedMixin, Base):
 
         # TODO: make more generic
         if self.order_by == self.ABSOLUTE_FREQUENCY:
-            sql += f" ORDER BY {temp_table}.freq DESC "
+            sql += f" ORDER BY {temp_table}.freq DESC, {temp_table}.import_order ASC "
         else:
-            sql += f" ORDER BY {temp_table}.import_frequency DESC "
+            sql += f" ORDER BY {temp_table}.import_frequency DESC, {temp_table}.import_order ASC "
         sql += f" LIMIT {self.nb_to_take} " if self.nb_to_take > 0 else ""
 
         result = await db.execute(text(sql))

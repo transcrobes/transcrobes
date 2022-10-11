@@ -3,6 +3,7 @@ import FlashOnIcon from "@mui/icons-material/FlashOn";
 import { IconButton, useTheme } from "@mui/material";
 import * as CSS from "csstype";
 import { ReactElement, useEffect, useState } from "react";
+import { useTranslate } from "react-admin";
 import { makeStyles } from "tss-react/mui";
 import { useAppDispatch } from "../../../app/hooks";
 import { addKnownCards } from "../../../features/card/knownCardsSlice";
@@ -50,6 +51,7 @@ export default function Actions({ className, tokenDetails, definition }: Props):
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
   const dispatch = useAppDispatch();
+  const translate = useTranslate();
   function toggleGloss(event: React.MouseEvent<HTMLSpanElement>) {
     dispatch(updateDefinition({ ...definition, glossToggled: !definition.glossToggled }));
     dispatch(setTokenDetails({ ...tokenDetails, gloss: !tokenDetails.gloss }));
@@ -92,16 +94,33 @@ export default function Actions({ className, tokenDetails, definition }: Props):
   const theme = useTheme();
   return tokenDetails.token.id ? (
     <>
-      <Loading classes={classes} position="relative" size={50} top="0px" message="Saving Cards..." show={saving} />
+      <Loading
+        classes={classes}
+        position="relative"
+        size={50}
+        top="0px"
+        message={translate("widgets.popup.saving_cards")}
+        show={saving}
+      />
       {message && <div>{message}</div>}
       <div className={className}>
         <div className={classes.toggle}>
           {!tokenDetails.gloss ? (
-            <IconButton className={classes.iconStyle} title="Gloss right now" onClick={toggleGloss} size="large">
+            <IconButton
+              className={classes.iconStyle}
+              title={translate("widgets.popup.gloss_now")}
+              onClick={toggleGloss}
+              size="large"
+            >
               <FlashOnIcon />
             </IconButton>
           ) : (
-            <IconButton className={classes.iconStyle} title="Don't gloss right now" onClick={toggleGloss} size="large">
+            <IconButton
+              className={classes.iconStyle}
+              title={translate("widgets.popup.dont_gloss_now")}
+              onClick={toggleGloss}
+              size="large"
+            >
               <FlashOffIcon />
             </IconButton>
           )}
@@ -118,6 +137,6 @@ export default function Actions({ className, tokenDetails, definition }: Props):
       </div>
     </>
   ) : (
-    <div>New word synchronising, please wait</div>
+    <div>{translate("widgets.popup.synchronising")}</div>
   );
 }

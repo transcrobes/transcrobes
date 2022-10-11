@@ -55,7 +55,7 @@ export async function getUserConfig(proxy: ServiceWorkerProxy): Promise<Repetrob
       .filter(([_l, v]) => !((v as any) instanceof Function))
       .map(([label, value]) => {
         return {
-          label: label,
+          label: `widgets.card_type.${label.toLowerCase()}`,
           value: value.toString(),
           selected:
             (conf.activeCardTypes || []).filter((ct) => ct.value === value.toString() && ct.selected).length > 0,
@@ -73,7 +73,7 @@ export async function getUserConfig(proxy: ServiceWorkerProxy): Promise<Repetrob
       activeCardTypes: Array.from($enum(CARD_TYPES).entries())
         .filter(([_l, v]) => !((v as any) instanceof Function))
         .map(([label, value]) => {
-          return { label: label, value: value.toString(), selected: true };
+          return { label: `widgets.card_type.${label.toLowerCase()}`, value: value.toString(), selected: true };
         }),
       wordLists: await proxy.sendMessagePromise<SelectableListElementType[]>({
         source: DATA_SOURCE,

@@ -76,9 +76,12 @@ async function loadDb(
       });
     }
   };
-  return getDb({ url, username: user.username }, progressCallback, sw).then((dbObj) => {
+  return getDb({ url, username: user.username, messagesLang: user.user.toLang }, progressCallback, sw).then((dbObj) => {
     db = dbObj;
     sw.tcb = Promise.resolve(dbObj);
+    // FIXME: !!! these should NOT be intervals but rather timeouts that relaunch
+    // when they have finished. Running multiple intervals is a waste of resources and
+    // can cause problems with the database
     setInterval(() => data.sendUserEvents(dbObj, url), EVENT_QUEUE_PROCESS_FREQ, NAME_PREFIX + "sendUserEvents");
     setInterval(() => data.pushFiles(url, user.username), PUSH_FILES_PROCESS_FREQ, NAME_PREFIX + "pushFiles");
     if (event) {

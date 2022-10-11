@@ -20,7 +20,7 @@ import {
   TranscrobesDatabase,
   TranscrobesDocumentTypes,
 } from "../database/Schema";
-import { RxDBDataProviderParams } from "../ra-data-rxdb";
+import { DBParameters, RxDBDataProviderParams } from "../ra-data-rxdb";
 import {
   cleanSentence,
   configIsUsable,
@@ -62,6 +62,7 @@ import {
   SerialisableStringSet,
   ShortChar,
   ShortWord,
+  SystemLanguage,
   UserDefinitionType,
   UserListWordType,
   VocabReview,
@@ -73,7 +74,7 @@ import {
 
 const IMPORT_FILE_STORAGE = "import_file_storage";
 
-export function getNamedFileStorage(parameters: RxDBDataProviderParams): Promise<IDBFileStorage> {
+export function getNamedFileStorage(parameters: DBParameters): Promise<IDBFileStorage> {
   if (!parameters.username) {
     throw new Error("Unable to find the current user");
   }
@@ -89,8 +90,10 @@ export async function pushFiles(url: URL, username: string): Promise<{ status: "
     const fd = new FormData();
     fd.append("afile", upload);
     fd.append("filename", cacheFiles[f]);
+    console.log("Sending file", cacheFiles[f]);
     const result = await fetchPlus(apiEndPoint, fd);
     if (result.status === "success") {
+      console.log("Sending file success", cacheFiles[f]);
       await fileStore.remove(cacheFiles[f]);
     } else {
       console.error(result);
@@ -201,7 +204,8 @@ export async function getContentAccuracyStatsForImport(
     importId,
     analysisString,
     allWordsInput,
-  }: { importId?: string; analysisString?: string; allWordsInput?: PythonCounter },
+    fromLang,
+  }: { importId?: string; analysisString?: string; allWordsInput?: PythonCounter; fromLang: InputLanguage },
   cardWords: SerialisableDayCardWords,
 ) {
   const defs = new Map<string, DefinitionDocument>();
@@ -225,7 +229,7 @@ export async function getContentAccuracyStatsForImport(
     } else {
       throw new Error("At least one of importId or analysisString must be provided");
     }
-    const buckets = cleanAnalysis(analysis, "zh-Hans");
+    const buckets = cleanAnalysis(analysis, fromLang);
     for (const [nbOccurrences, wordList] of Object.entries(buckets)) {
       for (const word of wordList) {
         allWords[word] = [defs.get(word)?.id || "", parseInt(nbOccurrences)];
@@ -264,7 +268,7 @@ export async function getContentAccuracyStatsForImport(
 
 export async function getContentStatsForImport(
   db: TranscrobesDatabase,
-  { importId, analysisString }: { importId?: string; analysisString?: string },
+  { importId, analysisString, fromLang }: { importId?: string; analysisString?: string; fromLang: InputLanguage },
   cardWords: SerialisableDayCardWords,
 ): Promise<CalculatedContentStats | null> {
   let analysis: ImportAnalysis;
@@ -277,8 +281,7 @@ export async function getContentStatsForImport(
   } else {
     throw new Error("At least one of importId or analysisString must be provided");
   }
-  // FIXME: hard-coded fromLang
-  const buckets = cleanAnalysis(analysis, "zh-Hans");
+  const buckets = cleanAnalysis(analysis, fromLang);
   const allWords: PythonCounter = {};
   let wordsTypes = 0;
   let words = 0;
@@ -297,10 +300,12 @@ export async function getContentStatsForImport(
   const charsTypes = Object.keys(allCharCounts).length;
   let knownCharsTypes = 0;
   let knownChars = 0;
-  for (const [char, count] of Object.entries(allCharCounts)) {
-    if (Object.hasOwn(cardWords.knownCardWordChars, char)) {
-      knownCharsTypes++;
-      knownChars += count;
+  if (cardWords.knownCardWordChars) {
+    for (const [char, count] of Object.entries(allCharCounts)) {
+      if (Object.hasOwn(cardWords.knownCardWordChars, char)) {
+        knownCharsTypes++;
+        knownChars += count;
+      }
     }
   }
 
@@ -314,6 +319,7 @@ export async function getContentStatsForImport(
   }
   const meanSentenceLength = _.mean(analysis.sentenceLengths);
   return {
+    fromLang,
     chars,
     knownChars,
     charsTypes,
@@ -328,7 +334,7 @@ export async function getContentStatsForImport(
 
 export async function getFirstSuccessStatsForImport(
   db: TranscrobesDatabase,
-  { importId, analysisString }: { importId?: string; analysisString?: string },
+  { importId, analysisString, fromLang }: { importId?: string; analysisString?: string; fromLang: InputLanguage },
 ): Promise<ImportFirstSuccessStats | null> {
   let analysis: ImportAnalysis;
   if (analysisString) {
@@ -346,8 +352,7 @@ export async function getFirstSuccessStatsForImport(
   const knownGraphs = await getGraphs(db, [...knownCards.keys()]);
   const knownChars = getKnownChars(knownCards, knownGraphs);
 
-  // FIXME: hard-coded fromLang
-  const buckets = cleanAnalysis(analysis, "zh-Hans");
+  const buckets = cleanAnalysis(analysis, fromLang);
   const allWords: [string, number][] = [];
   let nbUniqueWords = 0;
   let nbTotalWords = 0;
@@ -1019,7 +1024,7 @@ export async function getVocabReviews(
         id: x.id,
         graph: x.graph,
         sound: x.sound,
-        meaning: x.providerTranslations ? shortMeaning(x.providerTranslations) : "",
+        meaning: x.providerTranslations ? shortMeaning(x.providerTranslations, graderConfig.toLang) : "",
         clicks: 0,
         lookedUp: false,
       };
@@ -1123,14 +1128,13 @@ async function getPotentialWordIds(
 
 export async function getSRSReviews(
   db: TranscrobesDatabase,
-  activityConfig: RepetrobesActivityConfigType,
-  fromLang: InputLanguage,
+  conf: { activityConfig: RepetrobesActivityConfigType; fromLang: InputLanguage },
 ): Promise<DailyReviewables> {
-  if (!configIsUsable(activityConfig)) {
+  if (!configIsUsable(conf.activityConfig)) {
     console.debug("No wordLists or config not usable, not trying to find reviews");
     return getEmptyDailyReviewables();
   }
-  const potentialWordIds = await getPotentialWordIds(db, activityConfig);
+  const potentialWordIds = await getPotentialWordIds(db, conf.activityConfig);
   const allKnownWordIds = new Set<string>();
   const existingCards = new Map<string, CardDocument>();
   const todaysStudiedWords = new Set<string>();
@@ -1142,7 +1146,7 @@ export async function getSRSReviews(
     if (card.firstRevisionDate > 0) {
       existingCards.set(card.id, card);
     }
-    if (card.lastRevisionDate > activityConfig.todayStarts) {
+    if (card.lastRevisionDate > conf.activityConfig.todayStarts) {
       todaysStudiedWords.add(card.wordId());
     }
   }
@@ -1150,7 +1154,9 @@ export async function getSRSReviews(
   for (const wordId of potentialWordIds) {
     if (allKnownWordIds.has(wordId) || todaysStudiedWords.has(wordId)) potentialWordIds.delete(wordId);
   }
-  const selectedTypes = (activityConfig.activeCardTypes || []).filter((ac) => ac.selected).map((act) => `${act.value}`);
+  const selectedTypes = (conf.activityConfig.activeCardTypes || [])
+    .filter((ac) => ac.selected)
+    .map((act) => `${act.value}`);
 
   // Map of all the possible wordIds, with a set of all possible types
   let potentialCardsMap = new Map<string, Set<string>>();
@@ -1216,7 +1222,10 @@ export async function getSRSReviews(
   // now clean the potential news and definitions that might have invalid graphs (for reviewing anyway!)
   const cleanReviewableDefinitions = new Map<string, DefinitionType>();
   for (const def of allReviewableDefinitions.values()) {
-    if ((potentialCardsMap.has(def.id) && simpOnly(def.graph, fromLang)) || allWordIdsForExistingCards.has(def.id)) {
+    if (
+      (potentialCardsMap.has(def.id) && simpOnly(def.graph, conf.fromLang)) ||
+      allWordIdsForExistingCards.has(def.id)
+    ) {
       cleanReviewableDefinitions.set(def.id, clone(def.toJSON()));
     } else if (potentialCardsMap.has(def.id)) {
       // it doesn't only have simplified chars, so we can't/won't review
@@ -1225,11 +1234,11 @@ export async function getSRSReviews(
     }
   }
 
-  if (!activityConfig.systemWordSelection) {
+  if (!conf.activityConfig.systemWordSelection) {
     // systemWordSelection is already sorted
     potentialCardsMap = await orderedPotentialCardsMap(
       db,
-      activityConfig.newCardOrdering,
+      conf.activityConfig.newCardOrdering,
       potentialCardsMap,
       allReviewableDefinitions,
     );

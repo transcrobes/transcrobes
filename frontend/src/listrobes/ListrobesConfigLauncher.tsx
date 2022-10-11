@@ -1,20 +1,9 @@
 import SettingsIcon from "@mui/icons-material/Settings";
-import { Box, Drawer, IconButton } from "@mui/material";
-import { Theme } from "@mui/material/styles";
+import { Box, Drawer } from "@mui/material";
 import React, { ReactElement } from "react";
-import { makeStyles } from "tss-react/mui";
+import { Button, useTranslate } from "react-admin";
 import { GraderConfig } from "../lib/types";
 import { ListrobesConfig } from "./ListrobesConfig";
-import { Button } from "react-admin";
-
-const useStyles = makeStyles()((theme: Theme) => ({
-  typography: {
-    padding: theme.spacing(2),
-  },
-  settings: {
-    paddingTop: 0,
-  },
-}));
 
 interface Props {
   graderConfig: GraderConfig;
@@ -22,7 +11,7 @@ interface Props {
 }
 
 export default function ListrobesConfigLauncher({ graderConfig, onConfigChange }: Props): ReactElement {
-  const { classes } = useStyles();
+  const translate = useTranslate();
   const [isOpen, setIsOpen] = React.useState(false);
 
   // TODO: work out how to do this as proper functions!
@@ -38,17 +27,12 @@ export default function ListrobesConfigLauncher({ graderConfig, onConfigChange }
 
   return (
     <div>
-      {/* <IconButton
-        className={classes.settings}
-        onClick={toggleDrawer(true)}
-        color="primary"
-        aria-label="settings"
+      <Button
         size="large"
-      >
-        <SettingsIcon />
-      </IconButton> */}
-
-      <Button size="large" children={<SettingsIcon />} label="Listrobes Settings" onClick={toggleDrawer(true)} />
+        children={<SettingsIcon />}
+        label={translate("screens.listrobes.config.title")}
+        onClick={toggleDrawer(true)}
+      />
       <Drawer anchor="left" open={isOpen} onClose={toggleDrawer(false)}>
         <Box sx={{ width: 300 }} role="presentation">
           <ListrobesConfig graderConfig={graderConfig} onConfigChange={onConfigChange} />

@@ -7,6 +7,7 @@ import {
   TextField as RATextField,
   useList,
   Identifier,
+  useTranslate,
 } from "react-admin";
 import { ShortWord } from "../lib/types";
 import Pagination from "./Pagination";
@@ -24,6 +25,7 @@ export default function ShortWordList(props: Props) {
   const [sort, setSort] = useState({ field: "id", order: "ASC" });
   const [data, setData] = useState<ShortWord[]>([]);
   const [ids, setIds] = useState<string[]>([]);
+  const translate = useTranslate();
 
   useEffect(() => {
     const newData = props.data.filter((x) => x.id !== props.sourceGraph).slice((page - 1) * perPage, page * perPage);
@@ -45,8 +47,11 @@ export default function ShortWordList(props: Props) {
       >
         <Pagination forceSmall />
         <Datagrid bulkActionButtons={false} rowClick={props.onRowClick}>
-          <RATextField source="id" />
-          <FunctionField label="Sounds" render={(record?: RaRecord) => record && record.sounds?.join(" ")} />
+          <RATextField source="id" label={translate("screens.notrobes.short_word_list.id")} />
+          <FunctionField
+            label={translate("screens.notrobes.short_word_list.sounds")}
+            render={(record?: RaRecord) => record && record.sounds?.join(" ")}
+          />
         </Datagrid>
       </ListContextProvider>
     </div>

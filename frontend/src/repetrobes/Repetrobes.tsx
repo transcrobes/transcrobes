@@ -2,7 +2,7 @@ import { useTheme } from "@mui/material";
 import dayjs from "dayjs";
 import _ from "lodash";
 import { ReactElement, useEffect, useRef, useState } from "react";
-import { TopToolbar } from "react-admin";
+import { TopToolbar, useTranslate } from "react-admin";
 import { makeStyles } from "tss-react/mui";
 import { useAppSelector } from "../app/hooks";
 import HelpButton from "../components/HelpButton";
@@ -81,7 +81,9 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
   const [loading, setLoading] = useState<boolean>(false);
   const [stateActivityConfig, setStateActivityConfig] = useState<RepetrobesActivityConfigType>(EMPTY_ACTIVITY);
 
+  const translate = useTranslate();
   const defaultProviderOrder = useAppSelector((state) => state.userData.user.translationProviders);
+  const fromLang = useAppSelector((state) => state.userData.user.fromLang);
 
   const windowEndRef = useRef<HTMLDivElement>(null);
   const windowBeginRef = useRef<HTMLDivElement>(null);
@@ -97,6 +99,7 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
     if (!proxy.loaded) return;
     (async () => {
       const conf = await getUserConfig(proxy);
+      console.log("Repetrobes.tsx: getUserConfig returned", conf);
       const ulws = await proxy.sendMessagePromise<{
         userListWords: UserListWordType;
       }>({
@@ -112,10 +115,12 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
           conf.translationProviderOrder ||
           defaultProviderOrder.reduce((acc, next, ind) => ({ ...acc, [next]: ind }), {} as Record<string, number>),
       } as RepetrobesActivityConfigType;
+      console.log("Repetrobes.tsx: activityConfigNew", activityConfigNew);
+
       const reviewLists = await proxy.sendMessagePromise<DailyReviewables>({
         source: DATA_SOURCE,
         type: "getSRSReviews",
-        value: activityConfigNew,
+        value: { activityConfig: activityConfigNew, fromLang },
       });
       const tempState = {
         ...daState,
@@ -145,7 +150,7 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
           stateActivityConfig,
           firstLoad,
         );
-        setLoadingMessage(usable === undefined ? "" : "Settings incomplete, please configure");
+        setLoadingMessage(usable === undefined ? "" : translate("screens.repetrobes.settings_incomplete"));
         setLoading(true);
         return;
       }
@@ -164,14 +169,14 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
           stateActivityConfig,
           firstLoad,
         );
-        setLoadingMessage(usable === undefined ? "" : "Settings incomplete, please configure");
+        setLoadingMessage(usable === undefined ? "" : translate("screens.repetrobes.settings_incomplete"));
         setLoading(true);
         return;
       }
       const reviewLists = await proxy.sendMessagePromise<DailyReviewables>({
         source: DATA_SOURCE,
         type: "getSRSReviews",
-        value: stateActivityConfig,
+        value: { activityConfig: stateActivityConfig, fromLang },
       });
 
       const tempState = {

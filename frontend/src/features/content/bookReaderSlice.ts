@@ -35,4 +35,5 @@ const bookReaderSlice = createGenericSlice({
   },
 });
 export const bookReaderActions = bookReaderSlice.actions;
+export type BookReaderActions = typeof bookReaderActions;
 export default bookReaderSlice.reducer;

@@ -1,4 +1,3 @@
-import Tracker from "@openreplay/tracker";
 import { configureStore } from "@reduxjs/toolkit";
 import { createHashHistory, History } from "history";
 import { fetchUtils } from "ra-core";
@@ -30,11 +29,11 @@ declare global {
   }
 }
 
-export let tracker: Tracker;
+// export let tracker: Tracker;
 
-export function setTracker(newTracker: Tracker) {
-  tracker = newTracker;
-}
+// export function setTracker(newTracker: Tracker) {
+//   tracker = newTracker;
+// }
 
 // const openReplayMiddleware = tracker.use(
 //   trackerRedux({
@@ -43,18 +42,12 @@ export function setTracker(newTracker: Tracker) {
 //     actionType: (action) => action.type, // action type for search, that's the default one
 //     stateTransformer: (state) => {
 //       const { jwt, ..._state } = state;
-//       console.log("would try to send", jwt, _state);
 //       return {};
 //     },
 //   }),
 // );
 export const ACCESS_TOKEN_PATH = "/api/v1/login/access-token";
 export const REFRESH_TOKEN_PATH = "/api/v1/refresh";
-
-interface CreateStoreProps {
-  authProvider?: AuthProvider;
-  dataProvider?: DataProvider;
-}
 
 export let authProvider: AuthProvider | undefined;
 export let dataProvider: DataProvider | undefined;

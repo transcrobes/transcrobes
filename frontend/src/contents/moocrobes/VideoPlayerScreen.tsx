@@ -1,7 +1,7 @@
 import { Container } from "@mui/material";
 import Button from "@mui/material/Button";
 import { ReactElement, useEffect, useRef, useState } from "react";
-import { TopToolbar, useGetOne } from "react-admin";
+import { TopToolbar, useGetOne, useTranslate } from "react-admin";
 import { useParams } from "react-router-dom";
 import { makeStyles } from "tss-react/mui";
 import { store } from "../../app/createStore";
@@ -33,6 +33,7 @@ const useStyles = makeStyles()({
   toolbar: {
     justifyContent: "space-between",
     alignItems: "center",
+    maxHeight: "64px",
   },
 });
 
@@ -41,8 +42,11 @@ export default function VideoPlayerScreen({ proxy }: ContentProps): ReactElement
   const [fileURL, setFileURL] = useState<string>("");
   const [models, setModels] = useState<KeyedModels>({});
   const { data: content } = useGetOne<Content>("contents", { id });
-
+  const dispatch = useAppDispatch();
+  const definitions = useAppSelector((state) => state.definitions);
+  const translate = useTranslate();
   const { classes } = useStyles();
+
   function handleFileSelect(files: FileList | null): void {
     if (files && files.length > 0) {
       const url = URL.createObjectURL(files[0]);
@@ -51,9 +55,6 @@ export default function VideoPlayerScreen({ proxy }: ContentProps): ReactElement
       }
     }
   }
-
-  const dispatch = useAppDispatch();
-  const definitions = useAppSelector((state) => state.definitions);
 
   useEffect(() => {
     if (!proxy.loaded) return;
@@ -90,7 +91,7 @@ export default function VideoPlayerScreen({ proxy }: ContentProps): ReactElement
         <Container className={classes.button}>
           <label htmlFor="file-input">
             <Button variant="outlined" component="span">
-              Load video file
+              {translate("screens.moocrobes.load_video_file")}
             </Button>
           </label>
           <input

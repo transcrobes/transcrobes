@@ -1,5 +1,6 @@
 import { ToggleButton, ToggleButtonGroup } from "@mui/material";
 import React, { ReactElement } from "react";
+import { useTranslate } from "react-admin";
 import { useParams } from "react-router-dom";
 import { makeStyles } from "tss-react/mui";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
@@ -39,7 +40,7 @@ const useStyles = makeStyles()((theme) => ({
 
 export default function VideoConfig({ containerRef, onSubDelayChange }: VideoReaderConfigProps): ReactElement {
   const { classes: localClasses } = useStyles();
-
+  const translate = useTranslate();
   const { id = "" } = useParams<ContentParams>();
   const readerConfig = useAppSelector((state) => state.videoReader[id] || { ...DEFAULT_VIDEO_READER_CONFIG_STATE, id });
 
@@ -49,7 +50,7 @@ export default function VideoConfig({ containerRef, onSubDelayChange }: VideoRea
     <div>
       {/* FIXME: this is extremely nasty. I am horrible. Default nav height is 48. Sometimes */}
       {!isOnFullscreen() && <div style={{ height: "50px" }}></div>}
-      <Conftainer label="Subs position" id="sp">
+      <Conftainer label={translate("screens.moocrobes.config.subs_position.title")} id="sp">
         <ToggleButtonGroup
           className={localClasses.button}
           value={readerConfig.subPosition}
@@ -59,38 +60,38 @@ export default function VideoConfig({ containerRef, onSubDelayChange }: VideoRea
           }}
         >
           <ToggleButton className={localClasses.button} value="top">
-            Top
+            {translate("screens.moocrobes.config.subs_position.top")}
           </ToggleButton>
           <ToggleButton className={localClasses.button} value="bottom">
-            Bottom
+            {translate("screens.moocrobes.config.subs_position.bottom")}
           </ToggleButton>
           <ToggleButton className={localClasses.button} value="under">
-            Under
+            {translate("screens.moocrobes.config.subs_position.under")}
           </ToggleButton>
         </ToggleButtonGroup>
       </Conftainer>
-      <Conftainer label="Subtitle Box Width" id="sbw">
+      <Conftainer label={translate("screens.moocrobes.config.subs_box_width.title")} id="sbw">
         <FivePercentFineControl
           onValueChange={(value) => dispatch(actions.setSubBoxWidth({ id, value }))}
           value={readerConfig.subBoxWidth}
           className={localClasses.fineControlIcons}
         />
       </Conftainer>
-      <Conftainer label="Subtitle synchronisation" id="sd">
+      <Conftainer label={translate("screens.moocrobes.config.subs_synchronisation.title")} id="sd">
         <SubDelay
           onValueChange={onSubDelayChange}
           value={readerConfig.subDelay}
           className={localClasses.fineControlIcons}
         />
       </Conftainer>
-      <Conftainer label="Playback Rate" id="pr">
+      <Conftainer label={translate("screens.moocrobes.config.playback_rate.title")} id="pr">
         <PlaybackRate
           onValueChange={(value) => dispatch(actions.setPlaybackRate({ id, value }))}
           value={readerConfig.playbackRate}
           className={localClasses.fineControlIcons}
         />
       </Conftainer>
-      <Conftainer label="Subtitle Playback Rate" id="spr">
+      <Conftainer label={translate("screens.moocrobes.config.subtitle_playback_rate.title")} id="spr">
         <SubPlaybackRate
           onValueChange={(value) => dispatch(actions.setSubPlaybackRate({ id, value }))}
           value={readerConfig.subPlaybackRate}

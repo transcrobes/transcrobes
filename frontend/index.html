@@ -18,6 +18,8 @@
         supported = true;
       } else if (browser.name === 'firefox' && browser.os !== 'Android OS') {
         supported = true;
+      } else if (browser.os === 'iOS' || browser.name === 'safari') {
+        supported = true;
       }
       if (!supported) {
         location.href = '/static/unsupported.html';

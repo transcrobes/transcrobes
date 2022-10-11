@@ -12,6 +12,7 @@ import {
 import { useAppSelector } from "../app/hooks";
 import { reorderArray } from "../lib/funclib";
 import { DNDItemType } from "../lib/types";
+import { useTranslate } from "react-admin";
 
 /**
  * Moves an item from one list to another list.
@@ -66,6 +67,7 @@ interface Props {
 }
 export default function DictionaryChooser({ selected, onSelectionChange }: Props) {
   const [state, setState] = useState<DNDItemType[][]>([[], []]);
+  const translate = useTranslate();
 
   const dictionaries = useAppSelector((state) => state.dictionary);
   useEffect(() => {
@@ -115,9 +117,9 @@ export default function DictionaryChooser({ selected, onSelectionChange }: Props
               {(provided, snapshot) => (
                 <div ref={provided.innerRef} style={getListStyle(snapshot.isDraggingOver)} {...provided.droppableProps}>
                   {ind === 0 ? (
-                    <Box sx={{ margin: "0.3em" }}>Selected</Box>
+                    <Box sx={{ margin: "0.3em" }}>{translate("widgets.dictionary_provider.selected")}</Box>
                   ) : (
-                    <Box sx={{ margin: "0.3em" }}>Unselected</Box>
+                    <Box sx={{ margin: "0.3em" }}>{translate("widgets.dictionary_provider.unselected")}</Box>
                   )}
                   {el.map((item, index) => (
                     <Draggable key={item.id} draggableId={item.id} index={index}>

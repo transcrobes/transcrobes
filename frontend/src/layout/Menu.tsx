@@ -92,7 +92,7 @@ function Menu({ dense = false }: MenuProps): ReactElement {
                 />
                 <MenuItemLink
                   to={`/notrobes`}
-                  primaryText={translate(`resources.notrobes.name`, {
+                  primaryText={translate(`screens.notrobes.name`, {
                     smart_count: 2,
                   })}
                   leftIcon={<notrobes.icon />}
@@ -100,7 +100,7 @@ function Menu({ dense = false }: MenuProps): ReactElement {
                 />
                 <MenuItemLink
                   to={`/listrobes`}
-                  primaryText={translate(`resources.listrobes.name`, {
+                  primaryText={translate(`screens.listrobes.name`, {
                     smart_count: 2,
                   })}
                   leftIcon={<listrobes.icon />}
@@ -108,7 +108,7 @@ function Menu({ dense = false }: MenuProps): ReactElement {
                 />
                 <MenuItemLink
                   to={`/userdictionaries`}
-                  primaryText={translate(`resources.dictionaries.name`, {
+                  primaryText={translate(`resources.userdictionaries.name`, {
                     smart_count: 2,
                   })}
                   leftIcon={<dictionaries.icon />}
@@ -124,7 +124,7 @@ function Menu({ dense = false }: MenuProps): ReactElement {
               >
                 <MenuItemLink
                   to={`/stats`}
-                  primaryText={translate(`resources.stats.name`, {
+                  primaryText={translate(`screens.stats.name`, {
                     smart_count: 2,
                   })}
                   leftIcon={<stats.icon />}
@@ -132,7 +132,7 @@ function Menu({ dense = false }: MenuProps): ReactElement {
                 />
                 <MenuItemLink
                   to={`/exports`}
-                  primaryText={translate(`resources.exports.name`, {
+                  primaryText={translate(`screens.exports.name`, {
                     smart_count: 2,
                   })}
                   leftIcon={<statsExports.icon />}
@@ -164,7 +164,7 @@ function Menu({ dense = false }: MenuProps): ReactElement {
               >
                 <MenuItemLink
                   to={`/repetrobes`}
-                  primaryText={translate(`resources.repetrobes.name`, {
+                  primaryText={translate(`screens.repetrobes.name`, {
                     smart_count: 2,
                   })}
                   leftIcon={<repetrobes.icon />}
@@ -172,7 +172,7 @@ function Menu({ dense = false }: MenuProps): ReactElement {
                 />
                 <MenuItemLink
                   to={`/textcrobes`}
-                  primaryText={translate(`resources.textcrobes.name`, {
+                  primaryText={translate(`screens.textcrobes.name`, {
                     smart_count: 2,
                   })}
                   leftIcon={<textcrobes.icon />}
@@ -188,7 +188,7 @@ function Menu({ dense = false }: MenuProps): ReactElement {
                 />
                 <MenuItemLink
                   to={`/brocrobes`}
-                  primaryText={translate(`resources.brocrobes.name`, {
+                  primaryText={translate(`screens.brocrobes.name`, {
                     smart_count: 2,
                   })}
                   leftIcon={<OpenInBrowserIcon />}
@@ -205,7 +205,7 @@ function Menu({ dense = false }: MenuProps): ReactElement {
               />
               <MenuItemLink
                 to={`/system`}
-                primaryText={translate(`resources.system.name`, {
+                primaryText={translate(`screens.system.name`, {
                   smart_count: 2,
                 })}
                 leftIcon={<system.icon />}
@@ -213,7 +213,7 @@ function Menu({ dense = false }: MenuProps): ReactElement {
               />
               <MenuItemLink
                 to={`/help`}
-                primaryText={translate(`resources.help.name`, {
+                primaryText={translate(`screens.help.name`, {
                   smart_count: 2,
                 })}
                 leftIcon={<help.icon />}

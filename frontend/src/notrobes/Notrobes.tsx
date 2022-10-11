@@ -1,20 +1,22 @@
 import { Container, FormControlLabel, Switch, TextField, Typography, useTheme } from "@mui/material";
-import { makeStyles } from "tss-react/mui";
 import axios, { CancelTokenSource } from "axios";
 import { Converter, ConvertText } from "opencc-js";
 import { ReactElement, useEffect, useMemo, useRef, useState } from "react";
-import { TopToolbar } from "react-admin";
-import { useNavigate, useLocation } from "react-router-dom";
+import { TopToolbar, useTranslate } from "react-admin";
+import { useLocation, useNavigate } from "react-router-dom";
 import { $enum } from "ts-enum-util";
+import { makeStyles } from "tss-react/mui";
 import { getAxiosHeaders } from "../app/createStore";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
 import HelpButton from "../components/HelpButton";
 import GlobalLoading, { Loading } from "../components/Loading";
+import WatchDemo from "../components/WatchDemo";
 import { CardDocument, CARD_TYPES, getCardId, getWordId } from "../database/Schema";
 import { setLoading } from "../features/ui/uiSlice";
 import { simpOnly } from "../lib/libMethods";
 import { ServiceWorkerProxy } from "../lib/proxies";
 import {
+  AnyTreebankPosType,
   CardType,
   CharacterType,
   DefinitionType,
@@ -26,7 +28,6 @@ import {
   ShortChar,
   ShortWord,
   SortableListElementType,
-  TreebankPosType,
   UserListWordType,
   USER_STATS_MODE,
   WordDetailsType,
@@ -35,11 +36,11 @@ import {
 } from "../lib/types";
 import ShortWordList from "./ShortWordList";
 import Word from "./Word";
-import WatchDemo from "../components/WatchDemo";
 
 let timeoutId: number;
 const MIN_LOOKED_AT_EVENT_DURATION = 2000; // ms
-const MAX_ALLOWED_CHARACTERS = 6; // FIXME: obviously only somewhat sensible for Chinese...
+const ZH_MAX_ALLOWED_CHARACTERS = 6; // FIXME: obviously only somewhat sensible for Chinese...
+const EN_MAX_ALLOWED_CHARACTERS = 47; // FIXME: obviously only somewhat sensible for Chinese...
 const DATA_SOURCE = "Notrobes";
 
 interface Props {
@@ -49,7 +50,7 @@ interface Props {
 
 const useStyles = makeStyles()((theme) => ({
   root: { margin: theme.spacing(1), maxWidth: "800px" },
-  toolbar: { alignItems: "center" },
+  toolbar: { alignItems: "center", maxHeight: "64px" },
   message: { color: "red", fontWeight: "bold", fontSize: "2em" },
 }));
 
@@ -92,6 +93,7 @@ function useQuery() {
 function Notrobes({ proxy, url }: Props): ReactElement {
   const currentQueryParam = useQuery();
   const navigate = useNavigate();
+  const translate = useTranslate();
   const converter = useRef<ConvertText>(Converter({ from: "t", to: "cn" }));
   const [query, setQuery] = useState<string>(currentQueryParam.get("q") || "");
   const [wordListNames, setWordListNames] = useState<WordListNamesType>({});
@@ -242,7 +244,9 @@ function Notrobes({ proxy, url }: Props): ReactElement {
     }
     setFilteredExistingByChars(newFilteredByChars);
     setFilteredExistingBySounds(newFilteredBySounds);
-    setFilteredExistingByRadicals(newFilteredByRadicals);
+    if (fromLang === "zh-Hans") {
+      setFilteredExistingByRadicals(newFilteredByRadicals);
+    }
   }
 
   async function submitLookupEvents(lookupEvents: any[], userStatsMode: number) {
@@ -265,6 +269,8 @@ function Notrobes({ proxy, url }: Props): ReactElement {
     if (cancel) {
       cancel.cancel();
     }
+
+    query = query.toLowerCase().trim();
     cancel = axios.CancelToken.source();
     const details = await proxy.sendMessagePromise<WordDetailsType>({
       source: DATA_SOURCE,
@@ -314,14 +320,15 @@ function Notrobes({ proxy, url }: Props): ReactElement {
       const headers = await getAxiosHeaders();
       console.debug("Going to the server for query with headers", query, headers);
       try {
-        const res = (await axios.post(
+        const resArray = (await axios.post(
           new URL("/api/v1/enrich/word_definitions", url.origin).href,
           { data: query },
           { cancelToken: cancel.token },
         )) as any;
+        const res = Array.isArray(resArray) ? resArray[0] : resArray;
         let resultNotFoundMsg = "";
         if (!res.data.definition) {
-          resultNotFoundMsg = "There are no search results. Please try a new search";
+          resultNotFoundMsg = translate("screens.notrobes.no_results");
           setCharacters(null);
           return;
         }
@@ -351,7 +358,7 @@ function Notrobes({ proxy, url }: Props): ReactElement {
         if (axios.isCancel(error) || error) {
           console.error("Error fetching new data", error);
           dispatch(setLoading(undefined));
-          setMessage("Failed to fetch the data. Please check network");
+          setMessage(translate("screens.notrobes.no_network"));
           if (timeoutId) {
             window.clearTimeout(timeoutId);
             timeoutId = 0;
@@ -403,7 +410,7 @@ function Notrobes({ proxy, url }: Props): ReactElement {
     });
     setCards(updatedCards);
     dispatch(setLoading(undefined));
-    setMessage("Cards recorded");
+    setMessage(translate("screens.notrobes.cards_recorded"));
   }
   function handleOnInputChange(event: React.ChangeEvent<HTMLInputElement>) {
     if (event.target.value !== query) {
@@ -433,13 +440,16 @@ function Notrobes({ proxy, url }: Props): ReactElement {
       setMessage("");
     } else if (q && !simpOnly(q, fromLang) && !(q in allWords)) {
       console.debug("Query has illegal chars", q);
-      setMessage("Only simplified characters can be searched for");
+      setMessage(translate("screens.notrobes.only_simplified_chars"));
     } else if (q && converter && converter.current(q) !== q) {
       console.debug("Query contains traditional characters", q);
-      setMessage("The system does not currently support traditional characters");
-    } else if (q.length > MAX_ALLOWED_CHARACTERS) {
-      console.debug(`Entered a query of more than ${MAX_ALLOWED_CHARACTERS} characters`, q);
-      setMessage(`The system only handles words of up to ${MAX_ALLOWED_CHARACTERS} characters`);
+      setMessage(translate("screens.notrobes.no_traditional"));
+    } else if (fromLang === "en" && q.length > EN_MAX_ALLOWED_CHARACTERS) {
+      console.debug(`Entered a query of more than ${EN_MAX_ALLOWED_CHARACTERS} characters`, q);
+      setMessage(translate("screens.notrobes.query_max_length", { max_chars: EN_MAX_ALLOWED_CHARACTERS }));
+    } else if (fromLang === "zh-Hans" && q.length > ZH_MAX_ALLOWED_CHARACTERS) {
+      console.debug(`Entered a query of more than ${ZH_MAX_ALLOWED_CHARACTERS} characters`, q);
+      setMessage(translate("screens.notrobes.query_max_length", { max_chars: ZH_MAX_ALLOWED_CHARACTERS }));
     } else {
       dispatch(setLoading(true));
       setMessage("");
@@ -451,7 +461,7 @@ function Notrobes({ proxy, url }: Props): ReactElement {
   async function handleDeleteRecent(modelId: number | bigint) {
     if (word && recentPosSentences) {
       const newRecents: RecentSentencesType = { id: word.id, posSentences: {} };
-      for (const [k, posSentence] of Object.entries(recentPosSentences) as [TreebankPosType, PosSentence[]][]) {
+      for (const [k, posSentence] of Object.entries(recentPosSentences) as [AnyTreebankPosType, PosSentence[]][]) {
         if (posSentence) {
           for (const sent of posSentence) {
             if (sent.modelId != modelId) {
@@ -486,7 +496,7 @@ function Notrobes({ proxy, url }: Props): ReactElement {
                   onChange={(_: any, checked: boolean) => setShowRelated(checked)}
                 />
               }
-              label="Show related"
+              label={translate("screens.notrobes.show_related")}
               labelPlacement="end"
             />
           </div>
@@ -502,7 +512,7 @@ function Notrobes({ proxy, url }: Props): ReactElement {
                       onChange={(_: any, checked: boolean) => setDictOnly(checked)}
                     />
                   }
-                  label="Only commonly recognised words"
+                  label={translate("screens.notrobes.common_only")}
                   labelPlacement="end"
                 />
               </div>
@@ -510,7 +520,7 @@ function Notrobes({ proxy, url }: Props): ReactElement {
                 {filteredExistingByChars && (
                   <ShortWordList
                     sourceGraph={word.graph}
-                    label="By Character"
+                    label={translate("screens.notrobes.by_chars")}
                     data={Object.values(filteredExistingByChars)}
                     onRowClick={(id) => `/notrobes?q=${id}`}
                   />
@@ -518,15 +528,15 @@ function Notrobes({ proxy, url }: Props): ReactElement {
                 {filteredExistingBySounds && (
                   <ShortWordList
                     sourceGraph={word.graph}
-                    label="By Sound"
+                    label={translate("screens.notrobes.by_sound")}
                     data={Object.values(filteredExistingBySounds)}
                     onRowClick={(id) => `/notrobes?q=${id}`}
                   />
                 )}
-                {filteredExistingByRadicals && (
+                {fromLang === "zh-Hans" && filteredExistingByRadicals && (
                   <ShortWordList
                     sourceGraph={word.graph}
-                    label="By Radical"
+                    label={translate("screens.notrobes.by_radical")}
                     data={Object.values(filteredExistingByRadicals)}
                     onRowClick={(id) => `/notrobes?q=${id}`}
                   />
@@ -538,7 +548,7 @@ function Notrobes({ proxy, url }: Props): ReactElement {
             show={showRelated && Object.keys(allWords).length === 0 && Object.keys(allChars).length === 0}
             top="0px"
             position="relative"
-            message="Initialising related data indexes (15-60 secs)"
+            message={translate("screens.notrobes.loading_related")}
           />
 
           <Word
@@ -567,14 +577,14 @@ function Notrobes({ proxy, url }: Props): ReactElement {
         <HelpButton url={helpUrl} />
       </TopToolbar>
       <Container maxWidth="md">
-        <Typography variant="h4">Notrobes: Vocabulary search, discover words</Typography>
+        <Typography variant="h4">{translate("screens.notrobes.title")}</Typography>
         <div>
           <form className={classes.root} noValidate>
             <TextField
               value={query}
               disabled={!initialised}
               id="outlined-basic"
-              label="Search..."
+              label={translate("ra.action.search")}
               variant="outlined"
               onChange={handleOnInputChange}
               fullWidth

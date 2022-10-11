@@ -4,7 +4,7 @@ import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
 import { Box, createTheme, StyledEngineProvider, ThemeProvider } from "@mui/material";
 import debounce from "debounce";
 import { ReactElement, useCallback, useEffect, useRef, useState } from "react";
-import { Button, useAuthenticated } from "react-admin";
+import { Button, useAuthenticated, useTranslate } from "react-admin";
 import { useParams } from "react-router-dom";
 import { AdminStore, AppDispatch, store } from "../../app/createStore";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
@@ -86,6 +86,7 @@ function enableResizeEvent(reader: any, dispatch: AppDispatch, id: string) {
 export default function BookReader({ proxy }: ContentProps): ReactElement {
   useAuthenticated(); // redirects to login if not authenticated, required because shown as RouteWithoutLayout
   const { id = "" } = useParams<ContentParams>();
+  const translate = useTranslate();
   window.bookId = id;
 
   const url = new URL(`/api/v1/data/content/${id}/manifest.json`, window.location.href);
@@ -146,7 +147,7 @@ export default function BookReader({ proxy }: ContentProps): ReactElement {
       const userSettings = {
         verticalScroll: !!conf.isScrolling,
         appearance: getColorMode(themeName),
-        fontFamily: `${conf.fontFamily},${conf.fontFamilyChinese}`,
+        fontFamily: `${conf.fontFamilyGloss},${conf.fontFamilyMain}`,
         currentTocUrl: conf.currentTocUrl,
         location: conf.location,
         atStart: conf.atStart,
@@ -154,7 +155,7 @@ export default function BookReader({ proxy }: ContentProps): ReactElement {
         pageMargins: conf.pageMargins,
       };
       window.transcrobesStore = store;
-
+      console.log("Loading the reader with ", url);
       const reader = await D2Reader.load({
         url,
         injectables: injectables,
@@ -220,9 +221,9 @@ export default function BookReader({ proxy }: ContentProps): ReactElement {
 
   useEffect(() => {
     if (loaded && reader) {
-      reader.applyUserSettings({ fontFamily: `${readerConfig.fontFamily},${readerConfig.fontFamilyChinese}` });
+      reader.applyUserSettings({ fontFamily: `${readerConfig.fontFamilyGloss},${readerConfig.fontFamilyMain}` });
     }
-  }, [readerConfig.fontFamily, readerConfig.fontFamilyChinese]);
+  }, [readerConfig.fontFamilyGloss, readerConfig.fontFamilyMain]);
 
   useEffect(() => {
     if (loaded && reader) {
@@ -334,7 +335,7 @@ export default function BookReader({ proxy }: ContentProps): ReactElement {
             <Button
               size="large"
               children={<KeyboardArrowLeftIcon />}
-              label="Previous"
+              label={translate("screens.boocrobes.previous")}
               onClick={goBackward}
               disabled={readerConfig.atStart}
             />
@@ -342,7 +343,7 @@ export default function BookReader({ proxy }: ContentProps): ReactElement {
               alignIcon="right"
               size="large"
               children={<KeyboardArrowRightIcon />}
-              label="Next"
+              label={translate("screens.boocrobes.next")}
               onClick={goForward}
               disabled={readerConfig.atEnd}
             />

@@ -1,8 +1,5 @@
 // import { Injectable } from "@d-i-t-a/reader/dist/types/navigator/IFrameNavigator";
 
-// eslint-disable-next-line no-var
-// declare var __webpack_hash__: any;
-
 declare var __FAKE_HASH__: any;
 
 // const injectables: Injectable[] = [
@@ -32,13 +29,6 @@ const injectables: any[] = [
       : `${origin}/readium.` + __FAKE_HASH__ + `.js`,
     r2before: true,
   },
-  // {
-  //   // transcrobes
-  //   type: "script",
-  //   // the hash is required or Android basically never updates...
-  //   url: `${origin}/readium.${__webpack_hash__}.js`,
-  //   r2before: true,
-  // },
   {
     type: "style",
     url: `${origin}/static/opendyslexic.css`,

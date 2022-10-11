@@ -1,7 +1,7 @@
 import TocIcon from "@mui/icons-material/Toc";
 import { Box, Drawer, MenuItem, MenuList } from "@mui/material";
 import React, { ReactElement } from "react";
-import { Button } from "react-admin";
+import { Button, useTranslate } from "react-admin";
 import { useParams } from "react-router-dom";
 import { useAppDispatch } from "../../app/hooks";
 import { bookReaderActions } from "../../features/content/bookReaderSlice";
@@ -63,6 +63,7 @@ type TableOfContentsLauncherProps = {
 
 export default function TableOfContentsLauncher({ manifest }: TableOfContentsLauncherProps): ReactElement {
   const [isOpen, setIsOpen] = React.useState(false);
+  const translate = useTranslate();
 
   // TODO: work out how to do this as proper functions!
   const toggleDrawer = (open: boolean) => (event: React.KeyboardEvent | React.MouseEvent) => {
@@ -78,7 +79,12 @@ export default function TableOfContentsLauncher({ manifest }: TableOfContentsLau
   const dimensions = useWindowDimensions();
   return (
     <>
-      <Button size="large" children={<TocIcon />} label="Table of contents" onClick={toggleDrawer(true)} />
+      <Button
+        size="large"
+        children={<TocIcon />}
+        label={translate("screens.boocrobes.config.table_of_contents")}
+        onClick={toggleDrawer(true)}
+      />
       <Drawer anchor="left" open={isOpen} onClose={toggleDrawer(false)}>
         <Box sx={{ width: dimensions.width * 0.8 }} role="presentation">
           <TableOfContents manifest={manifest} onClickChapter={() => setIsOpen(false)} />

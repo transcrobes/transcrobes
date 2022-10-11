@@ -1,4 +1,5 @@
 import { ReactElement } from "react";
+import { useAppSelector } from "../app/hooks";
 import Meaning from "../components/Meaning";
 import RecentSentencesElement from "../components/RecentSentencesElement";
 import SayIt from "../components/SayIt";
@@ -13,13 +14,14 @@ export default function PhraseAnswer({
   translationProviderOrder,
   onCardFrontUpdate,
 }: CommonAnswerProps): ReactElement {
+  const fromLang = useAppSelector((state) => state.userData.user.fromLang);
   return (
     <div>
       <CentredFlex>
         <StyledAnswer> {definition.sound} </StyledAnswer>
       </CentredFlex>
       <CentredFlex>
-        <SayIt graph={definition.graph} />
+        <SayIt graph={definition.graph} lang={fromLang} />
       </CentredFlex>
       <MeaningWrapper>
         <Meaning

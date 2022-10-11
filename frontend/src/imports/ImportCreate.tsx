@@ -1,9 +1,20 @@
 import { Typography } from "@mui/material";
-import { BooleanInput, Create, FileField, FileInput, required, SelectInput, SimpleForm, TextInput } from "react-admin";
+import {
+  BooleanInput,
+  Create,
+  FileField,
+  FileInput,
+  required,
+  SelectInput,
+  SimpleForm,
+  TextInput,
+  useTranslate,
+} from "react-admin";
 import { HelpCreateActions } from "../components/HelpCreateActions";
 import { DOCS_DOMAIN, IMPORTS_YT_VIDEO, MAX_IMPORT_SIZE_BYTES, PROCESS_TYPE } from "../lib/types";
 
 export default function ImportCreate() {
+  const translate = useTranslate();
   return (
     <Create
       redirect="list"
@@ -13,35 +24,34 @@ export default function ImportCreate() {
     >
       <SimpleForm>
         <Typography sx={{ paddingBottom: "1em" }}>
-          You can import{" "}
+          {translate("resources.imports.create.form_description_a")}{" "}
           <Typography component={"span"} sx={{ fontWeight: "bold" }}>
             .csv, .txt, .srt / .vtt and .epub
           </Typography>{" "}
-          files. Please check the dedicated{" "}
+          {translate("resources.imports.create.form_description_b")}{" "}
           <a target="_blank" href={`//${DOCS_DOMAIN}/page/software/configure/imports/`}>
-            Online Help
+            {translate("buttons.general.online_help")}
           </a>{" "}
-          for more information about supported import formats!
+          {translate("resources.imports.create.form_description_c")}
         </Typography>
 
-        <TextInput label="Import name" source="title" validate={[required()]} />
-        <TextInput label="Import description" multiline source="description" />
-        <BooleanInput label="Shared with others" source="shared" defaultValue={false} />
+        <TextInput source="title" validate={[required()]} />
+        <TextInput multiline source="description" />
+        <BooleanInput source="shared" defaultValue={false} />
         <FileInput
           source="importFile"
           maxSize={MAX_IMPORT_SIZE_BYTES}
           accept=".txt,.csv,.epub,.vtt,.srt"
           validate={[required()]}
         >
-          <FileField source="src" title="title" />
+          <FileField source="src" />
         </FileInput>
         <SelectInput
-          label="Processing type"
           source="processType"
           validate={[required()]}
           choices={[
             // FIXME: think about how to do this DRY
-            { id: PROCESS_TYPE.VOCABULARY_ONLY, name: "Vocabulary Only" },
+            { id: PROCESS_TYPE.VOCABULARY_ONLY, name: translate(`widgets.process_type.vocabulary_only`) },
             // { id: PROCESS_TYPE.GRAMMAR_ONLY, name: "Grammar Only" },
             // { id: PROCESS_TYPE.VOCABULARY_GRAMMAR, name: "Vocabulary and Grammar" },
           ]}

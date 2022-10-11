@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 
-from app.enrich.etypes import EntryDefinition, Token
+from app.etypes import EntryDefinition, Token
 from sqlalchemy.ext.asyncio.session import AsyncSession
 
 
@@ -14,11 +14,13 @@ class Translator(ABC):
         pass
 
     @abstractmethod
-    async def get_standardised_defs(self, db: AsyncSession, token: Token) -> EntryDefinition:
+    async def get_standardised_defs(self, db: AsyncSession, token: Token, all_forms: bool = False) -> EntryDefinition:
         pass
 
     @abstractmethod
-    async def get_standardised_fallback_defs(self, db: AsyncSession, token: Token) -> EntryDefinition:
+    async def get_standardised_fallback_defs(
+        self, db: AsyncSession, token: Token, all_forms: bool = False
+    ) -> EntryDefinition:
         pass
 
     @abstractmethod
@@ -33,6 +35,11 @@ class Translator(ABC):
 
 
 class DefaultTranslator(Translator):
+    @staticmethod
+    @abstractmethod
+    def fallback_name() -> str:
+        pass
+
     @abstractmethod
     async def translate(self, db: AsyncSession, text: str):
         pass

@@ -4,13 +4,13 @@ import HomeIcon from "@mui/icons-material/Home";
 import { Box, Link } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import React from "react";
-import { Button } from "react-admin";
+import { Button, useTranslate } from "react-admin";
 import HelpButton from "../../components/HelpButton";
 import WatchDemo from "../../components/WatchDemo";
 import useFullscreen from "../../hooks/useFullscreen";
 import { BOOCROBES_HEADER_HEIGHT, BOOCROBES_YT_VIDEO, DOCS_DOMAIN } from "../../lib/types";
 import { WebpubManifest } from "../../lib/WebpubManifestTypes/WebpubManifest";
-import BookReaderLauncher from "./BookReaderConfigLauncher";
+import BookReaderConfigLauncher from "./BookReaderConfigLauncher";
 import TableOfContentsLauncher from "./TableOfContentsLauncher";
 
 interface Props {
@@ -19,6 +19,7 @@ interface Props {
 
 export default function Header({ manifest }: Props): React.ReactElement {
   const [isFullscreen, toggleFullscreen] = useFullscreen();
+  const translate = useTranslate();
   const theme = useTheme();
   const helpUrl = `//${DOCS_DOMAIN}/page/software/learn/boocrobes/`;
   return (
@@ -39,20 +40,20 @@ export default function Header({ manifest }: Props): React.ReactElement {
       }}
     >
       <Box display="flex">
-        <Link href="/#/contents" aria-label="Back to Content">
-          <Button size="large" children={<HomeIcon />} label="Back to Content" />
+        <Link href="/#/contents" aria-label={translate("screens.boocrobes.config.back_to_contents")}>
+          <Button size="large" children={<HomeIcon />} label={translate("screens.boocrobes.config.back_to_contents")} />
         </Link>
       </Box>
 
       <Box display="flex">
         <TableOfContentsLauncher manifest={manifest} />
-        <BookReaderLauncher />
+        <BookReaderConfigLauncher />
         <WatchDemo url={BOOCROBES_YT_VIDEO} size="large" />
         <HelpButton url={helpUrl} size="large" />
         <Button
           size="large"
           children={isFullscreen ? <FullscreenExit /> : <Fullscreen />}
-          label="Fullscreen"
+          label={translate("screens.boocrobes.config.fullscreen")}
           onClick={() => toggleFullscreen()}
         />
       </Box>

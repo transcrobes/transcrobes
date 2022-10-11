@@ -1,4 +1,4 @@
-FROM python:3.10.7-slim
+FROM python:3.10.8-slim
 
 LABEL maintainer="Anton Melser <anton@transcrob.es>"
 
@@ -17,9 +17,6 @@ RUN apt-get update && apt-get upgrade -y && apt-get install -y \
   && apt-get -y clean
 
 RUN /usr/local/bin/python -m pip install --upgrade pip setuptools
-
-# Install Poetry
-RUN /usr/local/bin/python -m pip install pip-tools
 
 COPY ./backend/app/pyproject.toml ./backend/app/requirements.txt ./backend/app/dev-requirements.txt /app/
 

@@ -4,6 +4,7 @@ import { GoalDocument } from "../database/Schema";
 import { ComponentsConfig } from "../lib/complexTypes";
 import { SerialisableDayCardWords, STATUS, WordlistType } from "../lib/types";
 import GoalIcon from "@mui/icons-material/TrackChanges";
+import { useTranslate } from "react-admin";
 
 interface Props {
   config: ComponentsConfig;
@@ -20,7 +21,7 @@ type GoalPercent = {
 
 export default function GoalsWidget({ config, inited }: Props): ReactElement {
   const [goals, setGoals] = useState<GoalPercent[]>([]);
-
+  const translate = useTranslate();
   useEffect(() => {
     (async function () {
       if (!inited) return;
@@ -122,7 +123,7 @@ export default function GoalsWidget({ config, inited }: Props): ReactElement {
       </Grid>
       {goals.length === 0 && (
         <Link href={`#/goals`} sx={{ textDecoration: "none" }}>
-          <Button startIcon={<GoalIcon />}>Create Goals now</Button>
+          <Button startIcon={<GoalIcon />}>{translate("resources.goals.create_goals_now")}</Button>
         </Link>
       )}
     </Box>

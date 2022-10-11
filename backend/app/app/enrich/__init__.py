@@ -11,13 +11,14 @@ from abc import ABC, abstractmethod
 from enum import Enum
 from typing import TYPE_CHECKING
 
+from app.cache import TimeStampedDef
 from app.core.config import settings
 from app.data.models import DATA_JS_SUFFIX
 from app.db.session import async_session
-from app.enrich.etypes import AnyToken, Sentence
 from app.enrich.transliterate import Transliterator
+from app.etypes import LANG_PAIR_SEPARATOR, AnyToken, Sentence
 from app.models import AuthUser
-from app.ndutils import lemma, to_enrich
+from app.ndutils import lemma, orig_text, to_enrich
 from bs4 import BeautifulSoup
 from fastapi.routing import APIRouter
 from jinja2 import Template
@@ -42,22 +43,62 @@ class TokenPhoneType(Enum):
     DEEP = 2
 
 
+def best_surface_def(token, all_token_definitions):
+    lem = lemma(token)
+    ot = orig_text(token)
+    mbg = (
+        all_token_definitions.get(ot)
+        or all_token_definitions.get(ot.lower())
+        or all_token_definitions.get(lem)
+        or all_token_definitions.get(lem.lower())
+    )
+    if not mbg:
+        mbg = next(all_token_definitions.values(), None) or [0.0, "{}", 0]
+
+    return json.loads(mbg[1])
+
+
+def best_deep_def(token, all_token_definitions):
+    lem = lemma(token)
+    ot = orig_text(token)
+    mbg = (
+        all_token_definitions.get(lem.lower())
+        or all_token_definitions.get(lem)
+        or all_token_definitions.get(ot.lower())
+        or all_token_definitions.get(ot)
+    )
+    if not mbg:
+        mbg = next(all_token_definitions.values(), None) or [0.0, "{}", 0]
+
+    return json.loads(mbg[1])
+
+
+def lang_prefix(lang_pair: str) -> str:
+    return f"{lang_pair}{LANG_PAIR_SEPARATOR}"
+
+
 def latest_definitions_json_dir_path(user: AuthUser) -> str:
     find_re = (
-        DEFINITIONS_JSON_CACHE_FILE_PREFIX_REGEX
+        lang_prefix(f"{user.from_lang}{LANG_PAIR_SEPARATOR}{user.to_lang}")
+        + DEFINITIONS_JSON_CACHE_FILE_PREFIX_REGEX
         + "-".join(user.dictionary_ordering.split(","))
         + DEFINITIONS_JSON_CACHE_DIR_SUFFIX_REGEX
     )
     logger.debug(f"Looking for the latest definitions dir using regex: {find_re=}")
     try:
         return sorted(
-            [f.path for f in os.scandir(settings.DEFINITIONS_CACHE_DIR) if f.is_dir() and re.match(find_re, f.name)]
+            [
+                f.path.removeprefix(lang_prefix(user))
+                for f in os.scandir(settings.DEFINITIONS_CACHE_DIR)
+                if f.is_dir() and re.match(find_re, f.name)
+            ]
         )[-1]
     except IndexError:
         logger.error(
             "Unable to find a definitions file for user %s using %s with re %s",
             user,
             user.dictionary_ordering,
+            lang_prefix(user),
             find_re,
         )
     return ""
@@ -156,13 +197,22 @@ class Enricher(ABC):
 
     @abstractmethod
     def _set_best_guess(
-        self, sentence: Sentence, token: AnyToken, token_definition, available_def_providers: list[str]
+        self,
+        sentence: Sentence,
+        token: AnyToken,
+        token_definitions: list[TimeStampedDef],
+        available_def_providers: list[str],
     ):
         pass
 
     @abstractmethod
     def _set_slim_best_guess(
-        self, sentence: Sentence, token: AnyToken, token_definition, phone, available_def_providers: list[str]
+        self,
+        sentence: Sentence,
+        token: AnyToken,
+        token_definitions: list[TimeStampedDef],
+        phone,
+        available_def_providers: list[str],
     ):
         pass
 
@@ -172,6 +222,10 @@ class Enricher(ABC):
 
     @abstractmethod
     def get_simple_pos(self, token: AnyToken):
+        pass
+
+    @abstractmethod
+    def normalise_punctuation(self, token: AnyToken):
         pass
 
     @abstractmethod
@@ -264,8 +318,8 @@ class Enricher(ABC):
         available_def_providers: list[str],
     ):
         logger.debug("Attempting to async enrich: '%s'", text)
-        clean_text = self.clean_text(text)
-        raw_model = await manager.parser().parse(clean_text)
+        ctext = self.clean_text(text)
+        raw_model = await manager.parser().parse(ctext)
         parsed_slim_model = manager.enricher().slim_parse(raw_model)
         model = {
             "s": await self.enrich_slim_model(
@@ -291,11 +345,12 @@ class Enricher(ABC):
     ):
         logger.debug("Attempting to async enrich: '%s'", text)
 
-        clean_text = self.clean_text(text)
-        raw_model = await manager.parser().parse(clean_text)
+        ctext = self.clean_text(text)
+        raw_model = await manager.parser().parse(ctext)
         model = {
             "s": await self._enrich_model(raw_model, manager, translate_sentence, best_guess, deep_transliterations)
         }
+        raise Exception("this is broken")
         match = re.match(r"^\s+", text)
         if match:
             model["sws"] = match.group(0)
@@ -354,12 +409,23 @@ class Enricher(ABC):
         for sentence in fat_model["sentences"]:
             slim_sentence = []
             for token in sentence["tokens"]:
+                self.normalise_punctuation(token)
+                nt = {}
                 if self.is_clean(token) and self.needs_enriching(token):
-                    # slim_sentence.append({"l": token["lemma"], "pos": token["pos"]})
-                    slim_sentence.append({"l": token["originalText"], "pos": token["pos"]})
+                    # should I be using token["word"] for word?
+                    if token["originalText"] == token["lemma"]:
+                        nt = {"l": token["originalText"], "pos": token["pos"]}
+                    else:
+                        nt = {"w": token["originalText"], "l": token["lemma"], "pos": token["pos"]}
                 else:
-                    # slim_sentence.append({"l": token["lemma"]})
-                    slim_sentence.append({"l": token["originalText"]})
+                    nt = {"l": token["originalText"]}
+                if "before" in token and token["before"]:
+                    nt["b"] = token["before"]
+                if "after" in token and token["after"]:
+                    nt["a"] = token["after"]
+
+                slim_sentence.append(nt)
+
             slim_model.append({"t": slim_sentence})
         return slim_model
 
@@ -387,7 +453,7 @@ class Enricher(ABC):
         deep_transliterations: bool,
     ):
         # FIXME: find out how to put this in the header without a circular dep
-        from app.enrich.models import definition  # pylint: disable=C0415
+        from app.enrich.models import definitions  # pylint: disable=C0415
 
         raise Exception("Actually there are logic problems with this method..., namely the phone stuff")
 
@@ -415,7 +481,7 @@ class Enricher(ABC):
             for token in sentence["tokens"]:
                 if not self.is_clean(token) or not self.needs_enriching(token):
                     continue
-                token_definition = await definition(db, manager, token)
+                token_definition = await definitions(db, manager, token)
                 token["id"] = token_definition["id"]  # BingAPILookup id
                 token["np"] = self.get_simple_pos(token)  # Normalised POS
 
@@ -458,7 +524,7 @@ class Enricher(ABC):
         available_def_providers: list[str],
     ):
         # FIXME: find out how to put this in the header without a circular dep
-        from app.enrich.models import definition  # pylint: disable=C0415
+        from app.enrich.models import definitions  # pylint: disable=C0415
 
         async with async_session() as db:
             if phone_type == TokenPhoneType.DEEP:
@@ -482,18 +548,22 @@ class Enricher(ABC):
                 if not self.is_clean(token) or not self.needs_enriching(token):
                     continue
                 # calling definition also ensures the token is properly in the db, so is required
-                token_definition = await definition(db, manager, token)
+                token_definitions = await definitions(db, manager, token)
+                token_definition = best_surface_def(token, token_definitions)
                 if fill_id:
                     token["id"] = token_definition["id"]
+                    if len(token_definitions) > 1:
+                        token["oids"] = [
+                            def_id for _a, _b, def_id in token_definitions.values() if def_id != token["id"]
+                        ]
                 if phone_type == TokenPhoneType.DEFAULT:
                     token["p"] = token_definition["p"].split()
                 if best_guess:
                     # no longer used, as we have this info in the client
                     # token["np"] = self.get_simple_pos(token)  # Normalised POS
                     self._set_slim_best_guess(
-                        sentence, token, token_definition["defs"], token_definition["p"], available_def_providers
+                        sentence, token, token_definitions, token_definition["p"], available_def_providers
                     )
-
         return sentence
 
 
@@ -503,8 +573,7 @@ async def enrich_html_fragment(xhtml, manager: EnrichmentManager):
     slim_models = {}
     for text_node in text_nodes:
         text = manager.enricher().clean_text(str(text_node))
-
-        if not re.search(r"\S+", text) or not to_enrich(text):
+        if not re.search(r"\S+", text) or not to_enrich(text, manager.from_lang):
             continue
 
         parse = await manager.parser().parse(text)
@@ -542,7 +611,7 @@ async def enrich_html_to_html(chapter_id, xhtml, manager: EnrichmentManager):
     for text_node in text_nodes:
         text = manager.enricher().clean_text(str(text_node))
 
-        if not re.search(r"\S+", text) or not to_enrich(text):
+        if not re.search(r"\S+", text) or not to_enrich(text, manager.from_lang):
             continue
 
         logger.debug(f"Starting parse for {chapter_id}: {text[:100]}")
@@ -573,7 +642,7 @@ async def enrich_plain_to_html(unique_key, start_text, manager: EnrichmentManage
 
     for raw_line in text_node.splitlines():
         text = "".join(c for c in raw_line.strip() if c.isprintable())
-        if not re.search(r"\S+", text) or not to_enrich(text):
+        if not re.search(r"\S+", text) or not to_enrich(text, manager.from_lang):
             template_string = text.strip()
         else:
             logger.debug(f"Starting parse for {unique_key}: {text[:100]}")
@@ -587,9 +656,9 @@ async def enrich_plain_to_html(unique_key, start_text, manager: EnrichmentManage
                 parsed_slim_model["ews"] = match.group(0)
 
             timestamp = time.time_ns()
-            template_string = f"<enriched-text-fragment id='{timestamp}'>{text}<enriched-text-fragment>"
+            template_string = f"<enriched-text-fragment id='{timestamp}'>{text}</enriched-text-fragment>"
             slim_models[timestamp] = parsed_slim_model
 
-        lines += f"<br>{template_string}" if (lines and text.startswith("-")) else template_string
+        lines += f"<br>{template_string}" if (lines and text.startswith("-")) else template_string + "&nbsp;"
 
     return unique_key, lines, slim_models

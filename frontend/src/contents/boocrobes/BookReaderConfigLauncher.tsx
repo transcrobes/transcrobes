@@ -3,16 +3,17 @@ import SettingsIcon from "@mui/icons-material/Settings";
 import { Box, Drawer } from "@mui/material";
 import BookReaderConfig from "./BookReaderConfig";
 import useWindowDimensions from "../../hooks/WindowDimensions";
-import { Button } from "react-admin";
+import { Button, useTranslate } from "react-admin";
 
 export default function BookReaderConfigLauncher(): ReactElement {
   const [isOpen, setIsOpen] = React.useState(false);
+  const translate = useTranslate();
+
   // TODO: work out how to do this as proper functions!
   const toggleDrawer = (open: boolean) => (event: React.KeyboardEvent | React.MouseEvent) => {
     if (
       event.type === "keydown" &&
-      ((event as React.KeyboardEvent).key === "Tab" ||
-        (event as React.KeyboardEvent).key === "Shift")
+      ((event as React.KeyboardEvent).key === "Tab" || (event as React.KeyboardEvent).key === "Shift")
     ) {
       return;
     }
@@ -26,7 +27,7 @@ export default function BookReaderConfigLauncher(): ReactElement {
       <Button
         size="large"
         children={<SettingsIcon />}
-        label="Settings"
+        label={translate("screens.boocrobes.config.title")}
         onClick={toggleDrawer(true)}
       />
       <Drawer anchor="left" open={isOpen} onClose={toggleDrawer(false)}>

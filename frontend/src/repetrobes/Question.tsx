@@ -55,7 +55,7 @@ export default function Question({
 }: QuestionProps): ReactElement {
   const { classes } = useStyles({ premature });
   const cardType = getCardType(card);
-  const word = showNormalFont ? definition.graph : undefined;
+  const word = showNormalFont || characters.length === 0 ? definition.graph : undefined;
   return (
     <div className={classes.question}>
       {(cardType === CARD_TYPES.GRAPH.toString() && (

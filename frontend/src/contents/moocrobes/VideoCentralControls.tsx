@@ -8,6 +8,7 @@ import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import SkipNextIcon from "@mui/icons-material/SkipNext";
 import SkipPreviousIcon from "@mui/icons-material/SkipPrevious";
 import { ReactElement } from "react";
+import { useTranslate } from "react-admin";
 
 interface Props {
   onPlayPause: () => void;
@@ -46,21 +47,52 @@ function VideoCentralControls({
   playing,
 }: Props): ReactElement {
   const { classes } = useStyles();
+  const translate = useTranslate();
   return (
     <Grid container direction="row" alignItems="center" justifyContent="space-around">
-      <IconButton onClick={onSkipPreviousCue} className={classes.controlIcons} aria-label="previous cue" size="large">
+      <IconButton
+        title={translate("screens.moocrobes.config.central_controls.previous_sub")}
+        onClick={onSkipPreviousCue}
+        className={classes.controlIcons}
+        aria-label={translate("screens.moocrobes.config.central_controls.previous_sub")}
+        size="large"
+      >
         <SkipPreviousIcon className={classes.controlIcons} fontSize="inherit" />
       </IconButton>
-      <IconButton onClick={onRewind} className={classes.controlIcons} aria-label="rewind" size="large">
+      <IconButton
+        title={translate("screens.moocrobes.config.central_controls.skip_back")}
+        onClick={onRewind}
+        className={classes.controlIcons}
+        aria-label={translate("screens.moocrobes.config.central_controls.skip_back")}
+        size="large"
+      >
         <FastRewindIcon className={classes.controlIcons} fontSize="inherit" />
       </IconButton>
-      <IconButton onClick={onPlayPause} className={classes.controlIcons} aria-label="play" size="large">
+      <IconButton
+        title={translate("screens.moocrobes.config.central_controls.play")}
+        onClick={onPlayPause}
+        className={classes.controlIcons}
+        aria-label={translate("screens.moocrobes.config.central_controls.play")}
+        size="large"
+      >
         {playing ? <PauseIcon fontSize="inherit" /> : <PlayArrowIcon fontSize="inherit" />}
       </IconButton>
-      <IconButton onClick={onFastForward} className={classes.controlIcons} aria-label="forward" size="large">
+      <IconButton
+        title={translate("screens.moocrobes.config.central_controls.skip_forward")}
+        onClick={onFastForward}
+        className={classes.controlIcons}
+        aria-label={translate("screens.moocrobes.config.central_controls.skip_forward")}
+        size="large"
+      >
         <FastForwardIcon fontSize="inherit" />
       </IconButton>
-      <IconButton onClick={onSkipNextCue} className={classes.controlIcons} aria-label="next cue" size="large">
+      <IconButton
+        title={translate("screens.moocrobes.config.central_controls.next_sub")}
+        onClick={onSkipNextCue}
+        className={classes.controlIcons}
+        aria-label={translate("screens.moocrobes.config.central_controls.next_sub")}
+        size="large"
+      >
         <SkipNextIcon fontSize="inherit" />
       </IconButton>
     </Grid>

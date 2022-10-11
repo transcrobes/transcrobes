@@ -6,6 +6,7 @@ import { getDb } from "../database/Database";
 import { getNamedFileStorage } from "../lib/data";
 import { TranscrobesCollectionsKeys, TranscrobesDatabase } from "../database/Schema";
 import dayjs from "dayjs";
+import { SystemLanguage } from "../lib/types";
 
 type DbDataProvider = DataProvider & { db: () => Promise<TranscrobesDatabase> };
 
@@ -168,9 +169,13 @@ export default function RxDBProvider(params: RxDBDataProviderParams): DbDataProv
   } as DbDataProvider;
 }
 
-export interface RxDBDataProviderParams {
+export interface DBParameters {
   test?: boolean;
   url: URL;
   username: string;
   loggingEnabled?: boolean;
+}
+
+export interface RxDBDataProviderParams extends DBParameters {
+  messagesLang: SystemLanguage;
 }

@@ -4,6 +4,7 @@ import { makeStyles } from "tss-react/mui";
 import { store } from "../../app/createStore";
 import { useAppSelector, useJssStyles } from "../../app/hooks";
 import { enrichETFElements } from "../../components/content/etf/EnrichedTextFragment";
+import { isScriptioContinuo } from "../../lib/funclib";
 import { ContentParams, DEFAULT_VIDEO_READER_CONFIG_STATE, KeyedModels, VideoReaderState } from "../../lib/types";
 
 interface Props {
@@ -25,7 +26,8 @@ function SubtitleControl({ currentCue, models }: Props): ReactElement {
 
   const ref = useRef<HTMLDivElement>(null);
   const { classes } = useStyles(readerConfig);
-  const etfClasses = useJssStyles(readerConfig);
+  const fromLang = useAppSelector((state) => state.userData.user.fromLang);
+  const etfClasses = useJssStyles({ ...readerConfig, scriptioContinuo: isScriptioContinuo(fromLang) });
 
   if (ref.current && models) {
     enrichETFElements(ref.current, currentCue, readerConfig, models, store, etfClasses);

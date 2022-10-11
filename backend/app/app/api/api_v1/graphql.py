@@ -28,10 +28,12 @@ from app.db.session import async_session, async_stats_session
 from app.enrich import HANZI_JSON_CACHE_FILE_REGEX, latest_character_json_dir_path, latest_definitions_json_dir_path
 from app.enrich.data import managers
 from app.enrich.models import ensure_cache_preloaded, update_cache
+from app.etypes import LANG_PAIR_SEPARATOR
 from app.models import stats
 from app.models.migrated import KNOWLEDGE_UNSET
 from app.models.mixins import ActivatorMixin, DetailedMixin
 from app.models.user import AuthUser
+from app.ndutils import get_from_lang, get_to_lang, within_char_limit
 from app.schemas.files import ProcessData
 from app.worker.faustus import content_process_topic, list_process_topic
 from fastapi.exceptions import HTTPException
@@ -122,7 +124,7 @@ class FrequencyEntry:
             # return None
             return FrequencyEntry(wcpm="", wcdp="", pos="", pos_freq="")
         for v in entries:
-            if v["pinyin"]:  # FIXME: this is brittle to making generic!
+            if v.get("pinyin") or v.get("zipf"):  # FIXME: this is brittle to making generic!
                 return FrequencyEntry(wcpm=v["wcpm"], wcdp=v["wcdp"], pos=v["pos"], pos_freq=v["pos_freq"])
         return FrequencyEntry(
             wcpm=entries[0]["wcpm"],
@@ -246,23 +248,25 @@ class DefinitionSet:
     @staticmethod
     def from_model(definition: models.CachedDefinition, providers: List[str]) -> DefinitionSet:
         stored = json.loads(definition.response_json)
+
         out_definition = DefinitionSet(
             id=str(definition.word_id),  # RxDB requires a str for the primary key of a collection
             graph=definition.source_text,
             updated_at=definition.cached_date.timestamp(),
             sound=stored["p"].split(),
             frequency=FrequencyEntry.from_dict(stored["metadata"]["frq"]),
-            hsk=HSKEntry.from_dict(stored["metadata"]["hsk"]),
         )
+        if stored["metadata"].get("hsk"):
+            out_definition.hsk = HSKEntry.from_dict(stored["metadata"]["hsk"])
+
         for pos, syns in stored["syns"].items():
             out_definition.synonyms.append(POSValuesSet(pos_tag=pos, values=syns))
 
-        definitions = stored["defs"]
         for provider in providers:
-            if provider not in definitions:
+            if provider not in stored["defs"]:
                 continue
             sd = ProviderTranslations(provider=provider)
-            for k2, v2 in definitions[provider].items():
+            for k2, v2 in stored["defs"][provider].items():
                 sd.pos_translations.append(POSValuesSet(pos_tag=k2, values=[entry["nt"] for entry in v2]))
             out_definition.provider_translations.append(sd)
         return out_definition
@@ -297,7 +301,7 @@ async def filter_cached_definitions(
         # FIXME: Here we get the last object from the most recent generated file. There is a small
         # chance that there has been a new file generated since the user downloaded their version
         # so that needs to be fixed. We will only regenarate once a week or so, so later...
-        latest_name = os.path.basename(latest_definitions_json_dir_path(user))
+        latest_name = os.path.basename(latest_definitions_json_dir_path(user)).split(LANG_PAIR_SEPARATOR)[-1]
         latest_cached_date = datetime.fromtimestamp(float(latest_name.split("-")[1]))
         latest_word_id = int(latest_name.split("-")[2])
         stmt = stmt.where(
@@ -329,11 +333,11 @@ async def filter_cached_definitions(
     stmt = stmt.order_by(text("cached_date, word_id")).limit(limit)
     try:
         result = await db.execute(stmt)
-        definitions = [DefinitionSet.from_model(word, providers) for word in result.scalars().all()]
+        defs = [DefinitionSet.from_model(word, providers) for word in result.scalars().all()]
     except Exception:
         logger.exception(f"Error getting DefinitionSet for {stmt=}")
         raise
-    return definitions
+    return defs
 
 
 @strawberry.type
@@ -427,16 +431,15 @@ class MissingCacheValueException(Exception):
 
 
 def add_word_ids(user_words: list, lang_pair: str) -> list:
-    cds = cached_definitions[lang_pair]
     filtered_words = []
     for x in user_words:
-        if len(x[0]) > 10:
+        if not within_char_limit(x[0], get_from_lang(lang_pair)):
             logger.error("Trying to find an invalid word")
             logger.error(x)
             continue
         filtered_words.append(x)
     for uw in filtered_words:
-        val = cds.get(uw[0])
+        val = (cached_definitions[lang_pair].get(uw[0].lower()) or [None, {}])[1].get(uw[0])
         if not val:
             print(uw)
             raise MissingCacheValueException(
@@ -486,7 +489,7 @@ async def filter_word_model_stats(
         # This happens because broadcaster actually doesn't work... sigh... encode...
         async with async_session() as db:
             cached_max_timestamp = next(reversed(cached_definitions[lang_pair].values()))[0]
-            await update_cache(db, lang_pair.split(":")[0], lang_pair.split(":")[1], cached_max_timestamp)
+            await update_cache(db, get_from_lang(lang_pair), get_to_lang(lang_pair), cached_max_timestamp)
         updates = add_word_ids(lines, lang_pair)
 
     updates = [
@@ -927,23 +930,26 @@ class UsersurveysInput(CommonTypeInput):
 
 async def filter_wordlists(
     db: AsyncSession,
-    user_id: int,
+    user: AuthUser,
     limit: int,
     id: Optional[str] = "",
     updated_at: Optional[float] = -1,
 ) -> List[CommonType]:
 
     logger.debug(
-        f"filter_wordlists started: {user_id=}, {limit=}, {id=}, {updated_at=}, {WordList=}, {models.UserList=}"
+        f"filter_wordlists started: {user.id=}, {limit=}, {id=}, {updated_at=}, {WordList=}, {models.UserList=}"
     )
 
     stmt = (
         select(models.UserList)
         .where(
             or_(
-                models.UserList.created_by_id == user_id,  # pylint: disable=W0143
+                and_(models.UserList.created_by_id == user.id, models.AuthUser.id == user.id),
                 and_(
-                    models.UserList.created_by_id == 1, models.UserList.shared == True  # noqa: E712
+                    models.UserList.from_lang == user.from_lang,
+                    models.UserList.shared == True,  # noqa: E712
+                    models.AuthUser.is_superuser == True,  # noqa: E712
+                    models.UserList.created_by_id == models.AuthUser.id,
                 ),  # pylint: disable=W0143
             )
         )
@@ -969,8 +975,54 @@ async def filter_wordlists(
     obj_list = result.scalars().all()
     objs = [WordList.from_model(dj_model) for dj_model in obj_list]
     logger.debug(
-        f"filter_wordlists finished: {user_id=}, {limit=}, {id=}, {updated_at=}, {WordList=}, {models.UserList=}"
+        f"filter_wordlists finished: {user.id=}, {limit=}, {id=}, {updated_at=}, {WordList=}, {models.UserList=}"
     )
+    return objs
+
+
+async def filter_surveys(
+    db: AsyncSession,
+    from_lang: str,
+    to_lang: str,
+    limit: int,
+    id: Optional[str] = "",
+    updated_at: Optional[float] = -1,
+) -> List[CommonType]:
+    logger.debug(f"filter_surveys started: {from_lang=}, {to_lang=}, {limit=}, {id=}, {updated_at=}")
+
+    stmt = (
+        select(models.Survey)
+        .where(
+            and_(
+                models.Survey.from_lang == from_lang,
+                models.Survey.to_lang == to_lang,
+                models.AuthUser.is_superuser == True,  # noqa: E712
+                models.Survey.created_by_id == models.AuthUser.id,
+            )
+        )
+        .options(selectinload(models.Survey.created_by))
+    )
+
+    if updated_at and updated_at > 0:
+        updated_at_datetime = datetime.fromtimestamp(updated_at, pytz.utc)
+        base_query = models.Survey.updated_at > updated_at_datetime
+        if not id:
+            stmt = stmt.where(base_query)
+        else:
+            stmt = stmt.where(
+                or_(
+                    base_query,
+                    and_(
+                        models.Survey.updated_at == updated_at_datetime,
+                        models.Survey.id > id,
+                    ),
+                )
+            )
+
+    result = await db.execute(stmt.order_by("updated_at", "id").limit(limit))
+    obj_list = result.scalars().all()
+    objs = [Survey.from_model(dj_model) for dj_model in obj_list]
+    logger.debug(f"filter_survey finished: {from_lang=}, {to_lang=}, {limit=}, {id=}, {updated_at=}")
     return objs
 
 
@@ -1116,7 +1168,7 @@ class Query:
         logger.debug(f"Getting word model stats query: {user_id=}, {limit=}, {id=}, {updated_at=}, {lang_pair=}")
         if settings.DEBUG:
             async with async_session() as db:
-                await ensure_cache_preloaded(db, lang_pair.split(":")[0], lang_pair.split(":")[1])
+                await ensure_cache_preloaded(db, get_from_lang(lang_pair), get_to_lang(lang_pair))
 
         async with async_stats_session() as db:
             return await filter_word_model_stats(db, user_id, lang_pair, limit, int(id) if id else 0, updated_at)
@@ -1143,7 +1195,7 @@ class Query:
     ) -> List[WordList]:
         async with async_session() as db:
             user = await get_user(db, info.context.request)
-            return await filter_wordlists(db, user.id, limit, id, updated_at)
+            return await filter_wordlists(db, user, limit, id, updated_at)
 
     @strawberry.field
     async def feed_cards(  # pylint: disable=E0213
@@ -1186,10 +1238,8 @@ class Query:
         updated_at: Optional[float] = -1,
     ) -> List[Survey]:
         async with async_session() as db:
-            # user_id = (await get_user(db, info.context.request)).id
-            await get_user(db, info.context.request)  # raises exception if no logged in user
-            user_id = 1  # FIXME: slight hack - will admin always create all surveys? will they always be for everyone?
-            objs = await filter_standard(db, user_id, limit, Survey, models.Survey, id, updated_at)
+            user = await get_user(db, info.context.request)  # raises exception if no logged in user
+            objs = await filter_surveys(db, user.from_lang, user.to_lang, limit, id, updated_at)
             for obj in objs:
                 obj.survey_json = json.dumps(obj.survey_json)
             return objs
@@ -1217,7 +1267,7 @@ def get_user_id_from_token(token: str) -> int:
     return user_id
 
 
-def fill_import(dj_obj: models.Import, obj: ImportsInput):
+def fill_import(dj_obj: models.Import, obj: ImportsInput, _user: models.AuthUser = None):
     dj_obj.processing = obj.processing
     dj_obj.process_type = obj.process_type
     dj_obj.import_file = obj.import_file
@@ -1225,14 +1275,16 @@ def fill_import(dj_obj: models.Import, obj: ImportsInput):
     dj_obj.shared = obj.shared
 
 
-def fill_goal(dj_obj: models.Goal, obj: GoalsInput):
+def fill_goal(dj_obj: models.Goal, obj: GoalsInput, _user: models.AuthUser = None):
     if obj.parent:
         dj_obj.parent_id = obj.parent
     dj_obj.priority = obj.priority
     dj_obj.user_list_id = obj.user_list
 
 
-def fill_user_list(dj_obj: models.UserList, obj: UserlistsInput):
+def fill_user_list(dj_obj: models.UserList, obj: UserlistsInput, user: models.AuthUser = None):
+    if user and user.from_lang:
+        dj_obj.from_lang = user.from_lang
     dj_obj.processing = obj.processing
     dj_obj.the_import_id = obj.the_import
     dj_obj.minimum_doc_frequency = obj.minimum_doc_frequency
@@ -1245,7 +1297,7 @@ def fill_user_list(dj_obj: models.UserList, obj: UserlistsInput):
     dj_obj.only_dictionary_words = obj.only_dictionary_words
 
 
-def fill_userdictionary(dj_obj: models.UserDictionary, obj: UserdictionariesInput):
+def fill_userdictionary(dj_obj: models.UserDictionary, obj: UserdictionariesInput, _user: models.AuthUser = None):
     dj_obj.lz_content = obj.lz_content
     dj_obj.processing = obj.processing
     dj_obj.from_lang = obj.from_lang
@@ -1253,7 +1305,7 @@ def fill_userdictionary(dj_obj: models.UserDictionary, obj: UserdictionariesInpu
     dj_obj.shared = obj.shared
 
 
-def fill_content(dj_obj: models.Content, obj: ContentsInput):
+def fill_content(dj_obj: models.Content, obj: ContentsInput, _user: models.AuthUser = None):
     dj_obj.processing = obj.processing
     dj_obj.the_import_id = obj.the_import
     dj_obj.content_type = obj.content_type
@@ -1263,7 +1315,7 @@ def fill_content(dj_obj: models.Content, obj: ContentsInput):
     dj_obj.shared = obj.shared
 
 
-def fill_user_survey(dj_obj: models.UserSurvey, obj: UsersurveysInput):
+def fill_user_survey(dj_obj: models.UserSurvey, obj: UsersurveysInput, _user: models.AuthUser = None):
     dj_obj.survey_id = obj.survey_id
     dj_obj.data = obj.data
 
@@ -1280,7 +1332,7 @@ async def set_objects(
     info: Info[Context, Any],
     channel: str,
     ref: type[CommonType],
-    fill_object: Callable[[Base, CommonType], None],
+    fill_object: Callable[[Base, CommonType, models.AuthUser], None],
 ):
     async with async_session() as db:
         user = await get_user(db, info.context.request)
@@ -1318,7 +1370,7 @@ async def set_objects(
                 dj_obj = model_ref(id=obj.id, created_by=user, updated_by=user)
 
             fill_common(dj_obj, obj)
-            fill_object(dj_obj, obj)
+            fill_object(dj_obj, obj, user)
             db.add(dj_obj)
         try:
             await db.commit()

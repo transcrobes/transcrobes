@@ -2,7 +2,7 @@ import { Box, Drawer } from "@mui/material";
 import { makeStyles } from "tss-react/mui";
 import SettingsIcon from "@mui/icons-material/Settings";
 import { ReactElement, useState } from "react";
-import { Button } from "react-admin";
+import { Button, useTranslate } from "react-admin";
 import useWindowDimensions from "../../hooks/WindowDimensions";
 import ContentConfigDrawer, { ContentConfigProps } from "../common/ReaderConfig";
 
@@ -27,6 +27,7 @@ export default function ContentConfigLauncher({ ...props }: ContentConfigProps):
   const open = Boolean(anchorEl);
   const dimensions = useWindowDimensions();
   const width = dimensions.width < 600 ? dimensions.width * 0.8 : "inherit";
+  const translate = useTranslate();
 
   function handleClick(event: React.MouseEvent<HTMLButtonElement, MouseEvent>): void {
     setAnchorEl(event.currentTarget as HTMLElement);
@@ -39,7 +40,7 @@ export default function ContentConfigLauncher({ ...props }: ContentConfigProps):
       <Button
         className={classes.button}
         children={<SettingsIcon />}
-        label="Textcrobes Settings"
+        label={translate("screens.textcrobes.settings")}
         onClick={handleClick}
       />
       <Drawer container={props.containerRef?.current} anchor="left" open={open} onClose={handleClose}>

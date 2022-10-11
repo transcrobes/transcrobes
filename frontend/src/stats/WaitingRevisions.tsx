@@ -2,6 +2,7 @@ import { Grid, useTheme } from "@mui/material";
 import { bin } from "d3-array";
 import dayjs, { ManipulateType } from "dayjs";
 import { useEffect, useState } from "react";
+import { useTranslate } from "react-admin";
 import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
 import useWindowDimensions from "../hooks/WindowDimensions";
 import { binnedData } from "../lib/funclib";
@@ -24,6 +25,7 @@ interface Props {
 export function WaitingRevisions({ yIsNumber = true, periodType = "week" }: Props) {
   const [data, setData] = useState<ListGraphData[]>([]);
   const [revisions, setRevisions] = useState<CardType[]>([]);
+  const translate = useTranslate();
   useEffect(() => {
     (async () => {
       if (!window.componentsConfig.proxy.loaded) return;
@@ -84,7 +86,9 @@ export function WaitingRevisions({ yIsNumber = true, periodType = "week" }: Prop
           <tbody>
             <tr>
               <td>
-                <span style={{ color: theme.palette.primary.main }}>Total waiting</span>
+                <span style={{ color: theme.palette.primary.main }}>
+                  {translate("screens.stats.total_revisions_waiting")}
+                </span>
               </td>
               <td>{revisions.length}</td>
             </tr>
@@ -93,8 +97,8 @@ export function WaitingRevisions({ yIsNumber = true, periodType = "week" }: Prop
       </Grid>
     </Grid>
   ) : revisions === null ? (
-    <div>There are no revision stats available</div>
+    <div>{translate("screens.stats.no_revision_stats")}</div>
   ) : (
-    <div>The stats are still being generated</div>
+    <div>{translate("screens.stats.generating")}</div>
   );
 }

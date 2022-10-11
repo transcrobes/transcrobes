@@ -1,10 +1,11 @@
 import { useTheme } from "@mui/system";
-import { FunctionField, useRecordContext } from "react-admin";
+import { FunctionField, useRecordContext, useTranslate } from "react-admin";
 import { PROCESSING, reverseEnum } from "../lib/types";
 
 export function ProcessingField({ label }: { label?: string }) {
   const record = useRecordContext();
   const theme = useTheme();
+  const translate = useTranslate();
   return (
     <FunctionField
       source="processing"
@@ -25,7 +26,7 @@ export function ProcessingField({ label }: { label?: string }) {
           color: theme.palette.error.main,
         }),
       }}
-      render={(record: any) => reverseEnum(PROCESSING, record.processing)}
+      render={(record: any) => translate(`widgets.processing.${PROCESSING[record.processing].toLowerCase()}`)}
     />
   );
 }

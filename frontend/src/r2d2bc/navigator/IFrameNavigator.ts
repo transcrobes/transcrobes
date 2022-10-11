@@ -1184,8 +1184,14 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
             const script = IFrameNavigator.createJavascriptLink(injectable.url, injectable.async ?? false);
             head.appendChild(script);
             addLoadingInjectable(script);
+          } else if (injectable.type === "nomodule" && injectable.url) {
+            const script = IFrameNavigator.createJavascriptLink(injectable.url, injectable.async ?? false, false);
+            script.noModule = true;
+            head.appendChild(script);
+            addLoadingInjectable(script);
           } else if (injectable.type === "module" && injectable.url) {
             const script = IFrameNavigator.createJavascriptLink(injectable.url, injectable.async ?? false, true);
+            // script.crossOrigin = "anonymous";
             head.appendChild(script);
             addLoadingInjectable(script);
           }

@@ -263,9 +263,78 @@ class Settings(BaseSettings):
     ZH_HSK_LISTS_INMEM: bool = False
     ZH_CORENLP_HOST: str = "corenlpzh:9001"
 
+    EN_ZH_ABC_DICT_PATH: str = "/data/abc_en_zh_dict.txt"
+    EN_SUBTLEX_FREQ_PATH: str = "/data/subtlex-en-us.utf8.txt"
+    EN_CMU_DICT_PATH: str = "/data/cmudict-0.7b.txt"
+    EN_ZH_ABC_DICT_INMEM: bool = False
+    EN_SUBTLEX_FREQ_INMEM: bool = False
+    EN_CMU_DICT_INMEM: bool = False
+    EN_CORENLP_HOST: str = "corenlpen:9001"
+
     @property
     def LANG_PAIRS(self):
         return {
+            "en:zh-Hans": {
+                "enrich": {"classname": "app.en.CoreNLP_EN_Enricher", "config": {}},
+                "parse": {
+                    "classname": "app.enrich.parse.HTTPCoreNLPProvider",
+                    "config": {
+                        "base_url": f"http://{self.EN_CORENLP_HOST}",
+                        "params": '{"annotators":"lemma","outputFormat":"json"}',
+                    },
+                },
+                "word_lemmatizer": {
+                    "classname": "app.en.lemmatize.HTTPCoreNLPLemmatizer",
+                    "config": {
+                        "base_url": f"http://{self.EN_CORENLP_HOST}",
+                        "params": '{"annotators":"lemma","outputFormat":"json"}',
+                    },
+                },
+                "default": {
+                    "classname": "app.enrich.translate.bing.BingTranslator",
+                    "config": {
+                        "from": "en",
+                        "to": "zh-Hans",
+                        "api_host": self.BING_API_HOST,
+                        "api_key": self.BING_SUBSCRIPTION_KEY,
+                        "inmem": self.BING_TRANSLATOR_INMEM,
+                    },
+                    "transliterator": {
+                        "classname": "app.en.transliterate.cmu.CMU_EN_Transliterator",
+                        "config": {
+                            "path": self.EN_CMU_DICT_PATH,
+                            "inmem": self.EN_CMU_DICT_INMEM,
+                        },
+                    },
+                },
+                "secondary": [
+                    {
+                        "classname": "app.en_zhhans.translate.abc.EN_ZHHANS_ABCDictTranslator",
+                        "config": {
+                            "config": {
+                                "path": self.EN_ZH_ABC_DICT_PATH,
+                                "inmem": self.EN_ZH_ABC_DICT_INMEM,
+                            },
+                        },
+                    },
+                ],
+                "metadata": [
+                    {
+                        "classname": "app.en.metadata.subtlex.EN_SubtlexMetadata",
+                        "config": {
+                            "path": self.EN_SUBTLEX_FREQ_PATH,
+                            "inmem": self.EN_SUBTLEX_FREQ_INMEM,
+                        },
+                    },
+                ],
+                "transliterate": {
+                    "classname": "app.en.transliterate.cmu.CMU_EN_Transliterator",
+                    "config": {
+                        "path": self.EN_CMU_DICT_PATH,
+                        "inmem": self.EN_CMU_DICT_INMEM,
+                    },
+                },
+            },
             "zh-Hans:en": {
                 "language_config": {
                     "max_word_length_chars": 10,

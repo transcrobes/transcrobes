@@ -1,5 +1,6 @@
-import { Component, createVNode, VNode } from "inferno";
+import { Component, createTextVNode, createVNode, VNode } from "inferno";
 import { connect } from "inferno-redux";
+import _ from "lodash";
 import type { RootState } from "../../../app/createStore";
 import { addDefinitions } from "../../../features/definition/definitionsSlice";
 import { DOMRectangle, setMouseover, setTokenDetails } from "../../../features/ui/uiSlice";
@@ -120,19 +121,28 @@ class Entry extends Component<StatedEntryProps, LocalEntryState> {
     const knownCards = rootState.knownCards;
     const definitions = rootState.definitions;
     const tokenDetails = rootState.ui.tokenDetails;
-    const fromLang = rootState.userData.user.fromLang;
+    const { fromLang, toLang } = rootState.userData.user;
     const token = this.props.token;
+
+    // FIXME: this should be configurable!
+    const nonOptimisticKnows =
+      token.l in (knownCards.knownCardWordGraphs || {}) || (token.w || "") in (knownCards.knownCardWordGraphs || {});
+    const optimisticKnows =
+      token.l.toLowerCase() in (knownCards.knownCardWordGraphs || {}) ||
+      (token.w || "").toLowerCase() in (knownCards.knownCardWordGraphs || {}) ||
+      nonOptimisticKnows;
+
     const needsGloss =
       readerConfig.glossing > USER_STATS_MODE.NO_GLOSS &&
-      !(token.l in (knownCards.knownCardWordGraphs || {})) &&
       !!token.pos &&
+      !optimisticKnows &&
       (!isNumberToken(token) || GLOSS_NUMBER_NOUNS);
 
     const def = token.id ? definitions[token.id] : { ...(await getWord(token.l)), glossToggled: false };
 
     let localGloss = "";
     if ((needsGloss && (!def || !def.glossToggled)) || (!needsGloss && def && def.glossToggled)) {
-      localGloss = await getNormalGloss(token, readerConfig, knownCards, definitions, fromLang || "zh-Hans");
+      localGloss = await getNormalGloss(token, readerConfig, knownCards, definitions, fromLang, toLang);
     } else {
       localGloss = "";
     }
@@ -161,7 +171,7 @@ class Entry extends Component<StatedEntryProps, LocalEntryState> {
       knownCards,
       definitions,
       userData: {
-        user: { fromLang },
+        user: { fromLang, toLang },
       },
     } = this.context.store.getState() as RootState;
     if (attemptsRemaining < 0) {
@@ -182,15 +192,11 @@ class Entry extends Component<StatedEntryProps, LocalEntryState> {
         });
       } else {
         this.context.store.dispatch(addDefinitions([{ ...def, glossToggled: false }]));
-        getNormalGloss(
-          token,
-          readerConfig || this.props.readerConfig,
-          knownCards,
-          definitions,
-          fromLang || "zh-Hans",
-        ).then((gloss) => {
-          this.setState({ gloss });
-        });
+        getNormalGloss(token, readerConfig || this.props.readerConfig, knownCards, definitions, fromLang, toLang).then(
+          (gloss) => {
+            this.setState({ gloss });
+          },
+        );
       }
     });
   }
@@ -238,6 +244,11 @@ class Entry extends Component<StatedEntryProps, LocalEntryState> {
   }
 
   render(): VNode {
+    let wordStyle: { [key: string]: string } = this.props.token.style || {};
+    if (this.props.token.b) {
+      wordStyle["padding-left"] = `${this.props.token.b.length * 0.25}em`;
+    }
+
     if (this.props.token.pos || this.props.token.bg) {
       let isUnsure = false;
       if (this.props.readerConfig.glossUnsureBackgroundColour) {
@@ -261,9 +272,9 @@ class Entry extends Component<StatedEntryProps, LocalEntryState> {
             HtmlElement,
             "span",
             `${this.props.classes.word} tcrobe-word`,
-            this.props.token.l,
+            this.props.token.w || this.props.token.l,
             HasTextChildren,
-            { style: this.props.token.style },
+            _.isEmpty(wordStyle) ? undefined : { style: wordStyle },
             null,
             null,
           ),
@@ -293,7 +304,7 @@ class Entry extends Component<StatedEntryProps, LocalEntryState> {
         this.props.classes.word,
         this.props.token.l,
         HasTextChildren,
-        null,
+        _.isEmpty(wordStyle) ? undefined : { style: wordStyle },
         null,
         null,
       );

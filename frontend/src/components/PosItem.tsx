@@ -12,8 +12,9 @@ interface Props {
 }
 
 export default function PosItem({ item, discoverableWords }: Props): ReactElement {
+  // FIXME: remember why I'm not using useAppSelector here
   const user = store.getState().userData.user;
-  const posLabel = toPosLabels(item.posTag, user?.fromLang || "zh-Hans");
+  const posLabel = toPosLabels(item.posTag, user.toLang);
   return (
     <InfoBox>
       {item.values.length > 0 ? (

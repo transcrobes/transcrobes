@@ -1,0 +1,75 @@
+import re
+
+# French, stolen and adapted from https://character-table.netlify.app/french/#unicode-ranges
+# WARNING! It turns out \u002D MUST be the first character in the range,
+# otherwise it is not recognised and creates rubbish
+"""
+# \u0020-\u005F
+\u0027
+\u002D
+\u0041-\u005A
+\u0061-\u007A
+
+# \u007C
+# \u00A0
+# \u00A7
+# \u00A9
+# \u00AB
+# \u00B2-\u00B3
+# \u00BB
+\u00C0
+\u00C2
+\u00C6-\u00CB
+\u00CE-\u00CF
+\u00D4
+\u00D9
+\u00DB-\u00DC
+\u00E0
+\u00E2
+\u00E6-\u00EB
+\u00EE-\u00EF
+\u00F4
+\u00F9
+\u00FB-\u00FC
+\u00FF
+
+\u0152-\u0153
+\u0178
+# \u02B3
+# \u02E2
+#
+# \u1D48-\u1D49
+\u2010-\u2011
+\u2013-\u2014
+\u2019
+# \u201C-\u201D
+# \u2020-\u2021
+# \u2026
+# \u202F-\u2030
+# \u20AC
+\u2212
+"""
+
+FRENCH_WORD_RE = re.compile(
+    "^[\u002D\u0027\u0041-\u005A\u0061-\u007A\u00C0\u00C2\u00C6-\u00CB\u00CE-\u00CF\u00D4\u00D9\u00DB-\u00DC\u00E0\u00E2\u00E6-\u00EB\u00EE-\u00EF\u00F4\u00F9\u00FB-\u00FC\u00FF\u0152-\u0153\u0178\u2010-\u2011\u2013-\u2014\u2019\u2212]{1,47}$"
+)
+EXTENDED_ENGLISH_CHARS = "[\u002D\u0027\u0041-\u005A\u0061-\u007A\u00C0\u00C2\u00C6-\u00CB\u00CE-\u00CF\u00D4\u00D9\u00DB-\u00DC\u00E0\u00E2\u00E6-\u00EB\u00EE-\u00EF\u00F4\u00F9\u00FB-\u00FC\u00FF\u0152-\u0153\u0178\u2010-\u2011\u2013-\u2014\u2019\u2212]"
+EXTENDED_ENGLISH_CHARS_RE = re.compile(EXTENDED_ENGLISH_CHARS + "+")
+EXTENDED_ENGLISH_CHARS_ONLY_RE = re.compile("^" + EXTENDED_ENGLISH_CHARS + "+$")
+FULL_FRENCH_CHARS_RE = re.compile(
+    "[\u0020-\u005F\u0061-\u007A\u007C\u00A0\u00A7\u00A9\u00AB\u00B2-\u00B3\u00BB\u00C0\u00C2\u00C6-\u00CB\u00CE-\u00CF\u00D4\u00D9\u00DB-\u00DC\u00E0\u00E2\u00E6-\u00EB\u00EE-\u00EF\u00F4\u00F9\u00FB-\u00FC\u00FF\u0152-\u0153\u0178\u02B3\u02E2\u1D48-\u1D49\u2010-\u2011\u2013-\u2014\u2019\u201C-\u201D\u2020-\u2021\u2026\u202F-\u2030\u20AC\u2212]+"
+)
+
+# Chinese
+KANGXI_RADICALS = "\u2f00-\u2fd5"  # https://en.wikipedia.org/wiki/Kangxi_radical
+CJK_RADICALS_SUPPLEMENT = "\u2e80-\u2ef3"  # https://en.wikipedia.org/wiki/CJK_Radicals_Supplement
+CHINESE_CHARACTERS = "\u4e00-\u9fff"
+
+ZHHANS_CHARS_RE = re.compile(f".*[{KANGXI_RADICALS}{CJK_RADICALS_SUPPLEMENT}{CHINESE_CHARACTERS}]+.*")
+
+SIMPLIFIED_UTF8_ORD_MIN = 19968  # why did I think this should be 22909???
+SIMPLIFIED_UTF8_ORD_MAX = 40869  # why did I think this should be 40869???
+KANGXI_RADICALS_UTF8_ORD_MIN = 12032
+KANGXI_RADICALS_UTF8_ORD_MAX = 12245
+CJK_RADICALS_SUPPLEMENT_UTF8_ORD_MIN = 11904  # why did I think this should be 11912???
+CJK_RADICALS_SUPPLEMENT_UTF8_ORD_MAX = 12019

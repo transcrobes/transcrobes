@@ -7,12 +7,14 @@ import {
   SelectInput,
   SimpleForm,
   TextInput,
+  useTranslate,
 } from "react-admin";
 import { HelpCreateActions } from "../components/HelpCreateActions";
 import { GRADE, KNOWLEDGE_UNSET } from "../database/Schema";
 import { DOCS_DOMAIN, PROCESSING, STATUS, USERLISTS_YT_VIDEO } from "../lib/types";
 
 export default function UserListCreate() {
+  const translate = useTranslate();
   return (
     <Create
       redirect="list"
@@ -21,12 +23,11 @@ export default function UserListCreate() {
       }
     >
       <SimpleForm>
-        <TextInput label="List name" source="title" validate={[required()]} />
-        <TextInput label="List description" multiline source="description" />
+        <TextInput source="title" validate={[required()]} />
+        <TextInput multiline source="description" />
         <NumberInput min={-1} source="nbToTake" step={1} defaultValue={-1} />
         <ReferenceInput
           sort={{ field: "title", order: "ASC" }}
-          label="Source Import"
           source="theImport"
           reference="imports"
           filter={{ status: STATUS.ACTIVE, processing: PROCESSING.FINISHED }}
@@ -34,32 +35,30 @@ export default function UserListCreate() {
           <SelectInput validate={[required()]} optionText="title" />
         </ReferenceInput>
         {/* <BooleanInput label="Only dictionary words" source="onlyDictionaryWords" defaultValue={true} /> */}
-        <NumberInput label="Minimum absolute freq." min={-1} source="minimumAbsFrequency" step={1} defaultValue={-1} />
-        <NumberInput label="Minimum document freq." min={-1} source="minimumDocFrequency" step={1} defaultValue={-1} />
+        <NumberInput min={-1} source="minimumAbsFrequency" step={1} defaultValue={-1} />
+        <NumberInput min={-1} source="minimumDocFrequency" step={1} defaultValue={-1} />
         <SelectInput
-          label="Order by"
           source="orderBy"
           validate={[required()]}
           choices={[
-            { id: 0, name: "Absolute Frequency" },
-            { id: 1, name: "Import Frequency" },
+            { id: 0, name: translate("widgets.order_by.absolute_frequency") },
+            { id: 1, name: translate("widgets.order_by.import_frequency") },
           ]}
           defaultValue={0}
         />
         <SelectInput
-          label="Set word knowledge"
           source="wordKnowledge"
           validate={[required()]}
           choices={[
-            { id: KNOWLEDGE_UNSET, name: "Don't set" },
-            { id: GRADE.UNKNOWN, name: "Unknown" },
-            { id: GRADE.HARD, name: "Hard" },
-            { id: GRADE.GOOD, name: "Good" },
-            { id: GRADE.KNOWN, name: "Known" },
+            { id: KNOWLEDGE_UNSET, name: translate("widgets.set_knowledge.dont_set") },
+            { id: GRADE.UNKNOWN, name: translate("widgets.set_knowledge.unknown") },
+            { id: GRADE.HARD, name: translate("widgets.set_knowledge.hard") },
+            { id: GRADE.GOOD, name: translate("widgets.set_knowledge.good") },
+            { id: GRADE.KNOWN, name: translate("widgets.set_knowledge.known") },
           ]}
           defaultValue={KNOWLEDGE_UNSET}
         />
-        <BooleanInput label="Shared with others" source="shared" defaultValue={false} />
+        <BooleanInput source="shared" defaultValue={false} />
       </SimpleForm>
     </Create>
   );

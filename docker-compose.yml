@@ -9,17 +9,17 @@ services:
     depends_on:
       - backend
   db:
-    image: postgres:14
+    image: postgres:15
     volumes:
-      - app-db-data:/var/lib/postgresql/data/pgdata
+      - app-db-data15:/var/lib/postgresql/data/pgdata
     env_file:
       - .env
     environment:
       - PGDATA=/var/lib/postgresql/data/pgdata
   statsdb:
-    image: postgres:14
+    image: postgres:15
     volumes:
-      - app-statsdb-data:/var/lib/postgresql/data
+      - app-statsdb-data15:/var/lib/postgresql/data
     env_file:
       - .env
     environment:
@@ -30,7 +30,12 @@ services:
       - POSTGRES_PORT=${STATS_POSTGRES_PORT?Variable not set}
 
   corenlpzh:
-    image: transcrobes/corenlp-chinese:4.3.1
+    image: transcrobes/corenlp-chinese:4.5.1
+    env_file:
+      - .env
+
+  corenlpen:
+    image: transcrobes/corenlp-english:4.5.1
     env_file:
       - .env
 
@@ -42,7 +47,7 @@ services:
       - ALLOW_ANONYMOUS_LOGIN=yes
 
   kafka:
-    image: docker.io/bitnami/kafka:latest
+    image: docker.io/bitnami/kafka:3.3
     volumes:
       - "app-kafka_data:/bitnami"
     environment:
@@ -75,7 +80,7 @@ services:
       - SMTP_HOST=${SMTP_HOST}
     build:
       context: .
-      dockerfile: Dockerfile.backend
+      dockerfile: Dockerfile.web
       args:
         INSTALL_DEV: ${INSTALL_DEV-true}
         TRANSCROBES_DOCKER_REPO: ${TRANSCROBES_DOCKER_REPO-transcrobes}
@@ -139,10 +144,10 @@ services:
   #       FRONTEND_ENV: ${FRONTEND_ENV-production}
 
 volumes:
-  app-db-data:
   app-files-data:
   app-stats-data:
-  app-statsdb-data:
+  app-db-data15:
+  app-statsdb-data15:
   app-zookeeper_data:
     driver: local
   app-kafka_data:

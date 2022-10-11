@@ -5,6 +5,9 @@ from abc import ABC, abstractmethod
 
 
 class WordLemmatizer(ABC):
+    def __init__(self, config):
+        self._config = config
+
     @abstractmethod
-    def lemmatize(self, lword):
+    async def lemmatize(self, lword) -> set[str]:
         pass

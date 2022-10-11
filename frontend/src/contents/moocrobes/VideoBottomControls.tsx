@@ -11,7 +11,7 @@ import IconButton from "@mui/material/IconButton";
 import Slider from "@mui/material/Slider";
 import Typography from "@mui/material/Typography";
 import React, { ReactElement } from "react";
-import { Button as RAButton } from "react-admin";
+import { Button as RAButton, useTranslate } from "react-admin";
 import { useParams } from "react-router-dom";
 import { makeStyles } from "tss-react/mui";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
@@ -39,7 +39,7 @@ const useStyles = makeStyles()((theme) => {
   return {
     controlsWrapper: {
       [theme.breakpoints.down("md")]: {
-        padding: theme.spacing(1),
+        padding: 0,
       },
       [theme.breakpoints.up("md")]: {
         padding: theme.spacing(2),
@@ -98,7 +98,9 @@ function VideoBottomControls({
     (state) => state.videoReader[id] || DEFAULT_VIDEO_READER_CONFIG_STATE,
   );
   const dispatch = useAppDispatch();
+  const translate = useTranslate();
   const actions = videoReaderActions;
+
   return (
     <Grid
       container
@@ -154,7 +156,7 @@ function VideoBottomControls({
         <RAButton
           className={localClasses.bottomIcons}
           children={isFullscreen ? <FullscreenExit /> : <Fullscreen />}
-          label="Fullscreen"
+          label={translate("screens.moocrobes.fullscreen")}
           onClick={onToggleFullscreen}
         />
       </Grid>

@@ -3,6 +3,7 @@ import dayjs from "dayjs";
 import timezone from "dayjs/plugin/timezone";
 import utc from "dayjs/plugin/utc";
 import { ReactElement } from "react";
+import { useTranslate } from "react-admin";
 import PracticerInput from "../components/PracticerInput";
 import { getWordId } from "../database/Schema";
 import { ServiceWorkerProxy } from "../lib/proxies";
@@ -53,6 +54,7 @@ export function VocabRevisor({
   const { showSynonyms, showL2LengthHint, showRecents, showNormalFont } = activityConfig;
   const premature = currentCard && currentCard?.dueDate > dayjs().unix();
   const theme = useTheme();
+  const translate = useTranslate();
   console.log(
     "prematurity",
     premature,
@@ -129,7 +131,7 @@ export function VocabRevisor({
           ) : (
             <CentredFlex>
               <Button onClick={onShowAnswer} variant="contained" color="primary">
-                Show Answer
+                {translate("screens.repetrobes.show_answer")}
               </Button>
             </CentredFlex>
           )}

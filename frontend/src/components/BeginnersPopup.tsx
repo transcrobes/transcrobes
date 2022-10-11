@@ -4,7 +4,7 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
 import { Box } from "@mui/system";
-import { useRedirect } from "react-admin";
+import { useRedirect, useTranslate } from "react-admin";
 import { useLocation } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
 import { setIgnoreBeginner } from "../features/ui/uiSlice";
@@ -32,6 +32,8 @@ export default function AlertDialog() {
   const dispatch = useAppDispatch();
   const loc = useLocation();
   const redirect = useRedirect();
+  const translate = useTranslate();
+
   const show = useAppSelector((state) => {
     return (
       !state.ui.ignoreBeginner &&
@@ -51,15 +53,12 @@ export default function AlertDialog() {
     margin: "0.5rem",
     width: "100%",
   };
-
   return (
     <div>
       <Dialog open={show} aria-labelledby="alert-dialog-title" aria-describedby="alert-dialog-description">
-        <DialogTitle id="alert-dialog-title">{"What words do you know already?"}</DialogTitle>
+        <DialogTitle id="alert-dialog-title">{translate("widgets.beginners.title")}</DialogTitle>
         <DialogContent>
-          <DialogContentText id="alert-dialog-description">
-            To be useful Transcrobes needs to know what words you know already.
-          </DialogContentText>
+          <DialogContentText id="alert-dialog-description">{translate("widgets.beginners.intro")}</DialogContentText>
         </DialogContent>
         <Box
           sx={{
@@ -74,10 +73,10 @@ export default function AlertDialog() {
             onClick={() => handleRedirect("listrobes")}
             autoFocus
           >
-            Use the interface
+            {translate("widgets.beginners.button_interface")}
           </Button>
           <Button size="large" sx={buttonSx} variant="contained" onClick={() => handleRedirect("imports")}>
-            Import
+            {translate("widgets.beginners.button_import")}
           </Button>
         </Box>
         <Box
@@ -87,7 +86,7 @@ export default function AlertDialog() {
           }}
         >
           <Button size="small" onClick={handleIgnore}>
-            Later (NOT recommended)
+            {translate("widgets.beginners.button_later")}
           </Button>
         </Box>
       </Dialog>

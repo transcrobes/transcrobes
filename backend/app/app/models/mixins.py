@@ -78,11 +78,16 @@ class JSONLookupMixin:
     id = Column(Integer, primary_key=True)
     source_text = Column(String(2000), nullable=False, index=True)
     response_json = Column(String(25000), nullable=False)
+    # TODO: alembic doesn't know how to do this, so they were added manually :-(
+    # idx_lower = Index(None, func.lower(source_text))
 
 
 @declarative_mixin
 class CachedAPIJSONLookupMixin(JSONLookupMixin):
     unique = UniqueConstraint("source_text", "from_lang", "to_lang")
+    # TODO: alembic doesn't know how to do this, so it was added manually :-(
+    # idx_lower = Index(None, func.lower("source_text"), "from_lang", "to_lang")
+
     __table_args__ = (unique,)
 
     from_lang = Column(String(20), nullable=False, index=True)

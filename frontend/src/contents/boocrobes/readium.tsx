@@ -7,7 +7,7 @@ import { ETFStyles } from "../../components/Common";
 import EnrichedTextFragment from "../../components/content/etf/EnrichedTextFragment";
 import { setLoading, setTokenDetails } from "../../features/ui/uiSlice";
 import { ensureDefinitionsLoaded } from "../../lib/dictionary";
-import { missingWordIdsFromModels, tokensInModel } from "../../lib/funclib";
+import { isScriptioContinuo, missingWordIdsFromModels, tokensInModel } from "../../lib/funclib";
 import { setPlatformHelper } from "../../lib/proxies";
 import { observerFunc } from "../../lib/stats";
 import { ComponentClass, ComponentFunction, KeyedModels } from "../../lib/types";
@@ -17,6 +17,8 @@ declare global {
     transcrobesModel: KeyedModels;
   }
 }
+
+console.log("Running readium.tsx");
 
 const MAX_TOKENS_FOR_PRE_ENRICHMENT = 30000;
 
@@ -29,6 +31,7 @@ const definitions = store.getState().definitions;
 
 const getReaderConfig = () => readerConfig;
 const getKnownCards = () => store.getState().knownCards;
+const user = store.getState().userData.user;
 const readObserver = new IntersectionObserver(observerFunc(getReaderConfig, currentModels, getKnownCards), {
   threshold: [1.0],
 });
@@ -42,7 +45,9 @@ store.dispatch(setLoading(true));
 // this can't be done with a hook, so just doing it like this
 jss.setup(preset());
 const sheet = jss.createStyleSheet(ETFStyles, { link: true }).attach();
-sheet.update(readerConfig);
+const wtf = { ...readerConfig, scriptioContinuo: isScriptioContinuo(user.fromLang) };
+sheet.update({ ...readerConfig, scriptioContinuo: isScriptioContinuo(user.fromLang) }).classes;
+
 const classes = sheet.classes;
 
 export function onEntryId(entries: IntersectionObserverEntry[]): void {
@@ -102,7 +107,7 @@ const uniqueIds = missingWordIdsFromModels(currentModels, definitions);
 let w = watch(store.getState, "bookReader");
 store.subscribe(
   w((newVal) => {
-    sheet.update(newVal[bookId]);
+    sheet.update({ ...newVal[bookId], scriptioContinuo: isScriptioContinuo(user.fromLang) });
   }),
 );
 

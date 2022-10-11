@@ -8,6 +8,7 @@ import WordOrderSelector from "../components/WordOrderSelector";
 import { reorderArray, validInt } from "../lib/funclib";
 import { GraderConfig, WordOrdering } from "../lib/types";
 import { getColour } from "./funclib";
+import { useTranslate } from "react-admin";
 
 const useStyles = makeStyles()((theme: Theme) => ({
   typography: {
@@ -32,6 +33,7 @@ interface Props {
 
 export function ListrobesConfig({ graderConfig, onConfigChange }: Props): ReactElement {
   const theme = useTheme();
+  const translate = useTranslate();
   const colourStyles: StylesConfig = {
     control: (styles) => ({ ...styles, backgroundColor: theme.palette.background.default }),
     menu: (styles) => ({ ...styles, backgroundColor: theme.palette.background.default, zIndex: 2 }),
@@ -81,11 +83,11 @@ export function ListrobesConfig({ graderConfig, onConfigChange }: Props): ReactE
   return (
     <div>
       <FormControlLabel
-        label="Advanced mode"
+        label={translate("screens.listrobes.config.advanced")}
         control={<Switch checked={!!graderConfig.isAdvanced} onChange={handleAdvancedChange} />}
       />
 
-      <div>Default click order</div>
+      <div>{translate("screens.listrobes.config.default_click_order")}</div>
       <div className={classes.multiselect}>
         <DragDropContext onDragEnd={handleDragEnd}>
           <Droppable droppableId="droppable">
@@ -106,7 +108,7 @@ export function ListrobesConfig({ graderConfig, onConfigChange }: Props): ReactE
                           }}
                         >
                           <Box sx={{ paddingRight: "8px" }}>{index}</Box>
-                          <div>{item.content}</div>
+                          <div>{translate(item.content)}</div>
                           {item.icon}
                         </Box>
                       </div>
@@ -120,8 +122,11 @@ export function ListrobesConfig({ graderConfig, onConfigChange }: Props): ReactE
         </DragDropContext>
       </div>
       <div className={classes.multiselect}>
-        Source word lists
+        {translate("screens.listrobes.config.source_word_lists")}
         <Select
+          noOptionsMessage={() => translate("screens.listrobes.config.no_options")}
+          loadingMessage={() => translate("screens.listrobes.config.loading")}
+          placeholder={translate("screens.listrobes.config.placeholder")}
           styles={colourStyles}
           onChange={handleWordListsChange}
           defaultValue={graderConfig.wordLists.filter((x) => x.selected)}
@@ -135,11 +140,15 @@ export function ListrobesConfig({ graderConfig, onConfigChange }: Props): ReactE
       </div>
       <div className={classes.itemsPerPage}>
         <TextField
-          label="Items per page (1 to 250)"
-          title="Items per page (1 to 250)"
+          label={translate("screens.listrobes.config.items_per_page")}
+          title={translate("screens.listrobes.config.items_per_page")}
           type="number"
           error={!validInt(graderConfig.itemsPerPage, 0, 10000)}
-          helperText={!validInt(graderConfig.itemsPerPage, 1, 250) ? "Invalid number" : undefined}
+          helperText={
+            !validInt(graderConfig.itemsPerPage, 1, 250)
+              ? translate("screens.listrobes.config.invalid_number")
+              : undefined
+          }
           defaultValue={graderConfig.itemsPerPage}
           onChange={handleItemsPerPageChange}
           name="itemsPerPage"

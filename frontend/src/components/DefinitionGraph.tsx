@@ -69,7 +69,7 @@ export default function DefinitionGraph({
             );
           })}
       </div>
-      {showAnswer && (
+      {showAnswer && characters.filter((x) => !!x).length > 0 && (
         <div className={classes.centred}>
           <Button onClick={() => draw()} variant="contained" color="primary">
             Draw it!

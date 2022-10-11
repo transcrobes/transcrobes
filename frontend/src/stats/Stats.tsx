@@ -1,7 +1,7 @@
 import { Container, Typography } from "@mui/material";
 import { makeStyles } from "tss-react/mui";
 import { ReactElement } from "react";
-import { TopToolbar } from "react-admin";
+import { TopToolbar, useTranslate } from "react-admin";
 import HelpButton from "../components/HelpButton";
 import { DayProgressRead } from "./DayProgressRead";
 import { DayProgressRevised } from "./DayProgressRevised";
@@ -18,6 +18,7 @@ const useStyles = makeStyles()((theme) => ({
 
 export default function Stats(): ReactElement {
   const { classes } = useStyles();
+  const translate = useTranslate();
   const helpUrl = `//${DOCS_DOMAIN}/page/software/learn/stats/`;
   return (
     <>
@@ -26,25 +27,25 @@ export default function Stats(): ReactElement {
       </TopToolbar>
       <Container maxWidth="md">
         <Typography className={classes.header} variant="h4">
-          My stats: reflect on progress
+          {translate("screens.stats.title")}
         </Typography>
         <hr />
         <Typography className={classes.header} variant="h6">
-          Known words and characters (totals)
+          {translate("screens.stats.known_elements")}
         </Typography>
         <ListProgress yIsNumber={true} nbPeriods={6} periodType="month" />
         <hr />
         <Typography className={classes.header} variant="h6">
-          Words seen and looked up (rates)
+          {translate("screens.stats.seen_looked_up")}
         </Typography>
         <DayProgressRead />
         <hr />
         <Typography className={classes.header} variant="h6">
-          Words actively revised (rates)
+          {translate("screens.stats.actively_revised")}
         </Typography>
         <DayProgressRevised />
         <Typography className={classes.header} variant="h6">
-          Revisions waiting (totals)
+          {translate("screens.stats.revisions_waiting")}
         </Typography>
         <WaitingRevisions />
       </Container>

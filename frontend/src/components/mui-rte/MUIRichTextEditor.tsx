@@ -37,16 +37,8 @@ import Blockquote from "./components/Blockquote";
 import CodeBlock from "./components/CodeBlock";
 import Link from "./components/Link";
 import Media from "./components/Media";
-import Toolbar, {
-  TCustomControl,
-  TToolbarButtonSize,
-  TToolbarControl,
-} from "./components/Toolbar";
-import UrlPopover, {
-  TAlignment,
-  TMediaType,
-  TUrlData,
-} from "./components/UrlPopover";
+import Toolbar, { TCustomControl, TToolbarButtonSize, TToolbarControl } from "./components/Toolbar";
+import UrlPopover, { TAlignment, TMediaType, TUrlData } from "./components/UrlPopover";
 import { CreateCSSProperties, CSSProperties, PropsFunc } from "./types";
 import {
   atomicBlockExists,
@@ -88,20 +80,13 @@ export type TMUIRichTextEditorRef = {
    */
   insertAtomicBlock: (name: string, data: any) => void;
   insertAtomicBlockSync: (name: string, data: any) => void;
-  insertAtomicBlockAsync: (
-    name: string,
-    promise: Promise<TAsyncAtomicBlockResponse>,
-    placeholder?: string
-  ) => void;
+  insertAtomicBlockAsync: (name: string, promise: Promise<TAsyncAtomicBlockResponse>, placeholder?: string) => void;
 };
 
 export type TDraftEditorProps = {
   spellCheck?: boolean;
   stripPastedStyles?: boolean;
-  handleDroppedFiles?: (
-    selectionState: SelectionState,
-    files: Blob[]
-  ) => DraftHandleValue;
+  handleDroppedFiles?: (selectionState: SelectionState, files: Blob[]) => DraftHandleValue;
 };
 
 export type TKeyCommand = {
@@ -172,62 +157,20 @@ type TStateOffset = {
 interface TMUIRichTextEditorStyles {
   overrides?: {
     MUIRichTextEditor?: {
-      root?:
-        | CSSProperties
-        | CreateCSSProperties<{}>
-        | PropsFunc<{}, CreateCSSProperties<{}>>;
-      container?:
-        | CSSProperties
-        | CreateCSSProperties<{}>
-        | PropsFunc<{}, CreateCSSProperties<{}>>;
-      inheritFontSize?:
-        | CSSProperties
-        | CreateCSSProperties<{}>
-        | PropsFunc<{}, CreateCSSProperties<{}>>;
-      editor?:
-        | CSSProperties
-        | CreateCSSProperties<{}>
-        | PropsFunc<{}, CreateCSSProperties<{}>>;
-      editorContainer?:
-        | CSSProperties
-        | CreateCSSProperties<{}>
-        | PropsFunc<{}, CreateCSSProperties<{}>>;
-      editorReadOnly?:
-        | CSSProperties
-        | CreateCSSProperties<{}>
-        | PropsFunc<{}, CreateCSSProperties<{}>>;
-      error?:
-        | CSSProperties
-        | CreateCSSProperties<{}>
-        | PropsFunc<{}, CreateCSSProperties<{}>>;
-      hidePlaceholder?:
-        | CSSProperties
-        | CreateCSSProperties<{}>
-        | PropsFunc<{}, CreateCSSProperties<{}>>;
-      placeHolder?:
-        | CSSProperties
-        | CreateCSSProperties<{}>
-        | PropsFunc<{}, CreateCSSProperties<{}>>;
-      linkPopover?:
-        | CSSProperties
-        | CreateCSSProperties<{}>
-        | PropsFunc<{}, CreateCSSProperties<{}>>;
-      linkTextField?:
-        | CSSProperties
-        | CreateCSSProperties<{}>
-        | PropsFunc<{}, CreateCSSProperties<{}>>;
-      anchorLink?:
-        | CSSProperties
-        | CreateCSSProperties<{}>
-        | PropsFunc<{}, CreateCSSProperties<{}>>;
-      toolbar?:
-        | CSSProperties
-        | CreateCSSProperties<{}>
-        | PropsFunc<{}, CreateCSSProperties<{}>>;
-      inlineToolbar?:
-        | CSSProperties
-        | CreateCSSProperties<{}>
-        | PropsFunc<{}, CreateCSSProperties<{}>>;
+      root?: CSSProperties | CreateCSSProperties<{}> | PropsFunc<{}, CreateCSSProperties<{}>>;
+      container?: CSSProperties | CreateCSSProperties<{}> | PropsFunc<{}, CreateCSSProperties<{}>>;
+      inheritFontSize?: CSSProperties | CreateCSSProperties<{}> | PropsFunc<{}, CreateCSSProperties<{}>>;
+      editor?: CSSProperties | CreateCSSProperties<{}> | PropsFunc<{}, CreateCSSProperties<{}>>;
+      editorContainer?: CSSProperties | CreateCSSProperties<{}> | PropsFunc<{}, CreateCSSProperties<{}>>;
+      editorReadOnly?: CSSProperties | CreateCSSProperties<{}> | PropsFunc<{}, CreateCSSProperties<{}>>;
+      error?: CSSProperties | CreateCSSProperties<{}> | PropsFunc<{}, CreateCSSProperties<{}>>;
+      hidePlaceholder?: CSSProperties | CreateCSSProperties<{}> | PropsFunc<{}, CreateCSSProperties<{}>>;
+      placeHolder?: CSSProperties | CreateCSSProperties<{}> | PropsFunc<{}, CreateCSSProperties<{}>>;
+      linkPopover?: CSSProperties | CreateCSSProperties<{}> | PropsFunc<{}, CreateCSSProperties<{}>>;
+      linkTextField?: CSSProperties | CreateCSSProperties<{}> | PropsFunc<{}, CreateCSSProperties<{}>>;
+      anchorLink?: CSSProperties | CreateCSSProperties<{}> | PropsFunc<{}, CreateCSSProperties<{}>>;
+      toolbar?: CSSProperties | CreateCSSProperties<{}> | PropsFunc<{}, CreateCSSProperties<{}>>;
+      inlineToolbar?: CSSProperties | CreateCSSProperties<{}> | PropsFunc<{}, CreateCSSProperties<{}>>;
     };
   };
 }
@@ -256,17 +199,10 @@ const autocompleteMinSearchCharCount = 2;
 const lineHeight = 26;
 const defaultInlineToolbarControls = ["bold", "italic", "underline", "clear"];
 
-const findLinkEntities = (
-  contentBlock: any,
-  callback: any,
-  contentState: any
-) => {
+const findLinkEntities = (contentBlock: any, callback: any, contentState: any) => {
   contentBlock.findEntityRanges((character: any) => {
     const entityKey = character.getEntity();
-    return (
-      entityKey !== null &&
-      contentState.getEntity(entityKey).getType() === "LINK"
-    );
+    return entityKey !== null && contentState.getEntity(entityKey).getType() === "LINK";
   }, callback);
 };
 
@@ -293,23 +229,17 @@ const useEditorState = (props: IMUIRichTextEditorProps) => {
           findDecoWithRegex(deco.regex, contentBlock, callback);
         },
         component: deco.component,
-      })
+      }),
     );
   }
   const decorator = new CompositeDecorator(decorators);
   const defaultValue = props.defaultValue || props.value;
   return defaultValue
-    ? EditorState.createWithContent(
-        convertFromRaw(JSON.parse(defaultValue)),
-        decorator
-      )
+    ? EditorState.createWithContent(convertFromRaw(JSON.parse(defaultValue)), decorator)
     : EditorState.createEmpty(decorator);
 };
 
-const MUIRichTextEditor: ForwardRefRenderFunction<
-  TMUIRichTextEditorRef,
-  IMUIRichTextEditorProps
-> = (props, ref) => {
+const MUIRichTextEditor: ForwardRefRenderFunction<TMUIRichTextEditorRef, IMUIRichTextEditorProps> = (props, ref) => {
   const { classes, controls, customControls } = props;
 
   const [state, setState] = useState<TMUIRichTextEditorState>({});
@@ -324,13 +254,9 @@ const MUIRichTextEditor: ForwardRefRenderFunction<
   const toolbarPositionRef = useRef<TPosition | undefined>(undefined);
   const editorStateRef = useRef<EditorState | null>(editorState);
   const autocompleteRef = useRef<TAutocompleteStrategy | undefined>(undefined);
-  const autocompleteSelectionStateRef = useRef<SelectionState | undefined>(
-    undefined
-  );
+  const autocompleteSelectionStateRef = useRef<SelectionState | undefined>(undefined);
   const autocompletePositionRef = useRef<TPosition | undefined>(undefined);
-  const autocompleteLimit = props.autocomplete
-    ? props.autocomplete.suggestLimit || 5
-    : 5;
+  const autocompleteLimit = props.autocomplete ? props.autocomplete.suggestLimit || 5 : 5;
   const isFirstFocus = useRef(true);
   const customBlockMapRef = useRef<DraftBlockRenderMap | undefined>(undefined);
   const customStyleMapRef = useRef<DraftStyleMap | undefined>(undefined);
@@ -356,11 +282,7 @@ const MUIRichTextEditor: ForwardRefRenderFunction<
     insertAtomicBlockSync: (name: string, data: any) => {
       handleInsertAtomicBlockSync(name, data);
     },
-    insertAtomicBlockAsync: (
-      name: string,
-      promise: Promise<TAsyncAtomicBlockResponse>,
-      placeholder?: string
-    ) => {
+    insertAtomicBlockAsync: (name: string, promise: Promise<TAsyncAtomicBlockResponse>, placeholder?: string) => {
       handleInsertAtomicBlockAsync(name, promise, placeholder);
     },
   }));
@@ -447,15 +369,11 @@ const MUIRichTextEditor: ForwardRefRenderFunction<
     }, 1);
   };
 
-  const findAutocompleteStrategy = (
-    chars: string
-  ): TAutocompleteStrategy | undefined => {
+  const findAutocompleteStrategy = (chars: string): TAutocompleteStrategy | undefined => {
     if (!props.autocomplete) {
       return undefined;
     }
-    const acArray = props.autocomplete.strategies.filter(
-      (ac) => ac.triggerChar === chars
-    );
+    const acArray = props.autocomplete.strategies.filter((ac) => ac.triggerChar === chars);
     if (acArray.length) {
       return acArray[0];
     }
@@ -469,40 +387,25 @@ const MUIRichTextEditor: ForwardRefRenderFunction<
     }
     const { editorRect, selectionRect } = getEditorBounds(editor);
     const line = getLineNumber(editorState);
-    const top = selectionRect
-      ? selectionRect.top
-      : editorRect.top + lineHeight * line;
+    const top = selectionRect ? selectionRect.top : editorRect.top + lineHeight * line;
     const left = selectionRect ? selectionRect.left : editorRect.left;
     const position = {
       top: editor.offsetTop + (top - editorRect.top) + lineHeight,
       left: editor.offsetLeft + (left - editorRect.left),
     };
     if (!autocompleteSelectionStateRef.current) {
-      autocompleteSelectionStateRef.current =
-        editorStateRef.current!.getSelection();
+      autocompleteSelectionStateRef.current = editorStateRef.current!.getSelection();
     }
     autocompletePositionRef.current = position;
   };
 
-  const insertAutocompleteSuggestionAsAtomicBlock = (
-    name: string,
-    selection: SelectionState,
-    value: any
-  ) => {
+  const insertAutocompleteSuggestionAsAtomicBlock = (name: string, selection: SelectionState, value: any) => {
     const block = atomicBlockExists(name, props.customControls);
     if (!block) {
       return;
     }
-    const contentState = Modifier.removeRange(
-      editorStateRef.current!.getCurrentContent(),
-      selection,
-      "forward"
-    );
-    const newEditorState = EditorState.push(
-      editorStateRef.current!,
-      contentState,
-      "remove-range"
-    );
+    const contentState = Modifier.removeRange(editorStateRef.current!.getCurrentContent(), selection, "forward");
+    const newEditorState = EditorState.push(editorStateRef.current!, contentState, "remove-range");
     const withAtomicBlock = insertAtomicBlock(
       newEditorState,
       name.toUpperCase(),
@@ -511,31 +414,22 @@ const MUIRichTextEditor: ForwardRefRenderFunction<
       },
       {
         selection: newEditorState.getCurrentContent().getSelectionAfter(),
-      }
+      },
     );
     handleChange(withAtomicBlock);
   };
 
-  const insertAutocompleteSuggestionAsText = (
-    selection: SelectionState,
-    value: string
-  ) => {
+  const insertAutocompleteSuggestionAsText = (selection: SelectionState, value: string) => {
     const currentContentState = editorState.getCurrentContent();
-    const entityKey = currentContentState
-      .createEntity("AC_ITEM", "IMMUTABLE")
-      .getLastCreatedEntityKey();
+    const entityKey = currentContentState.createEntity("AC_ITEM", "IMMUTABLE").getLastCreatedEntityKey();
     const contentState = Modifier.replaceText(
       editorStateRef.current!.getCurrentContent(),
       selection,
       value,
       editorStateRef.current!.getCurrentInlineStyle(),
-      entityKey
+      entityKey,
     );
-    const newEditorState = EditorState.push(
-      editorStateRef.current!,
-      contentState,
-      "insert-characters"
-    );
+    const newEditorState = EditorState.push(editorStateRef.current!, contentState, "insert-characters");
     if (autocompleteRef.current!.insertSpaceAfter === false) {
       handleChange(newEditorState);
     } else {
@@ -543,11 +437,9 @@ const MUIRichTextEditor: ForwardRefRenderFunction<
         newEditorState.getCurrentContent(),
         newEditorState.getSelection(),
         " ",
-        newEditorState.getCurrentInlineStyle()
+        newEditorState.getCurrentInlineStyle(),
       );
-      handleChange(
-        EditorState.push(newEditorState, addSpaceState, "insert-characters")
-      );
+      handleChange(EditorState.push(newEditorState, addSpaceState, "insert-characters"));
     }
   };
 
@@ -563,16 +455,9 @@ const MUIRichTextEditor: ForwardRefRenderFunction<
       });
       if (autocompleteRef.current!.atomicBlockName) {
         const name = autocompleteRef.current!.atomicBlockName;
-        insertAutocompleteSuggestionAsAtomicBlock(
-          name,
-          newSelection as SelectionState,
-          item.value
-        );
+        insertAutocompleteSuggestionAsAtomicBlock(name, newSelection as SelectionState, item.value);
       } else {
-        insertAutocompleteSuggestionAsText(
-          newSelection as SelectionState,
-          item.value
-        );
+        insertAutocompleteSuggestionAsText(newSelection as SelectionState, item.value);
       }
     }
     handleAutocompleteClosed();
@@ -589,9 +474,7 @@ const MUIRichTextEditor: ForwardRefRenderFunction<
       return [];
     }
     return autocompleteRef
-      .current!.items.filter(
-        (item) => item.keys.filter((key) => key.includes(searchTerm)).length > 0
-      )
+      .current!.items.filter((item) => item.keys.filter((key) => key.includes(searchTerm)).length > 0)
       .splice(0, autocompleteLimit);
   };
 
@@ -599,10 +482,7 @@ const MUIRichTextEditor: ForwardRefRenderFunction<
     setEditorState(state);
   };
 
-  const handleBeforeInput = (
-    chars: string,
-    editorState: EditorState
-  ): DraftHandleValue => {
+  const handleBeforeInput = (chars: string, editorState: EditorState): DraftHandleValue => {
     if (chars === " " && searchTerm.length) {
       clearSearch();
     } else if (autocompleteSelectionStateRef.current) {
@@ -623,14 +503,8 @@ const MUIRichTextEditor: ForwardRefRenderFunction<
       isFocusedWithMouse.current = false;
       return;
     }
-    const nextEditorState = EditorState.forceSelection(
-      editorState,
-      editorState.getSelection()
-    );
-    setTimeout(
-      () => setEditorState(EditorState.moveFocusToEnd(nextEditorState)),
-      0
-    );
+    const nextEditorState = EditorState.forceSelection(editorState, editorState.getSelection());
+    setTimeout(() => setEditorState(EditorState.moveFocusToEnd(nextEditorState)), 0);
   };
 
   const handlePlaceholderFocus = () => {
@@ -677,26 +551,15 @@ const MUIRichTextEditor: ForwardRefRenderFunction<
     if (customStyleMapRef.current === undefined) {
       return;
     }
-    const withoutStyles = clearInlineStyles(
-      editorState,
-      customStyleMapRef.current
-    );
+    const withoutStyles = clearInlineStyles(editorState, customStyleMapRef.current);
     const selectionInfo = getSelectionInfo(editorState);
-    const newEditorState = EditorState.push(
-      editorState,
-      withoutStyles,
-      "change-inline-style"
-    );
-    setEditorState(
-      RichUtils.toggleBlockType(newEditorState, selectionInfo.blockType)
-    );
+    const newEditorState = EditorState.push(editorState, withoutStyles, "change-inline-style");
+    setEditorState(RichUtils.toggleBlockType(newEditorState, selectionInfo.blockType));
   };
 
   const handleSave = () => {
     if (props.onSave) {
-      props.onSave(
-        JSON.stringify(convertToRaw(editorState.getCurrentContent()))
-      );
+      props.onSave(JSON.stringify(convertToRaw(editorState.getCurrentContent())));
     }
   };
 
@@ -705,21 +568,16 @@ const MUIRichTextEditor: ForwardRefRenderFunction<
     if (!block) {
       return;
     }
-    const newEditorState = insertAtomicBlock(
-      editorState,
-      block.name.toUpperCase(),
-      data,
-      {
-        selection: editorState.getCurrentContent().getSelectionAfter(),
-      }
-    );
+    const newEditorState = insertAtomicBlock(editorState, block.name.toUpperCase(), data, {
+      selection: editorState.getCurrentContent().getSelectionAfter(),
+    });
     updateStateForPopover(newEditorState);
   };
 
   const handleInsertAtomicBlockAsync = (
     name: string,
     promise: Promise<TAsyncAtomicBlockResponse>,
-    placeholder?: string
+    placeholder?: string,
   ) => {
     const selection = insertAsyncAtomicBlockPlaceholder(name, placeholder);
     const offset = selection.getFocusOffset() + 1;
@@ -729,14 +587,9 @@ const MUIRichTextEditor: ForwardRefRenderFunction<
 
     promise
       .then((response) => {
-        const newEditorState = insertAtomicBlock(
-          editorStateRef.current!,
-          name,
-          response.data,
-          {
-            selection: newSelection,
-          }
-        );
+        const newEditorState = insertAtomicBlock(editorStateRef.current!, name, response.data, {
+          selection: newSelection,
+        });
         handleChange(newEditorState);
       })
       .catch((error) => {
@@ -746,49 +599,31 @@ const MUIRichTextEditor: ForwardRefRenderFunction<
         const newContentState = Modifier.removeRange(
           editorStateRef.current!.getCurrentContent(),
           newSelection as SelectionState,
-          "forward"
+          "forward",
         );
-        handleChange(
-          EditorState.push(
-            editorStateRef.current!,
-            newContentState,
-            "remove-range"
-          )
-        );
+        handleChange(EditorState.push(editorStateRef.current!, newContentState, "remove-range"));
       });
   };
 
-  const insertAsyncAtomicBlockPlaceholder = (
-    name: string,
-    placeholder?: string
-  ): SelectionState => {
+  const insertAsyncAtomicBlockPlaceholder = (name: string, placeholder?: string): SelectionState => {
     const placeholderName = placeholder || name + "...";
     const currentContentState = editorStateRef.current!.getCurrentContent();
-    const entityKey = currentContentState
-      .createEntity("ASYNC_ATOMICBLOCK", "IMMUTABLE")
-      .getLastCreatedEntityKey();
+    const entityKey = currentContentState.createEntity("ASYNC_ATOMICBLOCK", "IMMUTABLE").getLastCreatedEntityKey();
     const contentState = Modifier.insertText(
       editorStateRef.current!.getCurrentContent(),
       currentContentState.getSelectionAfter(),
       placeholderName,
       undefined,
-      entityKey
+      entityKey,
     );
 
     const selection = currentContentState.getSelectionAfter();
-    const newEditorState = EditorState.push(
-      editorStateRef.current!,
-      contentState,
-      "insert-characters"
-    );
+    const newEditorState = EditorState.push(editorStateRef.current!, contentState, "insert-characters");
     handleChange(newEditorState);
     return selection;
   };
 
-  const handleKeyCommand = (
-    command: DraftEditorCommand | string,
-    editorState: EditorState
-  ): DraftHandleValue => {
+  const handleKeyCommand = (command: DraftEditorCommand | string, editorState: EditorState): DraftHandleValue => {
     const newState = RichUtils.handleKeyCommand(editorState, command);
     if (newState) {
       handleChange(newState);
@@ -804,9 +639,7 @@ const MUIRichTextEditor: ForwardRefRenderFunction<
         return "handled";
       }
       if (props.keyCommands) {
-        const keyCommand = props.keyCommands.find(
-          (comm) => comm.name === command
-        );
+        const keyCommand = props.keyCommands.find((comm) => comm.name === command);
         if (keyCommand) {
           const newState = keyCommand.callback(editorState);
           handleChange(newState);
@@ -825,11 +658,7 @@ const MUIRichTextEditor: ForwardRefRenderFunction<
       if (control.name.toUpperCase() === style) {
         if (control.onClick) {
           setTimeout(() => editorRef.current?.blur(), 0);
-          const newState = control.onClick(
-            editorState,
-            control.name,
-            document.getElementById(id)
-          );
+          const newState = control.onClick(editorState, control.name, document.getElementById(id));
           if (newState) {
             if (newState.getSelection().isCollapsed()) {
               setEditorState(newState);
@@ -855,11 +684,7 @@ const MUIRichTextEditor: ForwardRefRenderFunction<
     setEditorState(EditorState.redo(editorState));
   };
 
-  const handlePrompt = (
-    lastState: EditorState,
-    type: "link" | "media",
-    inlineMode?: boolean
-  ) => {
+  const handlePrompt = (lastState: EditorState, type: "link" | "media", inlineMode?: boolean) => {
     const selectionInfo = getSelectionInfo(lastState);
     const contentState = lastState.getCurrentContent();
     const linkKey = selectionInfo.linkKey;
@@ -874,9 +699,7 @@ const MUIRichTextEditor: ForwardRefRenderFunction<
       toolbarPosition: !inlineMode ? undefined : state.toolbarPosition,
       anchorUrlPopover: !inlineMode
         ? document.getElementById(`${editorId}-${type}-control-button`)!
-        : document.getElementById(
-            `${editorId}-${type}-control-button-toolbar`
-          )!,
+        : document.getElementById(`${editorId}-${type}-control-button-toolbar`)!,
       urlIsMedia: type === "media" ? true : undefined,
     });
   };
@@ -889,10 +712,7 @@ const MUIRichTextEditor: ForwardRefRenderFunction<
     }
   };
 
-  const handlePromptForMedia = (
-    inlineMode?: boolean,
-    newState?: EditorState
-  ) => {
+  const handlePromptForMedia = (inlineMode?: boolean, newState?: EditorState) => {
     const lastState = newState || editorState;
     handlePrompt(lastState, "media", inlineMode);
   };
@@ -905,12 +725,7 @@ const MUIRichTextEditor: ForwardRefRenderFunction<
     confirmLink(...args);
   };
 
-  const handleToolbarClick = (
-    style: string,
-    type: string,
-    id: string,
-    inlineMode?: boolean
-  ) => {
+  const handleToolbarClick = (style: string, type: string, id: string, inlineMode?: boolean) => {
     if (type === "inline") {
       return toggleInlineStyle(style);
     }
@@ -941,31 +756,17 @@ const MUIRichTextEditor: ForwardRefRenderFunction<
     }
   };
 
-  const handlePastedText = (
-    text: string,
-    _html: string | undefined,
-    editorState: EditorState
-  ): DraftHandleValue => {
-    return isMaxLengthHandled(editorState, text.length);
+  const handlePastedText = (text: string, _html: string | undefined, editorState: EditorState): DraftHandleValue => {
+    return isMaxLengthHandled(editorState, text?.length || 0);
   };
 
-  const handleReturn = (
-    _e: any,
-    editorState: EditorState
-  ): DraftHandleValue => {
+  const handleReturn = (_e: any, editorState: EditorState): DraftHandleValue => {
     return isMaxLengthHandled(editorState, 1);
   };
 
-  const isMaxLengthHandled = (
-    editorState: EditorState,
-    nextLength: number
-  ): DraftHandleValue => {
-    const currentLength = editorState
-      .getCurrentContent()
-      .getPlainText("").length;
-    return isGreaterThan(currentLength + nextLength, props.maxLength)
-      ? "handled"
-      : "not-handled";
+  const isMaxLengthHandled = (editorState: EditorState, nextLength: number): DraftHandleValue => {
+    const currentLength = editorState.getCurrentContent().getPlainText("").length;
+    return isGreaterThan(currentLength + nextLength, props.maxLength) ? "handled" : "not-handled";
   };
 
   const toggleMouseUpListener = (addAfter = false) => {
@@ -1003,26 +804,14 @@ const MUIRichTextEditor: ForwardRefRenderFunction<
 
     if (urlKey) {
       contentState.replaceEntityData(urlKey, data);
-      replaceEditorState = EditorState.push(
-        editorState,
-        contentState,
-        "apply-entity"
-      );
+      replaceEditorState = EditorState.push(editorState, contentState, "apply-entity");
     } else {
-      const contentStateWithEntity = contentState.createEntity(
-        "LINK",
-        "MUTABLE",
-        data
-      );
+      const contentStateWithEntity = contentState.createEntity("LINK", "MUTABLE", data);
       const entityKey = contentStateWithEntity.getLastCreatedEntityKey();
       const newEditorState = EditorState.set(editorState, {
         currentContent: contentStateWithEntity,
       });
-      replaceEditorState = RichUtils.toggleLink(
-        newEditorState,
-        newEditorState.getSelection(),
-        entityKey
-      );
+      replaceEditorState = RichUtils.toggleLink(newEditorState, newEditorState.getSelection(), entityKey);
     }
     updateStateForPopover(replaceEditorState);
   };
@@ -1032,21 +821,11 @@ const MUIRichTextEditor: ForwardRefRenderFunction<
     const contentState = editorState.getCurrentContent();
     const mediaBlock = contentState.getBlockForKey(blockKey);
     const newContentState = removeBlockFromMap(editorState, mediaBlock);
-    const newEditorState = EditorState.push(
-      editorState,
-      newContentState,
-      "remove-range"
-    );
+    const newEditorState = EditorState.push(editorState, newContentState, "remove-range");
     setEditorState(newEditorState);
   };
 
-  const confirmMedia = (
-    url?: string,
-    width?: number,
-    height?: number,
-    alignment?: TAlignment,
-    type?: TMediaType
-  ) => {
+  const confirmMedia = (url?: string, width?: number, height?: number, alignment?: TAlignment, type?: TMediaType) => {
     const { urlKey } = state;
     if (!url) {
       if (urlKey) {
@@ -1067,24 +846,14 @@ const MUIRichTextEditor: ForwardRefRenderFunction<
 
     if (urlKey) {
       contentState.replaceEntityData(urlKey, data);
-      const newEditorState = EditorState.push(
-        editorState,
-        contentState,
-        "apply-entity"
-      );
+      const newEditorState = EditorState.push(editorState, contentState, "apply-entity");
       updateStateForPopover(
-        EditorState.forceSelection(
-          newEditorState,
-          newEditorState.getCurrentContent().getSelectionAfter()
-        )
+        EditorState.forceSelection(newEditorState, newEditorState.getCurrentContent().getSelectionAfter()),
       );
     } else {
       const newEditorState = insertAtomicBlock(editorState, "IMAGE", data);
       updateStateForPopover(
-        EditorState.forceSelection(
-          newEditorState,
-          newEditorState.getCurrentContent().getSelectionAfter()
-        )
+        EditorState.forceSelection(newEditorState, newEditorState.getCurrentContent().getSelectionAfter()),
       );
     }
     setFocusMediaKey("");
@@ -1121,10 +890,7 @@ const MUIRichTextEditor: ForwardRefRenderFunction<
 
   const focusMedia = (block: ContentBlock) => {
     const newSeletion = SelectionState.createEmpty(block.getKey());
-    const newEditorState = EditorState.forceSelection(
-      editorStateRef.current!,
-      newSeletion
-    );
+    const newEditorState = EditorState.forceSelection(editorStateRef.current!, newSeletion);
     editorStateRef.current = newEditorState;
     setFocusMediaKey(block.getKey());
     setEditorState(newEditorState);
@@ -1165,10 +931,7 @@ const MUIRichTextEditor: ForwardRefRenderFunction<
           wrapper: control.blockWrapper,
         };
       });
-    customBlockMapRef.current = DefaultDraftBlockRenderMap.merge(
-      blockRenderMap,
-      Immutable.Map(customBlockMap)
-    );
+    customBlockMapRef.current = DefaultDraftBlockRenderMap.merge(blockRenderMap, Immutable.Map(customBlockMap));
   };
 
   const blockRenderer = (contentBlock: ContentBlock) => {
@@ -1189,17 +952,12 @@ const MUIRichTextEditor: ForwardRefRenderFunction<
             },
           };
         } else {
-          const block = atomicBlockExists(
-            type.toLowerCase(),
-            props.customControls
-          );
+          const block = atomicBlockExists(type.toLowerCase(), props.customControls);
           if (block) {
             return {
               component: block.atomicComponent,
               editable: false,
-              props: contentState
-                .getEntity(contentBlock.getEntityAt(0))
-                .getData(),
+              props: contentState.getEntity(contentBlock.getEntityAt(0)).getData(),
             };
           }
         }
@@ -1217,47 +975,26 @@ const MUIRichTextEditor: ForwardRefRenderFunction<
     }, {});
   };
 
-  const insertAtomicBlock = (
-    editorState: EditorState,
-    type: string,
-    data: any,
-    options?: any
-  ) => {
+  const insertAtomicBlock = (editorState: EditorState, type: string, data: any, options?: any) => {
     const contentState = editorState.getCurrentContent();
-    const contentStateWithEntity = contentState.createEntity(
-      type,
-      "IMMUTABLE",
-      data
-    );
+    const contentStateWithEntity = contentState.createEntity(type, "IMMUTABLE", data);
     const entityKey = contentStateWithEntity.getLastCreatedEntityKey();
     const newEditorStateRaw = EditorState.set(editorState, {
       currentContent: contentStateWithEntity,
       ...options,
     });
-    return AtomicBlockUtils.insertAtomicBlock(
-      newEditorStateRaw,
-      entityKey,
-      " "
-    );
+    return AtomicBlockUtils.insertAtomicBlock(newEditorStateRaw, entityKey, " ");
   };
 
-  const getAutocompleteKeyEvent = (
-    keyboardEvent: React.KeyboardEvent<{}>
-  ): string | null => {
+  const getAutocompleteKeyEvent = (keyboardEvent: React.KeyboardEvent<{}>): string | null => {
     const itemsLength = getAutocompleteItems().length;
-    const limit =
-      autocompleteLimit > itemsLength ? itemsLength : autocompleteLimit;
+    const limit = autocompleteLimit > itemsLength ? itemsLength : autocompleteLimit;
     switch (keyboardEvent.key) {
       case "ArrowDown":
-        if (
-          (selectedIndex === 0 && itemsLength === 1) ||
-          selectedIndex + 1 === limit
-        ) {
+        if ((selectedIndex === 0 && itemsLength === 1) || selectedIndex + 1 === limit) {
           setSelectedIndex(0);
         } else {
-          setSelectedIndex(
-            selectedIndex + 1 < limit ? selectedIndex + 1 : selectedIndex
-          );
+          setSelectedIndex(selectedIndex + 1 < limit ? selectedIndex + 1 : selectedIndex);
         }
         return "mui-autocomplete-navigate";
       case "ArrowUp":
@@ -1276,13 +1013,8 @@ const MUIRichTextEditor: ForwardRefRenderFunction<
     }
   };
 
-  const updateSearchTermForKeyBinding = (
-    keyBinding: DraftEditorCommand | null
-  ) => {
-    const text = editorStateRef
-      .current!.getCurrentContent()
-      .getLastBlock()
-      .getText();
+  const updateSearchTermForKeyBinding = (keyBinding: DraftEditorCommand | null) => {
+    const text = editorStateRef.current!.getCurrentContent().getLastBlock().getText();
 
     if (
       keyBinding === "backspace" &&
@@ -1290,16 +1022,9 @@ const MUIRichTextEditor: ForwardRefRenderFunction<
       text.substr(text.length - 1) === autocompleteRef.current.triggerChar
     ) {
       clearSearch();
-    } else if (
-      autocompletePositionRef.current &&
-      keyBinding === "backspace" &&
-      searchTerm.length
-    ) {
+    } else if (autocompletePositionRef.current && keyBinding === "backspace" && searchTerm.length) {
       setSearchTerm(searchTerm.substr(0, searchTerm.length - 1));
-    } else if (
-      !autocompletePositionRef.current &&
-      (keyBinding === "backspace" || keyBinding === "split-block")
-    ) {
+    } else if (!autocompletePositionRef.current && (keyBinding === "backspace" || keyBinding === "split-block")) {
       clearSearch();
     }
   };
@@ -1324,8 +1049,7 @@ const MUIRichTextEditor: ForwardRefRenderFunction<
   };
 
   const renderToolbar = props.toolbar === undefined || props.toolbar;
-  const inlineToolbarControls =
-    props.inlineToolbarControls || defaultInlineToolbarControls;
+  const inlineToolbarControls = props.inlineToolbarControls || defaultInlineToolbarControls;
   const editable = props.readOnly === undefined || !props.readOnly;
   let className = "";
   let placeholder: React.ReactElement | null = null;
@@ -1334,13 +1058,9 @@ const MUIRichTextEditor: ForwardRefRenderFunction<
     if (!contentState.hasText()) {
       placeholder = (
         <div
-          className={classNames(
-            classes!.editorContainer,
-            classes!.placeHolder,
-            {
-              [classes!.error!]: props.error,
-            }
-          )}
+          className={classNames(classes!.editorContainer, classes!.placeHolder, {
+            [classes!.error!]: props.error,
+          })}
           tabIndex={0}
           onFocus={handlePlaceholderFocus}
         >
@@ -1456,27 +1176,23 @@ export default withStyles(
         margin: 0,
       },
     },
-    inheritFontSize: (theme?.overrides?.MUIRichTextEditor
-      ?.inheritFontSize as any) || {
+    inheritFontSize: (theme?.overrides?.MUIRichTextEditor?.inheritFontSize as any) || {
       fontSize: "inherit",
     },
     editor: (theme?.overrides?.MUIRichTextEditor?.editor as any) || {},
-    editorContainer: (theme?.overrides?.MUIRichTextEditor
-      ?.editorContainer as any) || {
+    editorContainer: (theme?.overrides?.MUIRichTextEditor?.editorContainer as any) || {
       margin: theme.spacing(1, 0, 0, 0),
       cursor: "text",
       width: "100%",
       padding: theme.spacing(0, 0, 1, 0),
     },
-    editorReadOnly: (theme?.overrides?.MUIRichTextEditor
-      ?.editorReadOnly as any) || {
+    editorReadOnly: (theme?.overrides?.MUIRichTextEditor?.editorReadOnly as any) || {
       borderBottom: "none",
     },
     error: (theme?.overrides?.MUIRichTextEditor?.error as any) || {
       borderBottom: "2px solid red",
     },
-    hidePlaceholder: (theme?.overrides?.MUIRichTextEditor
-      ?.hidePlaceholder as any) || {
+    hidePlaceholder: (theme?.overrides?.MUIRichTextEditor?.hidePlaceholder as any) || {
       display: "none",
     },
     placeHolder: (theme?.overrides?.MUIRichTextEditor?.placeHolder as any) || {
@@ -1492,8 +1208,7 @@ export default withStyles(
     },
     anchorLink: (theme?.overrides?.MUIRichTextEditor?.anchorLink as any) || {},
     toolbar: (theme?.overrides?.MUIRichTextEditor?.toolbar as any) || {},
-    inlineToolbar: (theme?.overrides?.MUIRichTextEditor
-      ?.inlineToolbar as any) || {
+    inlineToolbar: (theme?.overrides?.MUIRichTextEditor?.inlineToolbar as any) || {
       maxWidth: "180px",
       position: "absolute",
       padding: "5px",
@@ -1502,5 +1217,5 @@ export default withStyles(
   }),
   {
     name: "MUIRichTextEditor",
-  }
+  },
 );

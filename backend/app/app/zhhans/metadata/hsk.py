@@ -8,7 +8,7 @@ from typing import Any
 
 from app.enrich.data import PersistenceProvider
 from app.enrich.metadata import Metadata
-from app.models.migrated import ZhHskLookup
+from app.models.lookups import ZhHskLookup
 from sqlalchemy.ext.asyncio.session import AsyncSession
 
 logger = logging.getLogger(__name__)  # FIXME: add some logging
@@ -48,7 +48,7 @@ class ZH_HSKMetadata(PersistenceProvider, Metadata):
     # override Metadata
     @staticmethod
     def name() -> str:
-        return "hsk"
+        return ZH_HSKMetadata.model_type.SHORT_NAME
 
     # override Metadata
     async def meta_for_word(self, db: AsyncSession, lword) -> Any:

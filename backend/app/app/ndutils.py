@@ -3,38 +3,71 @@ from __future__ import annotations
 
 import asyncio
 import base64
-
-# import orjson as json
 import json
-import re
 from typing import TYPE_CHECKING
 
-from app.enrich.etypes import AnyToken, PosDefinition, SlimPosDefinition
+from app.etypes import LANG_PAIR_SEPARATOR, AnyToken, PosDefinition, SlimPosDefinition
+from app.unicode_ranges import (
+    CJK_RADICALS_SUPPLEMENT_UTF8_ORD_MAX,
+    CJK_RADICALS_SUPPLEMENT_UTF8_ORD_MIN,
+    EXTENDED_ENGLISH_CHARS_ONLY_RE,
+    EXTENDED_ENGLISH_CHARS_RE,
+    KANGXI_RADICALS_UTF8_ORD_MAX,
+    KANGXI_RADICALS_UTF8_ORD_MIN,
+    SIMPLIFIED_UTF8_ORD_MAX,
+    SIMPLIFIED_UTF8_ORD_MIN,
+    ZHHANS_CHARS_RE,
+)
 
 if TYPE_CHECKING:
     from app.models.mixins import TimestampMixin
 
-KANGXI_RADICALS = "\u2f00-\u2fd5"  # https://en.wikipedia.org/wiki/Kangxi_radical
-CJK_RADICALS_SUPPLEMENT = "\u2e80-\u2ef3"  # https://en.wikipedia.org/wiki/CJK_Radicals_Supplement
-CHINESE_CHARACTERS = "\u4e00-\u9fff"
 
-ZHHANS_CHARS_RE = re.compile(f".*[{KANGXI_RADICALS}{CJK_RADICALS_SUPPLEMENT}{CHINESE_CHARACTERS}]+.*")
-
-SIMPLIFIED_UTF8_ORD_MIN = 19968  # why did I think this should be 22909???
-SIMPLIFIED_UTF8_ORD_MAX = 40869  # why did I think this should be 40869???
-KANGXI_RADICALS_UTF8_ORD_MIN = 12032
-KANGXI_RADICALS_UTF8_ORD_MAX = 12245
-CJK_RADICALS_SUPPLEMENT_UTF8_ORD_MIN = 11904  # why did I think this should be 11912???
-CJK_RADICALS_SUPPLEMENT_UTF8_ORD_MAX = 12019
+EN_MAX_ALLOWED_CHARACTERS = 47
+ZH_MAX_ALLOWED_CHARACTERS = 10
 
 
-# FIXME: replace with https://github.com/tsroten/hanzidentifier or https://github.com/tsroten/zhon
-# FIXME: this is language specific...
-def to_enrich(word: str) -> bool:
-    return bool(ZHHANS_CHARS_RE.search(word))
+def get_from_lang(lang_pair: str) -> str:
+    return lang_pair.split(LANG_PAIR_SEPARATOR)[0]
 
 
-def is_useful_character(char: str) -> bool:
+def get_to_lang(lang_pair: str) -> str:
+    return lang_pair.split(LANG_PAIR_SEPARATOR)[1]
+
+
+def to_import(word: str, from_lang: str) -> bool:
+    # WARNING! This is a very naive implementation, but it works for now
+    # At the moment we consider that English words MUST have ONLY english characters
+    # but that Chinese words can have any character, including english ones, as long as they have at
+    # least one Chinese character
+    if from_lang == "en":
+        # Here we assume that English can have French, but not German. Well I am a French citizen... :-)
+        return bool(EXTENDED_ENGLISH_CHARS_ONLY_RE.search(word))
+    # FIXME: replace with https://github.com/tsroten/hanzidentifier or https://github.com/tsroten/zhon
+    elif from_lang == "zh-Hans":
+        return bool(ZHHANS_CHARS_RE.search(word))
+    return False
+
+
+def within_char_limit(word: str, from_lang: str) -> bool:
+    if from_lang == "zh-Hans":
+        return len(word) <= ZH_MAX_ALLOWED_CHARACTERS
+    return len(word) <= EN_MAX_ALLOWED_CHARACTERS
+
+
+def to_enrich(word: str, from_lang: str) -> bool:
+    if from_lang == "en":
+        # Here we assume that English can have French, but not German. Well I am a French citizen... :-)
+        return bool(EXTENDED_ENGLISH_CHARS_RE.search(word))
+    # FIXME: replace with https://github.com/tsroten/hanzidentifier or https://github.com/tsroten/zhon
+    elif from_lang == "zh-Hans":
+        return bool(ZHHANS_CHARS_RE.search(word))
+    return False
+
+
+def is_useful_character(char: str, from_lang: str = "zh-Hans") -> bool:
+    if from_lang == "en":
+        return ord("A") <= ord(char) <= ord("Z") or ord("a") <= ord(char) <= ord("z")
     return (
         (ord(char) >= SIMPLIFIED_UTF8_ORD_MIN and ord(char) <= SIMPLIFIED_UTF8_ORD_MAX)
         or (ord(char) >= KANGXI_RADICALS_UTF8_ORD_MIN and ord(char) <= KANGXI_RADICALS_UTF8_ORD_MAX)
@@ -64,6 +97,10 @@ def user_imports_path(instance: TimestampMixin, filename: str):
 
 def lemma(token: AnyToken) -> str:
     return token.get("l") or token["lemma"]
+
+
+def orig_text(token: AnyToken) -> str:
+    return token.get("w") or token.get("word") or token.get("originalText") or lemma(token)
 
 
 def phone_rep(token: AnyToken) -> str:

@@ -15,27 +15,27 @@ export default function Help(): ReactElement {
   return (
     <Card>
       <Title title={translate("pos.help")} />
-      <CardHeader title="Transcrobes help centre" />
+      <CardHeader title={translate("screens.help.title")} />
       <CardContent>
         <Typography style={{ padding: "1em" }}>
-          The{" "}
+          {translate("screens.help.text_a")}
+          {` `}
           <a target="_blank" href={helpUrl}>
-            Transcrobes information site
+            {translate("screens.help.text_b")}
           </a>{" "}
-          has user documentation for the Transcrobes platform.
         </Typography>
+
+        <Typography style={{ padding: "1em" }}>{translate("screens.help.text_c")}</Typography>
         <Typography style={{ padding: "1em" }}>
-          There is a{" "}
           <RAButton
             size="medium"
-            label="YouTube Channel"
+            label={translate("screens.help.youtube_channel")}
             onClick={() => window.open(YOUTUBE_CHANNEL, "_blank")}
             children={<YouTubeIcon />}
           />
-          and
           <RAButton
             size="medium"
-            label="a playlist of walkthrough videos"
+            label={translate("screens.help.playlist")}
             onClick={() =>
               window.open(
                 "https://www.youtube.com/watch?v=XwZNzFw51lA&list=PLTPZJRPrvkmFS0cJudwCSNs1vrpZu9vgV",
@@ -43,18 +43,17 @@ export default function Help(): ReactElement {
               )
             }
             children={<YouTubeIcon />}
-          />{" "}
-          for all the major features of the software.
+          />
         </Typography>
+
+        <Typography style={{ padding: "1em" }}>{translate("screens.help.text_d")}</Typography>
         <Typography style={{ padding: "1em" }}>
-          Connect with the Transcrobes community on
           <RAButton
             size="medium"
             label="Twitter"
             onClick={() => window.open("https://twitter.com/transcrobes", "_blank")}
             children={<TwitterIcon />}
           />
-          or on
           <RAButton
             size="medium"
             label="Discord"
@@ -63,15 +62,12 @@ export default function Help(): ReactElement {
           />
         </Typography>
         <Typography style={{ padding: "1em" }}>
-          For anything not covered in the online documentation or for any comments, questions or suggestions about the
-          software, theories or the research, please contact the Lead Researcher and developer, Anton Melser (
-          {ADMIN_EMAILS.join(" or ")})
+          {translate("screens.help.text_e")} ({ADMIN_EMAILS.join(" or ")})
         </Typography>
         <Typography style={{ padding: "1em" }}>
-          Transcrobes is also an active academic research project. The key aspects of the theory behind the software are
-          outlined{" "}
+          {translate("screens.help.text_f")}{" "}
           <a target="_blank" href={`//${DOCS_DOMAIN}/page/meaningful-io/intro/`}>
-            here
+            {translate("screens.help.text_g")}
           </a>
           .
         </Typography>

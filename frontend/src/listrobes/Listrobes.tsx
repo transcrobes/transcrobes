@@ -1,7 +1,7 @@
 import { Container } from "@mui/material";
 import _ from "lodash";
 import { ReactElement, useEffect, useState } from "react";
-import { TopToolbar } from "react-admin";
+import { TopToolbar, useTranslate } from "react-admin";
 import { $enum } from "ts-enum-util";
 import { makeStyles } from "tss-react/mui";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
@@ -45,6 +45,7 @@ const useStyles = makeStyles()(() => ({
   toolbar: {
     justifyContent: "space-between",
     alignItems: "center",
+    maxHeight: "64px",
   },
   columnList: {
     columnWidth: "150px",
@@ -53,11 +54,6 @@ const useStyles = makeStyles()(() => ({
   },
 }));
 
-function gradesWithoutIcons(grades: GradesType[]) {
-  return grades.map((x) => {
-    return { id: x.id, content: x.content };
-  });
-}
 interface Props {
   proxy: AbstractWorkerProxy;
 }
@@ -67,10 +63,18 @@ export function Listrobes({ proxy }: Props): ReactElement {
   const dispatch = useAppDispatch();
   const wordsCount = useAppSelector((state) => Object.keys(state.knownCards.allCardWordGraphs || {}).length);
   const [lastWordsCount, setLastWordsCount] = useState(wordsCount);
+  const toLang = useAppSelector((state) => state.userData.user.toLang);
   const isAdvanced = wordsCount > MIN_KNOWN_BEFORE_ADVANCED;
+  const translate = useTranslate();
 
+  function gradesWithoutIcons(grades: GradesType[]) {
+    return grades.map((x) => {
+      return { id: x.id, content: translate(x.content) };
+    });
+  }
   const [graderConfig, setGraderConfig] = useState<GraderConfig>({
     isAdvanced,
+    toLang,
     gradeOrder: GRADES,
     itemOrdering: DEFAULT_ITEM_ORDERING,
     itemsPerPage: DEFAULT_ITEMS_PER_PAGE,
@@ -83,7 +87,7 @@ export function Listrobes({ proxy }: Props): ReactElement {
       gradeOrder: newOrder,
     });
     if (!graderConfig.isAdvanced) {
-      setVocab(vocab.map((v) => ({ ...v, clicks: v.clicks >= newOrder.length ? 0 : v.clicks })));
+      setVocab((vocab || []).map((v) => ({ ...v, clicks: v.clicks >= newOrder.length ? 0 : v.clicks })));
     }
   }, [graderConfig.isAdvanced]);
 
@@ -99,6 +103,7 @@ export function Listrobes({ proxy }: Props): ReactElement {
         ...graderConfig,
         isAdvanced,
         wordLists,
+        toLang,
         gradeOrder: graderConfig.isAdvanced ? GRADES : BASIC_GRADES,
       };
       setGraderConfig(gConfig);

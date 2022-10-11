@@ -7,12 +7,12 @@ export default function ContentEdit() {
     <Edit redirect="list" actions={<HelpEditActions helpUrl={`//${DOCS_DOMAIN}/page/software/configure/contents/`} />}>
       <SimpleForm>
         <TextField source="id" sx={{ paddingBottom: "1em" }} />
-        <TextInput label="Content name" source="title" validate={[required()]} />
-        <TextInput label="Content description" multiline source="description" />
+        <TextInput source="title" validate={[required()]} />
+        <TextInput multiline source="description" />
         <TextInput source="author" />
         <TextInput source="cover" />
-        <TextInput label="Language" source="lang" />
-        <BooleanInput label="Shared" source="shared" />
+        <TextInput source="lang" />
+        <BooleanInput source="shared" />
       </SimpleForm>
     </Edit>
   );

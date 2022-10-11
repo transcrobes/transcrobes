@@ -1,11 +1,13 @@
 import { ReactElement } from "react";
+import { useTranslate } from "react-admin";
 import FineControl, { FineControlImplProps } from "../../components/FineControl";
 
 function PlaybackRate({ className, value, onValueChange }: FineControlImplProps): ReactElement {
+  const translate = useTranslate();
   return (
     <FineControl
-      labelLess="Speed up by 5%"
-      labelMore="Slow down by +5%"
+      labelLess={translate("screens.moocrobes.config.playback_rate.minus")}
+      labelMore={translate("screens.moocrobes.config.playback_rate.plus")}
       className={className}
       isPercent={false}
       onLess={() => {

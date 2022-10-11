@@ -18,6 +18,7 @@ import jsonexport from "jsonexport/dist";
 import * as React from "react";
 import { downloadCSV } from "react-admin";
 import { store } from "../app/createStore";
+import { useAppSelector } from "../app/hooks";
 import { ensureDefinitionsLoaded } from "../lib/dictionary";
 import { bestGuess, sumValues } from "../lib/libMethods";
 import { AbstractWorkerProxy } from "../lib/proxies";
@@ -67,7 +68,7 @@ export default function ContentAnalysisAccuracy({
   const [foundWordsT, setFoundWordsT] = React.useState(0);
   const [notFoundWordsT, setNotFoundWordsT] = React.useState(0);
   const [knownNotFoundWordsT, setKnownNotFoundWordsT] = React.useState(0);
-
+  const { fromLang, toLang } = useAppSelector((state) => state.userData.user);
   const readerConfig = { ...DEFAULT_READER_CONFIG_STATE };
 
   function handleClickOpen(event: React.MouseEvent<HTMLButtonElement>) {
@@ -96,7 +97,7 @@ export default function ContentAnalysisAccuracy({
         } else if (word in accuracy.notFoundWords) {
           const def = store.getState().definitions[wordId];
           if (def) {
-            nnfw.push({ word, guess: bestGuess({ l: word, id: wordId }, def, "zh-Hans", readerConfig) });
+            nnfw.push({ word, guess: bestGuess({ l: word, id: wordId }, [def], fromLang, toLang, readerConfig) });
           } else {
             nnfw.push({ word, guess: "" });
           }

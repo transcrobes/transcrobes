@@ -10,6 +10,7 @@ import { makeStyles } from "tss-react/mui";
 import { isInitialisedAsync } from "../database/authdb";
 import { lightTheme } from "../layout/themes";
 import { ADMIN_EMAILS, DOCS_DOMAIN } from "../lib/types";
+import NolayoutWrapper from "../components/NolayoutWrapper";
 
 const useStyles = makeStyles()((theme) => ({
   main: {
@@ -238,7 +239,9 @@ function LoginWithTheme(props: any): ReactElement {
   return (
     <StyledEngineProvider injectFirst>
       <ThemeProvider theme={createTheme(lightTheme)}>
-        <Login {...props} />
+        <NolayoutWrapper {...props}>
+          <Login {...props} />
+        </NolayoutWrapper>
       </ThemeProvider>
     </StyledEngineProvider>
   );

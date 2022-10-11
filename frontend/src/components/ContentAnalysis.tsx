@@ -15,6 +15,7 @@ import TableRow from "@mui/material/TableRow";
 import { TransitionProps } from "@mui/material/transitions";
 import { Box } from "@mui/system";
 import * as React from "react";
+import { useTranslate } from "react-admin";
 import { CalculatedContentStats, DOCS_DOMAIN } from "../lib/types";
 import HelpButton from "./HelpButton";
 
@@ -43,6 +44,7 @@ interface Props extends CalculatedContentStats {
 export default function ContentAnalysis(props: Props) {
   const helpUrl = `//${DOCS_DOMAIN}/page/software/learn/content-stats/`;
   const [open, setOpen] = React.useState(false);
+  const translate = useTranslate();
   function handleClickOpen(event: React.MouseEvent<HTMLButtonElement>) {
     event.stopPropagation();
     setOpen(true);
@@ -60,11 +62,16 @@ export default function ContentAnalysis(props: Props) {
     const wordTypes = props.knownWordsTypes / props.wordsTypes || 0;
     const charTokens = props.knownChars / props.chars || 0;
     const wordTokens = props.knownWords / props.words || 0;
-    return `${(charTypes * 100).toFixed()}:${(wordTypes * 100).toFixed()}:${(charTokens * 100).toFixed()}:${(
-      wordTokens * 100
-    ).toFixed()}:${props.meanSentenceLength ? props.meanSentenceLength.toFixed() : "?"}`;
+    if (props.fromLang === "en") {
+      return `${(wordTypes * 100).toFixed()}:${(wordTokens * 100).toFixed()}:${
+        props.meanSentenceLength ? props.meanSentenceLength.toFixed() : "?"
+      }`;
+    } else {
+      return `${(charTypes * 100).toFixed()}:${(wordTypes * 100).toFixed()}:${(charTokens * 100).toFixed()}:${(
+        wordTokens * 100
+      ).toFixed()}:${props.meanSentenceLength ? props.meanSentenceLength.toFixed() : "?"}`;
+    }
   }
-
   return (
     <>
       <Box
@@ -124,33 +131,35 @@ export default function ContentAnalysis(props: Props) {
           }}
           onClick={(event) => event.stopPropagation()}
         >
-          <Typography marginRight={6}>Personalised analysis</Typography>
+          <Typography marginRight={6}>{translate("widgets.content_analysis.title")}</Typography>
           <HelpButton url={helpUrl} />
         </DialogTitle>
         <DialogContent onClick={(event) => event.stopPropagation()}>
           <TableContainer component={Paper}>
-            <CardHeader title="Different items (types)" />
+            <CardHeader title={translate("widgets.content_analysis.types")} />
             <Table aria-label="simple table">
               <TableBody>
                 <TableRow>
-                  <TableCell>Items</TableCell>
-                  <TableCell align="right">Known / Total</TableCell>
-                  <TableCell align="right">Ratio</TableCell>
+                  <TableCell>{translate("widgets.content_analysis.header_items")}</TableCell>
+                  <TableCell align="right">{translate("widgets.content_analysis.header_known_total")}</TableCell>
+                  <TableCell align="right">{translate("widgets.content_analysis.header_ratio")}</TableCell>
                 </TableRow>
               </TableBody>
               <TableBody>
+                {props.fromLang === "zh-Hans" && (
+                  <TableRow sx={{ "&:last-child td, &:last-child th": { border: 0 } }}>
+                    <TableCell component="th" scope="row">
+                      {translate("widgets.content_analysis.number_of_characters")}
+                    </TableCell>
+                    <TableCell align="right">
+                      {props.knownCharsTypes} / {props.charsTypes}
+                    </TableCell>
+                    <TableCell align="right">{format(props.knownCharsTypes / props.charsTypes)}</TableCell>
+                  </TableRow>
+                )}
                 <TableRow sx={{ "&:last-child td, &:last-child th": { border: 0 } }}>
                   <TableCell component="th" scope="row">
-                    Number of characters
-                  </TableCell>
-                  <TableCell align="right">
-                    {props.knownCharsTypes} / {props.charsTypes}
-                  </TableCell>
-                  <TableCell align="right">{format(props.knownCharsTypes / props.charsTypes)}</TableCell>
-                </TableRow>
-                <TableRow sx={{ "&:last-child td, &:last-child th": { border: 0 } }}>
-                  <TableCell component="th" scope="row">
-                    Number of words
+                    {translate("widgets.content_analysis.number_of_words")}
                   </TableCell>
                   <TableCell align="right">
                     {props.knownWordsTypes} / {props.wordsTypes}
@@ -166,28 +175,30 @@ export default function ContentAnalysis(props: Props) {
             }}
             component={Paper}
           >
-            <CardHeader title="Items (tokens)" />
+            <CardHeader title={translate("widgets.content_analysis.tokens")} />
             <Table aria-label="simple table">
               <TableBody>
                 <TableRow>
-                  <TableCell>Items</TableCell>
-                  <TableCell align="right">Known / Total</TableCell>
-                  <TableCell align="right">Ratio</TableCell>
+                  <TableCell>{translate("widgets.content_analysis.header_items")}</TableCell>
+                  <TableCell align="right">{translate("widgets.content_analysis.header_known_total")}</TableCell>
+                  <TableCell align="right">{translate("widgets.content_analysis.header_ratio")}</TableCell>
                 </TableRow>
               </TableBody>
               <TableBody>
+                {props.fromLang === "zh-Hans" && (
+                  <TableRow sx={{ "&:last-child td, &:last-child th": { border: 0 } }}>
+                    <TableCell component="th" scope="row">
+                      {translate("widgets.content_analysis.number_of_characters")}
+                    </TableCell>
+                    <TableCell align="right">
+                      {props.knownChars} / {props.chars}
+                    </TableCell>
+                    <TableCell align="right">{format(props.knownChars / props.chars)}</TableCell>
+                  </TableRow>
+                )}
                 <TableRow sx={{ "&:last-child td, &:last-child th": { border: 0 } }}>
                   <TableCell component="th" scope="row">
-                    Number of characters
-                  </TableCell>
-                  <TableCell align="right">
-                    {props.knownChars} / {props.chars}
-                  </TableCell>
-                  <TableCell align="right">{format(props.knownChars / props.chars)}</TableCell>
-                </TableRow>
-                <TableRow sx={{ "&:last-child td, &:last-child th": { border: 0 } }}>
-                  <TableCell component="th" scope="row">
-                    Number of words
+                    {translate("widgets.content_analysis.number_of_words")}
                   </TableCell>
                   <TableCell align="right">
                     {props.knownWords} / {props.words}
@@ -205,7 +216,7 @@ export default function ContentAnalysis(props: Props) {
             <CardContent>
               <Box sx={{ display: "flex", justifyContent: "space-between" }}>
                 <Box>
-                  <Typography>Average sentence length (words)</Typography>
+                  <Typography>{translate("widgets.content_analysis.avg_sentence_length")}</Typography>
                 </Box>
                 <Box>
                   <Typography>{props.meanSentenceLength ? props.meanSentenceLength.toFixed(1) : "N/A"}</Typography>
@@ -216,7 +227,7 @@ export default function ContentAnalysis(props: Props) {
         </DialogContent>
         <DialogActions>
           <Button size="small" onClick={handleClose} startIcon={<CloseIcon />}>
-            Close
+            {translate("ra.action.close")}
           </Button>
         </DialogActions>
       </Dialog>

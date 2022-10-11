@@ -1,5 +1,6 @@
 import { ClassNameMap } from "@mui/material";
 import { ReactElement, useEffect, useState } from "react";
+import { useTranslate } from "react-admin";
 import { getRecentSentences } from "../../../lib/componentMethods";
 import {
   DEFAULT_RECENTS_READER_CONFIG_STATE,
@@ -17,6 +18,7 @@ type Props = {
 
 export default function RecentSentences({ token, classes, definition }: Props): ReactElement {
   const [recentSentences, setRecentSentences] = useState<RecentSentencesType | null>(null);
+  const translate = useTranslate();
   useEffect(() => {
     (async () => {
       setRecentSentences(await getRecentSentences(token, definition));
@@ -27,7 +29,7 @@ export default function RecentSentences({ token, classes, definition }: Props): 
     <div className={classes.recentSentences}>
       <hr />
       <div>
-        <div>Similar examples</div>
+        <div>{translate("widgets.popup.recent_sentences")}</div>
         {Object.values(recentSentences.posSentences).map((recentSentence, i) => {
           return (
             <div key={i}>

@@ -1,5 +1,6 @@
 import { Box, useTheme } from "@mui/system";
 import { ReactElement } from "react";
+import { useTranslate } from "react-admin";
 import { makeStyles } from "tss-react/mui";
 import { GradesType, VocabReview } from "../lib/types";
 import { getColour } from "./funclib";
@@ -44,10 +45,15 @@ function RowItem({ item, gradeOrder }: { item: VocabReview; gradeOrder: GradesTy
 
 function MeaningTooltip({ item }: { item: VocabReview }) {
   const { classes } = useStyles();
+  const translate = useTranslate();
   return (
     <div className={classes.descriptionText}>
-      <div>Pinyin: {item.sound.join(" ")}</div>
-      <div>Meaning: {item.meaning}</div>
+      <div>
+        {translate("screens.listrobes.vocab_item_sound")} {item.sound.join(" ")}
+      </div>
+      <div>
+        {translate("screens.listrobes.vocab_item_meaning")} {item.meaning}
+      </div>
     </div>
   );
 }

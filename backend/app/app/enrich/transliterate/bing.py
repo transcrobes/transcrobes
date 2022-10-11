@@ -9,7 +9,7 @@ import sqlalchemy
 from app.cache import caches
 from app.enrich.apis.bing import BingAPI
 from app.enrich.transliterate import Transliterator
-from app.models.migrated import BingApiTransliteration
+from app.models.lookups import BingApiTransliteration
 from sqlalchemy.ext.asyncio.session import AsyncSession
 from sqlalchemy.future import select
 

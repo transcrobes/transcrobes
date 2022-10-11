@@ -52,6 +52,11 @@ export async function getRefreshedState<T extends ReaderState>(
   return conf;
 }
 
+// export type SetFontFamily<T extends ReaderState> = (
+//   state: GenericState<T>,
+//   action: PayloadAction<ContentConfigPayload<FontFamily | FontFamilyChinese>>,
+// ) => void;
+
 export const createGenericSlice = <T extends ReaderState, Reducers extends SliceCaseReducers<GenericState<T>>>({
   name = "",
   initialState,
@@ -67,13 +72,19 @@ export const createGenericSlice = <T extends ReaderState, Reducers extends Slice
     name,
     initialState,
     reducers: {
-      setFontFamily(state: GenericState<T>, action: PayloadAction<ContentConfigPayload<FontFamily>>) {
+      setFontFamilyGloss(
+        state: GenericState<T>,
+        action: PayloadAction<ContentConfigPayload<FontFamily | FontFamilyChinese>>,
+      ) {
         state[action.payload.id] = state[action.payload.id] || defaultValue;
-        state[action.payload.id].fontFamily = action.payload.value;
+        state[action.payload.id].fontFamilyGloss = action.payload.value;
       },
-      setFontFamilyChinese(state: GenericState<T>, action: PayloadAction<ContentConfigPayload<FontFamilyChinese>>) {
+      setFontFamilyMain(
+        state: GenericState<T>,
+        action: PayloadAction<ContentConfigPayload<FontFamily | FontFamilyChinese>>,
+      ) {
         state[action.payload.id] = state[action.payload.id] || defaultValue;
-        state[action.payload.id].fontFamilyChinese = action.payload.value;
+        state[action.payload.id].fontFamilyMain = action.payload.value;
       },
       setGlossing(state: GenericState<T>, action: PayloadAction<ContentConfigPayload<number>>) {
         state[action.payload.id] = state[action.payload.id] || defaultValue;

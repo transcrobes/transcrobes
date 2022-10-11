@@ -64,3 +64,6 @@ class Sentence(TypedDict):
 
 class Model(TypedDict):
     sentences: List[Sentence]
+
+
+LANG_PAIR_SEPARATOR = ":"

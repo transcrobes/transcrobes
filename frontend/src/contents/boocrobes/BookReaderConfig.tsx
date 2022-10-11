@@ -1,4 +1,5 @@
 import { ToggleButton, ToggleButtonGroup } from "@mui/material";
+import { useTranslate } from "react-admin";
 import { useParams } from "react-router-dom";
 import { makeStyles } from "tss-react/mui";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
@@ -31,13 +32,14 @@ const useStyles = makeStyles()((theme) => {
 
 export default function BookReaderConfig(): React.ReactElement {
   const { classes } = useStyles();
+  const translate = useTranslate();
   const { id = "" } = useParams<ContentParams>();
   const readerConfig = useAppSelector((state) => state.bookReader[id] || { ...DEFAULT_BOOK_READER_CONFIG_STATE, id });
   const dispatch = useAppDispatch();
 
   return (
     <>
-      <Conftainer label="Paging" id="paging">
+      <Conftainer label={translate("screens.boocrobes.config.paging.title")} id="paging">
         <ToggleButtonGroup
           className={classes.button}
           onChange={(event: React.MouseEvent<HTMLElement>, value: any) =>
@@ -47,14 +49,14 @@ export default function BookReaderConfig(): React.ReactElement {
           exclusive
         >
           <ToggleButton className={classes.button} value={false}>
-            Paginated
+            {translate("screens.boocrobes.config.paging.paginated")}
           </ToggleButton>
           <ToggleButton className={classes.button} value={true}>
-            Scrolling
+            {translate("screens.boocrobes.config.paging.scrolling")}
           </ToggleButton>
         </ToggleButtonGroup>
       </Conftainer>
-      <Conftainer label="Page Margins" id="pageMargins">
+      <Conftainer label={translate("screens.boocrobes.config.page_margins")} id="pageMargins">
         <FivePercentFineControl
           onValueChange={(value) => {
             dispatch(bookReaderActions.setPageMargins({ id, value: value || 1 }));

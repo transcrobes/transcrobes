@@ -2,6 +2,7 @@ import { makeStyles } from "tss-react/mui";
 import HelpIcon from "@mui/icons-material/HelpOutline";
 import { Button } from "ra-ui-materialui";
 import { ReactElement } from "react";
+import { useTranslate } from "react-admin";
 
 interface Props {
   url: string;
@@ -15,6 +16,7 @@ const useStyles = makeStyles()({
 
 export default function HelpButton({ url, text, size }: Props): ReactElement {
   const { classes } = useStyles();
+  const translate = useTranslate();
   return (
     <Button
       onClick={() => window.open(url, "_blank")}
@@ -22,7 +24,7 @@ export default function HelpButton({ url, text, size }: Props): ReactElement {
       size={size}
       children={<HelpIcon />}
       variant="text"
-      label={text || "Online Help"}
+      label={text || translate("buttons.general.online_help")}
     />
   );
 }

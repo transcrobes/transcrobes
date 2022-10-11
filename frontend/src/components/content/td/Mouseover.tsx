@@ -44,7 +44,7 @@ export default function Mouseover({ readerConfig }: Props): ReactElement {
   const knownWords = useAppSelector((state) => state.knownCards);
   const definitions = useAppSelector((state) => state.definitions);
   const mouseover = useAppSelector((state) => state.ui.mouseover);
-  const fromLang = useAppSelector((state) => state.userData.user.fromLang);
+  const { fromLang, toLang } = useAppSelector((state) => state.userData.user);
   const [timeoutId, setTimeoutId] = useState(0);
   const { classes } = useStyles();
   const { ref } = useResizeObserver<HTMLDivElement>({
@@ -64,7 +64,7 @@ export default function Mouseover({ readerConfig }: Props): ReactElement {
   });
   useEffect(() => {
     if (mouseover) {
-      getPopoverText(mouseover.token, knownWords, definitions, fromLang, readerConfig).then((lText) => {
+      getPopoverText(mouseover.token, knownWords, definitions, fromLang, toLang, readerConfig).then((lText) => {
         setText(lText);
         setTimeoutId(
           window.setTimeout(() => {

@@ -17,6 +17,7 @@ from app.enrich.metadata import Metadata
 from app.enrich.parse import ParseProvider
 from app.enrich.translate import DefaultTranslator, Translator
 from app.enrich.transliterate import Transliterator
+from sqlalchemy.dialects import postgresql
 from sqlalchemy.ext.asyncio.session import AsyncSession
 from sqlalchemy.sql.expression import select
 from sqlalchemy.sql.functions import func
@@ -31,7 +32,7 @@ class PersistenceProvider(ABC):
         self._config = config
         self._inmem = self._config.get("inmem")
         self.dico = self._load() if self._inmem else None
-        self.model_type = None  # Children must assign
+        # self.model_type = None  # Children must assign
 
     async def __len__(self):
         if self._inmem:
@@ -45,18 +46,23 @@ class PersistenceProvider(ABC):
             result = await db.execute(select(func.count("*")).select_from(self.model_type))
             return result.scalar()
 
-    def load_to_db(self, dico, force_reload=False):  # pylint: disable=R0201
-        raise Exception("Not yet migrated to fastapi")
-        # for lword, entry in dico.items():
-        #     dbentries = self.model_type.objects.filter(source_text=lword)
-        #     if len(dbentries) == 0:
-        #         dbentry = self.model_type(source_text=lword, response_json=json.dumps(entry, ensure_ascii=False))
-        #         dbentry.save()
-        #     elif force_reload:
-        #         dbentry = dbentries.first()  # TODO: what about having more than one... :-(
-        #         dbentry.source_text = lword
-        #         dbentry.response_json = json.dumps(entry, ensure_ascii=False)
-        #         dbentry.save()
+    async def _flush_to_db(self, db: AsyncSession, dico_rows):
+        stmt = postgresql.insert(self.model_type).values(dico_rows)
+        # this isn't a real upsert, but it's good enough for our purposes
+        stmt = stmt.on_conflict_do_nothing(index_elements=["source_text"])
+        await db.execute(stmt)
+
+    async def load_to_db(self, db: AsyncSession, dico):  # pylint: disable=R0201
+        dico_rows = []
+        for i, (lword, entry) in enumerate(dico.items()):
+            if i % 10000 == 0 and i > 0:  # 10000 == 30000 / 3, which keeps us under the params limit of 32k
+                await self._flush_to_db(db, dico_rows)
+                dico_rows = []
+
+            dico_rows.append({"source_text": lword, "response_json": json.dumps(entry, ensure_ascii=False)})
+
+        if len(dico_rows) > 0:
+            await self._flush_to_db(db, dico_rows)
 
     async def entry(self, db: AsyncSession, lword: str) -> Any:
         if self._inmem:

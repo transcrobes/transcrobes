@@ -1,7 +1,9 @@
 import dayjs from "dayjs";
 import { ReactElement } from "react";
+import { useTranslate } from "react-admin";
 import { $enum } from "ts-enum-util";
 import { makeStyles } from "tss-react/mui";
+import { useAppSelector } from "../app/hooks";
 import { ThinHR } from "../components/Common";
 import DefinitionGraph from "../components/DefinitionGraph";
 import DefinitionTranslations from "../components/DefinitionTranslations";
@@ -71,17 +73,19 @@ interface WordInfoProps {
 
 function WordInfo({ definition, characters, meaningCard, onCardFrontUpdate }: WordInfoProps): ReactElement {
   const { classes } = useStyles();
+  const translate = useTranslate();
+  const fromLang = useAppSelector((state) => state.userData.user.fromLang);
   return (
     <>
       <div>
-        <Header text="Card Revision Details" />
+        <Header text={translate("screens.notrobes.card_revision_details")} />
         <div className={classes.definitionGraph}>
           <DefinitionGraph charWidth={100} charHeight={100} characters={characters} showAnswer={true} />
         </div>
         <div className={classes.soundBoxOuter}>
           <div className={classes.soundBoxInner}>
             <Sound definition={definition} />
-            <SayIt graph={definition.graph} />
+            <SayIt graph={definition.graph} lang={fromLang} />
           </div>
         </div>
         {/*
@@ -108,11 +112,12 @@ interface PracticerProps {
 }
 
 function Practicer({ wordId, onPractice }: PracticerProps): ReactElement {
+  const translate = useTranslate();
   return (
     <>
       <ThinHR />
       <div>
-        <Header text="Card Actions" />
+        <Header text={translate("screens.notrobes.card_actions")} />
         <div>
           <PracticerInput wordId={wordId} onPractice={onPractice} />
         </div>
@@ -123,6 +128,8 @@ function Practicer({ wordId, onPractice }: PracticerProps): ReactElement {
 
 function ExistingCards({ cards, classes }: { cards: CardType[]; classes: any }): ReactElement {
   const cardsArray = [...cards.values()];
+  const translate = useTranslate();
+  const toLang = useAppSelector((state) => state.userData.user.toLang);
   const cardsRows = cardsArray.map((card) => {
     return (
       card && (
@@ -133,9 +140,9 @@ function ExistingCards({ cards, classes }: { cards: CardType[]; classes: any }):
             {dayjs
               .unix(card.dueDate || 0)
               .toDate()
-              .toLocaleString("en-UK")}
+              .toLocaleString(toLang === "zh-Hans" ? "zh-CN" : "en-UK")}
           </td>
-          <td>{card.known ? "Yes" : "No"}</td>
+          <td>{card.known ? translate("ra.message.yes") : translate("ra.message.no")}</td>
         </tr>
       )
     );
@@ -145,21 +152,21 @@ function ExistingCards({ cards, classes }: { cards: CardType[]; classes: any }):
     <>
       <ThinHR />
       <div>
-        <Header text="Existing Cards" />
+        <Header text={translate("screens.notrobes.existing_cards")} />
         <div>
           {cardsArray.length > 0 ? ( // cards is a map
             <table className={classes.cardsTable}>
               <thead>
                 <tr>
-                  <th>Type</th>
-                  <th>Due Date</th>
-                  <th>Known?</th>
+                  <th>{translate("screens.notrobes.type")}</th>
+                  <th>{translate("screens.notrobes.due_date")}</th>
+                  <th>{translate("screens.notrobes.known")}</th>
                 </tr>
               </thead>
               <tbody>{cardsRows}</tbody>
             </table>
           ) : (
-            <span>No cards for this item</span>
+            <span>{translate("screens.notrobes.no_cards")}</span>
           )}
         </div>
       </div>
@@ -168,17 +175,18 @@ function ExistingCards({ cards, classes }: { cards: CardType[]; classes: any }):
 }
 function WordLists({ lists }: { lists: SortableListElementType[] }): ReactElement {
   const { classes } = useStyles();
+  const translate = useTranslate();
   return (
     <>
       <ThinHR />
       <div>
-        <Header text="Lists (name: freq. position in list)" />
+        <Header text={translate("screens.notrobes.lists")} />
         {lists.length > 0 ? ( // cards is a map
           <div className={classes.infoBox}>
             {lists.map((wl) => `${wl.name}: ${wl.position}`).reduce((prev, curr) => prev + ", " + curr)}
           </div>
         ) : (
-          <span>No lists for this item</span>
+          <span>{translate("screens.notrobes.no_lists")}</span>
         )}
       </div>
     </>
@@ -192,11 +200,12 @@ function CharacterDetails({
   characters: (CharacterType | null)[];
   classes: any;
 }): ReactElement {
+  const translate = useTranslate();
   return (
     <>
       <ThinHR />
       <div>
-        <Header text="Radicals and composition" />
+        <Header text={translate("screens.notrobes.radicals")} />
         {(characters.length > 0 && (
           <div>
             {characters
@@ -220,7 +229,7 @@ function CharacterDetails({
                 );
               })}
           </div>
-        )) || <div className={classes.infoBox}>No character details found</div>}
+        )) || <div className={classes.infoBox}>{translate("screens.notrobes.no_radicals")}</div>}
       </div>
     </>
   );
@@ -228,18 +237,19 @@ function CharacterDetails({
 
 function Synonyms({ definition }: { definition: DefinitionType }): ReactElement {
   const { classes } = useStyles();
+  const translate = useTranslate();
   return (
     <>
       <ThinHR />
       <div>
-        <Header text="Related Words" />
+        <Header text={translate("screens.notrobes.related_words")} />
         {(definition.synonyms.length > 0 && (
           <div>
             {definition.synonyms.map((result, ind) => {
               return <PosItem key={ind} item={result} discoverableWords />;
             })}
           </div>
-        )) || <div className={classes.infoBox}>No synonyms found</div>}
+        )) || <div className={classes.infoBox}>{translate("screens.notrobes.no_related_words")}</div>}
       </div>
     </>
   );
@@ -247,46 +257,54 @@ function Synonyms({ definition }: { definition: DefinitionType }): ReactElement 
 
 function WordModelStats({ wordModelStats }: { wordModelStats: WordModelStatsType }): ReactElement {
   const { classes } = useStyles();
+  const translate = useTranslate();
+  const toLang = useAppSelector((state) => state.userData.user.toLang);
   return (
     <>
       <ThinHR />
       <div>
-        <Header text="Personal Word Stats" />
+        <Header text={translate("screens.notrobes.personal_word_stats.title")} />
         {(wordModelStats && (
           <div>
             <div className={classes.infoBox}>
-              <span style={{ fontWeight: "bold" }}>Nb. seen: </span>
+              <span style={{ fontWeight: "bold" }}>{translate("screens.notrobes.personal_word_stats.nb_seen")} </span>
               <span>{wordModelStats.nbSeen} </span>
             </div>
             <div className={classes.infoBox}>
-              <span style={{ fontWeight: "bold" }}>Last seen: </span>
+              <span style={{ fontWeight: "bold" }}>{translate("screens.notrobes.personal_word_stats.last_seen")} </span>
               {/* FIXME: nasty hardcoded locale!!! */}
               <span>
                 {dayjs
                   .unix(wordModelStats.lastSeen || 0)
                   .toDate()
-                  .toLocaleString("en-UK")}{" "}
+                  .toLocaleString(toLang === "zh-Hans" ? "zh-CN" : "en-UK")}{" "}
               </span>
             </div>
             <div className={classes.infoBox}>
-              <span style={{ fontWeight: "bold" }}>Nb. seen since last check: </span>
+              <span style={{ fontWeight: "bold" }}>
+                {translate("screens.notrobes.personal_word_stats.nb_seen_since_last_check")}
+              </span>
               <span>{wordModelStats.nbSeenSinceLastCheck} </span>
             </div>
             <div className={classes.infoBox}>
-              <span style={{ fontWeight: "bold" }}>Nb. Checked: </span>
+              <span style={{ fontWeight: "bold" }}>{translate("screens.notrobes.personal_word_stats.nb_checked")}</span>
               <span>{wordModelStats.nbChecked} </span>
             </div>
             <div className={classes.infoBox}>
-              <span style={{ fontWeight: "bold" }}>Last Checked: </span>
+              <span style={{ fontWeight: "bold" }}>
+                {translate("screens.notrobes.personal_word_stats.last_checked")}{" "}
+              </span>
               <span>
                 {dayjs
                   .unix(wordModelStats.lastChecked || 0)
                   .toDate()
-                  .toLocaleString("en-UK")}{" "}
+                  .toLocaleString(toLang === "zh-Hans" ? "zh-CN" : "en-UK")}{" "}
               </span>
             </div>
           </div>
-        )) || <div className={classes.infoBox}>No word stats found</div>}
+        )) || (
+          <div className={classes.infoBox}>{translate("screens.notrobes.personal_word_stats.no_word_stats_found")}</div>
+        )}
       </div>
     </>
   );
@@ -299,10 +317,11 @@ function ProviderTranslations({
   definition: DefinitionType;
   translationProviderOrder: Record<string, number>;
 }): ReactElement {
+  const translate = useTranslate();
   return (
     <>
       <ThinHR />
-      <Header text="Entry Definitions" />
+      <Header text={translate("screens.notrobes.entry_definitions")} />
       <DefinitionTranslations definition={definition} translationProviderOrder={translationProviderOrder} />
     </>
   );
@@ -314,17 +333,23 @@ function Sound({ definition }: { definition: DefinitionType }): ReactElement {
 
 function WordMetadata({ definition }: { definition: DefinitionType }): ReactElement {
   const { classes } = useStyles();
+  const translate = useTranslate();
+  const fromLang = useAppSelector((state) => state.userData.user.fromLang);
   return (
     <>
       <ThinHR />
       <div>
-        <Header text="Metadata" />
-        <div className={classes.infoBox}>
-          <span className={classes.fieldName}>HSK: </span>
-          <span>
-            {definition.hsk && definition.hsk.levels.length > 0 ? definition.hsk.levels.join(", ") : "Not in the HSK"}
-          </span>
-        </div>
+        <Header text={translate("screens.notrobes.metadata")} />
+        {fromLang === "zh-Hans" && (
+          <div className={classes.infoBox}>
+            <span className={classes.fieldName}>HSK: </span>
+            <span>
+              {definition.hsk?.levels && definition.hsk.levels.length > 0
+                ? definition.hsk.levels.join(", ")
+                : "Not in the HSK"}
+            </span>
+          </div>
+        )}
         <div className={classes.infoBox}>
           <Frequency frequency={definition.frequency} />
         </div>
@@ -359,6 +384,7 @@ function Word({
   onCardFrontUpdate,
 }: WordProps): ReactElement {
   const { classes } = useStyles();
+  const fromLang = useAppSelector((state) => state.userData.user.fromLang);
   return (
     definition && (
       <div>
@@ -375,7 +401,7 @@ function Word({
         />
         <Practicer wordId={definition.id} onPractice={onPractice} />
         <ExistingCards cards={cards} classes={classes} />
-        <CharacterDetails characters={characters} classes={classes} />
+        {fromLang === "zh-Hans" && <CharacterDetails characters={characters} classes={classes} />}
         <WordLists lists={lists} />
         <RecentSentencesElement recentPosSentences={recentPosSentences} onDelete={onDeleteRecent} sameTab />
         <WordMetadata definition={definition} />

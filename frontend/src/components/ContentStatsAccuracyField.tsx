@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useRecordContext } from "react-admin";
+import { useAppSelector } from "../app/hooks";
 import { AnalysisAccuracy } from "../lib/types";
 import ContentAnalysisAccuracy from "./ContentAnalysisAccuracy";
 
@@ -7,6 +8,7 @@ const DATA_SOURCE = "ContentStatsField";
 
 export function ContentStatsAccuracyField({ label }: { label?: string }) {
   const record = useRecordContext();
+  const fromLang = useAppSelector((state) => state.userData.user.fromLang);
   let importId = "";
   if (Object.hasOwn(record, "theImport")) {
     importId = record.theImport;
@@ -23,7 +25,7 @@ export function ContentStatsAccuracyField({ label }: { label?: string }) {
           await window.componentsConfig.proxy.sendMessagePromise<AnalysisAccuracy | null>({
             source: DATA_SOURCE,
             type: "getContentAccuracyStatsForImport",
-            value: { importId },
+            value: { importId, fromLang },
           });
         setAccuracy(locStats);
       })();

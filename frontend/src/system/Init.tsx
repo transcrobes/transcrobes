@@ -25,39 +25,17 @@ function Intro() {
   const translate = useTranslate();
   return (
     <>
-      <h1>Welcome to Transcrobes!</h1>
-      <h2>It's initialisation time (3-10 minutes)!</h2>
-      <div>
-        <Typography>
-          <a target={"_blank"} href={helpUrl}>
-            {translate("user.help.site")}
-          </a>
-        </Typography>
-      </div>
-
       <p>
-        Transcrobes has been tested and works best on either Google Chrome, Microsoft Edge or Yandex Browser
-        (Chromium-based browsers) on either the desktop (Windows, Linux, Mac) or on Android. Unfortunately, other
-        browsers (including everything on iOS) don't properly support all the latest web standards, so some things might
-        not work properly. We are working hard on bringing compatibility to all platforms.
+        <Typography variant="h4">{translate("screens.extension.initialisation.title")}</Typography>
       </p>
       <p>
-        Even though Transcrobes is entirely browser-based, a lot of Transcrobes' functionality is available offline
-        (it's a{" "}
-        <a target="_blank" rel="noopener noreferrer" href="https://web.dev/progressive-web-apps/">
-          "Progressive Web App"
-        </a>
-        ), which means you can keep reading your favourite books, watching your favourite movies or doing active
-        learning exercises wherever you are, whenever you want. On a mountain or behind a Great Big Firewall, nothing
-        should get in the way of your learning! This does mean that the system needs to download and prepare some
-        things, and that is going to take a while (3-10 minutes depending on how fast your phone/tablet/computer is).
+        <Typography>{translate("screens.initialisation.intro_a")}</Typography>
       </p>
       <p>
-        The system needs to do quite a lot of work (mainly building indexeddb indexes), so don't be alarmed if your
-        devices heat up a bit (should be less than a gaming session though!) and the fan switches on. It's normal, and
-        will only happen once, at initialisation time. It's better to not interrupt the initialisation while it's
-        happening (like any initialisation!), so make sure your device has plenty of battery (or is plugged in). It will
-        also download 25-50MB of data so if you are not on wifi, make sure that is not a problem for your data plan.
+        <Typography>{translate("screens.initialisation.intro_b")}</Typography>
+      </p>
+      <p>
+        <Typography>{translate("screens.initialisation.intro_c")}</Typography>
       </p>
     </>
   );
@@ -68,14 +46,11 @@ interface RunningMessageProps {
 }
 
 function RunningMessage({ message }: RunningMessageProps): ReactElement {
+  const translate = useTranslate();
   return (
     <div id="initialising">
-      <h1 className="h4 text-gray-900 mb-4">Initialisation started</h1>
-      <p>
-        Please be patient while the initialisation finishes. The initialisation will give some updates but you should
-        not be worried unless you see no update for over 5 minutes. No harm should come if you stop the initialisation
-        by navigating away or closing the browser. The initialisation will pick up where it left off when you return.
-      </p>
+      <Typography variant="h4">{translate("screens.initialisation.started")}</Typography>
+      <Typography>{translate("screens.initialisation.started_message")}</Typography>
       <Loading position="relative" top="0px" />
       <div className="text-center" style={{ fontSize: "2em", color: "black" }} id="initialisationMessages">
         {message}
@@ -162,30 +137,32 @@ function Init({ proxy }: Props): ReactElement {
   }
 
   return (
-    <div>
-      <Card>
-        <Title title={translate("pos.system")} />
-        <CardContent>
-          <Intro />
-          {runStarted === null && (
-            <Button
-              variant="contained"
-              className={classes.button}
-              color={"primary"}
-              size={"large"}
-              onClick={() => initialise()}
-            >
-              {translate("resources.system.initialise")}
-            </Button>
-          )}
-          {runStarted && (
-            <>
-              <RunningMessage message={message} />
-            </>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+    <Card
+      sx={{
+        paddingTop: "3em",
+      }}
+    >
+      <Title title={translate("pos.system")} />
+      <CardContent>
+        <Intro />
+        {runStarted === null && (
+          <Button
+            variant="contained"
+            className={classes.button}
+            color={"primary"}
+            size={"large"}
+            onClick={() => initialise()}
+          >
+            {translate("screens.system.initialise")}
+          </Button>
+        )}
+        {runStarted && (
+          <>
+            <RunningMessage message={message} />
+          </>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 

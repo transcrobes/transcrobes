@@ -1,10 +1,11 @@
 from collections import defaultdict
-from typing import Tuple
 
-cache_loading = False
+cache_loading = {}
 
-TimestampedDict = dict[str, Tuple[float, str, int]]
-cached_definitions = defaultdict(TimestampedDict)
+TimeStampedDef = tuple[float, str, int]
+TimestampedDict = tuple[float, dict[str, TimeStampedDef]]
+
+cached_definitions = defaultdict(lambda: defaultdict(TimestampedDict))
 
 
 class SimpleCache(dict):

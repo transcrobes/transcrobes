@@ -3,6 +3,7 @@ import { bin } from "d3-array";
 import dayjs, { ManipulateType } from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat";
 import { useEffect, useState } from "react";
+import { useTranslate } from "react-admin";
 import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
 import useWindowDimensions from "../hooks/WindowDimensions";
 import { binnedDayData } from "../lib/funclib";
@@ -38,6 +39,7 @@ export function DayProgressRevised({ nbPeriods = 8, periodType = 2 }: Props) {
   const [data, setData] = useState<DayRevisedGraphData[]>([]);
   const [stats, setStats] = useState<DayModelStatsType[]>();
   const [totals, setTotals] = useState<Totals>({ nbSuccess: 0, nbFailures: 0 });
+  const translate = useTranslate();
 
   useEffect(() => {
     (async function () {
@@ -121,7 +123,7 @@ export function DayProgressRevised({ nbPeriods = 8, periodType = 2 }: Props) {
           <tbody>
             <tr>
               <td>
-                <span style={{ color: theme.palette.primary.main }}>Nb Successes</span>
+                <span style={{ color: theme.palette.primary.main }}>{translate("stats.nb_successes")}</span>
               </td>
               <td>
                 <span style={{ color: theme.palette.primary.main }}>{totals.nbSuccess}</span>
@@ -129,7 +131,7 @@ export function DayProgressRevised({ nbPeriods = 8, periodType = 2 }: Props) {
             </tr>
             <tr>
               <td>
-                <span style={{ color: theme.palette.success.light }}>Nb Re-revisions</span>
+                <span style={{ color: theme.palette.success.light }}>{translate("stats.nb_re_revisions")}</span>
               </td>
               <td>
                 <span style={{ color: theme.palette.success.light }}>{totals.nbFailures}</span>
@@ -140,6 +142,6 @@ export function DayProgressRevised({ nbPeriods = 8, periodType = 2 }: Props) {
       </Grid>
     </Grid>
   ) : (
-    <div>The stats are still being generated</div>
+    <div>{translate("screens.stats.generating")}</div>
   );
 }

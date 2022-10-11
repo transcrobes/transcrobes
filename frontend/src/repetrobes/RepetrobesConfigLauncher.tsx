@@ -4,7 +4,7 @@ import React, { ReactElement } from "react";
 import { makeStyles } from "tss-react/mui";
 import { RepetrobesActivityConfigType } from "../lib/types";
 import RepetrobesConfig from "./RepetrobesConfig";
-import { Button } from "react-admin";
+import { Button, useTranslate } from "react-admin";
 
 const useStyles = makeStyles()({
   settings: {
@@ -20,6 +20,7 @@ interface Props {
 export default function RepetrobesConfigLauncher({ activityConfig, onConfigChange }: Props): ReactElement {
   const [isOpen, setIsOpen] = React.useState(false);
   const { classes } = useStyles();
+  const translate = useTranslate();
   // TODO: work out how to do this as proper functions!
   const toggleDrawer = (open: boolean) => (event: React.KeyboardEvent | React.MouseEvent) => {
     if (
@@ -33,16 +34,12 @@ export default function RepetrobesConfigLauncher({ activityConfig, onConfigChang
 
   return (
     <Box>
-      {/* <IconButton
-        className={classes.settings}
-        onClick={toggleDrawer(true)}
-        color="primary"
-        aria-label="settings"
+      <Button
         size="large"
-      >
-        <SettingsIcon />
-      </IconButton> */}
-      <Button size="large" children={<SettingsIcon />} label="Repetrobes Settings" onClick={toggleDrawer(true)} />
+        children={<SettingsIcon />}
+        label={translate("screens.repetrobes.config.title")}
+        onClick={toggleDrawer(true)}
+      />
       <Drawer anchor="left" open={isOpen} onClose={toggleDrawer(false)}>
         <Box sx={{ width: 300 }} role="presentation">
           <RepetrobesConfig activityConfig={activityConfig} onConfigChange={onConfigChange} />

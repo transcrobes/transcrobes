@@ -2,13 +2,15 @@ import { FormControl, FormControlLabel, Switch, TextField, Typography, useTheme 
 import dayjs from "dayjs";
 import _ from "lodash";
 import { ChangeEvent, ReactElement } from "react";
+import { useTranslate } from "react-admin";
 import Select, { StylesConfig } from "react-select";
 import { makeStyles } from "tss-react/mui";
+import { useAppSelector } from "../app/hooks";
 import DictionaryChooser from "../components/DictionaryChooser";
 import TCCheckbox from "../components/TCCheckbox";
 import WordOrderSelector from "../components/WordOrderSelector";
-import { validInt } from "../lib/funclib";
-import { RepetrobesActivityConfigType, WordOrdering } from "../lib/types";
+import { hasCharacters, isAlphabetic, validInt } from "../lib/funclib";
+import { RepetrobesActivityConfigType, SelectableListElementType, WordOrdering } from "../lib/types";
 
 interface Props {
   activityConfig: RepetrobesActivityConfigType;
@@ -39,26 +41,14 @@ const useStyles = makeStyles()({
 
 export default function RepetrobesConfig({ activityConfig, onConfigChange }: Props): ReactElement {
   const { classes } = useStyles();
+  const translate = useTranslate();
   const theme = useTheme();
+  const fromLang = useAppSelector((state) => state.userData.user.fromLang);
   const colourStyles: StylesConfig = {
     control: (styles) => ({ ...styles, backgroundColor: theme.palette.background.default }),
     menu: (styles) => ({ ...styles, backgroundColor: theme.palette.background.default, zIndex: 2 }),
   };
-
-  // function handleDragEnd(result: DropResult) {
-  //   // dropped outside the list
-  //   if (!result.destination) {
-  //     return;
-  //   }
-
-  //   const translationProviderOrder = reorderArray(
-  //     activityConfig.translationProviderOrder,
-  //     result.source.index,
-  //     result.destination.index,
-  //   );
-
-  //   onConfigChange({ ...activityConfig, translationProviderOrder });
-  // }
+  console.log("RepetrobesConfig activityConfig", activityConfig);
 
   function handleWordListsChange(sls: any) {
     // FIXME: this is SUPER nasty but see
@@ -126,59 +116,75 @@ export default function RepetrobesConfig({ activityConfig, onConfigChange }: Pro
   function handleSystemWordSelectionChange(event: ChangeEvent<HTMLInputElement>, checked: boolean): void {
     onConfigChange({ ...activityConfig, systemWordSelection: !checked });
   }
+  function translated_card_types(activeCardTypes?: SelectableListElementType[]): SelectableListElementType[] {
+    return (
+      activeCardTypes?.map((x) => ({
+        value: x.value,
+        label: translate(x.label),
+        selected: x.selected,
+      })) || []
+    );
+  }
   return (
     <div>
       <div className={classes.multiselect}>
-        <Typography>Active card types</Typography>
+        <Typography>{translate("screens.repetrobes.config.active_card_types")}</Typography>
         <Select
           styles={colourStyles}
           onChange={handleCardTypesChange}
-          defaultValue={(activityConfig.activeCardTypes || []).filter((x) => x.selected)}
+          defaultValue={translated_card_types(activityConfig.activeCardTypes).filter((x) => x.selected)}
           isMulti
           name="activeCardTypes"
-          options={activityConfig.activeCardTypes}
+          options={translated_card_types(activityConfig.activeCardTypes)}
         />
       </div>
-      <TCCheckbox
-        name="showNormalFont"
-        className={classes.checkbox}
-        label="Also show graphs with normal font"
-        isSelected={activityConfig.showNormalFont}
-        onCheckboxChange={handleSimpleChange}
-      />
+      {isAlphabetic(fromLang) ? (
+        <TCCheckbox
+          name="showL2LengthHint"
+          className={classes.checkbox}
+          label={translate("screens.repetrobes.config.show_l2_length_hint")}
+          isSelected={activityConfig.showL2LengthHint}
+          onCheckboxChange={handleSimpleChange}
+        />
+      ) : (
+        <></>
+      )}
+      {hasCharacters(fromLang) ? (
+        <TCCheckbox
+          name="showNormalFont"
+          className={classes.checkbox}
+          label={translate("screens.repetrobes.config.show_normal_font")}
+          isSelected={activityConfig.showNormalFont}
+          onCheckboxChange={handleSimpleChange}
+        />
+      ) : (
+        <></>
+      )}
       <TCCheckbox
         name="showSynonyms"
         className={classes.checkbox}
-        label="Show meaning question L2 synonyms"
+        label={translate("screens.repetrobes.config.show_synonyms")}
         isSelected={activityConfig.showSynonyms}
         onCheckboxChange={handleSimpleChange}
       />
-      {/* This is really no longer useful with the character component */}
-      {/* <TCCheckbox
-        name="showL2LengthHint"
-        className={classes.checkbox}
-        label="Show L2 length hint"
-        isSelected={activityConfig.showL2LengthHint}
-        onCheckboxChange={handleSimpleChange}
-      /> */}
       <TCCheckbox
         name="showProgress"
         className={classes.checkbox}
-        label="Show daily progress information"
+        label={translate("screens.repetrobes.config.show_daily_progress")}
         isSelected={activityConfig.showProgress}
         onCheckboxChange={handleSimpleChange}
       />
       <TCCheckbox
         name="showRecents"
         className={classes.checkbox}
-        label="Show recent phrases"
+        label={translate("screens.repetrobes.config.show_recents")}
         isSelected={activityConfig.showRecents}
         onCheckboxChange={handleSimpleChange}
       />
       <div className={classes.textbox}>
         <TextField
-          label="Day start hour (0 to 23)"
-          title="Day start hour (0 to 23)"
+          label={translate("screens.repetrobes.config.day_starts_hour")}
+          title={translate("screens.repetrobes.config.day_starts_hour")}
           type="number"
           error={!validInt(activityConfig.dayStartsHour, 0, 23)}
           helperText={!validInt(activityConfig.dayStartsHour, 0, 23) ? "Invalid number" : undefined}
@@ -190,8 +196,8 @@ export default function RepetrobesConfig({ activityConfig, onConfigChange }: Pro
       </div>
       <div className={classes.textbox}>
         <TextField
-          label="Bad review wait mins (1 to 300)"
-          title="Bad review wait mins (1 to 300)"
+          label={translate("screens.repetrobes.config.bad_review_wait_minutes")}
+          title={translate("screens.repetrobes.config.bad_review_wait_minutes")}
           type="number"
           error={!validInt(Math.round(activityConfig.badReviewWaitSecs / 60), 1, 300)}
           helperText={
@@ -205,8 +211,8 @@ export default function RepetrobesConfig({ activityConfig, onConfigChange }: Pro
       </div>
       <div className={classes.textbox}>
         <TextField
-          label="Max new p/d (0 to 10000)"
-          title="Max new p/d (0 to 10000)"
+          label={translate("screens.repetrobes.config.max_new_cards_per_day")}
+          title={translate("screens.repetrobes.config.max_new_cards_per_day")}
           type="number"
           error={!validInt(activityConfig.maxNew, 0, 10000)}
           helperText={!validInt(activityConfig.maxNew, 0, 10000) ? "Invalid number" : undefined}
@@ -218,8 +224,8 @@ export default function RepetrobesConfig({ activityConfig, onConfigChange }: Pro
       </div>
       <div className={classes.textbox}>
         <TextField
-          label="Max revisions p/d (0 to 10000)"
-          title="Max revisions p/d (0 to 10000)"
+          label={translate("screens.repetrobes.config.max_new_revisions_per_day")}
+          title={translate("screens.repetrobes.config.max_new_revisions_per_day")}
           type="number"
           error={!validInt(activityConfig.maxRevisions, 0, 10000)}
           helperText={!validInt(activityConfig.maxRevisions, 0, 10000) ? "Invalid number" : undefined}
@@ -232,12 +238,12 @@ export default function RepetrobesConfig({ activityConfig, onConfigChange }: Pro
       <FormControl component="fieldset" className={classes.wordSelection}>
         <FormControlLabel
           control={<Switch checked={!activityConfig.systemWordSelection} onChange={handleSystemWordSelectionChange} />}
-          label="Manual Review Selection"
+          label={translate("screens.repetrobes.config.manual_selection")}
         />
         {!activityConfig.systemWordSelection && (
           <>
             <div className={classes.multiselect}>
-              <Typography>Source word lists</Typography>
+              <Typography>{translate("screens.repetrobes.config.source_wordlists")}</Typography>
               <Select
                 styles={colourStyles}
                 onChange={handleWordListsChange}
@@ -254,13 +260,13 @@ export default function RepetrobesConfig({ activityConfig, onConfigChange }: Pro
                 onChange={handleOrderingChange}
                 value={activityConfig.newCardOrdering}
                 name="newCardOrdering"
-                label="New Card Ordering"
+                label={translate("screens.repetrobes.config.new_card_ordering")}
               />
             </div>
             <TCCheckbox
               name="onlySelectedWordListRevisions"
               className={classes.checkbox}
-              label="Filter Revisions by list"
+              label={translate("screens.repetrobes.config.filter_revisions_by_list")}
               isSelected={activityConfig.onlySelectedWordListRevisions}
               onCheckboxChange={handleSimpleChange}
             />
@@ -269,37 +275,13 @@ export default function RepetrobesConfig({ activityConfig, onConfigChange }: Pro
       </FormControl>
       <div>
         <div className={classes.multiselect}>
-          <Typography>Preferred meaning provider</Typography>
+          <Typography>{translate("screens.repetrobes.config.preferred_meaning_provider")}</Typography>
           <DictionaryChooser
             selected={activityConfig.translationProviderOrder || {}}
             onSelectionChange={(value) => {
               onConfigChange({ ...activityConfig, translationProviderOrder: value });
             }}
           />
-          {/* <DragDropContext onDragEnd={handleDragEnd}>
-            <Droppable droppableId="droppable">
-              {(provided) => (
-                <div {...provided.droppableProps} ref={provided.innerRef}>
-                  {activityConfig.translationProviderOrder.map((item, index) => (
-                    <Draggable key={item} draggableId={item} index={index}>
-                      {(provided) => (
-                        <div
-                          className={classes.row}
-                          ref={provided.innerRef}
-                          {...provided.draggableProps}
-                          {...provided.dragHandleProps}
-                        >
-                          <div className={classes.rowItem}>{index}</div>
-                          <div>{ZHHANS_EN_DICT_PROVIDERS[item]}</div>
-                        </div>
-                      )}
-                    </Draggable>
-                  ))}
-                  {provided.placeholder}
-                </div>
-              )}
-            </Droppable>
-          </DragDropContext> */}
         </div>
       </div>
     </div>

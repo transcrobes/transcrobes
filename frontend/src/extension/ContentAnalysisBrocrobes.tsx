@@ -11,6 +11,7 @@ export default function ContentAnalysisBrocrobes() {
   const [removed, setRemoved] = React.useState(false);
   const outsideStats = useAppSelector((state) => state.stats);
   const readerConfig = useAppSelector((state) => state.extensionReader[EXTENSION_READER_ID]);
+  const fromLang = useAppSelector((state) => state.userData.user.fromLang);
 
   const [knownChars, setKnownChars] = React.useState(0);
   const [chars, setChars] = React.useState(0);
@@ -84,6 +85,7 @@ export default function ContentAnalysisBrocrobes() {
       }}
     >
       <ContentAnalysis
+        fromLang={fromLang}
         boxRadii={boxRadii}
         leftButtonRadii={leftButtonRadii}
         rightButtonRadii={rightButtonRadii}

@@ -9,7 +9,7 @@ import * as React from "react";
 import { FunctionComponent, ReactElement } from "react";
 import { useCookies } from "react-cookie";
 import { makeStyles } from "tss-react/mui";
-import { ServiceWorkerProxy } from "../lib/proxies";
+import { AbstractWorkerProxy } from "../lib/proxies";
 
 /*
  * Copy pasted from https://raw.githubusercontent.com/marmelab/react-admin/43c4fafc8bcedebc386c7d3dc3b63cfd56420a17/packages/ra-ui-materialui/src/auth/Logout.tsx
@@ -18,7 +18,7 @@ import { ServiceWorkerProxy } from "../lib/proxies";
  */
 
 interface Props {
-  proxy: ServiceWorkerProxy;
+  proxy: AbstractWorkerProxy;
   className?: string;
   redirectTo?: string;
   icon?: ReactElement;

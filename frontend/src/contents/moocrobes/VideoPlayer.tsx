@@ -402,7 +402,11 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, Props>(
 
     return (
       <>
-        <Container>
+        <Container
+          sx={{
+            padding: 0,
+          }}
+        >
           <div ref={playerContainerRef} className={classes.playerContainer}>
             <div onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave} className={classes.playerWrapper}>
               {/* {subsPosition === "above" && (

@@ -10,6 +10,7 @@ import {
   TextField,
   TopToolbar,
   useGetList,
+  useTranslate,
 } from "react-admin";
 import HelpButton from "../components/HelpButton";
 import { ListEmpty } from "../components/ListEmpty";
@@ -54,6 +55,7 @@ function EmtpyList() {
 }
 
 export default function UserListList() {
+  const translate = useTranslate();
   return (
     <List
       queryOptions={{ refetchInterval: 5000 }}
@@ -63,10 +65,10 @@ export default function UserListList() {
     >
       <Datagrid rowClick="show">
         <TextField source="title" />
-        <ReferenceField label="Source import" source="theImport" reference="imports" link="show">
+        <ReferenceField source="theImport" reference="imports" link="show">
           <TextField source="title" />
         </ReferenceField>
-        <ProcessingField label="Processing status" />
+        <ProcessingField label={translate("resources.userlists.processingStatus")} />
         <BooleanField source="shared" sortable={false} />
       </Datagrid>
     </List>

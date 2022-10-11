@@ -10,10 +10,10 @@
     "minimum_chrome_version": "100"
   },
   "icons": {
-    "16": "public/tc16.png",
-    "32": "public/tc32.png",
-    "64": "public/tc64.png",
-    "128": "public/tc128.png"
+    "16": "public/static/tc16.png",
+    "32": "public/static/tc32.png",
+    "64": "public/static/tc64.png",
+    "128": "public/static/tc128.png"
   },
   "web_accessible_resources": [
     {

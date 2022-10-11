@@ -1,13 +1,13 @@
 import { NodeGlobalsPolyfillPlugin } from "@esbuild-plugins/node-globals-polyfill";
 import { NodeModulesPolyfillPlugin } from "@esbuild-plugins/node-modules-polyfill";
 import replace, { RollupReplaceOptions } from "@rollup/plugin-replace";
+import react from "@vitejs/plugin-react";
 import { resolve } from "path";
+import rollupNodePolyFill from "rollup-plugin-node-polyfills";
 import { defineConfig } from "vite";
 import type { ManifestOptions, VitePWAOptions } from "vite-plugin-pwa";
 import { VitePWA } from "vite-plugin-pwa";
-import react from "@vitejs/plugin-react";
 import svgr from "vite-plugin-svgr";
-import rollupNodePolyFill from "rollup-plugin-node-polyfills";
 
 const mode = process.env.NODE_ENV === "development" ? "development" : "production";
 

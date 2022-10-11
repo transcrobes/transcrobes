@@ -1,5 +1,15 @@
 import { Typography } from "@mui/material";
-import { Datagrid, FunctionField, Link, List, ReferenceField, SortButton, TextField, TopToolbar } from "react-admin";
+import {
+  Datagrid,
+  FunctionField,
+  Link,
+  List,
+  ReferenceField,
+  SortButton,
+  TextField,
+  TopToolbar,
+  useTranslate,
+} from "react-admin";
 import HelpButton from "../components/HelpButton";
 import { ListEmpty } from "../components/ListEmpty";
 import { ProcessingField } from "../components/ProcessingField";
@@ -12,7 +22,11 @@ import { useAppSelector } from "../app/hooks";
 
 function ListActions({ empty }: { empty?: boolean }) {
   return (
-    <TopToolbar>
+    <TopToolbar
+      sx={{
+        maxHeight: "64px",
+      }}
+    >
       {!empty && <SortButton fields={["createdAt", "title", "processing"]} />}
       <HelpButton url={`//${DOCS_DOMAIN}/page/software/configure/contents/`} />
     </TopToolbar>
@@ -20,6 +34,7 @@ function ListActions({ empty }: { empty?: boolean }) {
 }
 
 function EmtpyList() {
+  const translate = useTranslate();
   return (
     <ListEmpty createDisabled actions={<ListActions empty />}>
       <Typography
@@ -37,6 +52,7 @@ function EmtpyList() {
 
 export default function ContentList() {
   const user = useAppSelector((state) => state.userData);
+  const translate = useTranslate();
   return (
     <List
       queryOptions={{ refetchInterval: 5000 }}
@@ -46,15 +62,18 @@ export default function ContentList() {
     >
       <Datagrid rowClick="show">
         <TextField source="title" />
-        <ReferenceField label="Source import" source="theImport" reference="imports" link="show">
+        <ReferenceField source="theImport" reference="imports" link="show">
           <TextField source="title" />
         </ReferenceField>
-        <ProcessingField label="Processing status" />
-        <FunctionField source="contentType" render={(record: any) => reverseEnum(CONTENT_TYPE, record.contentType)} />
-        <ContentStatsField label="Content Stats" />
+        <ProcessingField label={translate("resources.contents.processingStatus")} />
+        <FunctionField
+          source="contentType"
+          render={(record: any) => translate(`widgets.content_type.${CONTENT_TYPE[record.contentType].toLowerCase()}`)}
+        />
+        <ContentStatsField label={translate("resources.contents.contentStats")} />
         {user.showResearchDetails && <ContentStatsAccuracyField label="Accuracy" />}
-        <ActionButton label="Action" />
-        <CacheSwitch label="Offline?" />
+        <ActionButton label={translate("resources.contents.action")} />
+        <CacheSwitch label={translate("resources.contents.offline")} />
       </Datagrid>
     </List>
   );

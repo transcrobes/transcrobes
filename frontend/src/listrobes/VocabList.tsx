@@ -1,5 +1,6 @@
 import { Button } from "@mui/material";
 import { ReactElement } from "react";
+import { useTranslate } from "react-admin";
 import { useAppSelector } from "../app/hooks";
 import { GraderConfig, VocabReview } from "../lib/types";
 import { VocabItem } from "./VocabItem";
@@ -22,10 +23,11 @@ export function VocabList({
   onValidate,
 }: Props): ReactElement {
   const loading = useAppSelector((state) => state.ui.loading);
+  const translate = useTranslate();
   const unloaded = loading || !vocab;
   return (
     <>
-      {!unloaded && vocab.length === 0 && <span>No remaining vocabulary items</span>}
+      {!unloaded && vocab.length === 0 && <span>{translate("screens.listrobes.finished")}</span>}
       {!unloaded &&
         vocab.map((vocabItem, index) => {
           return (
@@ -43,7 +45,7 @@ export function VocabList({
       {!unloaded && vocab.length > 0 && (
         <div style={{ width: "100%", paddingTop: "1em" }}>
           <Button variant="outlined" onClick={onValidate} style={{ width: "80%" }}>
-            Validate
+            {translate("ra.action.save")}
           </Button>
         </div>
       )}

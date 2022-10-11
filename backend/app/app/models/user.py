@@ -2,27 +2,17 @@ import os
 
 from app.core.config import settings
 from app.db.base_class import Base
+from app.models.lookups import BingApiLookup, EnZhhansABCLookup, ZhhansEnCCCLookup
 from app.models.mixins import utcnow
 from sqlalchemy import Boolean, Column, DateTime, Integer, String, Text
 from sqlalchemy.orm import relationship
 
-# FIXME: this needs to be put somewhere
-
-
-class BingTranslator:
-    SHORT_NAME = "mst"
-    FALLBACK_SHORT_NAME = "fbk"
-
-
-class ZHHANS_EN_CCCedictTranslator:
-    SHORT_NAME = "ccc"
-
-
-# Support dropped, at least temporarily
-# class ZHHANS_EN_ABCdictTranslator:
-#     SHORT_NAME = "abc"
-
-ds = f"{BingTranslator.SHORT_NAME},{ZHHANS_EN_CCCedictTranslator.SHORT_NAME},{BingTranslator.FALLBACK_SHORT_NAME}"
+DEFAULT_DICTIONARY_ORDERING_ZHHANS_EN = (
+    f"{BingApiLookup.SHORT_NAME},{ZhhansEnCCCLookup.SHORT_NAME},{BingApiLookup.FALLBACK_SHORT_NAME}"
+)
+DEFAULT_DICTIONARY_ORDERING_EN_ZHHANS = (
+    f"{BingApiLookup.SHORT_NAME},{EnZhhansABCLookup.SHORT_NAME},{BingApiLookup.FALLBACK_SHORT_NAME}"
+)
 
 
 def absolute_imports_path(user_id: int, filename: str) -> str:
@@ -62,7 +52,7 @@ class AuthUser(Base):
 
     from_lang = Column(String(20), nullable=False, default="zh-Hans")
     to_lang = Column(String(20), nullable=False, default="en")
-    dictionary_ordering = Column(String(50), nullable=False, default=ds)
+    dictionary_ordering = Column(String(50), nullable=False, default=DEFAULT_DICTIONARY_ORDERING_ZHHANS_EN)
 
     # user config as json, think about turning this into real json
     config = Column(Text, nullable=False, default="")

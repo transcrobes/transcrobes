@@ -18,6 +18,8 @@ class UserCreate(UserBase):
     email: EmailStr
     username: str
     password: str
+    from_lang: Optional[str] = "zh-Hans"
+    to_lang: Optional[str] = "en"
 
 
 # Properties to receive via API on update

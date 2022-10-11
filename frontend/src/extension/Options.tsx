@@ -10,12 +10,14 @@ import {
 } from "@mui/material";
 import Button from "@mui/material/Button";
 import { ReactElement, useEffect, useState } from "react";
+import { useLocaleState, useTranslate } from "react-admin";
 import { FormContainer, TextFieldElement } from "react-hook-form-mui";
 import { makeStyles } from "tss-react/mui";
 import { store } from "../app/createStore";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
 import HelpButton from "../components/HelpButton";
 import Loading from "../components/Loading";
+import NolayoutWrapper from "../components/NolayoutWrapper";
 import WatchDemo from "../components/WatchDemo";
 import { getUserDexie, isInitialisedAsync, setInitialisedAsync } from "../database/authdb";
 import { getDb } from "../database/Database";
@@ -36,6 +38,7 @@ import {
   EXTENSION_READER_ID,
   IS_DEV,
   SITE_DOMAIN,
+  SystemLanguage,
 } from "../lib/types";
 import { RxDBDataProviderParams } from "../ra-data-rxdb";
 import Initialisation from "./components/Initialisation";
@@ -79,10 +82,31 @@ const useStyles = makeStyles()((theme) => ({
   },
   message: {},
   glossFontColour: { display: "flex", justifyContent: "flex-start", padding: "0.4em" },
-  header: { width: "100%", display: "inline-flex", justifyContent: "space-between", alignItems: "start" },
+  header: {
+    paddingTop: "3em",
+    width: "100%",
+    display: "inline-flex",
+    justifyContent: "space-between",
+    alignItems: "start",
+  },
   headerText: { padding: "1em" },
   configContainer: { maxWidth: "500px" },
 }));
+
+function Header(): ReactElement {
+  const helpUrl = `http://${DOCS_DOMAIN}/page/software/install/clients/brocrobes/`;
+  return (
+    <Box
+      sx={{
+        display: "flex",
+        justifyContent: "space-between",
+      }}
+    >
+      <WatchDemo url={BROCROBES_YT_VIDEO} />
+      <HelpButton url={helpUrl} />
+    </Box>
+  );
+}
 
 export default function Options(): ReactElement {
   const [inited, setInited] = useState<boolean | null>(null);
@@ -93,6 +117,8 @@ export default function Options(): ReactElement {
   const [baseUrl, setBaseUrl] = useState(DEFAULT_SERVER_URL);
   const [loaded, setLoaded] = useState(false);
   const theme = useAppSelector((state) => createTheme(state.theme === "dark" ? darkTheme : lightTheme));
+  const [locale, setLocale] = useLocaleState() as [SystemLanguage, (locale: SystemLanguage) => void];
+  const translate = useTranslate();
 
   const id = EXTENSION_READER_ID;
 
@@ -101,60 +127,51 @@ export default function Options(): ReactElement {
   const { classes } = useStyles();
   dispatch(setLoading(true));
   useEffect(() => {
-    console.log("i am in options");
     (async () => {
-      console.log("i am in options async");
       dispatch(setUser(await getUserDexie()));
       const userData = store.getState().userData;
+      // setLocale(userData.user.toLang);
       setPassword(userData.password);
       setUsername(userData.username);
       setBaseUrl(userData.baseUrl || DEFAULT_SERVER_URL);
 
-      console.log("i am in options async biz");
       const linit = await isInitialisedAsync(userData.username);
-      console.log("i am in options async biz2");
       setInited(linit);
       let conf: ExtensionReaderState = { ...DEFAULT_EXTENSION_READER_CONFIG_STATE, id };
       if (userData.username && linit) {
-        console.log("i am in options async biz3");
         await proxy.asyncInit({ username: userData.username });
-        console.log("i am in options async biz4");
-        await refreshDictionaries(store, proxy);
+        await refreshDictionaries(store, proxy, userData.user.fromLang);
         conf = await getRefreshedState<ExtensionReaderState>(proxy, DEFAULT_EXTENSION_READER_CONFIG_STATE, id);
       }
-      console.log("i am in options async biz again");
       dispatch(changeTheme(conf.themeName));
       dispatch(extensionReaderActions.setState({ id, value: conf }));
-      console.log("i am in options async biz again again");
       setLoaded(true);
       dispatch(setLoading(false));
     })();
   }, []);
   useEffect(() => {
     if (userData.error) {
-      setMessage(
-        `There was an error logging in to ${baseUrl}. \n\n
-          Please check the login details, or try again in a short while.`,
-      );
+      setMessage(translate("screens.extension.login_error", { baseUrl }));
       console.error("Something bad happened, couldnt get an accessToken to start a syncDB()");
     } else {
       setMessage("");
     }
   }, [userData.error]);
-
   useEffect(() => {
-    console.log("i am in options other");
     if (loaded) {
       (async () => {
-        console.log("i am in options other loaded");
         const userData = store.getState().userData;
         setRunning(true);
         if (!userData.user.accessToken) {
-          setMessage("There was an error starting the initial synchronisation. Please try again in a short while.");
+          setMessage(translate("screens.extension.sync_error"));
           console.error("Something bad happened, couldnt get an accessToken to start a syncDB()");
         } else {
           setMessage("");
-          const dbConfig: RxDBDataProviderParams = { url: new URL(userData.baseUrl), username: userData.username };
+          const dbConfig: RxDBDataProviderParams = {
+            url: new URL(userData.baseUrl),
+            username: userData.username,
+            messagesLang: locale,
+          };
 
           const progressCallback = (message: string) => {
             setMessage(message);
@@ -162,8 +179,8 @@ export default function Options(): ReactElement {
           const db = await getDb(dbConfig, progressCallback, undefined);
           try {
             window.tcb = db;
-            const action = !inited ? "Initialisation" : "Settings Update";
-            setMessage(`${action} Complete!`);
+            const action = !inited ? "init" : "update";
+            setMessage(translate(`screens.extension.${action}_complete`));
             setRunning(false);
             await setInitialisedAsync(userData.username);
             console.debug("Synchronisation finished!");
@@ -182,8 +199,7 @@ export default function Options(): ReactElement {
             setInited(true);
           } catch (err: any) {
             setRunning(false);
-            setMessage(`There was an error setting up Transcrobes.
-                  Please try again in a little while, or contact Transcrobes support (<a href="http://${DOCS_DOMAIN}/page/contact/">here</a>)`);
+            setMessage(translate("screens.extension.error", { docs_domain: DOCS_DOMAIN }));
             console.log("getDb() threw an error in options.ts");
             console.dir(err);
             console.error(err);
@@ -198,10 +214,8 @@ export default function Options(): ReactElement {
     dispatch(updatePassword(values.password));
     dispatch(updateBaseUrl(values.baseUrl));
     dispatch(throttledLogin() as any);
-    setMessage("Saving the options, please wait and keep this window open...");
+    setMessage(translate("screens.extension.saving_now"));
   }
-
-  const helpUrl = `http://${DOCS_DOMAIN}/page/software/install/clients/brocrobes/`;
 
   return (
     <ThemeProvider theme={theme}>
@@ -216,114 +230,117 @@ export default function Options(): ReactElement {
             }}
             onSuccess={saveFields}
           >
-            <div className={classes.header}>
-              <div>
-                <FormLabel className={classes.headerText} component="legend">
-                  Transcrobes Server Connection Settings
-                </FormLabel>
-                <FormGroup className={classes.groups}>
-                  <TextFieldElement
-                    name={"username"}
-                    className={classes.controls}
-                    required={true}
-                    value={username}
-                    label="Email"
-                    type="email"
-                    variant="filled"
-                  />
-                  <TextFieldElement
-                    name="password"
-                    className={classes.controls}
-                    required={true}
-                    value={password}
-                    label="Password"
-                    type="password"
-                    variant="filled"
-                  />
-                  <TextFieldElement
-                    name={"baseUrl"}
-                    className={classes.controls}
-                    required={true}
-                    value={baseUrl}
-                    label="Server URL"
-                    type="url"
-                    variant="filled"
-                  />
-                </FormGroup>
-              </div>
-              <Box
-                sx={{
-                  width: "100%",
-                }}
-              >
+            <NolayoutWrapper proxy={proxy} menuChildren={<Header />}>
+              <div className={classes.header}>
+                <div>
+                  <FormLabel className={classes.headerText} component="legend">
+                    {translate("screens.extension.title")}
+                  </FormLabel>
+                  <FormGroup className={classes.groups}>
+                    <TextFieldElement
+                      name={"username"}
+                      className={classes.controls}
+                      required={true}
+                      value={username}
+                      label={translate("screens.extension.form_email")}
+                      type="email"
+                      variant="filled"
+                    />
+                    <TextFieldElement
+                      name="password"
+                      className={classes.controls}
+                      required={true}
+                      value={password}
+                      label={translate("screens.extension.form_password")}
+                      type="password"
+                      variant="filled"
+                    />
+                    <TextFieldElement
+                      name={"baseUrl"}
+                      className={classes.controls}
+                      required={true}
+                      value={baseUrl}
+                      label={translate("screens.extension.form_server")}
+                      type="url"
+                      variant="filled"
+                    />
+                  </FormGroup>
+                </div>
                 <Box
                   sx={{
                     width: "100%",
-                    display: "inline-flex",
-                    justifyContent: "space-between",
-                    padding: "1em",
                   }}
                 >
-                  <WatchDemo url={BROCROBES_YT_VIDEO} />
-                  <HelpButton url={helpUrl} />
-                </Box>
-                {inited && (
-                  <Box>
-                    <Typography
-                      sx={(theme) => ({
-                        bgcolor: "warning.light",
-                        [theme.breakpoints.down("md")]: {
-                          fontSize: "1em",
-                          padding: "0.2em",
-                          margin: "0.2em",
-                        },
-                        [theme.breakpoints.up("md")]: {
-                          fontSize: "2em",
-                          padding: "0.5em",
-                          margin: "0.5em",
-                        },
-                      })}
-                    >
-                      Don't forget to hit save (at the bottom) after making a change!
-                    </Typography>
+                  {/* <Box
+                    sx={{
+                      width: "100%",
+                      display: "inline-flex",
+                      justifyContent: "space-between",
+                      padding: "1em",
+                    }}
+                  >
+                    <WatchDemo url={BROCROBES_YT_VIDEO} />
+                    <HelpButton url={helpUrl} />
                   </Box>
-                )}
-              </Box>
-            </div>
+                  */}
+                  {inited && (
+                    <Box>
+                      <Typography
+                        sx={(theme) => ({
+                          bgcolor: "warning.light",
+                          [theme.breakpoints.down("md")]: {
+                            fontSize: "1em",
+                            padding: "0.2em",
+                            margin: "0.2em",
+                          },
+                          [theme.breakpoints.up("md")]: {
+                            fontSize: "2em",
+                            padding: "0.5em",
+                            margin: "0.5em",
+                          },
+                        })}
+                      >
+                        {translate("screens.extension.save_warning")}
+                      </Typography>
+                    </Box>
+                  )}
+                </Box>
+              </div>
 
-            {inited && <ExtensionConfig />}
-            <FormGroup className={classes.buttonGroup}>
-              <Box className={classes.controls}>
-                <Button
-                  type="submit"
-                  disabled={!!running}
-                  className={classes.buttons}
-                  variant="contained"
-                  color="primary"
-                >
-                  Save
-                </Button>
-              </Box>
-            </FormGroup>
-            <Typography
-              sx={(theme) => ({
-                margin: theme.spacing(1),
-                fontSize: "2em",
-                color: userData.error ? "error.main" : "text.primary",
-              })}
-            >
-              {message}
-            </Typography>
-            <Intro inited={!!inited} />
-            {running && (
-              <>
-                <Loading position="fixed" disableShrink />
-                <Initialisation />
-              </>
-            )}
+              {inited && <ExtensionConfig />}
+              <FormGroup className={classes.buttonGroup}>
+                <Box className={classes.controls}>
+                  <Button
+                    type="submit"
+                    disabled={!!running}
+                    className={classes.buttons}
+                    variant="contained"
+                    color="primary"
+                  >
+                    {translate("ra.action.save")}
+                  </Button>
+                </Box>
+              </FormGroup>
+              <Typography
+                sx={(theme) => ({
+                  margin: theme.spacing(1),
+                  fontSize: "2em",
+                  color: userData.error ? "error.main" : "text.primary",
+                })}
+              >
+                {message}
+              </Typography>
+              <Intro inited={!!inited} />
+              {running && (
+                <>
+                  <Loading position="fixed" disableShrink />
+                  <Initialisation />
+                </>
+              )}
+            </NolayoutWrapper>
           </FormContainer>
         ) : (
-          <Loading disableShrink message="Loading configuration from the local database..." />
+          <Loading disableShrink message={translate("screens.extension.save_warning")} />
         )}
       </Container>
     </ThemeProvider>

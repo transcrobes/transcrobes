@@ -1,4 +1,5 @@
 import { ReactElement } from "react";
+import { useTranslate } from "react-admin";
 import FineControl, { FineControlImplProps } from "./FineControl";
 
 function FivePercentFineControl({
@@ -8,11 +9,12 @@ function FivePercentFineControl({
   increment,
   onValueChange,
 }: FineControlImplProps): ReactElement {
+  const translate = useTranslate();
   return (
     <FineControl
       title={label || ""}
-      labelLess={`Decrease ${(increment || 0.05) * 100}%`}
-      labelMore={`Increase ${(increment || 0.05) * 100}%`}
+      labelLess={translate("widgets.fine_control.less", { amount: (increment || 0.05) * 100 })}
+      labelMore={translate("widgets.fine_control.more", { amount: (increment || 0.05) * 100 })}
       className={className}
       isPercent={true}
       onLess={() => {

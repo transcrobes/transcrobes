@@ -17,8 +17,9 @@ from app.cache import cached_definitions
 from app.core.config import settings
 from app.data.importer import process
 from app.enrich import TokenPhoneType, definitions_json_paths, enrich_html_fragment, hanzi_json_paths
+from app.enrich.cache import ensure_cached_definitions
 from app.enrich.data import EnrichmentManager, managers
-from app.enrich.models import definition, reload_definitions_cache
+from app.enrich.models import definitions, reload_definitions_cache
 from app.fworker import import_process_topic, regenerate
 from app.models import CachedDefinition, Import
 from app.models.user import absolute_imports_path
@@ -57,6 +58,13 @@ async def api_regenerate_hanzi(_current_user: models.AuthUser = Depends(deps.get
     return {"result": "success"}
 
 
+@router.get("/ensure_definitions_cache")
+async def ensure_definitions_cache(db: AsyncSession = Depends(deps.get_db)):
+    await load_definitions_cache(db)
+    await ensure_cached_definitions(db)
+    return {"result": "success"}
+
+
 @router.get("/load_definitions_cache")
 async def load_definitions_cache(db: AsyncSession = Depends(deps.get_db), force_reload: bool = False):
     for lang_pair in managers:
@@ -85,7 +93,7 @@ def definitions_export_urls(
 def definitions_export_json(
     resource_path: str,
     # current_user: models.AuthUser = Depends(deps.get_current_good_user),
-    _current_user: schemas.TokenPayload = Depends(deps.get_current_good_tokenpayload),
+    current_user: schemas.TokenPayload = Depends(deps.get_current_good_tokenpayload),
 ):
     # FIXME: better perms checking for providers
     abspath = os.path.join(settings.DEFINITIONS_CACHE_DIR, resource_path)
@@ -127,6 +135,29 @@ def hanzi_export_json(
     return FileResponse(abspath)
 
 
+@router.post("/lemma_test", response_model=Any, name="lemma_test")
+async def lemma_test(
+    info_request: InfoRequest,
+    db: AsyncSession = Depends(deps.get_db),
+    current_user: models.AuthUser = Depends(deps.get_current_active_user),
+):
+    data = {}
+
+    manager: EnrichmentManager = managers.get(current_user.lang_pair)
+
+    w = info_request.data
+    if not w:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail='Incorrectly formed query, you must provide a JSON like { "data": "好" }"',
+        )
+
+    raw_model = await manager.parser().parse(w)
+    data["corenlp"] = raw_model
+
+    return data
+
+
 @router.post("/word_definitions", response_model=Any, name="word_definitions")
 async def word_definitions(
     info_request: InfoRequest,
@@ -159,19 +190,14 @@ async def word_definitions(
             ),
         )
 
+    providers = current_user.dictionary_ordering.split(",")
+
     t = {"word": w, "pos": "NN", "lemma": w}  # fake pos, here we don't care
     if not manager.enricher().needs_enriching(t) or manager.enricher().clean_text(w) != w:
         return {}  # if unclean, fail silently...
 
-    # FIXME: iterate on all lookup providers for each lemma returned
-    # (plus the original?)
-    # lemmas = manager.word_lemmatizer().lemmatize(w)
-
-    # this gives us the JSON version and ensures that it has been loaded to the DB
-    await definition(db, manager, t)
-
-    providers = current_user.dictionary_ordering.split(",")
-
+    await definitions(db, manager, t)
+    # now we get the full record from the db - why do I need this again?
     result = await db.execute(
         select(CachedDefinition).filter_by(
             source_text=w,
@@ -180,8 +206,41 @@ async def word_definitions(
         )
     )
     obj = result.scalar_one()
-
     graphql_definition = DefinitionSet.from_model_asdict(obj, providers)
+
+    other_defs = []
+
+    if w != w.lower():
+        t = {"word": w, "pos": "NN", "lemma": w.lower()}  # fake pos, here we don't care
+        await definitions(db, manager, t)
+        result = await db.execute(
+            select(CachedDefinition).filter_by(
+                source_text=w.lower(),
+                from_lang=current_user.from_lang,
+                to_lang=current_user.to_lang,
+            )
+        )
+        obj = result.scalar_one()
+        other_defs.append(DefinitionSet.from_model_asdict(obj, providers))
+
+    # FIXME: iterate on all lookup providers for each lemma returned
+    # (plus the original?)
+    lemmas = await manager.word_lemmatizer().lemmatize(w)
+    lemmas.discard(w)
+    lemmas.discard(w.lower())
+    for lem in lemmas:
+        # this gives us the JSON version and ensures that it has been loaded to the DB
+        t = {"word": w, "pos": "NN", "lemma": lem}  # fake pos, here we don't care
+        await definitions(db, manager, t)
+        result = await db.execute(
+            select(CachedDefinition).filter_by(
+                source_text=lem,
+                from_lang=current_user.from_lang,
+                to_lang=current_user.to_lang,
+            )
+        )
+        obj = result.scalar_one()
+        other_defs.append(DefinitionSet.from_model_asdict(obj, providers))
 
     # modelStats = next(
     #     iter(
@@ -198,6 +257,7 @@ async def word_definitions(
     data = {
         # "json_definition": json_definition,
         "definition": graphql_definition,  # the only one currently used
+        "other_definitions": other_defs,
         # "model_stats": [modelStats["fields"]] if modelStats else [],
     }
 
@@ -256,7 +316,6 @@ async def translate(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail='Incorrectly formed query, you must provide a JSON like { "data": "好" }"',
         )
-    print("Going to translate %s", text)
     outdata, _ = await manager.default().translate(db, text)
     return outdata
 
@@ -314,7 +373,8 @@ async def enrich_html_to_json(
             model,
             manager,
             translate_sentence=False,
-            best_guess=True,
+            # best_guess=True,
+            best_guess=False,
             phone_type=TokenPhoneType.NONE,
             fill_id=True,
             available_def_providers=current_user.translation_providers,
@@ -346,6 +406,7 @@ async def import_file(
     db: AsyncSession = Depends(deps.get_db),
 ):
     import_id = os.path.basename(filename).split("_")[0]
+    logger.info(f"Importing file {filename} for user {current_user.id}")
     stmt = select(Import.id).where(Import.id == import_id)
     result = await db.execute(stmt)
     is_ready = result.scalar_one_or_none()

@@ -7,6 +7,7 @@ import {
   RaRecord,
   TextField as RATextField,
   useList,
+  useTranslate,
 } from "react-admin";
 import { UserDefinitionType } from "../lib/types";
 import TranslationsField from "./TranslationsField";
@@ -22,7 +23,8 @@ export default function CustomList(props: Props) {
   const [perPage, setPerPage] = useState(10);
   const [sort, setSort] = useState({ field: "id", order: "ASC" });
   const [data, setData] = useState<UserDefinitionType[]>([]);
-  const [ids, setIds] = useState<string[]>([]);
+  const [, setIds] = useState<string[]>([]);
+  const translate = useTranslate();
 
   useEffect(() => {
     const newData = props.data.slice((page - 1) * perPage, page * perPage);
@@ -47,7 +49,10 @@ export default function CustomList(props: Props) {
         }}
       >
         <RATextField source="id" />
-        <FunctionField label="Sounds" render={(record?: RaRecord) => record && record.sounds} />
+        <FunctionField
+          label={translate("resources.userdictionaries.sounds")}
+          render={(record?: RaRecord) => record && record.sounds}
+        />
         <TranslationsField source="translations" itemSeparator={props.itemSeparator} />
       </Datagrid>
     </ListContextProvider>

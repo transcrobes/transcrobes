@@ -1,4 +1,4 @@
-import { Edit, required, SimpleForm, TextField, TextInput } from "react-admin";
+import { Edit, required, SimpleForm, TextField, TextInput, useTranslate } from "react-admin";
 import { HelpEditActions } from "../components/HelpEditActions";
 import { DOCS_DOMAIN, IMPORTS_YT_VIDEO } from "../lib/types";
 
@@ -12,8 +12,8 @@ export default function ImportEdit() {
     >
       <SimpleForm>
         <TextField source="id" sx={{ paddingBottom: "1em" }} />
-        <TextInput label="Import name" source="title" validate={[required()]} />
-        <TextInput label="Import description" multiline source="description" />
+        <TextInput source="title" validate={[required()]} />
+        <TextInput multiline source="description" />
       </SimpleForm>
     </Edit>
   );

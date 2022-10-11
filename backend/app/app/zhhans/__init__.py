@@ -8,10 +8,11 @@ from typing import List
 
 import opencc
 import unidecode
-from app.enrich import Enricher, TransliterationException
-from app.enrich.etypes import AnyToken, Sentence
+from app.cache import TimestampedDict
+from app.enrich import Enricher, TransliterationException, best_deep_def
 from app.enrich.models import Token
 from app.enrich.transliterate import Transliterator
+from app.etypes import AnyToken, Sentence
 from app.ndutils import ZHHANS_CHARS_RE, lemma
 from app.zhhans_en.translate.abc import ZH_TB_POS_TO_ABC_POS
 from sqlalchemy.ext.asyncio.session import AsyncSession
@@ -136,8 +137,8 @@ ZH_TB_POS_TO_SIMPLE_POS = {
     "URL": "OTHER",
 }
 
-CORENLP_IGNORABLE_POS = ["PU", "OD", "CD", "NT", "URL", "FW"]
-CORENLP_IGNORABLE_POS_SHORT = ["PU", "URL"]
+CORENLP_ZH_IGNORABLE_POS = {"PU", "OD", "CD", "NT", "URL", "FW"}
+CORENLP_ZH_IGNORABLE_POS_SHORT = {"PU", "URL"}
 
 IDEAL_GLOSS_STRING_LENGTH = 5  # pretty random but https://arxiv.org/pdf/1208.6109.pdf
 
@@ -170,7 +171,7 @@ class CoreNLP_ZHHANS_Enricher(Enricher):
             return False
         # FIXME: this was previously the following, trying to change and see whether it's bad...
         # if token['pos'] in CORENLP_IGNORABLE_POS:
-        if token["pos"] in CORENLP_IGNORABLE_POS_SHORT:
+        if token["pos"] in CORENLP_ZH_IGNORABLE_POS_SHORT:
             logger.debug("'%s' has POS '%s' so not adding to translatables", word, token["pos"])
             return False
 
@@ -181,6 +182,11 @@ class CoreNLP_ZHHANS_Enricher(Enricher):
             return False
 
         return True
+
+    # override Enricher
+    def normalise_punctuation(self, token: AnyToken):
+        # Nothing to do for ZH
+        pass
 
     # override Enricher
     def _cleaned_sentence(self, sentence: Sentence) -> str:
@@ -206,8 +212,8 @@ class CoreNLP_ZHHANS_Enricher(Enricher):
         self, db: AsyncSession, sentence: Sentence, transliterator: Transliterator
     ) -> bool:
         tokens = sentence["tokens"]
-        clean_text = self._get_transliteratable_sentence(tokens)
-        trans = await transliterator.transliterate(db, clean_text)
+        ctext = self._get_transliteratable_sentence(tokens)
+        trans = await transliterator.transliterate(db, ctext)
 
         clean_trans = " "
 
@@ -251,7 +257,7 @@ class CoreNLP_ZHHANS_Enricher(Enricher):
                             logger.error(f"{w[i]} should equal {nc} for '{clean_trans}'")
                             raise TransliterationException(
                                 f"{w[i]} should equal {nc} for '{clean_trans}' "
-                                f"and tokens '{tokens}' with original {clean_text}"
+                                f"and tokens '{tokens}' with original {ctext}"
                             )
                         pinyin.append(w[i])
                         if len(nc) > 1:
@@ -263,7 +269,7 @@ class CoreNLP_ZHHANS_Enricher(Enricher):
             return True
         except Exception:  # pylint: disable=W0703
             logger.error(
-                f"Error calculating context-informed pinyin, trying from tokens '{tokens}' with original {clean_text}"
+                f"Error calculating context-informed pinyin, trying from tokens '{tokens}' with original {ctext}"
             )
             for token in tokens:
                 token["phone"] = (await transliterator.transliterate(db, token["originalText"])).split()
@@ -275,8 +281,8 @@ class CoreNLP_ZHHANS_Enricher(Enricher):
         self, db: AsyncSession, sentence, transliterator: Transliterator
     ):
         tokens = sentence["t"]
-        clean_text = self._get_transliteratable_sentence(tokens)
-        trans = await transliterator.transliterate(db, clean_text)
+        ctext = self._get_transliteratable_sentence(tokens)
+        trans = await transliterator.transliterate(db, ctext)
 
         clean_trans = " "
 
@@ -320,7 +326,7 @@ class CoreNLP_ZHHANS_Enricher(Enricher):
                             logger.error(f"{w[i]} should equal {nc} for '{clean_trans}'")
                             raise TransliterationException(
                                 f"{w[i]} should equal {nc} for '{clean_trans}' "
-                                f"and tokens '{tokens}' with original {clean_text}"
+                                f"and tokens '{tokens}' with original {ctext}"
                             )
                         pinyin.append(w[i])
                         if len(nc) > 1:
@@ -337,7 +343,7 @@ class CoreNLP_ZHHANS_Enricher(Enricher):
             return True
         except Exception:  # pylint: disable=W0703
             logger.error(
-                f"Error calculating context-informed pinyin, trying from tokens '{tokens}' with original {clean_text}"
+                f"Error calculating context-informed pinyin, trying from tokens '{tokens}' with original {ctext}"
             )
             for token in tokens:
                 if not self.is_clean(token) or not self.needs_enriching(token):
@@ -347,7 +353,9 @@ class CoreNLP_ZHHANS_Enricher(Enricher):
             return False
 
     # override Enricher
-    def _set_best_guess(self, _sentence, token: Token, token_definitions, phone, available_def_providers: list[str]):
+    def _set_best_guess(
+        self, _sentence, token: Token, all_token_definitions: TimestampedDict, phone, available_def_providers: list[str]
+    ):
         # TODO: do something intelligent here - sentence isn't used yet
         # ideally this will translate the sentence using some sort of statistical method but get the best
         # translation for each individual word of the sentence, not the whole sentence, giving us the
@@ -356,9 +364,13 @@ class CoreNLP_ZHHANS_Enricher(Enricher):
         # This could be bumped to the parent class but for the POS correspondance dicts
         # This is ugly and stupid
 
+        # FIXME: *again* ignoring available_def_providers...
         best_guess = None
         others = []
         all_defs = []
+
+        # TODO: decide whether this is ok
+        token_definitions = best_deep_def(token, all_token_definitions).get("defs", [])
         for t in token_definitions.keys():
             if t not in available_def_providers:
                 continue
@@ -368,7 +380,6 @@ class CoreNLP_ZHHANS_Enricher(Enricher):
             # the secondaries. If anything changes in that, this algo may well not return the "best"
             # translation
             for def_pos, defs in token_definitions[t].items():
-                # {ZH_TB_POS_TO_SIMPLE_POS[token['pos']]=}, {ZH_TB_POS_TO_ABC_POS[token['pos']]=} {defs=}")
                 if not defs:
                     continue
                 all_defs += defs
@@ -427,13 +438,24 @@ class CoreNLP_ZHHANS_Enricher(Enricher):
         token["bg"] = best_guess
 
     # override Enricher
-    def _set_slim_best_guess(self, sentence, token, token_definitions, phone, available_def_providers: list[str]):
-        self._set_best_guess(sentence, token, token_definitions, phone, available_def_providers)
+    def _set_slim_best_guess(
+        self, sentence, token: Token, all_token_definitions: TimestampedDict, phone, available_def_providers: list[str]
+    ):
+        self._set_best_guess(sentence, token, all_token_definitions, phone, available_def_providers)
         token["bg"] = token["bg"]["nt"]
 
     # override Enricher
     def clean_text(self, text: str, remove_whitespace=True) -> str:
+        # remove soft hyphens - they are not easily managed in the frontend
         t = text
+        t = t.replace("\xc2\xad", "")
+        t = t.replace("\xad", "")
+        t = t.replace("\u00ad", "")
+        t = t.replace("\N{SOFT HYPHEN}", "")
+        t = t.replace("\xc2\xa0", " ")
+        t = t.replace("\xa0", " ")
+        # ??? t = unicodedata.normalize("NFKD", t)
+
         if remove_whitespace:
             t = "".join(t.split())  # for Chinese we can/should remove any spaces
         # Make sure it is simplified and clean, so we don't pollute the DB

@@ -9,7 +9,6 @@ interface Props {
 }
 
 export function ListEmpty({ actions, children, createDisabled }: Props) {
-  console.log("createDisabled", createDisabled);
   return (
     <Box
       sx={{

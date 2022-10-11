@@ -9,6 +9,7 @@ import { AnalysisAccuracy, ContentStats, EXTENSION_READER_ID } from "../lib/type
 export default function ContentAnalysisAccuracyBrocrobes({ proxy }: { proxy: BackgroundWorkerProxy }) {
   const outsideStats = useAppSelector((state) => state.stats);
   const readerConfig = useAppSelector((state) => state.extensionReader[EXTENSION_READER_ID]);
+  const fromLang = useAppSelector((state) => state.userData.user.fromLang);
 
   const [accuracy, setAccuracy] = React.useState<AnalysisAccuracy | null>(null);
 
@@ -19,7 +20,7 @@ export default function ContentAnalysisAccuracyBrocrobes({ proxy }: { proxy: Bac
           .sendMessagePromise<AnalysisAccuracy>({
             source: "ContentAnalysisAccuracyBrocrobes",
             type: "getContentAccuracyStatsForImport",
-            value: { allWordsInput: stats.words },
+            value: { allWordsInput: stats.words, fromLang },
           })
           .then((accuracy) => {
             setAccuracy(accuracy);

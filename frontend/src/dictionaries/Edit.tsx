@@ -7,8 +7,8 @@ export default function AEdit() {
     <Edit actions={<HelpEditActions helpUrl={`//${DOCS_DOMAIN}/page/software/configure/userdictionaries/`} />}>
       <SimpleForm redirect="list">
         <TextField source="id" sx={{ paddingBottom: "1em" }} />
-        <TextInput label="Dictionary name" source="title" validate={[required()]} />
-        <TextInput label="Dictionary description" multiline source="description" />
+        <TextInput source="title" validate={[required()]} />
+        <TextInput multiline source="description" />
       </SimpleForm>
     </Edit>
   );

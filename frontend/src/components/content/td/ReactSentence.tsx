@@ -2,7 +2,8 @@ import { createComponentVNode, render } from "inferno";
 import { Provider } from "inferno-redux";
 import { ReactElement, useEffect, useRef } from "react";
 import { store } from "../../../app/createStore";
-import { useJssStyles } from "../../../app/hooks";
+import { useAppSelector, useJssStyles } from "../../../app/hooks";
+import { isScriptioContinuo } from "../../../lib/funclib";
 import { ComponentClass, ComponentFunction, ReaderState, SentenceType } from "../../../lib/types";
 import Sentence from "../etf/Sentence";
 
@@ -14,14 +15,15 @@ type Props = {
 
 export default function ReactSentence({ sentence, readerConfig, sameTab }: Props): ReactElement {
   const ref = useRef<HTMLSpanElement>(null);
-  const classes = useJssStyles(readerConfig);
+  const fromLang = useAppSelector((state) => state.userData.user.fromLang);
+  const etfClasses = useJssStyles({ ...readerConfig, scriptioContinuo: isScriptioContinuo(fromLang) });
 
   useEffect(() => {
     const wrappedSentence = createComponentVNode(ComponentClass, Provider, {
       store: store,
       children: [
         createComponentVNode(ComponentFunction, Sentence, {
-          classes,
+          classes: etfClasses,
           readerConfig,
           sentence,
           clickable: true,

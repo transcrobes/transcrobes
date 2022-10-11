@@ -7,14 +7,15 @@ import { Loading } from "../components/Loading";
 import { ServiceWorkerProxy } from "../lib/proxies";
 import {
   isSimplePOS,
-  isTreebankPOS,
-  SimplePosType,
-  TreebankPosType,
+  isZhTreebankPOS,
+  AnyPosType,
   UserDefinitionType,
   USER_DEFINITION_SOUND_SEPARATOR,
+  isEnTreebankPOS,
 } from "../lib/types";
 import CustomList from "./CustomList";
 import Papa from "papaparse";
+import { useTranslate } from "react-admin";
 
 const useStyles = makeStyles()((theme) => ({
   error: {
@@ -70,6 +71,7 @@ export default function Import({ dictionaryId, proxy }: Props): ReactElement {
   const [saving, setSaving] = useState(false);
   const { classes } = useStyles();
   const theme = useTheme();
+  const translate = useTranslate();
 
   async function loadDictionary(event: React.ChangeEvent<HTMLInputElement>) {
     const files = (event.target as HTMLInputElement).files;
@@ -81,7 +83,7 @@ export default function Import({ dictionaryId, proxy }: Props): ReactElement {
   async function saveDictionary() {
     setSaving(true);
     setLoading(true);
-    setLoadingMessage("Saving Dictionary");
+    setLoadingMessage(translate("resources.userdictionaries.saving_dictionary"));
     if (!data) return;
     await proxy.sendMessagePromise({
       source: DATA_SOURCE,
@@ -118,7 +120,7 @@ export default function Import({ dictionaryId, proxy }: Props): ReactElement {
   useEffect(() => {
     setLoading(true);
     if (proxy.loaded) {
-      setLoadingMessage("Loading existing entries");
+      setLoadingMessage(translate("resources.userdictionaries.loading_entries"));
       (async function () {
         const existing = await proxy.sendMessagePromise<Record<string, UserDefinitionType>>({
           source: DATA_SOURCE,
@@ -137,7 +139,7 @@ export default function Import({ dictionaryId, proxy }: Props): ReactElement {
   useEffect(() => {
     if (columnSeparator) {
       setLoading(true);
-      setLoadingMessage("Loading dictionary");
+      setLoadingMessage(translate("resources.userdictionaries.loading_existing"));
       (async () => {
         const text = await file?.text();
         if (text) {
@@ -170,7 +172,11 @@ export default function Import({ dictionaryId, proxy }: Props): ReactElement {
               : convertPinyinTones(columns[2] || "")
                   .split(itemSeparator)
                   .join(USER_DEFINITION_SOUND_SEPARATOR);
-            if (columns.length >= 4 && meanings.join("").trim() && (isSimplePOS(pos) || isTreebankPOS(pos))) {
+            if (
+              columns.length >= 4 &&
+              meanings.join("").trim() &&
+              (isSimplePOS(pos) || isZhTreebankPOS(pos) || isEnTreebankPOS(pos))
+            ) {
               const graph = columns[0];
               if (!newData[graph]) {
                 newData[graph] = {
@@ -183,7 +189,7 @@ export default function Import({ dictionaryId, proxy }: Props): ReactElement {
               const lexeme = newData[graph].translations?.find((x) => x.posTag === pos && x.sounds === sounds);
               if (!lexeme) {
                 newData[graph].translations?.push({
-                  posTag: pos as SimplePosType | TreebankPosType,
+                  posTag: pos as AnyPosType,
                   values: meanings,
                   sounds,
                 });
@@ -194,7 +200,7 @@ export default function Import({ dictionaryId, proxy }: Props): ReactElement {
               newInvalidData[columns[0]] = {
                 id: columns[0],
                 sounds,
-                translations: [{ posTag: pos as SimplePosType | TreebankPosType, values: meanings }],
+                translations: [{ posTag: pos as AnyPosType, values: meanings }],
               };
             }
           }
@@ -215,7 +221,7 @@ export default function Import({ dictionaryId, proxy }: Props): ReactElement {
 
   return (
     <>
-      <Typography variant="h6">Dictionary import</Typography>
+      <Typography variant="h6">{translate("resources.userdictionaries.import")}</Typography>
       <div className={classes.importBox}>
         <FormGroup row>
           <span>
@@ -235,7 +241,7 @@ export default function Import({ dictionaryId, proxy }: Props): ReactElement {
                 size="large"
                 style={{ margin: "1em" }}
               >
-                Upload
+                {translate("general.upload")}
               </Button>
             </label>
           </span>
@@ -244,7 +250,7 @@ export default function Import({ dictionaryId, proxy }: Props): ReactElement {
             style={{ margin: "1em", width: "140px" }}
             required
             variant="outlined"
-            label="Column separator"
+            label={translate("resources.userdictionaries.column_separator")}
             defaultValue={columnSeparator}
             onChange={(event: React.ChangeEvent<HTMLInputElement>) => setColumnSeparator(event.target.value)}
           />
@@ -252,7 +258,7 @@ export default function Import({ dictionaryId, proxy }: Props): ReactElement {
             disabled={saving || loading}
             style={{ margin: "1em" }}
             variant="outlined"
-            label="Meaning/Sound separator"
+            label={translate("resources.userdictionaries.meaning_sound_separator")}
             defaultValue={itemSeparator}
             onChange={(event: React.ChangeEvent<HTMLInputElement>) => setItemSeparator(event.target.value)}
           />
@@ -260,7 +266,7 @@ export default function Import({ dictionaryId, proxy }: Props): ReactElement {
             disabled={saving || loading}
             style={{ margin: "1em", width: "150px" }}
             variant="outlined"
-            label="Quote character"
+            label={translate("resources.userdictionaries.quote_character")}
             defaultValue={quoteChar}
             onChange={(event: React.ChangeEvent<HTMLInputElement>) => setQuoteChar(event.target.value)}
           />
@@ -268,13 +274,13 @@ export default function Import({ dictionaryId, proxy }: Props): ReactElement {
             disabled={saving || loading}
             style={{ margin: "1em", width: "160px" }}
             variant="outlined"
-            label="Escape character"
+            label={translate("resources.userdictionaries.escape_character")}
             defaultValue={escapeChar}
             onChange={(event: React.ChangeEvent<HTMLInputElement>) => setEscapeChar(event.target.value)}
           />
           <FormControlLabel
             control={<Checkbox checked={headerRow} onChange={(_e, value) => setHeaderRow(value)} name="headerRow" />}
-            label="Contains header row"
+            label={translate("resources.userdictionaries.contains_header_row")}
           />
         </FormGroup>
       </div>
@@ -283,13 +289,15 @@ export default function Import({ dictionaryId, proxy }: Props): ReactElement {
 
       {data && (
         <>
-          <Typography variant="h6">Import Preview</Typography>
-          <Typography>Valid import entries</Typography>
+          <Typography variant="h6">{translate("resources.userdictionaries.import_preview")}</Typography>
+          <Typography>{translate("resources.userdictionaries.import_valid_entries")}</Typography>
           <CustomList data={Object.values(data)} itemSeparator={itemSeparator} />
           {invalidData && Object.keys(invalidData).length > 0 && (
             <>
               <hr />
-              <Typography className={classes.error}>Invalid import entries (ignored)</Typography>
+              <Typography className={classes.error}>
+                {translate("resources.userdictionaries.invalid_entries")}
+              </Typography>
               <CustomList
                 rowColour={theme.palette.error.main}
                 data={Object.values(invalidData)}
@@ -307,7 +315,7 @@ export default function Import({ dictionaryId, proxy }: Props): ReactElement {
               style={{ margin: "1em" }}
               startIcon={<SaveIcon />}
             >
-              Save
+              {translate("ra.actions.save")}
             </Button>
           </div>
         </>
@@ -317,18 +325,18 @@ export default function Import({ dictionaryId, proxy }: Props): ReactElement {
           <hr />
           {Object.keys(filteredExisting).length > 0 && (
             <>
-              <Typography>Filter</Typography>
+              <Typography>{translate("resources.userdictionaries.filter")}</Typography>
               <TextField
                 disabled={saving || loading}
                 style={{ margin: "1em" }}
                 required
                 variant="outlined"
-                label="Graph"
+                label={translate("resources.userdictionaries.graph")}
                 onChange={(event: React.ChangeEvent<HTMLInputElement>) => filterExisting(event.target.value)}
               />
             </>
           )}
-          <Typography>Existing Entries</Typography>
+          <Typography>{translate("resources.userdictionaries.existing_entries")}</Typography>
           <CustomList data={Object.values(filteredExisting)} itemSeparator={itemSeparator} />
         </div>
       )}

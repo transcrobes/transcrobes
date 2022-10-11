@@ -2,8 +2,9 @@ import { Grid, useTheme } from "@mui/material";
 import { bin } from "d3-array";
 import dayjs, { ManipulateType } from "dayjs";
 import { useEffect, useState } from "react";
-import { useRecordContext } from "react-admin";
+import { useRecordContext, useTranslate } from "react-admin";
 import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
+import { useAppSelector } from "../app/hooks";
 import useWindowDimensions from "../hooks/WindowDimensions";
 import { binnedData } from "../lib/funclib";
 import { dateRange } from "../lib/libMethods";
@@ -27,6 +28,8 @@ export function ListProgress({ yIsNumber = false, nbPeriods = 8, periodType = "w
   const [data, setData] = useState<ListGraphData[]>([]);
   const [stats, setStats] = useState<ListFirstSuccessStats | null>();
   const obj = useRecordContext();
+  const translate = useTranslate();
+  const fromLang = useAppSelector((state) => state.userData.user.fromLang);
   const listId = obj ? ("userList" in obj ? obj.userList : obj.id) : "";
   useEffect(() => {
     (async () => {
@@ -80,7 +83,7 @@ export function ListProgress({ yIsNumber = false, nbPeriods = 8, periodType = "w
           <YAxis tickFormatter={(tick) => `${tick}${yIsNumber ? "" : "%"}`} name="Progress" />
           <CartesianGrid stroke="#eee" strokeDasharray="5 5" />
           <Line type="monotone" dataKey="wordTypes" stroke={theme.palette.primary.main} />
-          <Line type="monotone" dataKey="charTypes" stroke={theme.palette.success.light} />
+          {fromLang === "zh-Hans" && <Line type="monotone" dataKey="charTypes" stroke={theme.palette.success.light} />}
         </LineChart>
       </Grid>
       <Grid item>
@@ -88,20 +91,26 @@ export function ListProgress({ yIsNumber = false, nbPeriods = 8, periodType = "w
           <tbody>
             <tr>
               <td>
-                <span style={{ color: theme.palette.primary.main }}>Unique words (types)</span>
+                <span style={{ color: theme.palette.primary.main }}>
+                  {translate("stats.list_progress.words_types")}
+                </span>
               </td>
               <td>
                 <span style={{ color: theme.palette.primary.main }}>{stats.nbUniqueWords}</span>
               </td>
             </tr>
-            <tr>
-              <td>
-                <span style={{ color: theme.palette.success.light }}>Unique chars (types)</span>
-              </td>
-              <td>
-                <span style={{ color: theme.palette.success.light }}>{stats.nbUniqueCharacters}</span>
-              </td>
-            </tr>
+            {fromLang === "zh-Hans" && (
+              <tr>
+                <td>
+                  <span style={{ color: theme.palette.success.light }}>
+                    {translate("stats.list_progress.chars_types")}
+                  </span>
+                </td>
+                <td>
+                  <span style={{ color: theme.palette.success.light }}>{stats.nbUniqueCharacters}</span>
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </Grid>

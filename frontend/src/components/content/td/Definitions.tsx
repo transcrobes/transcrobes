@@ -11,7 +11,7 @@ type Props = {
 };
 
 export default function Definitions({ definition, classes }: Props): ReactElement {
-  const fromLang = useAppSelector((state) => state.userData.user.fromLang);
+  const toLang = useAppSelector((state) => state.userData.user.toLang);
   const dictionaries = useAppSelector((state) => state.dictionary);
   const { readerConfig } = useContext(ReaderConfigContext);
   const [orderedTranslations, setOrderedTranslations] = useState<ProviderTranslationType[]>([]);
@@ -32,7 +32,7 @@ export default function Definitions({ definition, classes }: Props): ReactElemen
                 return (
                   <Fragment key={provider.provider + translation.posTag + translation.sounds}>
                     <div className={classes.sourcePos}>
-                      {toPosLabels(translation.posTag, fromLang)} {translation.sounds}
+                      {toPosLabels(translation.posTag, toLang)} {translation.sounds}
                     </div>
                     <div className={classes.sourcePosDefs}>
                       <span>{translation.values.join(", ")}</span>

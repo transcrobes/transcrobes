@@ -57,4 +57,5 @@ const videoReaderSlice = createGenericSlice({
 });
 
 export const videoReaderActions = videoReaderSlice.actions;
+export type VideoReaderActions = typeof videoReaderActions;
 export default videoReaderSlice.reducer;

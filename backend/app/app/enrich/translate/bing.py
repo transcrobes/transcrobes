@@ -8,13 +8,10 @@ from collections import defaultdict
 import sqlalchemy
 from app.cache import caches
 from app.enrich.apis.bing import BingAPI
-from app.enrich.etypes import Token
 from app.enrich.translate import DefaultTranslator
 from app.enrich.transliterate import Transliterator
-from app.models.migrated import (  # from app.enrich.models import BingAPILookup, BingAPITranslation
-    BingApiLookup,
-    BingApiTranslation,
-)
+from app.etypes import Token
+from app.models.lookups import BingApiLookup, BingApiTranslation
 from app.ndutils import lemma
 from sqlalchemy.ext.asyncio.session import AsyncSession
 from sqlalchemy.future import select
@@ -26,9 +23,6 @@ TRANSLAT_PATH = "/translate"
 
 
 class BingTranslator(DefaultTranslator, BingAPI):
-    SHORT_NAME = "mst"
-    FALLBACK_SHORT_NAME = "fbk"
-
     def __init__(self, config, transliterator: Transliterator):
         super().__init__(config)
         self._transliterator: Transliterator = transliterator
@@ -37,10 +31,15 @@ class BingTranslator(DefaultTranslator, BingAPI):
     # override Translator
     @staticmethod
     def name() -> str:
-        return BingTranslator.SHORT_NAME
+        return BingApiLookup.SHORT_NAME
+
+    # override DefaultTranslator
+    @staticmethod
+    def fallback_name() -> str:
+        return BingApiLookup.FALLBACK_SHORT_NAME
 
     # public override methods
-    async def get_standardised_defs(self, db: AsyncSession, token: Token):
+    async def get_standardised_defs(self, db: AsyncSession, token: Token, all_forms: bool = False):
         result = await self._ask_bing_lookup(db, lemma(token))
         try:
             jresult = json.loads(result)
@@ -66,7 +65,7 @@ class BingTranslator(DefaultTranslator, BingAPI):
 
         return std_format
 
-    async def get_standardised_fallback_defs(self, db: AsyncSession, token: Token):
+    async def get_standardised_fallback_defs(self, db: AsyncSession, token: Token, all_forms: bool = False):
         result = await self._ask_bing_translate(db, lemma(token), is_fallback=True)
 
         try:

@@ -1,5 +1,6 @@
 import { styled, Typography } from "@mui/material";
 import { ReactElement } from "react";
+import { useTranslate } from "react-admin";
 import DefinitionGraph from "../components/DefinitionGraph";
 import DiscoverableWord from "../components/DiscoverableWord";
 import useWindowDimensions from "../hooks/WindowDimensions";
@@ -17,6 +18,7 @@ export default function QuestionDefinitionGraph({
   word,
 }: QuestionDefinitionGraphProps): ReactElement {
   const dimensions = useWindowDimensions();
+  const translate = useTranslate();
   // the min char size should allow 4 on an old iphone before scrollbars appear
   const newDim = Math.max(72, Math.min(150, dimensions.width / characters.length - 18));
   return (
@@ -28,14 +30,16 @@ export default function QuestionDefinitionGraph({
           </Typography>
         </DiscoverableWord>
       )}
-      <DefinitionGraph
-        title="Remember the word and draw it here with a mouse or touchscreen, or even better use a pen and paper!"
-        characters={characters}
-        showAnswer={showAnswer}
-        charHeight={newDim}
-        charWidth={newDim}
-        newTab
-      />
+      {characters && characters.length > 0 && (
+        <DefinitionGraph
+          title={translate("screens.repetrobes.hanzi_writer_help")}
+          characters={characters}
+          showAnswer={showAnswer}
+          charHeight={newDim}
+          charWidth={newDim}
+          newTab
+        />
+      )}
     </>
   );
 }

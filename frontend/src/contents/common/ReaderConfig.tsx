@@ -1,9 +1,10 @@
 import { ClassNameMap, FormControl, FormControlLabel, Switch, ToggleButton, ToggleButtonGroup } from "@mui/material";
 import _ from "lodash";
 import React, { ReactElement, useCallback } from "react";
+import { useTranslate } from "react-admin";
 import { HslColor } from "react-colorful";
 import { makeStyles } from "tss-react/mui";
-import { useAppDispatch } from "../../app/hooks";
+import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import {
   Conftainer as BasicConftainer,
   DEFAULT_FONT_COLOUR,
@@ -13,9 +14,10 @@ import Conftainer from "../../components/Conftainer";
 import DictionaryChooser from "../../components/DictionaryChooser";
 import FivePercentFineControl from "../../components/FivePercentFineControl";
 import FontColour from "../../components/FontColour";
-import { bookReaderActions } from "../../features/content/bookReaderSlice";
-import { simpleReaderActions } from "../../features/content/simpleReaderSlice";
-import { videoReaderActions } from "../../features/content/videoReaderSlice";
+import { BookReaderActions } from "../../features/content/bookReaderSlice";
+import { SimpleReaderActions } from "../../features/content/simpleReaderSlice";
+import { VideoReaderActions } from "../../features/content/videoReaderSlice";
+import { isScriptioContinuo } from "../../lib/funclib";
 import { GlossPosition, ReaderState, USER_STATS_MODE } from "../../lib/types";
 import GlossFontOverrideConfig from "./GlossFontOverrideConfig";
 import MainTextOverrideConfig from "./MainTextOverrideConfig";
@@ -23,7 +25,7 @@ import MainTextOverrideConfig from "./MainTextOverrideConfig";
 export interface ContentConfigProps {
   containerRef?: React.RefObject<HTMLDivElement>;
   classes: ClassNameMap<string>;
-  actions: typeof simpleReaderActions | typeof videoReaderActions | typeof bookReaderActions;
+  actions: SimpleReaderActions | VideoReaderActions | BookReaderActions;
   readerConfig: ReaderState;
   allowMainTextOverride?: boolean;
 }
@@ -58,8 +60,10 @@ export default function ContentConfig({
   allowMainTextOverride = true,
 }: ContentConfigProps): ReactElement {
   const dispatch = useAppDispatch();
+  const translate = useTranslate();
   const id = readerConfig.id;
   const { classes: localClasses } = useStyles();
+  const fromLang = useAppSelector((state) => state.userData.user.fromLang);
   const changeGlossFontColour = useCallback(
     _.debounce((value: HslColor) => {
       dispatch(actions.setGlossFontColour({ id, value }));
@@ -90,7 +94,7 @@ export default function ContentConfig({
           localClasses={localClasses}
         />
       )}
-      <Conftainer label="Glossing" id="glossing">
+      <Conftainer label={translate("widgets.reader_config.glossing_type.title")} id="glossing">
         <ToggleButtonGroup
           className={classes.buttonGroup || localClasses.buttonGroup}
           value={readerConfig.glossing}
@@ -100,23 +104,23 @@ export default function ContentConfig({
           }}
         >
           <ToggleButton className={classes.button || localClasses.button} value={USER_STATS_MODE.NO_GLOSS}>
-            None
+            {translate("widgets.reader_config.glossing_type.none")}
           </ToggleButton>
           <ToggleButton className={classes.button || localClasses.button} value={USER_STATS_MODE.L2_SIMPLIFIED}>
-            Simpler
+            {translate("widgets.reader_config.glossing_type.simpler")}
           </ToggleButton>
           <ToggleButton className={classes.button || localClasses.button} value={USER_STATS_MODE.TRANSLITERATION}>
-            Sounds
+            {translate("widgets.reader_config.glossing_type.sounds")}
           </ToggleButton>
           <ToggleButton className={classes.button || localClasses.button} value={USER_STATS_MODE.L1}>
-            English
+            {translate("widgets.reader_config.glossing_type.l1")}
           </ToggleButton>
           <ToggleButton className={classes.button || localClasses.button} value={USER_STATS_MODE.TRANSLITERATION_L1}>
-            Sounds + English
+            {translate("widgets.reader_config.glossing_type.sounds_l1")}
           </ToggleButton>
         </ToggleButtonGroup>
       </Conftainer>
-      <Conftainer label="Gloss Position" id="gp">
+      <Conftainer label={translate("widgets.reader_config.glossing_position.title")} id="gp">
         <ToggleButtonGroup
           className={classes.buttonGroup || localClasses.buttonGroup}
           value={readerConfig.glossPosition}
@@ -126,20 +130,20 @@ export default function ContentConfig({
           }
         >
           <ToggleButton className={classes.button || localClasses.button} value="row">
-            After
+            {translate("widgets.reader_config.glossing_position.after")}
           </ToggleButton>
           <ToggleButton className={classes.button || localClasses.button} value="column-reverse">
-            Above
+            {translate("widgets.reader_config.glossing_position.above")}
           </ToggleButton>
           <ToggleButton className={classes.button || localClasses.button} value="column">
-            Below
+            {translate("widgets.reader_config.glossing_position.below")}
           </ToggleButton>
           <ToggleButton className={classes.button || localClasses.button} value="row-reverse">
-            Before
+            {translate("widgets.reader_config.glossing_position.before")}
           </ToggleButton>
         </ToggleButtonGroup>
       </Conftainer>
-      <Conftainer label="Gloss Font Size" id="glossFontSize">
+      <Conftainer label={translate("widgets.reader_config.gloss_font_size")} id="glossFontSize">
         <FivePercentFineControl
           onValueChange={(value) => {
             dispatch(actions.setGlossFontSize({ id, value: value || 1 }));
@@ -148,10 +152,11 @@ export default function ContentConfig({
           className={localClasses.fineControlIcons}
         />
       </Conftainer>
-      <Conftainer label="Gloss Text Colour" id="ogc">
+
+      <Conftainer label={translate("widgets.reader_config.gloss_colour_title")} id="ogc">
         <FormControl component="fieldset" className={classes.fontColour || localClasses.fontColour}>
           <FormControlLabel
-            label="Override gloss colour"
+            label={translate("widgets.reader_config.gloss_colour_label")}
             control={
               <Switch
                 checked={!!readerConfig.glossFontColour}
@@ -173,10 +178,10 @@ export default function ContentConfig({
           )}
         </FormControl>
       </Conftainer>
-      <Conftainer label="Override Unsure Gloss Background Colour" id="ougbc">
+      <Conftainer label={translate("widgets.reader_config.gloss_unsure_colour")} id="ougbc">
         <FormControl component="fieldset" className={classes.fontColour || localClasses.fontColour}>
           <FormControlLabel
-            label="Override unsure gloss background colour"
+            label={translate("widgets.reader_config.gloss_unsure_colour")}
             control={
               <Switch
                 checked={!!readerConfig.glossUnsureBackgroundColour}
@@ -203,24 +208,26 @@ export default function ContentConfig({
           )}
         </FormControl>
       </Conftainer>
-      <Conftainer label="Segmentation" id="segmentation">
-        <ToggleButtonGroup
-          className={classes.button || localClasses.button}
-          exclusive
-          value={readerConfig.segmentation}
-          onChange={(event: React.MouseEvent<HTMLElement>, value: boolean) => {
-            dispatch(actions.setSegmentation({ id, value }));
-          }}
-        >
-          <ToggleButton className={classes.button || localClasses.button} value={false}>
-            None
-          </ToggleButton>
-          <ToggleButton className={classes.button || localClasses.button} value={true}>
-            Segmented
-          </ToggleButton>
-        </ToggleButtonGroup>
-      </Conftainer>
-      <Conftainer label="Mouseover" id="mouseover">
+      {isScriptioContinuo(fromLang) ? (
+        <Conftainer label={translate("widgets.reader_config.segmentation.title")} id="segmentation">
+          <ToggleButtonGroup
+            className={classes.button || localClasses.button}
+            exclusive
+            value={readerConfig.segmentation}
+            onChange={(event: React.MouseEvent<HTMLElement>, value: boolean) => {
+              dispatch(actions.setSegmentation({ id, value }));
+            }}
+          >
+            <ToggleButton className={classes.button || localClasses.button} value={false}>
+              {translate("widgets.reader_config.segmentation.none")}
+            </ToggleButton>
+            <ToggleButton className={classes.button || localClasses.button} value={true}>
+              {translate("widgets.reader_config.segmentation.segmented")}
+            </ToggleButton>
+          </ToggleButtonGroup>
+        </Conftainer>
+      ) : null}
+      <Conftainer label={translate("widgets.reader_config.mouseover.title")} id="mouseover">
         <ToggleButtonGroup
           className={classes.button || localClasses.button}
           value={readerConfig.mouseover}
@@ -230,14 +237,14 @@ export default function ContentConfig({
           }}
         >
           <ToggleButton className={classes.button || localClasses.button} value={false}>
-            None
+            {translate("widgets.reader_config.mouseover.none")}
           </ToggleButton>
           <ToggleButton className={classes.button || localClasses.button} value={true}>
-            Display Mouseover
+            {translate("widgets.reader_config.mouseover.display_mouseover")}
           </ToggleButton>
         </ToggleButtonGroup>
       </Conftainer>
-      <Conftainer label="Collect recent phrases" id="collectRecents">
+      <Conftainer label={translate("widgets.reader_config.recent_phrases.title")} id="collectRecents">
         <ToggleButtonGroup
           className={classes.button || localClasses.button}
           exclusive
@@ -247,14 +254,14 @@ export default function ContentConfig({
           }}
         >
           <ToggleButton className={classes.button || localClasses.button} value={false}>
-            Off
+            {translate("widgets.reader_config.recent_phrases.off")}
           </ToggleButton>
           <ToggleButton className={classes.button || localClasses.button} value={true}>
-            On
+            {translate("widgets.reader_config.recent_phrases.on")}
           </ToggleButton>
         </ToggleButtonGroup>
       </Conftainer>
-      <Conftainer label="Strict Provider Ordering" id="strictProvider">
+      <Conftainer label={translate("widgets.reader_config.strict_provider_ordering.title")} id="strictProvider">
         <ToggleButtonGroup
           className={classes.button || localClasses.button}
           exclusive
@@ -264,14 +271,14 @@ export default function ContentConfig({
           }}
         >
           <ToggleButton className={classes.button || localClasses.button} value={false}>
-            Off
+            {translate("widgets.reader_config.strict_provider_ordering.off")}
           </ToggleButton>
           <ToggleButton className={classes.button || localClasses.button} value={true}>
-            On
+            {translate("widgets.reader_config.strict_provider_ordering.on")}
           </ToggleButton>
         </ToggleButtonGroup>
       </Conftainer>
-      <Conftainer label="Dictionary Providers" id="dictProviders">
+      <Conftainer label={translate("widgets.dictionary_provider.title")} id="dictProviders">
         <DictionaryChooser
           selected={readerConfig.translationProviderOrder}
           onSelectionChange={(value) => {

@@ -1,6 +1,7 @@
 import { bestGuess, complexPosToSimplePosLabels, filterKnown, toSimplePos } from "./libMethods";
 import { platformHelper } from "./proxies";
 import {
+  AnyTreebankPosType,
   BOOCROBES_HEADER_HEIGHT,
   DefinitionsState,
   DefinitionType,
@@ -11,14 +12,14 @@ import {
   RecentSentencesType,
   SentenceType,
   SerialisableDayCardWords,
+  SystemLanguage,
   TokenType,
-  TreebankPosType,
   USER_STATS_MODE,
 } from "./types";
 
 const DEFINITION_LOADING = "loading...";
 const DATA_SOURCE = "componentMethods.ts";
-const NUMBER_POS = new Set<TreebankPosType>(["OD", "NT", "CD"]);
+const NUMBER_POS = new Set<AnyTreebankPosType>(["OD", "NT", "CD"]);
 
 export async function getWord(lemma: string): Promise<DefinitionType> {
   return platformHelper.sendMessagePromise<DefinitionType>({
@@ -28,20 +29,37 @@ export async function getWord(lemma: string): Promise<DefinitionType> {
   });
 }
 
+export async function getDefinitions(token: TokenType, definitions: DefinitionsState) {
+  let defIds: string[] = [];
+  let defs: DefinitionType[] = [];
+  if (token.id) {
+    defIds.push(token.id);
+  }
+  if (token.oids) {
+    defIds = defIds.concat(token.oids);
+  }
+  for (const defId of defIds) {
+    const def = definitions[defId];
+    if (def) {
+      defs.push(def);
+    }
+  }
+  return defs || [await getWord(token.l)];
+}
+
 export async function getL1(
   token: TokenType,
   definitions: DefinitionsState,
   fromLang: InputLanguage,
+  toLang: SystemLanguage,
   readerConfig: ReaderState,
   defaultL1: string,
 ): Promise<string> {
   if (defaultL1 && !readerConfig.strictProviderOrdering) return defaultL1;
   let gloss = defaultL1;
-  const dictDefinition = (token.id && definitions[token.id]) || (await getWord(token.l));
-  // FIXME: need to add a timer or something to the dom element to keep
-  // looking for the actual definition when it arrives
-  if (dictDefinition && dictDefinition.providerTranslations) {
-    gloss = bestGuess(token, dictDefinition, fromLang, readerConfig);
+  const defs = await getDefinitions(token, definitions);
+  if (defs[0] && defs[0].providerTranslations) {
+    gloss = bestGuess(token, defs, fromLang, toLang, readerConfig);
   } else {
     gloss = DEFINITION_LOADING;
   }
@@ -65,18 +83,26 @@ export async function getNormalGloss(
   uCardWords: Partial<SerialisableDayCardWords>,
   definitions: DefinitionsState,
   fromLang: InputLanguage,
+  toLang: SystemLanguage,
 ): Promise<string> {
   // Default L1, context-aware, "best guess" gloss
   const { glossing } = readerConfig;
   let gloss = token.bg ? token.bg.split(",")[0].split(";")[0] : "";
   if (glossing == USER_STATS_MODE.L1) {
-    gloss = await getL1(token, definitions, fromLang, readerConfig, gloss);
+    gloss = await getL1(token, definitions, fromLang, toLang, readerConfig, gloss);
   } else if (glossing == USER_STATS_MODE.L2_SIMPLIFIED) {
-    gloss = await getL2Simplified(token, gloss, uCardWords, definitions, fromLang, readerConfig);
+    gloss = await getL2Simplified(token, gloss, uCardWords, definitions, fromLang, toLang, readerConfig);
   } else if (glossing == USER_STATS_MODE.TRANSLITERATION) {
     gloss = await getSound(token, definitions);
   } else if (glossing == USER_STATS_MODE.TRANSLITERATION_L1) {
-    gloss = `${await getSound(token, definitions)}: ${await getL1(token, definitions, fromLang, readerConfig, gloss)}`;
+    gloss = `${await getSound(token, definitions)}: ${await getL1(
+      token,
+      definitions,
+      fromLang,
+      toLang,
+      readerConfig,
+      gloss,
+    )}`;
   }
   return gloss;
 }
@@ -128,6 +154,7 @@ async function getL2Simplified(
   uCardWords: Partial<SerialisableDayCardWords>,
   definitions: DefinitionsState,
   fromLang: InputLanguage,
+  toLang: SystemLanguage,
   readerConfig: ReaderState,
 ): Promise<string> {
   let gloss = previousGloss;
@@ -136,13 +163,13 @@ async function getL2Simplified(
     gloss = token.us[0];
   } else {
     // try and get a local user known synonym
-    const dictDefinition = (token.id && definitions[token.id]) || (await getWord(token.l));
-    if (!dictDefinition) return DEFINITION_LOADING;
-    const syns = dictDefinition.synonyms.filter(
-      (x) => toSimplePos(x.posTag, fromLang) === toSimplePos(token.pos!, fromLang),
-    );
+    // const dictDefinition = (token.id && definitions[token.id]) || (await getWord(token.l));
+    const defs = await getDefinitions(token, definitions);
+    if (!defs[0]) return DEFINITION_LOADING;
+    // FIXME: should I just be using the first here? why? why not?
+    const syns = defs[0].synonyms.filter((x) => toSimplePos(x.posTag, fromLang) === toSimplePos(token.pos!, fromLang));
 
-    let innerGloss;
+    let innerGloss: string | undefined;
     if (syns && syns.length > 0) {
       const userSynonyms = filterKnown(
         uCardWords.knownWordIdsCounter || {},
@@ -153,7 +180,7 @@ async function getL2Simplified(
         innerGloss = userSynonyms[0];
       }
     }
-    gloss = innerGloss || gloss || bestGuess(token, dictDefinition, fromLang, readerConfig);
+    gloss = innerGloss || gloss || bestGuess(token, defs, fromLang, toLang, readerConfig);
   }
   return gloss;
 }
@@ -166,14 +193,17 @@ export async function getPopoverText(
   uCardWords: Partial<SerialisableDayCardWords>,
   definitions: DefinitionsState,
   fromLang: InputLanguage,
+  systemLang: SystemLanguage,
   readerConfig: ReaderState,
 ): Promise<string> {
   const gloss = token.bg ? token.bg.split(",")[0].split(";")[0] : "";
-  const l1 = await getL1(token, definitions, fromLang, readerConfig, gloss);
+  const l1 = await getL1(token, definitions, fromLang, systemLang, readerConfig, gloss);
   if (l1 === DEFINITION_LOADING) return DEFINITION_LOADING;
-  const l2 = await getL2Simplified(token, l1, uCardWords, definitions, fromLang, readerConfig);
+  const l2 = await getL2Simplified(token, l1, uCardWords, definitions, fromLang, systemLang, readerConfig);
   const sound = await getSound(token, definitions);
-  return `${complexPosToSimplePosLabels(token.pos!, fromLang)}: ${l1} ${l2 != l1 ? `: ${l2}` : ""}: ${sound}`;
+  return `${complexPosToSimplePosLabels(token.pos!, fromLang, systemLang)}: ${l1} ${
+    l2 != l1 ? `: ${l2}` : ""
+  }: ${sound}`;
 }
 
 export function eventCoordinates(event: React.MouseEvent<HTMLElement>): EventCoordinates {

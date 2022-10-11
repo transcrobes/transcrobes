@@ -46,7 +46,7 @@ from app.models.user import absolute_imports_path
 from app.ndutils import flatten, lemma
 from app.schemas.files import ProcessData
 from app.worker.faustus import content_process_topic
-from app.zhhans import CORENLP_IGNORABLE_POS
+from app.zhhans import CORENLP_ZH_IGNORABLE_POS
 from bs4 import BeautifulSoup
 from dawn.epub import Epub
 from sqlalchemy.ext.asyncio.session import AsyncSession
@@ -308,7 +308,7 @@ async def process_text(db: AsyncSession, the_import: Import, manager: Enrichment
     content.content_type = Content.BOOK
     content.title = the_import.title
     content.description = the_import.description
-    content.language = "zh-CN"
+    content.language = content.created_by.from_lang
 
     db.add(content)
     await db.commit()
@@ -378,7 +378,6 @@ async def process_text(db: AsyncSession, the_import: Import, manager: Enrichment
 
 
 async def process_subs(db: AsyncSession, the_import: Import, manager: EnrichmentManager):
-
     content = get_or_create_content(the_import)
     content.the_import = the_import
     content.created_by = the_import.created_by
@@ -387,7 +386,7 @@ async def process_subs(db: AsyncSession, the_import: Import, manager: Enrichment
     content.title = the_import.title
     content.description = the_import.description
     # content.cover = cover
-    # content.language = language
+    content.language = content.created_by.from_lang
 
     db.add(content)
     await db.commit()
@@ -504,7 +503,7 @@ async def vocabulary_from_model(model):
             # to be added to Anki, or that it should be included in known word counts, considered
             # when calculating difficulty, etc.
             # TODO: consider making this configurable
-            if pos_tag in token and token[pos_tag] not in CORENLP_IGNORABLE_POS:
+            if pos_tag in token and token[pos_tag] not in CORENLP_ZH_IGNORABLE_POS:
                 vocabulary[lemma(token)] += 1
     return vocabulary
 
@@ -649,19 +648,19 @@ async def get_analysis_from_csv(an_import: Import, manager: EnrichmentManager):
     """
     Extract unique set of words from the first column (currently only supports comma-separated and first column)
     """
-    all_words = set()
+    # DO NOT change to any other kind of collection, particularly a set! We *require* it to be ordered
+    all_words = {}
     async with aiofiles.open(an_import.imported_path(), encoding="utf_8_sig") as csv_file:
         csv_reader = csv.reader((await csv_file.read()).splitlines(), delimiter=",")
         line_count = 0
         for row in csv_reader:
             if len(row) > 0:
-                all_words.add(manager.enricher().clean_text(row[0]))
+                all_words[manager.enricher().clean_text(row[0])] = None
             line_count += 1
         logger.info(f"Processed {line_count=} lines with {len(all_words)} unique items")
-
     return {
         "vocabulary": {
-            "buckets": {"1": list(all_words)},
+            "buckets": {"1": list(all_words.keys())},
             "counts": {"1": len(all_words)},
         },
     }
@@ -709,8 +708,8 @@ async def process_import(file_event: ProcessData):
         await db.commit()
 
         await (await get_broadcast()).publish(channel=Import.__name__, message=str(an_import.created_by.id))
-        # There won't be a content update if it was a csv import but who cares!
-        await (await get_broadcast()).publish(channel=Content.__name__, message=str(an_import.created_by.id))
+        if not an_import.import_file.endswith(".csv"):
+            await (await get_broadcast()).publish(channel=Content.__name__, message=str(an_import.created_by.id))
         logger.info("Finished running import %s", file_event.id)
 
 

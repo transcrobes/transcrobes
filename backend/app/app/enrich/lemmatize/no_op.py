@@ -13,5 +13,5 @@ class NoOpWordLemmatizer(PersistenceProvider, WordLemmatizer):
     def _load(self):
         return {}
 
-    def lemmatize(self, lword):
-        return [lword]
+    async def lemmatize(self, lword) -> set[str]:
+        return {lword}

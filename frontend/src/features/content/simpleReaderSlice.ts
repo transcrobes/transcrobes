@@ -18,4 +18,5 @@ const simpleReaderSlice = createGenericSlice({
   reducers: {},
 });
 export const simpleReaderActions = simpleReaderSlice.actions;
+export type SimpleReaderActions = typeof simpleReaderActions;
 export default simpleReaderSlice.reducer;

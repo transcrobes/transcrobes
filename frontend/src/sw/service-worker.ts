@@ -114,8 +114,8 @@ self.addEventListener("message", (event) => {
     // this is the code for managing the react-admin queries, see rx-data-sw
     if (!dataProvider) {
       const url = new URL(self.location.href);
-      getUserDexie().then(({ username }) => {
-        dataProvider = RxDBProvider({ url: url, username });
+      getUserDexie().then(({ username, user }) => {
+        dataProvider = RxDBProvider({ url: url, username, messagesLang: user.toLang });
         self.tcb = dataProvider.db();
         dataProvider[event.data.method](event.data.collection, event.data.params).then((res: DataProviderResult) => {
           event.ports[0].postMessage(res);

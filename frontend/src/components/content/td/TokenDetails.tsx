@@ -3,11 +3,11 @@ import { ReactElement, useEffect, useState } from "react";
 import { makeStyles } from "tss-react/mui";
 import useResizeObserver from "use-resize-observer";
 import { useAppSelector } from "../../../app/hooks";
-import { getWord, positionPopup } from "../../../lib/componentMethods";
+import { getDefinitions, getWord, positionPopup } from "../../../lib/componentMethods";
 import { originalSentenceFromTokens } from "../../../lib/funclib";
 import { bestGuess } from "../../../lib/libMethods";
 import { platformHelper } from "../../../lib/proxies";
-import { ExtensionReaderState, IS_EXT, PopupPosition, ReaderState } from "../../../lib/types";
+import { DefinitionType, ExtensionReaderState, IS_EXT, PopupPosition, ReaderState } from "../../../lib/types";
 import ReaderConfigProvider from "../../ReaderConfigProvider";
 import Container from "./Container";
 import Extras from "./Extras";
@@ -90,7 +90,7 @@ export default function TokenDetails({ readerConfig }: Props): ReactElement {
   const definitions = useAppSelector((state) => state.definitions);
   const [styles, setStyles] = useState<PopupPosition>(invisible);
   const tokenDetails = useAppSelector((state) => state.ui.tokenDetails);
-  const fromLang = useAppSelector((state) => state.userData.user.fromLang);
+  const { fromLang, toLang } = useAppSelector((state) => state.userData.user);
   const [extrasOpen, setExtrasOpen] = useState(false);
   const [boxWidth, setBoxWidth] = useState(0);
 
@@ -116,9 +116,15 @@ export default function TokenDetails({ readerConfig }: Props): ReactElement {
   useEffect(() => {
     (async () => {
       if (tokenDetails) {
-        const def =
-          (tokenDetails.token.id && definitions[tokenDetails.token.id]) || (await getWord(tokenDetails.token.l));
-        setGuess(bestGuess(tokenDetails.token, def, fromLang, readerConfig));
+        setGuess(
+          bestGuess(
+            tokenDetails.token,
+            await getDefinitions(tokenDetails.token, definitions),
+            fromLang,
+            toLang,
+            readerConfig,
+          ),
+        );
       }
     })();
 

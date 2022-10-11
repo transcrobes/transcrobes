@@ -3,7 +3,6 @@ import dayjs from "dayjs";
 import { throttle } from "lodash";
 import LZString from "lz-string";
 import { HslColor } from "react-colorful";
-import { AnyAction } from "redux";
 import {
   CardType,
   DayStat,
@@ -17,6 +16,8 @@ import {
   RecentSentencesType,
   RepetrobesActivityConfigType,
   SentenceType,
+  SystemLanguage,
+  SYSTEM_LANG_TO_LOCALE,
   TokenType,
 } from "./types";
 
@@ -170,13 +171,20 @@ export function missingWordIdsFromModels(models: KeyedModels, existing: Definiti
 
 export function wordIdsFromModels(models: KeyedModels): Set<string> {
   const uniqueIds = new Set<string>();
-  [...Object.entries(models).values()].map((model) => {
-    model[1].s.map((s) =>
-      s.t.map((t) => {
-        if (t.id) uniqueIds.add(t.id.toString());
-      }),
-    );
-  });
+  for (const model of Object.values(models)) {
+    for (const sentence of model.s) {
+      for (const token of sentence.t) {
+        if (token.id) {
+          uniqueIds.add(token.id.toString());
+        }
+        if (token.oids) {
+          for (const oid of token.oids) {
+            uniqueIds.add(oid.toString());
+          }
+        }
+      }
+    }
+  }
   return uniqueIds;
 }
 
@@ -215,21 +223,23 @@ export function getVoices(): Promise<SpeechSynthesisVoice[]> {
   });
 }
 
-export function say(text: string, voice?: SpeechSynthesisVoice, lang = "zh-CN"): void {
+export function say(text: string, lang: SystemLanguage, voice?: SpeechSynthesisVoice): void {
   const synth = window.speechSynthesis;
-  if (voice && voice.lang !== lang) {
+  if (voice && voice.lang !== SYSTEM_LANG_TO_LOCALE[lang]) {
     throw new Error("The language of the voice and lang must be the same");
   }
   const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = lang;
+  utterance.lang = SYSTEM_LANG_TO_LOCALE[lang];
   if (voice) {
     utterance.voice = voice;
+    utterance.volume = 1;
     synth.speak(utterance);
   } else {
     getVoices()
       .then((voices) => {
         utterance.voice =
-          voices.filter((x) => x.lang === lang && !x.localService)[0] || voices.filter((x) => x.lang === lang)[0];
+          voices.filter((x) => x.lang === SYSTEM_LANG_TO_LOCALE[lang] && x.localService)[0] ||
+          voices.filter((x) => x.lang === SYSTEM_LANG_TO_LOCALE[lang] && !x.localService)[0];
         synth.speak(utterance);
       })
       .catch((error) => {
@@ -349,14 +359,31 @@ export function reorderArray(list: any[], startIndex: number, endIndex: number):
   return result;
 }
 
-export function toEnrich(charstr: string, fromLanguage: InputLanguage = "zh-Hans"): boolean {
+export function isAlphabetic(lang: SystemLanguage): boolean {
+  return ["en"].includes(lang);
+}
+
+export function hasCharacters(lang: SystemLanguage): boolean {
+  return ["zh-Hans"].includes(lang);
+}
+
+export function isScriptioContinuo(lang: SystemLanguage): boolean {
+  return ["zh-Hans"].includes(lang);
+}
+
+export function needsLatinFont(lang: SystemLanguage): boolean {
+  return ["en"].includes(lang);
+}
+
+export function toEnrich(charstr: string, fromLang: InputLanguage): boolean {
   // TODO: find out why the results are different if these consts are global...
   // unicode cjk radicals, supplement and characters, see src/enrichers/zhhans/__init__.py for details
   const zhReg = /[\u2e80-\u2ef3\u2f00-\u2fd5\u4e00-\u9fff]+/gi;
-  // const enReg = /[[A-z]+/gi;
-  switch (fromLanguage) {
-    // case "en":
-    //   return enReg.test(charstr);
+  const enReg = /[[A-z]+/gi;
+  switch (fromLang) {
+    case "en":
+      // FIXME: this is not really correct, but it's a start
+      return enReg.test(charstr);
     case "zh-Hans":
       return zhReg.test(charstr);
   }

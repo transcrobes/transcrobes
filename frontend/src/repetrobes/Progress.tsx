@@ -1,5 +1,6 @@
 import { styled, Theme, useTheme } from "@mui/material";
 import { ReactElement } from "react";
+import { useTranslate } from "react-admin";
 import { RepetrobesActivityConfigType } from "../lib/types";
 
 interface StyleProps {
@@ -45,13 +46,21 @@ export default function Progress({
   const allRevisionsToday = revisionsToday + possibleRevisionsToday;
   const allNewToday = newToday + availableNewToday;
   const theme = useTheme();
+  const translate = useTranslate();
+  // New: ({completedNewToday}) {newToday} / {Math.min(allNewToday, activityConfig.maxNew)} ({availableNewToday}{" "}
+  // available)
+
   return (
     <div>
       <ProgressStyle
         colour={progressColour(theme, newToday, completedNewToday, Math.min(allNewToday, activityConfig.maxNew))}
       >
-        New: ({completedNewToday}) {newToday} / {Math.min(allNewToday, activityConfig.maxNew)} ({availableNewToday}{" "}
-        available)
+        {translate("screens.repetrobes.progress_new", {
+          completedNewToday,
+          newToday,
+          maxNew: Math.min(allNewToday, activityConfig.maxNew),
+          availableNewToday,
+        })}
       </ProgressStyle>
       <ProgressStyle
         colour={progressColour(
@@ -61,8 +70,12 @@ export default function Progress({
           Math.min(allRevisionsToday, activityConfig.maxRevisions),
         )}
       >
-        Revisions: ({completedRevisionsToday}) {revisionsToday} /{" "}
-        {Math.min(allRevisionsToday, activityConfig.maxRevisions)} ({allRevisionsToday} due)
+        {translate("screens.repetrobes.progress_revisions", {
+          completedRevisionsToday,
+          revisionsToday,
+          maxRevisions: Math.min(allRevisionsToday, activityConfig.maxRevisions),
+          allRevisionsToday,
+        })}
       </ProgressStyle>
     </div>
   );

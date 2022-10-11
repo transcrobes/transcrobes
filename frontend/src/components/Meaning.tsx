@@ -43,7 +43,7 @@ export default function Meaning({
   const { classes } = useStyles();
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const [anchorElClick, setAnchorElClick] = useState<HTMLElement | null>(null);
-  const fromLang = useAppSelector((state) => state.userData.user.fromLang);
+  const toLang = useAppSelector((state) => state.userData.user.toLang);
 
   function handleClickOpen(event: React.MouseEvent<HTMLElement, MouseEvent>) {
     setAnchorEl(null);
@@ -81,7 +81,7 @@ export default function Meaning({
             hasValidDefinitions = true;
             posTrans.push(
               <div key={"mean" + posTranslation.posTag}>
-                {toPosLabels(posTranslation.posTag, fromLang)}: {finalList.join(", ")}
+                {toPosLabels(posTranslation.posTag, toLang)}: {finalList.join(", ")}
               </div>,
             );
           }

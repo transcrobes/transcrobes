@@ -4,7 +4,7 @@ import DownloadIcon from "@mui/icons-material/GetApp";
 import jsonexport from "jsonexport/dist";
 import { Button, TopToolbar } from "ra-ui-materialui";
 import { ReactElement, useState } from "react";
-import { downloadCSV } from "react-admin";
+import { downloadCSV, useTranslate } from "react-admin";
 import HelpButton from "../components/HelpButton";
 import { Loading } from "../components/Loading";
 import { ServiceWorkerProxy } from "../lib/proxies";
@@ -19,7 +19,7 @@ const DATA_SOURCE = "Exports.tsx";
 const useStyles = makeStyles()((theme) => ({
   exportType: { margin: theme.spacing(1), justifyContent: "space-between", display: "inline-flex", width: "100%" },
   header: { margin: theme.spacing(1), alignContent: "center" },
-  toolbar: { alignItems: "center" },
+  toolbar: { alignItems: "center", maxHeight: "64px" },
 }));
 
 const jsonexportPromise = (wordStats: any) => {
@@ -35,6 +35,7 @@ export default function Exports({ proxy }: Props): ReactElement {
   const { classes } = useStyles();
   const helpUrl = `//${DOCS_DOMAIN}/page/software/configure/exports/`;
   const [loading, setLoading] = useState(false);
+  const translate = useTranslate();
 
   async function runCardsExport() {
     setLoading(true);
@@ -83,40 +84,41 @@ export default function Exports({ proxy }: Props): ReactElement {
       </TopToolbar>
       <Container maxWidth="sm">
         <Typography className={classes.header} variant="h4">
-          Data Exports
+          {translate("screens.exports.title")}
         </Typography>
         <hr />
         {loading && <Loading show />}
         <div className={classes.exportType}>
-          <div>Export per word activity data</div>
+          <div>{translate("screens.exports.per_word_activity")}</div>
+
           <Button
             disabled={!proxy.loaded || loading}
             onClick={runWordExport}
             children={<DownloadIcon />}
             variant="text"
-            label={"Download"}
+            label={translate("buttons.general.download")}
           />
         </div>
         <hr />
         <div className={classes.exportType}>
-          <div>Export per day activity data</div>
+          <div>{translate("screens.exports.per_day_activity")}</div>
           <Button
             disabled={!proxy.loaded || loading}
             onClick={runDayExport}
             children={<DownloadIcon />}
             variant="text"
-            label={"Download"}
+            label={translate("buttons.general.download")}
           />
         </div>
         <hr />
         <div className={classes.exportType}>
-          <div>Export all Repetrobes card data</div>
+          <div>{translate("screens.exports.all_card_data")}</div>
           <Button
             disabled={!proxy.loaded || loading}
             onClick={runCardsExport}
             children={<DownloadIcon />}
             variant="text"
-            label={"Download"}
+            label={translate("buttons.general.download")}
           />
         </div>
       </Container>

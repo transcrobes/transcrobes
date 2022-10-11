@@ -35,4 +35,5 @@ const extensionReaderSlice = createGenericSlice({
   },
 });
 export const extensionReaderActions = extensionReaderSlice.actions;
+export type ExtensionReaderActions = typeof extensionReaderActions;
 export default extensionReaderSlice.reducer;
