@@ -61,13 +61,27 @@ export default defineConfig({
       process: "rollup-plugin-node-polyfills/polyfills/process-es6",
     },
   },
-
+  optimizeDeps: {
+    esbuildOptions: {
+      // Node.js global to browser globalThis
+      define: {
+        global: "globalThis",
+      },
+    },
+  },
+  server: {
+    // port: 5000,
+    host: "0.0.0.0",
+    hmr: {
+      port: 5555,
+    },
+  },
   plugins: [
     svgr(),
     // react({ jsxRuntime: "classic" }),
     react(),
     // @ts-ignore
     replace(replaceOptions),
-    crx({ manifest: manifest }),
+    crx({ manifest }),
   ],
 });
