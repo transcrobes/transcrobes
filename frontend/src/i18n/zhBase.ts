@@ -170,6 +170,9 @@ const chineseMessages: TranslationMessages = {
     configurable: {
       customize: "自定义",
       configureMode: "配置模式",
+      Datagrid: {
+        unlabeled: "未标记列 #%{column}",
+      },
       inspector: {
         title: "监工",
         content: "悬停应用程序 UI 元素以配置它们",
