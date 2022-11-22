@@ -71,6 +71,8 @@ export function enrichETFElements(
     }
     const etf = document.createElement("span");
     etf.id = id;
+    // FIXME: hardcoded style
+    etf.style.cssText = "padding-left: 0.25em;";
     elements[i].replaceWith(etf);
     readObserver.observe(etf);
 

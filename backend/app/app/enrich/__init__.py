@@ -659,6 +659,6 @@ async def enrich_plain_to_html(unique_key, start_text, manager: EnrichmentManage
             template_string = f"<enriched-text-fragment id='{timestamp}'>{text}</enriched-text-fragment>"
             slim_models[timestamp] = parsed_slim_model
 
-        lines += f"<br>{template_string}" if (lines and text.startswith("-")) else template_string + "&nbsp;"
+        lines += f"<br>{template_string}" if (lines and text.startswith("-")) else template_string  # + "&nbsp;"
 
     return unique_key, lines, slim_models
