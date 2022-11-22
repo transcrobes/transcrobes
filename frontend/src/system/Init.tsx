@@ -11,7 +11,6 @@ import Loading from "../components/Loading";
 import { isInitialisedAsync, setInitialisedAsync } from "../database/authdb";
 import { setLoading } from "../features/ui/uiSlice";
 import { AbstractWorkerProxy, ProgressCallbackMessage } from "../lib/proxies";
-import { DOCS_DOMAIN } from "../lib/types";
 
 const noSleep = new NoSleep();
 
@@ -20,23 +19,16 @@ const useStyles = makeStyles()({
   button: { margin: "1em" },
 });
 
-const helpUrl = `//${DOCS_DOMAIN}`;
 function Intro() {
   const translate = useTranslate();
   return (
     <>
-      <p>
-        <Typography variant="h4">{translate("screens.extension.initialisation.title")}</Typography>
-      </p>
-      <p>
-        <Typography>{translate("screens.initialisation.intro_a")}</Typography>
-      </p>
-      <p>
-        <Typography>{translate("screens.initialisation.intro_b")}</Typography>
-      </p>
-      <p>
-        <Typography>{translate("screens.initialisation.intro_c")}</Typography>
-      </p>
+      <Typography sx={{ paddingBottom: "1em" }} variant="h4">
+        {translate("screens.extension.initialisation.title")}
+      </Typography>
+      <Typography sx={{ paddingBottom: "1em" }}>{translate("screens.initialisation.intro_a")}</Typography>
+      <Typography sx={{ paddingBottom: "1em" }}>{translate("screens.initialisation.intro_b")}</Typography>
+      <Typography sx={{ paddingBottom: "1em" }}>{translate("screens.initialisation.intro_c")}</Typography>
     </>
   );
 }

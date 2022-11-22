@@ -1,4 +1,5 @@
-import { Typography } from "@mui/material";
+import { SelectChangeEvent, Typography } from "@mui/material";
+import { useState } from "react";
 import {
   Datagrid,
   FunctionField,
@@ -10,23 +11,26 @@ import {
   TopToolbar,
   useTranslate,
 } from "react-admin";
+import { useAppSelector } from "../app/hooks";
+import { ContentStatsAccuracyField } from "../components/ContentStatsAccuracyField";
+import { ContentStatsField } from "../components/ContentStatsField";
+import ContentValueField from "../components/ContentValueField";
 import HelpButton from "../components/HelpButton";
 import { ListEmpty } from "../components/ListEmpty";
 import { ProcessingField } from "../components/ProcessingField";
-import { CONTENT_TYPE, DOCS_DOMAIN, IS_DEV, reverseEnum } from "../lib/types";
+import { CONTENT_TYPE, DOCS_DOMAIN } from "../lib/types";
 import ActionButton from "./ActionButton";
 import CacheSwitch from "./CacheSwitch";
-import { ContentStatsField } from "../components/ContentStatsField";
-import { ContentStatsAccuracyField } from "../components/ContentStatsAccuracyField";
-import { useAppSelector } from "../app/hooks";
+import { ContentGoalSelector } from "./ContentGoalSelector";
 
-function ListActions({ empty }: { empty?: boolean }) {
+function ListActions({ empty, onGoalChange }: { empty?: boolean; onGoalChange?: (event: SelectChangeEvent) => void }) {
   return (
     <TopToolbar
       sx={{
-        maxHeight: "64px",
+        maxHeight: "125px",
       }}
     >
+      <ContentGoalSelector showResult={false} onChange={onGoalChange} />
       {!empty && <SortButton fields={["createdAt", "title", "processing"]} />}
       <HelpButton url={`//${DOCS_DOMAIN}/page/software/configure/contents/`} />
     </TopToolbar>
@@ -44,7 +48,7 @@ function EmtpyList() {
         }}
         variant="body1"
       >
-        <Link to="/imports">Imported content</Link> will appear here.
+        <Link to="/imports">{translate("resources.contents.emptyLink")}</Link>
       </Typography>
     </ListEmpty>
   );
@@ -53,11 +57,16 @@ function EmtpyList() {
 export default function ContentList() {
   const user = useAppSelector((state) => state.userData);
   const translate = useTranslate();
+  const [userListId, setUserListId] = useState<string | undefined>(undefined);
+
+  function onGoalChange(event: SelectChangeEvent) {
+    setUserListId(event.target.value);
+  }
   return (
     <List
       queryOptions={{ refetchInterval: 5000 }}
       empty={<EmtpyList />}
-      actions={<ListActions />}
+      actions={<ListActions onGoalChange={onGoalChange} />}
       sort={{ field: "createdAt", order: "DESC" }}
     >
       <Datagrid rowClick="show">
@@ -72,6 +81,7 @@ export default function ContentList() {
         />
         <ContentStatsField label={translate("resources.contents.contentStats")} />
         {user.showResearchDetails && <ContentStatsAccuracyField label="Accuracy" />}
+        {userListId && <ContentValueField label={translate("resources.contents.value")} userlistId={userListId} />}
         <ActionButton label={translate("resources.contents.action")} />
         <CacheSwitch label={translate("resources.contents.offline")} />
       </Datagrid>

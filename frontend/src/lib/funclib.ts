@@ -346,6 +346,12 @@ export function throttleAction(action: any, wait: number, options: any) {
 
   return thunk;
 }
+export function toPercent(yesValue: number, noValue: number) {
+  return Number(yesValue / (yesValue + noValue)).toLocaleString(undefined, {
+    style: "percent",
+    minimumFractionDigits: 2,
+  });
+}
 
 export function originalSentenceFromTokens(tokens: TokenType[]): string {
   // currently just use

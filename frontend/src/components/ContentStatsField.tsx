@@ -1,6 +1,6 @@
 import { useTheme } from "@mui/system";
 import { useEffect, useState } from "react";
-import { useRecordContext } from "react-admin";
+import { useRecordContext, useTranslate } from "react-admin";
 import { useAppSelector } from "../app/hooks";
 import { CalculatedContentStats, noop } from "../lib/types";
 import ContentAnalysis from "./ContentAnalysis";
@@ -9,6 +9,7 @@ const DATA_SOURCE = "ContentStatsField";
 
 export function ContentStatsField({ label }: { label?: string }) {
   const record = useRecordContext();
+  const translate = useTranslate();
   const fromLang = useAppSelector((state) => state.userData.user.fromLang);
   let importId = "";
   if (Object.hasOwn(record, "theImport")) {
@@ -76,6 +77,6 @@ export function ContentStatsField({ label }: { label?: string }) {
       colour={colour || ""}
     />
   ) : (
-    <></>
+    <>{translate("resources.contents.loading")}</>
   );
 }

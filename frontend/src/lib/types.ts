@@ -1256,6 +1256,17 @@ export type AnalysisAccuracy = {
   knownNotFoundWords: PythonCounter;
 };
 
+export type CalculatedContentValueStats = {
+  unknownFoundWordsTotalTypes: number;
+  unknownNotFoundWordsTotalTypes: number;
+  knownFoundWordsTotalTypes: number;
+  knownNotFoundWordsTotalTypes: number;
+  unknownFoundWordsTotalTokens: number;
+  unknownNotFoundWordsTotalTokens: number;
+  knownFoundWordsTotalTokens: number;
+  knownNotFoundWordsTotalTokens: number;
+};
+
 export interface CalculatedContentStats {
   fromLang: InputLanguage;
   knownChars: number;

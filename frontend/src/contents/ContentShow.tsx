@@ -1,3 +1,5 @@
+import { FormControl, FormHelperText, InputLabel, MenuItem, Select, SelectChangeEvent } from "@mui/material";
+import { Box } from "@mui/system";
 import { useEffect, useState } from "react";
 import {
   BooleanField,
@@ -10,13 +12,15 @@ import {
   useTranslate,
 } from "react-admin";
 import { useParams } from "react-router-dom";
+import { useAppSelector } from "../app/hooks";
+import ContentValueField from "../components/ContentValueField";
+import { DocumentProgress } from "../components/DocumentProgress";
 import { HelpShowActions } from "../components/HelpShowActions";
 import { ProcessingField } from "../components/ProcessingField";
-import { DocumentProgress } from "../components/DocumentProgress";
-import { Content, CONTENT_TYPE, DOCS_DOMAIN, ImportFirstSuccessStats, reverseEnum } from "../lib/types";
+import { Content, CONTENT_TYPE, DOCS_DOMAIN, ImportFirstSuccessStats, reverseEnum, Goal } from "../lib/types";
 import ActionButton from "./ActionButton";
 import CacheSwitch from "./CacheSwitch";
-import { useAppSelector } from "../app/hooks";
+import { ContentGoalSelector } from "./ContentGoalSelector";
 
 const DATA_SOURCE = "ContentShow.tsx";
 
@@ -40,30 +44,34 @@ export default function ContentShow() {
       })();
     }
   }, [data, window.componentsConfig.proxy.loaded]);
+
   return (
-    <Show actions={<HelpShowActions helpUrl={`//${DOCS_DOMAIN}/page/software/configure/contents/`} />}>
-      <SimpleShowLayout>
-        <TextField source="id" />
-        <TextField source="title" />
-        <TextField source="description" />
-        <ReferenceField source="theImport" reference="imports" link="show">
+    <Box>
+      <Show actions={<HelpShowActions helpUrl={`//${DOCS_DOMAIN}/page/software/configure/contents/`} />}>
+        <ContentGoalSelector showResult />
+        <SimpleShowLayout>
+          <TextField source="id" />
           <TextField source="title" />
-        </ReferenceField>
-        <ProcessingField label={translate("resources.contents.processingStatus")} />
-        <FunctionField
-          source="contentType"
-          render={(record: Content) => reverseEnum(CONTENT_TYPE, record.contentType)}
-        />
-        <TextField source="author" />
-        <TextField source="cover" />
-        <TextField source="lang" />
-        <BooleanField source="shared" />
-        <ActionButton label={translate("resources.contents.action")} />
-        <CacheSwitch label={translate("resources.contents.offline")} />
-        <hr />
-        <h3>{translate("resources.contents.progress")}</h3>
-        <DocumentProgress stats={stats} />
-      </SimpleShowLayout>
-    </Show>
+          <TextField source="description" />
+          <ReferenceField source="theImport" reference="imports" link="show">
+            <TextField source="title" />
+          </ReferenceField>
+          <ProcessingField label={translate("resources.contents.processingStatus")} />
+          <FunctionField
+            source="contentType"
+            render={(record: Content) => reverseEnum(CONTENT_TYPE, record.contentType)}
+          />
+          <TextField source="author" />
+          <TextField source="cover" />
+          <TextField source="lang" />
+          <BooleanField source="shared" />
+          <ActionButton label={translate("resources.contents.action")} />
+          <CacheSwitch label={translate("resources.contents.offline")} />
+          <hr />
+          <h3>{translate("resources.contents.progress")}</h3>
+          <DocumentProgress stats={stats} />
+        </SimpleShowLayout>
+      </Show>
+    </Box>
   );
 }

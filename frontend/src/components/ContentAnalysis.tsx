@@ -16,6 +16,7 @@ import { TransitionProps } from "@mui/material/transitions";
 import { Box } from "@mui/system";
 import * as React from "react";
 import { useTranslate } from "react-admin";
+import { hasCharacters } from "../lib/funclib";
 import { CalculatedContentStats, DOCS_DOMAIN } from "../lib/types";
 import HelpButton from "./HelpButton";
 
@@ -62,14 +63,14 @@ export default function ContentAnalysis(props: Props) {
     const wordTypes = props.knownWordsTypes / props.wordsTypes || 0;
     const charTokens = props.knownChars / props.chars || 0;
     const wordTokens = props.knownWords / props.words || 0;
-    if (props.fromLang === "en") {
-      return `${(wordTypes * 100).toFixed()}:${(wordTokens * 100).toFixed()}:${
-        props.meanSentenceLength ? props.meanSentenceLength.toFixed() : "?"
-      }`;
-    } else {
+    if (hasCharacters(props.fromLang)) {
       return `${(charTypes * 100).toFixed()}:${(wordTypes * 100).toFixed()}:${(charTokens * 100).toFixed()}:${(
         wordTokens * 100
       ).toFixed()}:${props.meanSentenceLength ? props.meanSentenceLength.toFixed() : "?"}`;
+    } else {
+      return `${(wordTypes * 100).toFixed()}:${(wordTokens * 100).toFixed()}:${
+        props.meanSentenceLength ? props.meanSentenceLength.toFixed() : "?"
+      }`;
     }
   }
   return (
@@ -146,7 +147,7 @@ export default function ContentAnalysis(props: Props) {
                 </TableRow>
               </TableBody>
               <TableBody>
-                {props.fromLang === "zh-Hans" && (
+                {hasCharacters(props.fromLang) && (
                   <TableRow sx={{ "&:last-child td, &:last-child th": { border: 0 } }}>
                     <TableCell component="th" scope="row">
                       {translate("widgets.content_analysis.number_of_characters")}
@@ -185,7 +186,7 @@ export default function ContentAnalysis(props: Props) {
                 </TableRow>
               </TableBody>
               <TableBody>
-                {props.fromLang === "zh-Hans" && (
+                {hasCharacters(props.fromLang) && (
                   <TableRow sx={{ "&:last-child td, &:last-child th": { border: 0 } }}>
                     <TableCell component="th" scope="row">
                       {translate("widgets.content_analysis.number_of_characters")}

@@ -336,20 +336,12 @@ export function manageEvent(sw: ServiceWorkerGlobalScope, event: ExtendableMessa
         );
       });
       break;
-
     case "getContentStatsForImport":
-      loadDb(message, sw).then(([ldb, msg]) => {
-        getLocalCardWords(message, sw).then((dayCW) => {
-          data.getContentStatsForImport(ldb, msg.value, dayCW).then((result) => {
-            postIt(event, { source: msg.source, type: msg.type, value: result });
-          });
-        });
-      });
-      break;
     case "getContentAccuracyStatsForImport":
+    case "getImportUtilityStatsForList":
       loadDb(message, sw).then(([ldb, msg]) => {
         getLocalCardWords(message, sw).then((dayCW) => {
-          data.getContentAccuracyStatsForImport(ldb, msg.value, dayCW).then((result) => {
+          data[message.type](ldb, msg.value, dayCW).then((result) => {
             postIt(event, { source: msg.source, type: msg.type, value: result });
           });
         });

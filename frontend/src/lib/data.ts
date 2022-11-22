@@ -20,7 +20,7 @@ import {
   TranscrobesDatabase,
   TranscrobesDocumentTypes,
 } from "../database/Schema";
-import { DBParameters, RxDBDataProviderParams } from "../ra-data-rxdb";
+import { DBParameters } from "../ra-data-rxdb";
 import {
   cleanSentence,
   configIsUsable,
@@ -36,6 +36,7 @@ import { practice } from "./review";
 import {
   ActionEvent,
   CalculatedContentStats,
+  CalculatedContentValueStats,
   CardType,
   CharacterType,
   ContentConfigType,
@@ -62,7 +63,6 @@ import {
   SerialisableStringSet,
   ShortChar,
   ShortWord,
-  SystemLanguage,
   UserDefinitionType,
   UserListWordType,
   VocabReview,
@@ -196,6 +196,72 @@ async function getGraphs(db: TranscrobesDatabase, wordIds: string[]): Promise<Ma
     graphs.set(def.id, def.graph);
   }
   return graphs;
+}
+
+export async function getImportUtilityStatsForList(
+  db: TranscrobesDatabase,
+  { importId, userlistId, fromLang }: { importId: string; userlistId: string; fromLang: InputLanguage },
+  cardWords: SerialisableDayCardWords,
+): Promise<CalculatedContentValueStats | null> {
+  const theImport = (await db.imports.findByIds([importId])).get(importId);
+  if (!theImport?.analysis || theImport.analysis.length === 0) return null;
+  const analysis: ImportAnalysis = JSON.parse(theImport.analysis);
+  const wordlist = (await db.wordlists.findByIds([userlistId])).get(userlistId)?.wordIds;
+  const defs = new Set<string>();
+  for (const def of (await db.definitions.findByIds(wordlist || [])).values()) {
+    defs.add(def.graph);
+  }
+  const buckets = cleanAnalysis(analysis, fromLang);
+
+  const foundWords: PythonCounter = {};
+  const notFoundWords: PythonCounter = {};
+  const knownFoundWords: PythonCounter = {};
+  const knownNotFoundWords: PythonCounter = {};
+
+  let unknownFoundWordsTotalTokens: number = 0;
+  let unknownNotFoundWordsTotalTokens: number = 0;
+  let knownFoundWordsTotalTokens: number = 0;
+  let knownNotFoundWordsTotalTokens: number = 0;
+
+  for (const [nbOccurences, words] of Object.entries(buckets)) {
+    for (const word of words) {
+      if (defs.has(word)) {
+        if (word in cardWords.knownCardWordGraphs) {
+          knownFoundWords[word] = parseInt(nbOccurences);
+          knownFoundWordsTotalTokens += parseInt(nbOccurences);
+        } else {
+          foundWords[word] = parseInt(nbOccurences);
+          unknownFoundWordsTotalTokens += parseInt(nbOccurences);
+        }
+      } else {
+        if (word in cardWords.knownCardWordGraphs) {
+          knownNotFoundWords[word] = parseInt(nbOccurences);
+          knownNotFoundWordsTotalTokens += parseInt(nbOccurences);
+        } else {
+          notFoundWords[word] = parseInt(nbOccurences);
+          unknownNotFoundWordsTotalTokens += parseInt(nbOccurences);
+        }
+      }
+    }
+  }
+  const knownWordsTotalTypes = Object.keys(knownFoundWords || {}).length + Object.keys(knownNotFoundWords || {}).length;
+  const unknownTotalTypes = Object.keys(foundWords || {}).length + Object.keys(notFoundWords || {}).length;
+
+  const foundWordsTotalTypes = Object.keys(knownFoundWords || {}).length + Object.keys(foundWords || {}).length;
+  const notFoundWordsTotalTypes =
+    Object.keys(knownNotFoundWords || {}).length + Object.keys(notFoundWords || {}).length;
+
+  return {
+    unknownFoundWordsTotalTypes: Object.keys(foundWords || {}).length,
+    unknownNotFoundWordsTotalTypes: Object.keys(notFoundWords || {}).length,
+    knownFoundWordsTotalTypes: Object.keys(knownFoundWords || {}).length,
+    knownNotFoundWordsTotalTypes: Object.keys(knownNotFoundWords || {}).length,
+
+    unknownFoundWordsTotalTokens,
+    unknownNotFoundWordsTotalTokens,
+    knownFoundWordsTotalTokens,
+    knownNotFoundWordsTotalTokens,
+  };
 }
 
 export async function getContentAccuracyStatsForImport(
@@ -554,7 +620,7 @@ export async function saveSurvey(
 
 export async function getWordListWordIds(db: TranscrobesDatabase, wordListId: string): Promise<string[]> {
   const wordList = await db.wordlists.findByIds([wordListId]);
-  return wordList.has(wordListId) ? wordList.get(wordListId)!.wordIds : [];
+  return wordList.get(wordListId)?.wordIds || [];
 }
 
 export async function getDefaultWordLists(db: TranscrobesDatabase): Promise<SelectableListElementType[]> {
