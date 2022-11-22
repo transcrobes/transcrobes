@@ -92,6 +92,7 @@ CORENLP_EN_IGNORABLE_POS = {
     ":",
     "``",
     "LS",
+    "ADD",
     "SYM",
     "HYPH",
     "NFP",
