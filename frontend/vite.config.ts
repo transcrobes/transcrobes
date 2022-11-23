@@ -47,8 +47,8 @@ const replaceOptions: RollupReplaceOptions = {
   __FAKE_HASH__: fakeHash,
   preventAssignment: true,
 };
-const claims = process.env.CLAIMS === "true";
-const reload = process.env.RELOAD_SW === "true";
+const claims = true; // process.env.CLAIMS === "true";
+const reload = true; // process.env.RELOAD_SW === "true";
 const selfDestroying = process.env.SW_DESTROY === "true";
 
 if (process.env.SW === "true") {

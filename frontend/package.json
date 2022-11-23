@@ -114,7 +114,7 @@
   "devDependencies": {
     "@crxjs/vite-plugin": "^2.0.0-beta.6",
     "@rollup/plugin-replace": "^5.0.0",
-    "@types/chrome": "^0.0.202",
+    "@types/chrome": "^0.0.203",
     "@types/d3-array": "^3.0.3",
     "@types/debounce": "^1.2.1",
     "@types/draft-js": "^0.11.9",
