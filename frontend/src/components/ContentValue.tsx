@@ -75,6 +75,7 @@ export default function ContentValue(props: Props) {
   return (
     <>
       <Box
+        title={translate("widgets.content_value_analysis.help_title")}
         style={{
           zIndex: 1000,
         }}

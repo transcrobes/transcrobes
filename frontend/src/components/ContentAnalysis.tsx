@@ -78,6 +78,7 @@ export default function ContentAnalysis(props: Props) {
   return (
     <>
       <Box
+        title={translate("widgets.content_analysis.help_title")}
         style={{
           zIndex: 1000,
           borderRadius: props.boxRadii,

@@ -104,6 +104,7 @@ const customEnglishMessages: TranslationMessages = {
     },
     content_value_analysis: {
       title: "Personalised value analysis",
+      help_title: "Show personalised analysis of the learning value of the content for the selected goal",
       header_items: "Items",
       header_unknown_total: "Unknown / Total",
       header_ratio: "Ratio",
@@ -116,6 +117,7 @@ const customEnglishMessages: TranslationMessages = {
     },
     content_analysis: {
       title: "Personalised analysis",
+      help_title: "Show personalised analysis of known and unknown words in the content",
       header_items: "Items",
       header_known_total: "Known / Total",
       header_ratio: "Ratio",
