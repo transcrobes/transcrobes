@@ -1,11 +1,16 @@
-import { makeStyles } from "tss-react/mui";
 import { ReactElement, useEffect, useState } from "react";
+import { makeStyles } from "tss-react/mui";
 import useResizeObserver from "use-resize-observer";
 import { useAppSelector } from "../../../app/hooks";
 import { getPopoverText, positionPopup } from "../../../lib/componentMethods";
-import { originalSentenceFromTokens } from "../../../lib/funclib";
+import { originalSentenceFromTokens, say } from "../../../lib/funclib";
 import { platformHelper } from "../../../lib/proxies";
-import { POPOVER_MIN_LOOKED_AT_EVENT_DURATION, PopupPosition, ReaderState } from "../../../lib/types";
+import {
+  POPOVER_MIN_LOOKED_AT_EVENT_DURATION,
+  POPOVER_MIN_LOOKED_AT_SOUND_DURATION,
+  PopupPosition,
+  ReaderState,
+} from "../../../lib/types";
 
 const useStyles = makeStyles()((theme) => ({
   popover: {
@@ -83,6 +88,13 @@ export default function Mouseover({ readerConfig }: Props): ReactElement {
             });
             setTimeoutId(0);
           }, POPOVER_MIN_LOOKED_AT_EVENT_DURATION),
+        );
+        setTimeoutId(
+          window.setTimeout(() => {
+            if (readerConfig.sayOnMouseover) {
+              say(mouseover.token.w || mouseover.token.l, fromLang);
+            }
+          }, POPOVER_MIN_LOOKED_AT_SOUND_DURATION),
         );
       });
     } else {

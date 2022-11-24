@@ -10,7 +10,7 @@ import FivePercentFineControl from "../../components/FivePercentFineControl";
 import FontColour from "../../components/FontColour";
 import { needsLatinFont } from "../../lib/funclib";
 import FontSelector from "./FontSelector";
-import { ContentConfigProps } from "./ReaderConfig";
+import { ContentConfigProps } from "./ContentConfig";
 
 function latinFontButtons(buttonClassName: string) {
   return [

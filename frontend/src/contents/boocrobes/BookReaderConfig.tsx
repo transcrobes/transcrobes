@@ -7,7 +7,7 @@ import Conftainer from "../../components/Conftainer";
 import FivePercentFineControl from "../../components/FivePercentFineControl";
 import { bookReaderActions } from "../../features/content/bookReaderSlice";
 import { ContentParams, DEFAULT_BOOK_READER_CONFIG_STATE } from "../../lib/types";
-import ReaderConfig from "../common/ReaderConfig";
+import ReaderConfig from "../common/ContentConfig";
 
 const useStyles = makeStyles()((theme) => {
   return {

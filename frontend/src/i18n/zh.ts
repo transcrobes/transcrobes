@@ -182,6 +182,11 @@ const customChineseMessages: TranslationMessages = {
         none: "无",
         display_mouseover: "显示鼠标悬停",
       },
+      say_on_mouseover: {
+        title: "鼠标悬停时说",
+        none: "无",
+        say: "鼠标悬停时说",
+      },
       recent_phrases: {
         title: "收集最近的短语",
         on: "开",

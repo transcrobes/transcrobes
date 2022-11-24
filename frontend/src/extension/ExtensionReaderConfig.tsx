@@ -3,7 +3,7 @@ import React, { ReactElement } from "react";
 import { useTranslate } from "react-admin";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
 import Conftainer from "../components/Conftainer";
-import ReaderConfig from "../contents/common/ReaderConfig";
+import ReaderConfig from "../contents/common/ContentConfig";
 import { extensionReaderActions } from "../features/content/extensionReaderSlice";
 import { changeTheme } from "../features/themes/themeReducer";
 import { setAndSaveUser } from "../features/user/userSlice";

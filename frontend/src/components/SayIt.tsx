@@ -4,14 +4,15 @@ import { useEffect, useState } from "react";
 import { useTranslate } from "react-admin";
 import { useAppSelector } from "../app/hooks";
 import { getVoices, say } from "../lib/funclib";
-import { SystemLanguage, SYSTEM_LANG_TO_LOCALE } from "../lib/types";
+import { LOCALES, SystemLanguage, SYSTEM_LANG_TO_LOCALE } from "../lib/types";
 
 type Props = {
   graph: string;
   lang: SystemLanguage;
+  sound?: string;
 };
 
-export default function SayIt({ graph, lang }: Props) {
+export default function SayIt({ graph, sound, lang }: Props) {
   const [voice, setVoice] = useState<SpeechSynthesisVoice | undefined>(undefined);
   const fromLang = useAppSelector((state) => state.userData.user.fromLang);
   const translate = useTranslate();
@@ -31,13 +32,20 @@ export default function SayIt({ graph, lang }: Props) {
     <Box
       title={
         !voice
-          ? translate("general.voice_not_available", { language: fromLang })
-          : translate("general.voice_available", { language: fromLang })
+          ? translate("general.voice_not_available", { language: LOCALES.filter((x) => x.locale === fromLang)[0].name })
+          : translate("general.voice_available", { language: LOCALES.filter((x) => x.locale === fromLang)[0].name })
       }
       sx={{ marginLeft: ".5em" }}
     >
-      <Button disabled={!voice} onClick={() => say(graph, lang, voice)} variant="contained" color="primary">
-        {translate("buttons.general.say_it")}
+      <Button
+        style={sound ? { textTransform: "none", padding: "0" } : {}}
+        disabled={!voice}
+        onClick={() => say(graph, lang, voice)}
+        size="small"
+        variant="outlined"
+        color="primary"
+      >
+        {sound || translate("buttons.general.say_it")}
       </Button>
     </Box>
   );

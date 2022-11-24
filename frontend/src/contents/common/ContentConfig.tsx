@@ -244,6 +244,25 @@ export default function ContentConfig({
           </ToggleButton>
         </ToggleButtonGroup>
       </Conftainer>
+      {readerConfig.mouseover ? (
+        <Conftainer label={translate("widgets.reader_config.say_on_mouseover.title")} id="mouseover">
+          <ToggleButtonGroup
+            className={classes.button || localClasses.button}
+            value={readerConfig.sayOnMouseover}
+            exclusive
+            onChange={(_: React.MouseEvent<HTMLElement>, value: boolean) => {
+              dispatch(actions.setSayOnMouseover({ id, value }));
+            }}
+          >
+            <ToggleButton className={classes.button || localClasses.button} value={false}>
+              {translate("widgets.reader_config.say_on_mouseover.none")}
+            </ToggleButton>
+            <ToggleButton className={classes.button || localClasses.button} value={true}>
+              {translate("widgets.reader_config.say_on_mouseover.say")}
+            </ToggleButton>
+          </ToggleButtonGroup>
+        </Conftainer>
+      ) : null}
       <Conftainer label={translate("widgets.reader_config.recent_phrases.title")} id="collectRecents">
         <ToggleButtonGroup
           className={classes.button || localClasses.button}

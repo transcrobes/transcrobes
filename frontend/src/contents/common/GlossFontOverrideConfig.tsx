@@ -5,7 +5,7 @@ import { useTranslate } from "react-admin";
 import { useAppDispatch } from "../../app/hooks";
 import Conftainer from "../../components/Conftainer";
 import { FontFamily } from "../../lib/types";
-import { ContentConfigProps } from "./ReaderConfig";
+import { ContentConfigProps } from "./ContentConfig";
 
 export default function GlossFontOverrideConfig({
   classes,

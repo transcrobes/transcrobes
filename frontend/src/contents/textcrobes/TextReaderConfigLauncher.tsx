@@ -4,7 +4,7 @@ import SettingsIcon from "@mui/icons-material/Settings";
 import { ReactElement, useState } from "react";
 import { Button, useTranslate } from "react-admin";
 import useWindowDimensions from "../../hooks/WindowDimensions";
-import ContentConfigDrawer, { ContentConfigProps } from "../common/ReaderConfig";
+import ReaderConfig, { ContentConfigProps } from "../common/ContentConfig";
 
 const useStyles = makeStyles()((theme) => ({
   button: {
@@ -45,7 +45,7 @@ export default function ContentConfigLauncher({ ...props }: ContentConfigProps):
       />
       <Drawer container={props.containerRef?.current} anchor="left" open={open} onClose={handleClose}>
         <Box sx={{ width: width }} role="presentation">
-          <ContentConfigDrawer containerRef={props.containerRef} {...props} />
+          <ReaderConfig containerRef={props.containerRef} {...props} />
         </Box>
       </Drawer>
     </>

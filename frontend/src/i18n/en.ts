@@ -195,6 +195,11 @@ const customEnglishMessages: TranslationMessages = {
         none: "None",
         display_mouseover: "Display mouseover",
       },
+      say_on_mouseover: {
+        title: "Say on mouseover",
+        none: "None",
+        say: "Say on mouseover",
+      },
       recent_phrases: {
         title: "Collect recent phrases",
         on: "On",

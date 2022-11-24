@@ -18,7 +18,7 @@ export const ADMIN_EMAILS = (import.meta.env.VITE_ADMIN_EMAILS || "admin@example
   .split(",")
   .map((x: string) => x.trim());
 
-export const LOCALES = [
+export const LOCALES: { locale: SystemLanguage; name: string }[] = [
   { locale: "en", name: "English" },
   { locale: "zh-Hans", name: "中文" },
 ];
@@ -96,6 +96,7 @@ export const PUSH_FILES_PROCESS_FREQ = IS_DEV ? 5000 : 30000; //milliseconds
 export const ONSCREEN_DELAY_IS_CONSIDERED_READ = 5000; // milliseconds
 export const IDEAL_GLOSS_STRING_LENGTH = 5; // pretty random but https://arxiv.org/pdf/1208.6109.pdf
 export const POPOVER_MIN_LOOKED_AT_EVENT_DURATION = 1500; // milliseconds
+export const POPOVER_MIN_LOOKED_AT_SOUND_DURATION = 750; // milliseconds
 
 export const MAX_IMPORT_SIZE_BYTES = 15000000;
 
@@ -622,6 +623,7 @@ export interface ReaderState {
   segmentation: boolean;
   collectRecents: boolean;
   mouseover: boolean;
+  sayOnMouseover: boolean;
   clickable: boolean;
   translationProviderOrder: Record<string, number>;
   strictProviderOrdering: boolean;
@@ -658,6 +660,7 @@ export const DEFAULT_READER_CONFIG_STATE: ReaderState = {
   segmentation: true,
   collectRecents: true,
   mouseover: true,
+  sayOnMouseover: false,
   clickable: true,
   translationProviderOrder: Object.keys(BASE_DICT_PROVIDERS).reduce(
     (acc, next, ind) => ({ ...acc, [next]: ind }),

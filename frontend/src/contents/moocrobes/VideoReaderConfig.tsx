@@ -9,7 +9,7 @@ import FivePercentFineControl from "../../components/FivePercentFineControl";
 import { videoReaderActions } from "../../features/content/videoReaderSlice";
 import { isOnFullscreen } from "../../hooks/useFullscreen";
 import { ContentParams, DEFAULT_VIDEO_READER_CONFIG_STATE, SubPosition } from "../../lib/types";
-import ReaderConfig from "../common/ReaderConfig";
+import ReaderConfig from "../common/ContentConfig";
 import PlaybackRate from "./PlaybackRate";
 import SubDelay from "./SubDelay";
 import SubPlaybackRate from "./SubPlaybackRate";

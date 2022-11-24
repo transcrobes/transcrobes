@@ -129,6 +129,10 @@ export const createGenericSlice = <T extends ReaderState, Reducers extends Slice
         state[action.payload.id] = state[action.payload.id] || defaultValue;
         state[action.payload.id].mouseover = action.payload.value;
       },
+      setSayOnMouseover(state: GenericState<T>, action: PayloadAction<ContentConfigPayload<boolean>>) {
+        state[action.payload.id] = state[action.payload.id] || defaultValue;
+        state[action.payload.id].sayOnMouseover = action.payload.value;
+      },
       setStrictProviderOrdering(state: GenericState<T>, action: PayloadAction<ContentConfigPayload<boolean>>) {
         state[action.payload.id] = state[action.payload.id] || defaultValue;
         state[action.payload.id].strictProviderOrdering = action.payload.value;

@@ -8,6 +8,7 @@ import { TokenType } from "../../../lib/types";
 import CloseIcon from "@mui/icons-material/Close";
 import { setTokenDetails } from "../../../features/ui/uiSlice";
 import DiscoverableWord from "../../DiscoverableWord";
+import SayIt from "../../SayIt";
 
 type Props = {
   classes: ClassNameMap<"header" | "sound" | "best" | "icons" | "popupControls">;
@@ -21,6 +22,7 @@ export default function Header({ classes, token, bestGuess, extrasOpen, onToggle
   const [sound, setSound] = useState("");
   const definitions = useAppSelector((state) => state.definitions);
   const dispatch = useAppDispatch();
+  const fromLang = useAppSelector((state) => state.userData.user.fromLang);
 
   useEffect(() => {
     (async () => {
@@ -42,7 +44,7 @@ export default function Header({ classes, token, bestGuess, extrasOpen, onToggle
 
   return (
     <div className={classes.header}>
-      <div className={classes.sound}>{sound}</div>
+      <SayIt graph={token.w || token.l} sound={sound} lang={fromLang} />
       <div className={classes.best}>{bestGuess}</div>
       <DiscoverableWord graph={token.l} newTab />
       <div>
