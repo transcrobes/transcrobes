@@ -85,7 +85,7 @@ export default function ContentValue(props: Props) {
             zIndex: 1000,
             padding: "0px 6px 0px 6px",
             margin: 0,
-            minWidth: "120px",
+            minWidth: "70px",
           }}
           onClick={handleClickOpen}
         >

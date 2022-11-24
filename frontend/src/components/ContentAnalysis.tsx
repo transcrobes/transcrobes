@@ -16,6 +16,7 @@ import { TransitionProps } from "@mui/material/transitions";
 import { Box } from "@mui/system";
 import * as React from "react";
 import { useTranslate } from "react-admin";
+import { useAppSelector } from "../app/hooks";
 import { hasCharacters } from "../lib/funclib";
 import { CalculatedContentStats, DOCS_DOMAIN } from "../lib/types";
 import HelpButton from "./HelpButton";
@@ -46,6 +47,7 @@ export default function ContentAnalysis(props: Props) {
   const helpUrl = `//${DOCS_DOMAIN}/page/software/learn/content-stats/`;
   const [open, setOpen] = React.useState(false);
   const translate = useTranslate();
+  const fromLang = useAppSelector((state) => state.userData.user.fromLang);
   function handleClickOpen(event: React.MouseEvent<HTMLButtonElement>) {
     event.stopPropagation();
     setOpen(true);
@@ -89,7 +91,7 @@ export default function ContentAnalysis(props: Props) {
             borderRadius: props.leftButtonRadii,
             padding: "0px 6px 0px 6px",
             margin: 0,
-            minWidth: "120px",
+            minWidth: hasCharacters(fromLang) ? "120px" : "70px",
           }}
           onClick={handleClickOpen}
         >
