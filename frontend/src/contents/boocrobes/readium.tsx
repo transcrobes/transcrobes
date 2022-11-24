@@ -18,8 +18,6 @@ declare global {
   }
 }
 
-console.log("Running readium.tsx");
-
 const MAX_TOKENS_FOR_PRE_ENRICHMENT = 30000;
 
 const proxy = window.parent.componentsConfig.proxy;
@@ -45,7 +43,6 @@ store.dispatch(setLoading(true));
 // this can't be done with a hook, so just doing it like this
 jss.setup(preset());
 const sheet = jss.createStyleSheet(ETFStyles, { link: true }).attach();
-const wtf = { ...readerConfig, scriptioContinuo: isScriptioContinuo(user.fromLang) };
 sheet.update({ ...readerConfig, scriptioContinuo: isScriptioContinuo(user.fromLang) }).classes;
 
 const classes = sheet.classes;

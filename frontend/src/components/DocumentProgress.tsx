@@ -6,7 +6,7 @@ import { useTranslate } from "react-admin";
 import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
 import { useAppSelector } from "../app/hooks";
 import useWindowDimensions from "../hooks/WindowDimensions";
-import { binnedData } from "../lib/funclib";
+import { binnedData, hasCharacters } from "../lib/funclib";
 import { dateRange } from "../lib/libMethods";
 import { ImportFirstSuccessStats } from "../lib/types";
 
@@ -80,7 +80,7 @@ export function DocumentProgress({ stats }: { stats?: ImportFirstSuccessStats | 
           {stats && stats.nbTotalWords !== stats.nbUniqueWords && (
             <Line type="monotone" dataKey="wordTokens" stroke={yellow} />
           )}
-          {fromLang === "zh-Hans" && (
+          {hasCharacters(fromLang) && (
             <>
               <Line type="monotone" dataKey="charTypes" stroke={green} />
               <Line type="monotone" dataKey="charTokens" stroke={pink} />
@@ -105,7 +105,7 @@ export function DocumentProgress({ stats }: { stats?: ImportFirstSuccessStats | 
                 <td>{stats.nbTotalWords}</td>
               </tr>
             )}
-            {fromLang === "zh-Hans" && (
+            {hasCharacters(fromLang) && (
               <>
                 <tr>
                   <td>

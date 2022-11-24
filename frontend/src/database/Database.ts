@@ -171,6 +171,7 @@ async function cacheExports(
     console.error(error);
     throw new Error(error);
   }
+  // FIXME: hardcoding... this will need to be changed when we add more languages
   if (user.fromLang === "zh-Hans") {
     try {
       // Add the hanzi character database urls

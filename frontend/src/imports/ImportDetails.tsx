@@ -1,6 +1,7 @@
 import { ReactElement } from "react";
 import { useRecordContext, useTranslate } from "react-admin";
 import { useAppSelector } from "../app/hooks";
+import { hasCharacters } from "../lib/funclib";
 import { Import, ImportAnalysis } from "../lib/types";
 
 export default function ImportDetails(): ReactElement {
@@ -25,7 +26,7 @@ export default function ImportDetails(): ReactElement {
 
   return (
     <table>
-      {fromLang === "zh-Hans" && (
+      {hasCharacters(fromLang) && (
         <>
           <tr>
             <td>{translate("stats.content_progress.chars_types")}</td>
