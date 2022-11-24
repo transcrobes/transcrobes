@@ -48,7 +48,7 @@ function EmtpyList() {
         }}
         variant="body1"
       >
-        <Link to="/imports">{translate("resources.contents.emptyLink")}</Link>
+        <Link to="/imports">{translate("resources.contents.empty_list")}</Link>
       </Typography>
     </ListEmpty>
   );

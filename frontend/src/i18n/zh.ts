@@ -400,7 +400,7 @@ const customChineseMessages: TranslationMessages = {
       processingStatus: "处理状态",
       action: "动作",
       offline: "离线？",
-      emptyList: "导入的内容会出现在这里",
+      empty_list: "导入的内容会出现在这里",
       goals: "目标",
       no_goal: "没有任何",
       goal_selector: "显示目标的预期内容效用",

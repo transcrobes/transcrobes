@@ -400,7 +400,7 @@ const customEnglishMessages: TranslationMessages = {
       value: "Vocab Value",
       action: "Action",
       offline: "Offline?",
-      emptyList: "Imported content will appear here.",
+      empty_list: "Imported content will appear here.",
       goals: "Goals",
       no_goal: "None",
       goal_selector: "Show expected content utility for Goal",
