@@ -21,6 +21,5 @@ createRoot(document.getElementById("root")!).render(
         <App config={window.componentsConfig} />
       </CacheProvider>
     </Provider>
-    ,
   </StrictMode>,
 );
