@@ -22,8 +22,9 @@ export default function ACreate() {
     <Create
       mutationOptions={{ onSuccess: onSuccess }}
       actions={<HelpCreateActions helpUrl={`//${DOCS_DOMAIN}/page/software/configure/userdictionaries/`} />}
+      redirect="list"
     >
-      <SimpleForm redirect="list">
+      <SimpleForm>
         <TextInput source="title" validate={[required()]} />
         <TextInput multiline source="description" />
       </SimpleForm>

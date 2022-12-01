@@ -4,8 +4,11 @@ import { DOCS_DOMAIN } from "../lib/types";
 
 export default function AEdit() {
   return (
-    <Edit actions={<HelpEditActions helpUrl={`//${DOCS_DOMAIN}/page/software/configure/userdictionaries/`} />}>
-      <SimpleForm redirect="list">
+    <Edit
+      redirect="list"
+      actions={<HelpEditActions helpUrl={`//${DOCS_DOMAIN}/page/software/configure/userdictionaries/`} />}
+    >
+      <SimpleForm>
         <TextField source="id" sx={{ paddingBottom: "1em" }} />
         <TextInput source="title" validate={[required()]} />
         <TextInput multiline source="description" />

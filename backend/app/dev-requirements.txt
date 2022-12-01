@@ -200,9 +200,9 @@ attrs==22.1.0 \
     --hash=sha256:29adc2665447e5191d0e7c568fde78b21f9672d344281d0c6e1ab085429b22b6 \
     --hash=sha256:86efa402f67bf2df34f51a335487cf46b1ec130d02b8d39fd248abfd30da551c
     # via aiohttp, pytest
-autoflake==1.7.7 \
-    --hash=sha256:a9b43d08f8e455824e4f7b3f078399f59ba538ba53872f466c09e55c827773ef \
-    --hash=sha256:c8e4fc41aa3eae0f5c94b939e3a3d50923d7a9306786a6cbf4866a077b8f6832
+autoflake==2.0.0 \
+    --hash=sha256:7185b596e70d8970c6d4106c112ef41921e472bd26abf3613db99eca88cc8c2a \
+    --hash=sha256:d58ed4187c6b4f623a942b9a90c43ff84bf6a266f3682f407b42ca52073c9678
     # via transcrobes (pyproject.toml)
 bcrypt==4.0.1 \
     --hash=sha256:089098effa1bc35dc055366740a067a2fc76987e8ec75349eb9484061c54f535 \
@@ -453,24 +453,27 @@ exceptiongroup==1.0.4 \
     --hash=sha256:542adf9dea4055530d6e1279602fa5cb11dab2395fa650b8674eaec35fc4a828 \
     --hash=sha256:bd14967b79cd9bdb54d97323216f8fdf533e278df937aa2a90089e7d6e06e5ec
     # via pytest
-fastapi==0.87.0 \
-    --hash=sha256:07032e53df9a57165047b4f38731c38bdcc3be5493220471015e2b4b51b486a4 \
-    --hash=sha256:254453a2e22f64e2a1b4e1d8baf67d239e55b6c8165c079d25746a5220c81bb4
+fastapi==0.88.0 \
+    --hash=sha256:263b718bb384422fe3d042ffc9a0c8dece5e034ab6586ff034f6b4b1667c3eee \
+    --hash=sha256:915bf304180a0e7c5605ec81097b7d4cd8826ff87a02bb198e336fb9f3b5ff02
     # via transcrobes (pyproject.toml)
-faust-streaming==0.9.5 \
-    --hash=sha256:328e47d10e37a3ab0e00c498d9c0be0fe9f2a8325fb0e981c09c1555b8011e9e \
-    --hash=sha256:4e5dea6ac9ebc9d897743f66555bc13b99bae8194fb44631bcb0cef17b166519 \
-    --hash=sha256:629669cf2f465bfc67cf33b3fd6f820a7fdb6924be4ff6a124b979aea572bc2b \
-    --hash=sha256:7bba71526af1f7c03fbea43f113b2f9be5b92d72493d1e3dd03071a3114f203c \
-    --hash=sha256:8e752a697c6d8d421eaa72e87277b8c27a5a092e873704a2ff70f5125bfa43e1 \
-    --hash=sha256:a8ff659235053664ac24583d8f5a7c78abc9a15ce61b73646c0d0644eefc13f2 \
-    --hash=sha256:b01289c85bd1707d5b88b870b5ff278aafa3074c701653742467651cade19092 \
-    --hash=sha256:b07806a6b6a39e62c1bf33598f73f99af1364db5b4745d0325b0bed35c030c5d \
-    --hash=sha256:b7a54507bd9ee1fa515ce109b265898decacc79f07ca46d45ac3255535f0b519 \
-    --hash=sha256:ca4459432a4fe2a90a6aee9ed4cb427ff74205504425e575009bac229e0aa595 \
-    --hash=sha256:d2443f1ad78f2a32abb80b6a4ebabaaca397002b68098a7cf35d663c760a3edf \
-    --hash=sha256:d9261802867be17564ee7f564ee8d1be3e4b9092279051e68abdbaf89e70263a \
-    --hash=sha256:eb4495aab25c47ac323bd0ee2cbaef9ba0699d36986e6868ca575075fccc31c1
+faust-streaming==0.10.0 \
+    --hash=sha256:0434d52af7484c3759f7d89bcbeadae067ded98a1574082ef57b6c6a3a9757e3 \
+    --hash=sha256:0d8457947d421cadb6bf7ef725043f54b5782cc9b71a05020dc6df6cdcb85bf4 \
+    --hash=sha256:0faa77f59aa7ec3c709b0d3965254b6f39bff96c29dcdf3bb0b4ebac40c7e953 \
+    --hash=sha256:1fb48c573dd926f1f7b6413233b73d772405340f395e1cb12a20d15c1a00a6d7 \
+    --hash=sha256:3711fbc01db154acf52a84ba0f99e750bec8dd91ea6311f189aaf2a08decc2dc \
+    --hash=sha256:45209b3fce370c9d905d8126cf5e2cad653964f08f1bc512bb75c2f89b57c024 \
+    --hash=sha256:525acdf99822b3c68a42713cf7df697680b515222b61028a39309f830a322bfa \
+    --hash=sha256:590869912321c676d3a6760b348d801d8f390f0ab5fe60e7091ede64106e767d \
+    --hash=sha256:68cbd6bd52fcf29c2ef85eb2eeb36d692a6dddfe4030ed3635208b28fd60d3ae \
+    --hash=sha256:765095541d7d97dc1d1f1e2ece1e535a34fff459a2006c1b05a06467ca119325 \
+    --hash=sha256:8527ce0cc3578f93f53ebbe50c7c39ab6d9808a8b68c85ff723389ebd5d95e30 \
+    --hash=sha256:90bcbcdfcc10717df4adb7d2cc17cf66044d5f6ca0166b0dccded94dbec612af \
+    --hash=sha256:c649a2a58e3983f4b9c34d4ba1dac168f7f0d49be4711781641d18a6a68e180f \
+    --hash=sha256:d0ffa01a5fbb6c375b6fc8e6f4136d32127f02838e8128a2fae0985785b9207d \
+    --hash=sha256:ecbfd1de7a49fd295a4dd606a3592bf90a28c70f33a720682391d6886b947df2 \
+    --hash=sha256:f6907433ea1b184c974949cc433d86b0f61cf9fc10b523408d9b5e79e7201887
     # via transcrobes (pyproject.toml)
 filelock==3.8.0 \
     --hash=sha256:55447caa666f2198c5b6b13a26d2084d26fa5b115c00d065664b2124680c4edc \
@@ -633,9 +636,9 @@ html5lib==1.1 \
     --hash=sha256:0d78f8fde1c230e99fe37986a60526d7049ed4bf8a9fadbad5f00e22e58e041d \
     --hash=sha256:b2e5b40261e20f354d198eae92afc10d750afb487ed5e50f9c4eaf07c184146f
     # via textile
-httpcore==0.16.1 \
-    --hash=sha256:3d3143ff5e1656a5740ea2f0c167e8e9d48c5a9bbd7f00ad1f8cff5711b08543 \
-    --hash=sha256:8d393db683cc8e35cc6ecb02577c5e1abfedde52b38316d038932a84b4875ecb
+httpcore==0.16.2 \
+    --hash=sha256:52c79095197178856724541e845f2db86d5f1527640d9254b5b8f6f6cebfdee6 \
+    --hash=sha256:c35c5176dc82db732acfd90b581a3062c999a72305df30c0fc8fafd8e4aca068
     # via httpx
 httptools==0.5.0 \
     --hash=sha256:0297822cea9f90a38df29f48e40b42ac3d48a28637368f3ec6d15eebefd182f9 \
@@ -889,9 +892,9 @@ mmh3==3.0.0 \
     --hash=sha256:f1cce018cc82a8a6287e6aeb139e441129837b810f2ddf372e3ff7f0fefb0947 \
     --hash=sha256:ff69ddc2d46e3e42720840b6b4f7bfb032fd1e677fac347fdfff6e4d9fd01212
     # via transcrobes (pyproject.toml)
-mode-streaming==0.2.1 \
-    --hash=sha256:4f32747f555db8fcc596c2da5c774b0311691f71d83d988d32c2641fb099077f \
-    --hash=sha256:ec15f1fdb0c79d6618763a84cbd753e5164070313077ff8833bffddab7ee4d85
+mode-streaming==0.3.2 \
+    --hash=sha256:46934a46178973b12d24918829540bade884563271c55828b6871ef6012a1fd5 \
+    --hash=sha256:fc8cb23c537c562e243e67c96c0622d60ec3baf2feb5d8383b9fdbb7cc8a4b7d
     # via faust-streaming
 multidict==6.0.2 \
     --hash=sha256:0327292e745a880459ef71be14e709aaea2f783f3537588fb4ed09b6c01bca60 \
@@ -1209,9 +1212,9 @@ pydantic==1.10.2 \
     --hash=sha256:e0bedafe4bc165ad0a56ac0bd7695df25c50f76961da29c050712596cf092d6d \
     --hash=sha256:e9069e1b01525a96e6ff49e25876d90d5a563bc31c658289a8772ae186552236
     # via fastapi, transcrobes (pyproject.toml)
-pyflakes==3.0.0 \
-    --hash=sha256:12da339341ba8b9071e185d4717bef732fdb4f4400b9f4a1d0d6bbc362bf7760 \
-    --hash=sha256:e38cbaa285564388a9622d7e440445d40c508d8fbf96e0c0f3ef28e47d8ba8a2
+pyflakes==3.0.1 \
+    --hash=sha256:ec55bf7fe21fff7f1ad2f7da62363d749e2a470500eab1b555334b67aa1ef8cf \
+    --hash=sha256:ec8b276a6b60bd80defed25add7e439881c19e64850afd9b346283d4165fd0fd
     # via autoflake
 pygithub==1.57 \
     --hash=sha256:5822febeac2391f1306c55a99af2bc8f86c8bf82ded000030cd02c18f31b731f \
@@ -1225,9 +1228,9 @@ pyjwt==2.6.0 \
     --hash=sha256:69285c7e31fc44f68a1feb309e948e0df53259d579295e6cfe2b1792329f05fd \
     --hash=sha256:d83c3d892a77bbb74d3e1a2cfa90afaadb60945205d1095d9221f04466f64c14
     # via pygithub
-pylint==2.15.6 \
-    --hash=sha256:15060cc22ed6830a4049cf40bc24977744df2e554d38da1b2657591de5bcd052 \
-    --hash=sha256:25b13ddcf5af7d112cf96935e21806c1da60e676f952efb650130f2a4483421c
+pylint==2.15.7 \
+    --hash=sha256:1d561d1d3e8be9dd880edc685162fbdaa0409c88b9b7400873c0cf345602e326 \
+    --hash=sha256:91e4776dbcb4b4d921a3e4b6fec669551107ba11f29d9199154a01622e460a57
     # via transcrobes (pyproject.toml)
 pymemcache==4.0.0 \
     --hash=sha256:27bf9bd1bbc1e20f83633208620d56de50f14185055e49504f4f5e94e94aff94 \
@@ -1495,13 +1498,13 @@ sqlalchemy2-stubs==0.0.2a29 \
     --hash=sha256:1bbc6aebd76db7c0351a9f45cc1c4e8ac335ba150094c2af091e8b87b9118419 \
     --hash=sha256:ece266cdabf3797b13ddddba27561b67ae7dedc038942bf66e045e978a5e3a66
     # via sqlalchemy
-starlette==0.21.0 \
-    --hash=sha256:0efc058261bbcddeca93cad577efd36d0c8a317e44376bcfc0e097a2b3dc24a7 \
-    --hash=sha256:b1b52305ee8f7cfc48cde383496f7c11ab897cd7112b33d998b1317dc8ef9027
+starlette==0.22.0 \
+    --hash=sha256:b092cbc365bea34dd6840b42861bdabb2f507f8671e642e8272d2442e08ea4ff \
+    --hash=sha256:b5eda991ad5f0ee5d8ce4c4540202a573bb6691ecd0c712262d0bc85cf8f2c50
     # via fastapi
-strawberry-graphql==0.142.2 \
-    --hash=sha256:1436844d1f2a18aed27d8d4b6ab5eea2497c1cf58cd9671cf39a97df151037e4 \
-    --hash=sha256:e8f723973b203a47e3f0126c151a03994d366a21ffea2e227c44ccfc8b0a3478
+strawberry-graphql==0.142.3 \
+    --hash=sha256:3631b45a655ecc2767b5ed9e4286cce018ba8edea065b00b4ff49cd883620a3b \
+    --hash=sha256:41a6b57b602b37445f10e202ae6ebd1f513ef6f48190d9917ca0f9c846bb6871
     # via transcrobes (pyproject.toml)
 tenacity==8.1.0 \
     --hash=sha256:35525cd47f82830069f0d6b73f7eb83bc5b73ee2fff0437952cedf98b27653ac \
@@ -1579,9 +1582,9 @@ venusian==3.0.0 \
     --hash=sha256:06e7385786ad3a15c70740b2af8d30dfb063a946a851dcb4159f9e2a2302578f \
     --hash=sha256:f6842b7242b1039c0c28f6feef29016e7e7dd3caaeb476a193acf737db31ee38
     # via faust-streaming
-virtualenv==20.16.7 \
-    --hash=sha256:8691e3ff9387f743e00f6bb20f70121f5e4f596cae754531f2b3b3a1b1ac696e \
-    --hash=sha256:efd66b00386fdb7dbe4822d172303f40cd05e50e01740b19ea42425cbe653e29
+virtualenv==20.17.0 \
+    --hash=sha256:40a7e06a98728fd5769e1af6fd1a706005b4bb7e16176a272ed4292473180389 \
+    --hash=sha256:7d6a8d55b2f73b617f684ee40fd85740f062e1f2e379412cb1879c7136f05902
     # via pre-commit
 watchfiles==0.18.1 \
     --hash=sha256:00ea0081eca5e8e695cffbc3a726bb90da77f4e3f78ce29b86f0d95db4e70ef7 \
@@ -1813,7 +1816,7 @@ zhon==1.1.5 \
     # via transcrobes (pyproject.toml)
 
 # The following packages are considered to be unsafe in a requirements file:
-setuptools==65.6.2 \
-    --hash=sha256:41fa68ecac9e099122990d7437bc10683b966c32a591caa2824dffcffd5dea7a \
-    --hash=sha256:97a4a824325146ebc8dc29b0aa5f3b1eaa590a0f00cacbfdf81831670f07862d
+setuptools==65.6.3 \
+    --hash=sha256:57f6f22bde4e042978bcd50176fdb381d7c21a9efa4041202288d3737a0c6a54 \
+    --hash=sha256:a7620757bf984b58deaf32fc8a4577a9bbc0850cf92c20e1ce41c38c19e5fb75
     # via gunicorn, nodeenv

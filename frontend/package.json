@@ -47,7 +47,7 @@
     "@esbuild-plugins/node-modules-polyfill": "^0.1.4",
     "@hello-pangea/dnd": "^16.0.0",
     "@mui/x-date-pickers": "^5.0.4",
-    "@reduxjs/toolkit": "1.8.6",
+    "@reduxjs/toolkit": "^1.9.1",
     "@use-it/event-listener": "^0.1.7",
     "axios": "^1.1.2",
     "browserslist-useragent-regexp": "^4.0.0",
