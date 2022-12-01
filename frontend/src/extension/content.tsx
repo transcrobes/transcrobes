@@ -3,6 +3,7 @@ import { createComponentVNode, render } from "inferno";
 import { Provider as InfernoProvider } from "inferno-redux";
 import jss from "jss";
 import preset from "jss-preset-default";
+import Polyglot from "node-polyglot";
 import { I18nContextProvider } from "react-admin";
 import { createRoot } from "react-dom/client";
 import { Provider } from "react-redux";
@@ -21,7 +22,7 @@ import { setUser } from "../features/user/userSlice";
 import { popupDarkTheme, popupLightTheme } from "../layout/themes";
 import { ensureDefinitionsLoaded, refreshDictionaries } from "../lib/dictionary";
 import { isScriptioContinuo, missingWordIdsFromModels, toEnrich } from "../lib/funclib";
-import { enrichChildren, getI18nProvider } from "../lib/libMethods";
+import { enrichChildren, getI18nProvider, getMessages } from "../lib/libMethods";
 import { AbstractWorkerProxy, BackgroundWorkerProxy, setPlatformHelper } from "../lib/proxies";
 import { observerFunc } from "../lib/stats";
 import {
@@ -102,10 +103,19 @@ async function ensureAllLoaded(platformHelper: AbstractWorkerProxy, store: Admin
 
 proxy.sendMessagePromise<UserState>({ source: DATA_SOURCE, type: "getUser", value: "" }).then((userData) => {
   if (!userData.username || !userData.password || !userData.baseUrl) {
+    // FIXME: externalise this?
+    let language = "en";
+    for (const lang of navigator.languages) {
+      if (lang.startsWith("en")) {
+        break;
+      } else if (lang.startsWith("zh")) {
+        language = "zh-Hans";
+        break;
+      }
+    }
+    const polyglot = new Polyglot({ phrases: getMessages(language) });
     store.dispatch(setLoading(undefined));
-    alert(
-      `You need an account on a Transcrobes server to Transcrobe a page. \n\n If you have an account please fill in the options page (right-click on the Transcrobe Me! icon -> Extension Options) with your login information (username, password, server URL).\n\n See the Transcrobes site http://${DOCS_DOMAIN} for more information`,
-    );
+    alert(polyglot.t("screen.extension.missing_account", { docs_domain: DOCS_DOMAIN }));
     throw new Error("Unable to find the current username");
   }
   // FIXME: it is DANGEROUS to use this here, as the async thunks do get and set dexie!!!

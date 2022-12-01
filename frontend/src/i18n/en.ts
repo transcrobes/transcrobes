@@ -435,7 +435,7 @@ const customEnglishMessages: TranslationMessages = {
       name: "Brocrobes",
       text_a: `Brocrobes is a browser extension, compatible with Google Chrome, Microsoft Edge,
         and other Chromium-derived browsers for reading webpages.`,
-      text_b: "You can download Brocrobes on the Chrome Web Store",
+      text_b: "You can download Brocrobes on the Chrome Web Store or the Microsoft Edge Store",
       text_c: `Brocrobes brings the power of Transcrobes to every page on the web,
         giving you the same comfort you get inside this application everywhere.`,
       text_d: `The main browser vendors don't support extentions on mobile (yet?) but you *can* use the
@@ -485,6 +485,10 @@ const customEnglishMessages: TranslationMessages = {
           No harm should come if you stop the initialisation by navigating away or closing the browser.
           The initialisation will pick up where it left off when you return.`,
       },
+      missing_account: `You need an account on a Transcrobes server to Transcrobe a page. \n\n
+        If you have an account please fill in the options page (right-click on the Transcrobe Me! icon -> Extension Options)
+        with your login information (username, password, server URL).\n\n
+        See the Transcrobes site http://%{docs_domain} for more information`,
       popup_theme_mode: {
         title: "Popup Theme Mode",
         light_mode: "Light Mode",
@@ -531,7 +535,7 @@ const customEnglishMessages: TranslationMessages = {
         title: "Minimum recommended training complete",
         message: `Now you've told the system a little about yourself, you can start using the platform.
           If you still know lots of words, you can continue training now, or come back and finish later.
-          To start reading we recommend you try out the Chrome browser extension Brocrobes,
+          To start reading we recommend you try out the Chrome/Edge browser extension Brocrobes,
           or if you want to type or paste text, you can try out Textcrobes.`,
         continue_training: "Continue training?",
         try_brocrobes: "Try Brocrobes?",

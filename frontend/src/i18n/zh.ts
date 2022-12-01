@@ -472,6 +472,9 @@ const customChineseMessages: TranslationMessages = {
         started_message: `初始化完成时请耐心等待。 初始化将提供一些更新，但您不必担心，除非您在 5 分钟内没有看到任何更新。
           如果您通过导航离开或关闭浏览器来停止初始化，则不会造成任何伤害。 初始化将在您返回时从中断处继续。`,
       },
+      missing_account: `您需要 Transcrobes 服务器上的帐户才能转译页面。 \n\n
+          如果您有帐户，请使用您的登录信息（用户名、密码、服务器 URL）填写选项页面（右键单击 Transcrobe Me! 图标 -> 扩展选项）。\n\n
+          请参阅 Transcrobes 网站 http://%{docs_domain} 了解更多信息`,
       popup_theme_mode: {
         title: "弹出主题模式",
         light_mode: "灯光模式",
