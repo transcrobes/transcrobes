@@ -6,6 +6,7 @@
 export PGHOST=${PGHOST:-postgres}
 export PGPORT=${PGPORT:-5432}
 export PGUSER=${PGUSER:-postgres}
+export DATABASE=${PGDATABASE:-transcrobes}
 : ${PGPASSWORD:?"--password to a PostgreSQL container or server is not set"}
 
 export BACKUPS_DATABASE_PATH=${BACKUPS_DATABASE_PATH:-/opt/backups/data}
@@ -43,7 +44,7 @@ find $BACKUPS_DATABASE_PATH -name $OBSOLETE_FILES -type f -mtime "+$DAYS_TO_KEEP
 
 echo "Set backup file name to: $ARCHIVE with xz compression level $XZ_COMPRESSION_LEVEL"
 echo "Starting database backup..."
-pg_dump -c --dbname=transcrobes  > $ARCHIVE
+pg_dump -c --dbname=$DATABASE  > $ARCHIVE
 echo "Database backup dumped, compressing with 'xz -T4 -${XZ_COMPRESSION_LEVEL} -zf $ARCHIVE'"
 xz -T4 -${XZ_COMPRESSION_LEVEL} -zf "$ARCHIVE"
 echo "Archive $ARCHIVE compressed, moving to ${BACKUPS_DATABASE_PATH}/$ARCHIVE.xz"
@@ -57,6 +58,7 @@ export PGHOST=${STATS_PGHOST:-postgres}
 export PGPORT=${STATS_PGPORT:-5432}
 export PGUSER=${STATS_PGUSER:-postgres}
 export PGPASSWORD=${STATS_PGPASSWORD:-postgres}
+export DATABASE=${STATS_PGDATABASE:-transcrobes}
 
 DAILY_ARCHIVE="statsdb-archive-$(date +"%Y-%m-%d").sql"
 
@@ -78,7 +80,7 @@ find $BACKUPS_DATABASE_PATH -name $OBSOLETE_FILES -type f -mtime "+$DAYS_TO_KEEP
 
 echo "Set backup file name to: $ARCHIVE with xz compression level $XZ_COMPRESSION_LEVEL"
 echo "Starting database backup..."
-pg_dump -c --dbname=transcrobes  > $ARCHIVE
+pg_dump -c --dbname=$DATABASE  > $ARCHIVE
 echo "Database backup dumped, compressing with 'xz -T4 -${XZ_COMPRESSION_LEVEL} -zf $ARCHIVE'"
 xz -T4 -${XZ_COMPRESSION_LEVEL} -zf "$ARCHIVE"
 echo "Archive $ARCHIVE compressed, moving to ${BACKUPS_DATABASE_PATH}/$ARCHIVE.xz"
