@@ -168,17 +168,25 @@ const chineseMessages: TranslationMessages = {
       help: "保存过滤器和排序条件",
     },
     configurable: {
+      SimpleForm: {
+        title: "配置",
+        unlabeled: "未标记",
+      },
       customize: "自定义",
       configureMode: "配置模式",
       Datagrid: {
+        title: "数据表格",
         unlabeled: "未标记列 #%{column}",
       },
       inspector: {
+        hideAll: "隐藏全部",
+        showAll: "显示全部",
         title: "监工",
         content: "悬停应用程序 UI 元素以配置它们",
         reset: "重新设置",
       },
       SimpleList: {
+        title: "简单列表",
         primaryText: "主要文本",
         secondaryText: "次要文本",
         tertiaryText: "第三文本",
