@@ -26,3 +26,10 @@ def test_email(
 @router.get("/hello")
 async def hello():
     return {"message": "Cruel World"}
+
+
+@router.get("/authed")
+def authed(
+    current_user: schemas.TokenPayload = Depends(deps.get_current_good_tokenpayload),
+):
+    return {"exp": current_user.exp}

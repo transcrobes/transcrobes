@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import logging
 
+from app.api.api_v1.subs import publish_message
 from app.data.context import get_broadcast
 from app.db.session import engine
 from sqlalchemy import text
@@ -30,7 +31,7 @@ async def push_user_stats_update_to_clients(user_ids: list[str], channel: str) -
         logger.info(f"Sending {channel} updates to client for {user_ids=}")
         for user_id in user_ids:
             logger.debug(f"Sending {channel} update to client for {user_id=}")
-            await broadcast.publish(channel=channel, message=str(user_id))
+            await publish_message(channel, None, broadcast, user_id=str(user_id))
     except Exception:  # pylint: disable=W0703
         logger.exception(f"Failed to publish changes to {channel} for {user_ids=}")
         logger.error(broadcast)

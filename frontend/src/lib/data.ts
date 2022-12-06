@@ -39,6 +39,7 @@ import {
   CalculatedContentValueStats,
   CardType,
   CharacterType,
+  ClassRegistration,
   ContentConfigType,
   DailyReviewables,
   DayModelStatsType,
@@ -52,6 +53,7 @@ import {
   ImportFirstSuccessStats,
   InputLanguage,
   ListFirstSuccessStats,
+  Participants,
   PracticeDetailsType,
   PROCESSING,
   PythonCounter,
@@ -63,6 +65,8 @@ import {
   SerialisableStringSet,
   ShortChar,
   ShortWord,
+  StudentRegistrationType,
+  TeacherRegistrationType,
   UserDefinitionType,
   UserListWordType,
   VocabReview,
@@ -73,6 +77,10 @@ import {
 } from "./types";
 
 const IMPORT_FILE_STORAGE = "import_file_storage";
+
+export async function createRegistrationRequest(db: TranscrobesDatabase, fixme: string[]): Promise<[]> {
+  return [];
+}
 
 export function getNamedFileStorage(parameters: DBParameters): Promise<IDBFileStorage> {
   if (!parameters.username) {
@@ -98,6 +106,72 @@ export async function pushFiles(url: URL, username: string): Promise<{ status: "
     } else {
       console.error(result);
       throw new Error("There was an error pushing an import file");
+    }
+  }
+  return { status: "success" };
+}
+
+export async function enqueueRegistrations(
+  db: TranscrobesDatabase,
+  { registrations }: { registrations: ClassRegistration[] },
+): Promise<boolean> {
+  let uuid = UUID();
+  while (await db.requestqueue.findOne(uuid).exec()) {
+    console.debug(`looks like event ${uuid} already exists, looking for another`);
+    uuid = UUID();
+  }
+  await db.requestqueue.insert({
+    id: uuid.toString(),
+    type: "registration",
+    endpoint: "/api/v1/users/register_classes",
+    requestString: JSON.stringify(registrations),
+  });
+  return true;
+}
+
+export async function processRequestQueue(
+  db: TranscrobesDatabase,
+  url: URL,
+  maxRequests = 500,
+): Promise<{ status: string }> {
+  if (!db) {
+    return { status: "uninitialised" };
+  }
+
+  const allRequests = {};
+  const allRequestIds = {};
+  const allEntries = await db.requestqueue.find({ limit: maxRequests }).exec();
+
+  for (const request of allEntries) {
+    const requestObj = JSON.parse(request.requestString);
+    if (!allRequests[request.endpoint]) {
+      allRequests[request.endpoint] = [];
+      allRequestIds[request.endpoint] = [];
+    }
+    for (const arequest of Array.isArray(requestObj) ? requestObj : [requestObj]) {
+      console.log("arequest", arequest);
+      allRequests[request.endpoint].push(arequest);
+      allRequestIds[request.endpoint].push(request.id.toString());
+    }
+  }
+
+  if (!Object.keys(allEntries).length) {
+    return { status: "empty_queue" };
+  }
+  for (const [endpoint, requests] of Object.entries(allRequests)) {
+    const apiEndPoint = new URL(endpoint, url.origin).href;
+    console.log("sending requests", endpoint, apiEndPoint, requests);
+    const data = await fetchPlus(apiEndPoint, JSON.stringify(requests));
+    // db.requestqueue.bulkRemove(allRequestIds[endpoint]);
+    if (!data || !("successes" in data) || !("failures" in data)) {
+      throw new Error("user_event update failed due to return status incorrect!");
+    } else {
+      // FIXME: should we do something with the failures? Maybe add to a visible log?
+      if (data.failures.length) {
+        console.error("Failed to send requests", endpoint, requests, data.failures);
+      }
+      // remove from queue, but no need to wait
+      db.requestqueue.bulkRemove(allRequestIds[endpoint]);
     }
   }
   return { status: "success" };
@@ -1386,4 +1460,67 @@ export async function getAllUserDictionaryEntries(db: TranscrobesDatabase): Prom
     }
   }
   return allEntries;
+}
+
+export async function getLanguageClassParticipants(
+  db: TranscrobesDatabase,
+  { classId, className }: { classId: string; className?: string },
+): Promise<Participants> {
+  if (!className) {
+    const classDoc = (await db.languageclasses.findByIds([classId])).get(classId);
+    if (!classDoc) {
+      throw new Error(`Class ${classId} not found`);
+    }
+    className = classDoc.title;
+  }
+  const teacherregistrations = await db.teacherregistrations
+    .find({
+      selector: { classId: { $eq: classId } },
+    })
+    .exec();
+  const studentregistrations = await db.studentregistrations
+    .find({
+      selector: { classId: { $eq: classId } },
+    })
+    .exec();
+
+  const teacherIds = new Map<string, TeacherRegistrationType>();
+  const studentIds = new Map<string, StudentRegistrationType>();
+  for (const registration of teacherregistrations) {
+    teacherIds.set(registration.userId, registration);
+  }
+  for (const registration of studentregistrations) {
+    studentIds.set(registration.userId, registration);
+  }
+
+  const users = [...(await db.persons.findByIds([...teacherIds.keys(), ...studentIds.keys()])).values()];
+  const participants: Participants = {
+    students: [],
+    teachers: [],
+  };
+  for (const user of [...users]) {
+    if (teacherIds.has(user.id)) {
+      participants.teachers.push({
+        id: teacherIds.get(user.id)!.id,
+        className,
+        classId,
+        userId: user.id,
+        fullName: user.fullName,
+        email: user.email,
+        createdAt: teacherIds.get(user.id)!.createdAt || 0,
+      });
+    }
+    if (studentIds.has(user.id)) {
+      participants.students.push({
+        id: studentIds.get(user.id)!.id,
+        className,
+        classId,
+        userId: user.id,
+        fullName: user.fullName,
+        email: user.email,
+        createdAt: studentIds.get(user.id)!.createdAt || 0,
+      });
+    }
+  }
+  return participants;
 }

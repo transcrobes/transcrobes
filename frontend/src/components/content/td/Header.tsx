@@ -19,14 +19,15 @@ type Props = {
 };
 
 export default function Header({ classes, token, bestGuess, extrasOpen, onToggleExtras }: Props): ReactElement {
-  const [sound, setSound] = useState("");
+  const [sound, setSound] = useState([""]);
   const definitions = useAppSelector((state) => state.definitions);
   const dispatch = useAppDispatch();
   const fromLang = useAppSelector((state) => state.userData.user.fromLang);
 
   useEffect(() => {
     (async () => {
-      setSound((token.p && token.p.join("")) || (await getSound(token, definitions)));
+      console.log("token", token);
+      setSound((token.p && token.p) || (await getSound(token, definitions)));
     })();
   }, [token]);
 
@@ -46,7 +47,7 @@ export default function Header({ classes, token, bestGuess, extrasOpen, onToggle
     <div className={classes.header}>
       <SayIt graph={token.w || token.l} sound={sound} lang={fromLang} />
       <div className={classes.best}>{bestGuess}</div>
-      <DiscoverableWord graph={token.l} newTab />
+      <DiscoverableWord graph={token.l} sound={sound} newTab />
       <div>
         <IconButton sx={{ padding: "3px" }} onClick={toggleSentence} aria-label="Extras" size="large">
           {extrasOpen ? (

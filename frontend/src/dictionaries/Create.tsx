@@ -1,4 +1,4 @@
-import { Create, required, SimpleForm, TextInput, useNotify, useRedirect, useRefresh } from "react-admin";
+import { Create, required, SimpleForm, TextInput, useNotify, useRedirect, useRefresh, useTranslate } from "react-admin";
 import { store } from "../app/createStore";
 import { useAppSelector } from "../app/hooks";
 import { HelpCreateActions } from "../components/HelpCreateActions";
@@ -9,11 +9,12 @@ export default function ACreate() {
   const notify = useNotify();
   const refresh = useRefresh();
   const redirect = useRedirect();
+  const translate = useTranslate();
   const fromLang = useAppSelector((state) => state.userData.user.fromLang);
 
   function onSuccess({ data }: { data: UserDictionary }) {
     // TODO: Find out why this doesn't work...
-    notify(`Changes to dictionary "${data?.title}" saved`);
+    notify("resources.userdictionaries.changes_saved", { type: "success", messageArgs: { title: data.title } });
     redirect("/userdictionaries");
     refresh();
     refreshDictionaries(store, window.componentsConfig.proxy, fromLang);

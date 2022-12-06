@@ -8,7 +8,8 @@ import {
   useEditContext,
   useResourceDefinition,
 } from "react-admin";
-import { ExtendedActionProps } from "../lib/types";
+import { useAppSelector } from "../app/hooks";
+import { CommonRecord, ExtendedActionProps } from "../lib/types";
 import HelpButton from "./HelpButton";
 import WatchDemo from "./WatchDemo";
 
@@ -23,11 +24,14 @@ export const HelpShowActions = ({
 }: ShowActionsProps & ExtendedActionProps): ReactElement => {
   const { record } = useEditContext(rest);
   const { hasEdit, hasList, hasCreate } = useResourceDefinition();
-
+  const userId = useAppSelector((state) => state.userData.user.id);
   return (
     <TopToolbar className={className} {...sanitizeRestProps(rest)}>
       {hasCreate && <CreateButton />}
-      {hasEdit && <EditButton record={record} />}
+      {hasEdit &&
+        (!record || !(record as CommonRecord)?.created_by || userId === (record as CommonRecord).created_by) && (
+          <EditButton record={record} />
+        )}
       {hasList && <ListButton />}
       {ytUrl && <WatchDemo url={ytUrl} />}
       <HelpButton url={helpUrl} text={helpLabel} />

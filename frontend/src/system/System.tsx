@@ -1,8 +1,8 @@
-import { CardHeader, FormControlLabel, Switch, Typography } from "@mui/material";
+import { Box, CardHeader, FormControlLabel, Switch, Typography } from "@mui/material";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
-import { ReactElement, useState } from "react";
+import { ReactElement, useEffect, useState } from "react";
 import { Title, TopToolbar, useLocaleState, useTheme, useTranslate } from "react-admin";
 import { makeStyles } from "tss-react/mui";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
@@ -15,6 +15,7 @@ import { setAndSaveUser } from "../features/user/userSlice";
 import { darkTheme, lightTheme } from "../layout/themes";
 import { AbstractWorkerProxy } from "../lib/proxies";
 import { DOCS_DOMAIN, ThemeName } from "../lib/types";
+import { fetcher } from "../lib/fetcher";
 
 const useStyles = makeStyles()({
   label: { width: "10em", display: "inline-block" },
@@ -118,19 +119,26 @@ interface Props {
 }
 
 function System({ proxy }: Props): ReactElement {
+  const translate = useTranslate();
   const [message, setMessage] = useState("");
+  const [serverAvailableMessage, setServerAvailableMessage] = useState(translate("screens.system.waiting_for_server"));
   const [loading, setLoading] = useState(false);
   const { classes } = useStyles();
 
   const helpUrl = `//${DOCS_DOMAIN}/page/software/configure/system/`;
 
   const [locale, setLocale] = useLocaleState();
-  const translate = useTranslate();
   const themeName = useAppSelector((state) => state.theme);
   const user = useAppSelector((state) => state.userData);
 
   const [, setTheme] = useTheme();
   const dispatch = useAppDispatch();
+
+  function setTimedServerAvailableMessage(message: string): string {
+    const mes = message + " " + new Date().toLocaleTimeString();
+    setServerAvailableMessage(mes);
+    return mes;
+  }
 
   function handleUpdate(mode: ThemeName) {
     localStorage.setItem("mode", mode); // a bit hacky, probably better somewhere else
@@ -140,6 +148,40 @@ function System({ proxy }: Props): ReactElement {
   function handleShowResearchUpdate(show: boolean) {
     return dispatch(setAndSaveUser({ ...user, showResearchDetails: show }));
   }
+
+  useEffect(() => {
+    fetcher
+      .fetchPlus<{ exp?: string }>("/api/v1/utils/authed")
+      .then((manif) => {
+        if (manif.exp) {
+          console.log("Server ping success", manif, new Date(manif.exp || 0).toLocaleTimeString());
+          setTimedServerAvailableMessage(translate("screens.system.server_available"));
+        } else {
+          throw new Error(JSON.stringify(manif));
+        }
+      })
+      .catch((error) => {
+        console.log("Server ping error", error);
+        setTimedServerAvailableMessage(translate("screens.system.server_unavailable"));
+      });
+    const interval = setInterval(() => {
+      fetcher
+        .fetchPlus<{ exp?: string }>("/api/v1/utils/authed")
+        .then((manif) => {
+          if (manif.exp) {
+            console.log("Server ping success", manif, new Date(manif.exp || 0).toLocaleTimeString());
+            setTimedServerAvailableMessage(translate("screens.system.server_available"));
+          } else {
+            throw new Error(JSON.stringify(manif));
+          }
+        })
+        .catch((error) => {
+          console.log("Server ping error", error);
+          setTimedServerAvailableMessage(translate("screens.system.server_unavailable"));
+        });
+    }, 10000);
+    return () => clearInterval(interval);
+  }, []);
   return (
     <div>
       <TopToolbar className={classes.toolbar}>
@@ -217,6 +259,9 @@ function System({ proxy }: Props): ReactElement {
           >
             中文
           </Button>
+        </CardContent>
+        <CardContent>
+          <Box>{serverAvailableMessage}</Box>
         </CardContent>
       </Card>
     </div>

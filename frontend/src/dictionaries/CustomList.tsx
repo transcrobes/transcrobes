@@ -44,6 +44,7 @@ export default function CustomList(props: Props) {
     >
       <Pagination />
       <Datagrid
+        bulkActionButtons={false}
         rowStyle={() => {
           return { color: [props.rowColour, "!important"] || "inherit" };
         }}

@@ -18,8 +18,8 @@ from app.enrich import lang_prefix, latest_character_json_dir_path
 from app.enrich.data import managers
 from app.enrich.models import definitions
 from app.etypes import LANG_PAIR_SEPARATOR
+from app.models.data import CachedDefinition
 from app.models.lookups import BingApiLookup
-from app.models.migrated import CachedDefinition
 from app.models.user import AuthUser
 from github import Github
 from sqlalchemy.ext.asyncio.session import AsyncSession
@@ -113,7 +113,7 @@ async def regenerate_definitions_jsons_multi(  # pylint: disable=R0914
     fakelimit: int = 0, from_lang: str = "zh-Hans", to_lang: str = "en"
 ) -> bool:
     # FIXME: the DefinitionSet DEFINITELY shouldn't be in the graphql module...
-    from app.api.api_v1.graphql import DefinitionSet  # pylint: disable=C0415
+    from app.api.api_v1.graphql import Definitions  # pylint: disable=C0415
 
     # save a new file for each combination of providers
     logger.info("Generating definitions jsons")
@@ -137,7 +137,7 @@ async def regenerate_definitions_jsons_multi(  # pylint: disable=R0914
             result = await db.execute(stmt.limit(fakelimit)) if fakelimit > 0 else await db.execute(stmt)
 
             file_cached_definitions = result.scalars().all()
-            export = [DefinitionSet.from_model_asdict(ds, providers) for ds in file_cached_definitions]
+            export = [Definitions.from_model_asdict(ds, providers) for ds in file_cached_definitions]
             if len(export) == 0:  # don't create empty files
                 continue
             logger.info("Loaded all definitions for %s, flushing to files", providers)

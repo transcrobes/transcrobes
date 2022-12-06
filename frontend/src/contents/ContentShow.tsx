@@ -1,4 +1,3 @@
-import { FormControl, FormHelperText, InputLabel, MenuItem, Select, SelectChangeEvent } from "@mui/material";
 import { Box } from "@mui/system";
 import { useEffect, useState } from "react";
 import {
@@ -13,11 +12,10 @@ import {
 } from "react-admin";
 import { useParams } from "react-router-dom";
 import { useAppSelector } from "../app/hooks";
-import ContentValueField from "../components/ContentValueField";
 import { DocumentProgress } from "../components/DocumentProgress";
 import { HelpShowActions } from "../components/HelpShowActions";
 import { ProcessingField } from "../components/ProcessingField";
-import { Content, CONTENT_TYPE, DOCS_DOMAIN, ImportFirstSuccessStats, reverseEnum, Goal } from "../lib/types";
+import { Content, CONTENT_TYPE, DOCS_DOMAIN, ImportFirstSuccessStats, reverseEnum } from "../lib/types";
 import ActionButton from "./ActionButton";
 import CacheSwitch from "./CacheSwitch";
 import { ContentGoalSelector } from "./ContentGoalSelector";

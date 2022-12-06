@@ -10,6 +10,8 @@ import { SystemLanguage } from "../lib/types";
 
 type DbDataProvider = DataProvider & { db: () => Promise<TranscrobesDatabase> };
 
+type ClassParticipants = "students" | "teachers";
+
 export default function RxDBProvider(params: RxDBDataProviderParams): DbDataProvider {
   const parameters = params;
   let dbPromise: Promise<TranscrobesDatabase>;
@@ -55,10 +57,14 @@ export default function RxDBProvider(params: RxDBDataProviderParams): DbDataProv
 
       const db = await dbProm();
       const res = [...(await db[resource].find(finder).exec())];
-      const resTot = [...(await db[resource].find().exec())];
+      let resTot = res.length;
+      if (!params.meta || !params.meta?.filteredAsAll) {
+        resTot = [...(await db[resource].find().exec())].length;
+      }
+
       const resArr = res.map((val) => val.toJSON());
 
-      return { data: resArr, total: resTot.length };
+      return { data: resArr, total: resTot };
     },
     getOne: async (resource: TranscrobesCollectionsKeys, params: GetOneParams) => {
       const db = await dbProm();
@@ -120,6 +126,7 @@ export default function RxDBProvider(params: RxDBDataProviderParams): DbDataProv
           }
         }
       }
+      // @ts-ignore TS2590: Expression produces a union type that is too complex to represent.
       const res = await db[resource].insert(insert);
       return { data: res.toJSON() };
     },

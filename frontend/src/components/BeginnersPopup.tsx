@@ -36,6 +36,8 @@ export default function AlertDialog() {
 
   const show = useAppSelector((state) => {
     return (
+      !state.userData.user.isTeacher &&
+      !state.userData.user.isAdmin &&
       !state.ui.ignoreBeginner &&
       shouldRedirectBeginner(loc.pathname) &&
       state.knownCards.allCardWordGraphs !== undefined &&
@@ -54,42 +56,40 @@ export default function AlertDialog() {
     width: "100%",
   };
   return (
-    <div>
-      <Dialog open={show} aria-labelledby="alert-dialog-title" aria-describedby="alert-dialog-description">
-        <DialogTitle id="alert-dialog-title">{translate("widgets.beginners.title")}</DialogTitle>
-        <DialogContent>
-          <DialogContentText id="alert-dialog-description">{translate("widgets.beginners.intro")}</DialogContentText>
-        </DialogContent>
-        <Box
-          sx={{
-            display: "flex",
-          }}
+    <Dialog open={show} aria-labelledby="alert-dialog-title" aria-describedby="alert-dialog-description">
+      <DialogTitle id="alert-dialog-title">{translate("widgets.beginners.title")}</DialogTitle>
+      <DialogContent>
+        <DialogContentText id="alert-dialog-description">{translate("widgets.beginners.intro")}</DialogContentText>
+      </DialogContent>
+      <Box
+        sx={{
+          display: "flex",
+        }}
+      >
+        <Button
+          color="success"
+          size="large"
+          sx={buttonSx}
+          variant="contained"
+          onClick={() => handleRedirect("listrobes")}
+          autoFocus
         >
-          <Button
-            color="success"
-            size="large"
-            sx={buttonSx}
-            variant="contained"
-            onClick={() => handleRedirect("listrobes")}
-            autoFocus
-          >
-            {translate("widgets.beginners.button_interface")}
-          </Button>
-          <Button size="large" sx={buttonSx} variant="contained" onClick={() => handleRedirect("imports")}>
-            {translate("widgets.beginners.button_import")}
-          </Button>
-        </Box>
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "flex-end",
-          }}
-        >
-          <Button size="small" onClick={handleIgnore}>
-            {translate("widgets.beginners.button_later")}
-          </Button>
-        </Box>
-      </Dialog>
-    </div>
+          {translate("widgets.beginners.button_interface")}
+        </Button>
+        <Button size="large" sx={buttonSx} variant="contained" onClick={() => handleRedirect("imports")}>
+          {translate("widgets.beginners.button_import")}
+        </Button>
+      </Box>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "flex-end",
+        }}
+      >
+        <Button size="small" onClick={handleIgnore}>
+          {translate("widgets.beginners.button_later")}
+        </Button>
+      </Box>
+    </Dialog>
   );
 }

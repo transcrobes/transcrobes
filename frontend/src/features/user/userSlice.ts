@@ -18,6 +18,7 @@ function userFromApiResult(result: any, username: string): UserDetails {
     username,
     id: token_data.id,
     isAdmin: token_data.is_superuser,
+    isTeacher: token_data.is_teacher,
     accessToken: result.access_token,
     refreshToken: result.refresh_token,
     trackingKey: token_data.tracking_key,

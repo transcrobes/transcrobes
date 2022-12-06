@@ -21,6 +21,17 @@ import {
   TokenType,
 } from "./types";
 
+const TONES = { "\u0304": 1, "\u0301": 2, "\u030c": 3, "\u0300": 4 };
+
+// Stolen from the Hanping anki deck colours
+const TONE_COLOURS = {
+  1: "dodgerblue",
+  2: "forestgreen",
+  3: "darkorange",
+  4: "crimson",
+  5: "grey",
+};
+
 const typeSizes = {
   undefined: () => 0,
   boolean: () => 4,
@@ -32,6 +43,21 @@ const typeSizes = {
 
 export function sizeOf(value: any) {
   return (typeSizes as any)[typeof value](value);
+}
+
+export function toneColour(pinyin: string) {
+  const [tone] = findTone(pinyin);
+  return TONE_COLOURS[tone];
+}
+
+export function findTone(pinyin: string) {
+  const n = pinyin.normalize("NFD");
+  for (let i = 0; i < n.length; i++) {
+    if (TONES[n[i]]) {
+      return [TONES[n[i]], i - 1];
+    }
+  }
+  return [5, -1];
 }
 
 export function convertArrayToObject(array: any[], key: any) {

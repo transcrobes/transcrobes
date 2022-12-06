@@ -1,6 +1,14 @@
+import uuid
 from typing import Optional
 
 from pydantic import BaseModel, EmailStr
+
+
+# Class registration
+class UserRegistration(BaseModel):
+    email: EmailStr
+    class_id: uuid.UUID
+    is_teacher: Optional[bool] = False
 
 
 # Shared properties
@@ -9,6 +17,7 @@ class UserBase(BaseModel):
     username: Optional[str] = None
     is_active: Optional[bool] = True
     is_verified: Optional[bool] = False
+    is_teacher: Optional[bool] = False
     is_superuser: bool = False
     full_name: Optional[str] = None
 

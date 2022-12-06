@@ -39,7 +39,7 @@ function ListActions({ empty, onGoalChange }: { empty?: boolean; onGoalChange?: 
   );
 }
 
-function EmtpyList() {
+function EmptyList() {
   const translate = useTranslate();
   return (
     <ListEmpty createDisabled actions={<ListActions empty />}>
@@ -67,7 +67,7 @@ export default function ContentList() {
   return (
     <List
       queryOptions={{ refetchInterval: 5000 }}
-      empty={<EmtpyList />}
+      empty={<EmptyList />}
       actions={<ListActions onGoalChange={onGoalChange} />}
       sort={{ field: "createdAt", order: "DESC" }}
     >

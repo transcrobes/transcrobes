@@ -132,12 +132,18 @@ function jwtTokenAuthProvider(): AuthProvider {
       return Promise.resolve();
     },
     getPermissions: async () => {
-      // FIXME: this is a bit of a hack... we don't really have permissions - if you have access etg is yours
       const username = store.getState().userData.username || (await getUserDexie()).username;
       if (!username || !(await isInitialisedAsync(username))) {
         return Promise.resolve([]);
       } else {
-        return Promise.resolve(["initialised"]);
+        const perms = ["initialised"];
+        if (store.getState().userData.user.isTeacher) {
+          perms.push("teacher");
+        }
+        if (store.getState().userData.user.isAdmin) {
+          perms.push("admin");
+        }
+        return Promise.resolve(perms);
       }
     },
   };

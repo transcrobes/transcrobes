@@ -22,12 +22,15 @@ import listrobes from "../listrobes";
 import notrobes from "../notrobes";
 import repetrobes from "../repetrobes";
 import stats from "../stats";
+import studentregistrations from "../studentregistrations";
+import teacherregistrations from "../teacherregistrations";
+import languageclasses from "../languageclasses";
 import surveys from "../surveys";
 import system from "../system";
 import userlists from "../userlists";
 import SubMenu from "./SubMenu";
 
-type MenuName = "menuInput" | "menuOrganisation" | "menuLearning" | "menuSurveys";
+type MenuName = "menuInput" | "menuOrganisation" | "menuLearning" | "menuSurveys" | "menuTeaching";
 
 const useStyles = makeStyles()((theme) => ({
   root: {
@@ -52,11 +55,11 @@ function Menu({ dense = false }: MenuProps): ReactElement {
     menuOrganisation: true,
     menuLearning: true,
     menuSurveys: true,
+    menuTeaching: true,
   });
   const translate = useTranslate();
   useAppSelector((state) => state.theme); // force rerender on theme change
   const { classes } = useStyles();
-
   const handleToggle = (menu: MenuName) => {
     setState((state) => ({ ...state, [menu]: !state[menu] }));
   };
@@ -72,8 +75,8 @@ function Menu({ dense = false }: MenuProps): ReactElement {
       {" "}
       <DashboardMenuItem />
       <WithPermissions
-        render={({ permissions }) =>
-          Array.isArray(permissions) && permissions.includes("initialised") ? (
+        render={({ permissions }) => {
+          return Array.isArray(permissions) && permissions.includes("initialised") ? (
             <>
               <SubMenu
                 handleToggle={() => handleToggle("menuInput")}
@@ -122,6 +125,14 @@ function Menu({ dense = false }: MenuProps): ReactElement {
                 icon={<goals.icon />}
                 dense={dense}
               >
+                <MenuItemLink
+                  to={`/studentregistrations`}
+                  primaryText={translate(`resources.studentregistrations.name`, {
+                    smart_count: 2,
+                  })}
+                  leftIcon={<studentregistrations.icon />}
+                  dense={dense}
+                />
                 <MenuItemLink
                   to={`/stats`}
                   primaryText={translate(`screens.stats.name`, {
@@ -203,6 +214,32 @@ function Menu({ dense = false }: MenuProps): ReactElement {
                 leftIcon={<surveys.icon />}
                 dense={dense}
               />
+              {permissions.includes("teacher") && (
+                <SubMenu
+                  handleToggle={() => handleToggle("menuTeaching")}
+                  isOpen={state.menuTeaching}
+                  name="pos.menu.teaching"
+                  icon={<teacherregistrations.icon />}
+                  dense={dense}
+                >
+                  <MenuItemLink
+                    to={`/teacherregistrations`}
+                    primaryText={translate(`resources.teacherregistrations.name`, {
+                      smart_count: 2,
+                    })}
+                    leftIcon={<teacherregistrations.icon />}
+                    dense={dense}
+                  />
+                  <MenuItemLink
+                    to={`/languageclasses`}
+                    primaryText={translate(`resources.languageclasses.name`, {
+                      smart_count: 2,
+                    })}
+                    leftIcon={<languageclasses.icon />}
+                    dense={dense}
+                  />
+                </SubMenu>
+              )}
               <MenuItemLink
                 to={`/system`}
                 primaryText={translate(`screens.system.name`, {
@@ -222,8 +259,8 @@ function Menu({ dense = false }: MenuProps): ReactElement {
             </>
           ) : (
             <></>
-          )
-        }
+          );
+        }}
       />
     </div>
   );

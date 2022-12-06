@@ -14,6 +14,7 @@ class TokenPayload(BaseModel):
     is_active: bool
     is_verified: bool
     is_superuser: bool
+    is_teacher: Optional[bool]
     lang_pair: str
     translation_providers: list[str]
     token_use: str

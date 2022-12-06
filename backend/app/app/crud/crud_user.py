@@ -20,6 +20,7 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
             hashed_password=get_password_hash(obj_in.password),
             full_name=obj_in.full_name,
             is_superuser=obj_in.is_superuser,
+            is_teacher=obj_in.is_teacher,
             is_verified=obj_in.is_verified,
             from_lang=obj_in.from_lang,
             to_lang=obj_in.to_lang,
@@ -57,6 +58,9 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
 
     def is_superuser(self, luser: User) -> Optional[bool]:  # pylint: disable=R0201
         return luser.is_superuser
+
+    def is_teacher(self, luser: User) -> Optional[bool]:  # pylint: disable=R0201
+        return luser.is_teacher
 
 
 user = CRUDUser(User)

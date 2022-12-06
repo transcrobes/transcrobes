@@ -67,14 +67,8 @@ export async function getL1(
   return gloss || defaultL1;
 }
 
-export async function getSound(token: TokenType, definitions: DefinitionsState): Promise<string> {
-  let gloss = "";
-  if (token.p) {
-    gloss = token.p.join("");
-  } else {
-    gloss = ((token.id && definitions[token.id]) || (await getWord(token.l)))?.sound.join("") || DEFINITION_LOADING;
-  }
-  return gloss;
+export async function getSound(token: TokenType, definitions: DefinitionsState): Promise<string[]> {
+  return token.p || ((token.id && definitions[token.id]) || (await getWord(token.l)))?.sound || [DEFINITION_LOADING];
 }
 
 export async function getNormalGloss(
@@ -93,9 +87,9 @@ export async function getNormalGloss(
   } else if (glossing == USER_STATS_MODE.L2_SIMPLIFIED) {
     gloss = await getL2Simplified(token, gloss, uCardWords, definitions, fromLang, toLang, readerConfig);
   } else if (glossing == USER_STATS_MODE.TRANSLITERATION) {
-    gloss = await getSound(token, definitions);
+    gloss = (await getSound(token, definitions)).join("");
   } else if (glossing == USER_STATS_MODE.TRANSLITERATION_L1) {
-    gloss = `${await getSound(token, definitions)}: ${await getL1(
+    gloss = `${(await getSound(token, definitions)).join("")}: ${await getL1(
       token,
       definitions,
       fromLang,

@@ -1,4 +1,3 @@
-// import { Record as RARecord, Identifier } from "react-admin";
 import { RaRecord, Identifier, UserIdentity } from "react-admin";
 import { HslColor } from "react-colorful";
 
@@ -92,6 +91,7 @@ export const API_PREFIX = "/api/v1";
 export const DEFAULT_RETRIES = 3;
 export const UNSURE_ATTRIBUTE = "data-unsure";
 export const EVENT_QUEUE_PROCESS_FREQ = IS_DEV ? 5000 : 30000; //milliseconds
+export const REQUEST_QUEUE_PROCESS_FREQ = IS_DEV ? 5000 : 30000; //milliseconds
 export const PUSH_FILES_PROCESS_FREQ = IS_DEV ? 5000 : 30000; //milliseconds
 export const ONSCREEN_DELAY_IS_CONSIDERED_READ = 5000; // milliseconds
 export const IDEAL_GLOSS_STRING_LENGTH = 5; // pretty random but https://arxiv.org/pdf/1208.6109.pdf
@@ -776,6 +776,7 @@ export interface UserDetails extends UserIdentity {
   username: string;
   fromLang: InputLanguage;
   toLang: InputLanguage;
+  isTeacher: boolean;
 }
 
 export interface UserState {
@@ -798,6 +799,7 @@ export const DEFAULT_USER: UserDetails = {
   id: "",
   fromLang: "zh-Hans",
   toLang: "en",
+  isTeacher: false,
 };
 
 export const INITIAL_USERSTATE: UserState = {
@@ -921,7 +923,14 @@ export type EventQueueType = {
   eventString: string;
 };
 
-interface CommonRecord extends RaRecord {
+export type RequestQueueType = {
+  id: string;
+  type: "registration";
+  endpoint: "/api/v1/users/register_classes";
+  requestString: string;
+};
+
+export interface CommonRecord extends RaRecord {
   title: string;
   description?: string;
 
@@ -1056,6 +1065,12 @@ export const EMPTY_CARD: CardType = {
   updatedAt: 0,
 };
 
+export type ClassRegistrationRequest = {
+  email: string;
+  class_id: string;
+  is_teacher?: boolean;
+};
+
 type PosValuesType = {
   posTag: AnyPosType;
   values: string[];
@@ -1164,6 +1179,7 @@ export type UserListPositionType = {
 };
 
 export interface ExtendedActionProps {
+  noEdit?: boolean;
   helpUrl: string;
   helpLabel?: string;
   ytUrl?: string;
@@ -1211,6 +1227,44 @@ export type DayModelStatsType = {
   updatedAt: number;
 };
 
+export type StudentDayModelStatsType = DayModelStatsType & {
+  pkId: string;
+  studentId: string;
+};
+
+export interface LanguageClassType extends CommonRecord {}
+
+export interface RegistrationType extends CommonRecord {
+  userId: string;
+  classId: string;
+}
+
+export interface StudentRegistrationType extends RegistrationType {}
+export interface TeacherRegistrationType extends RegistrationType {}
+
+export type PersonType = {
+  id: string;
+  fullName?: string;
+  email: string;
+  updatedAt: number;
+  config?: string; // json string, can include contact info other than email
+};
+
+export interface ClassRegistration {
+  id: Identifier;
+  className: string;
+  classId: string;
+  userId: string;
+  fullName?: string;
+  email: string;
+  createdAt: number;
+}
+
+export type Participants = {
+  teachers: ClassRegistration[];
+  students: ClassRegistration[];
+};
+
 export type WordModelStatsType = {
   id: string;
   nbSeen?: number;
@@ -1221,6 +1275,11 @@ export type WordModelStatsType = {
   nbTranslated?: number;
   lastTranslated?: number;
   updatedAt: number;
+};
+
+export type StudentWordModelStatsType = WordModelStatsType & {
+  pkId: string;
+  studentId: string;
 };
 
 export type EventData = {

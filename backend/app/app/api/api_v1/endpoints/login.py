@@ -89,6 +89,7 @@ async def access_from_refresh(token: TcToken, expires_delta: timedelta = None) -
         "is_active": bool(token_data.is_active),
         "is_verified": bool(token_data.is_verified),
         "is_superuser": bool(token_data.is_superuser),
+        "is_teacher": bool(token_data.is_teacher),
         "lang_pair": token_data.lang_pair,
         "translation_providers": token_data.translation_providers,
         "tracking_key": settings.TRACKING_KEY,

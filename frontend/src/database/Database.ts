@@ -24,6 +24,10 @@ import {
   DBCollections,
   DBPullCollectionKeys,
   DBPullCollections,
+  DBTeacherPullCollectionKeys,
+  DBTeacherPullCollections,
+  DBTeacherTwoWayCollectionKeys,
+  DBTeacherTwoWayCollections,
   DBTwoWayCollectionKeys,
   DBTwoWayCollections,
   DefinitionDocument,
@@ -166,6 +170,7 @@ async function cacheExports(
   let data: string[];
   try {
     data = await fetchPlus(exportFilesListURL);
+    console.log("data", data, exportFilesListURL);
   } catch (error: any) {
     progressCallback(polyglot.t("database.cache_exports_error"), false);
     console.error(error);
@@ -224,19 +229,19 @@ function refreshTokenIfRequired(
   }
 }
 
-function setupTwoWayReplication(db: TranscrobesDatabase, colName: DBTwoWayCollectionKeys, syncURL: string) {
+function setupTwoWayReplication(
+  db: TranscrobesDatabase,
+  colName: DBTwoWayCollectionKeys | DBTeacherTwoWayCollectionKeys,
+  syncURL: string,
+) {
   // set up replication
   console.debug(`Start ${colName} replication`);
   const headers = getHeaders(store.getState().userData.user.accessToken);
 
   // WARNING! pushQueryBuilderFromRxSchema modifies the input paramater object in place!
-  const pushQuery = pushQueryBuilderFromRxSchema(_.camelCase(colName), clone(DBTwoWayCollections[colName]));
+  const pushQuery = pushQueryBuilderFromRxSchema(_.camelCase(colName), clone(DBCollections[colName]));
   // WARNING! pullQueryBuilderFromRxSchema modifies the input paramater object in place!
-  const pullQuery = pullQueryBuilderFromRxSchema(
-    _.camelCase(colName),
-    clone(DBTwoWayCollections[colName]),
-    BATCH_SIZE_PULL,
-  );
+  const pullQuery = pullQueryBuilderFromRxSchema(_.camelCase(colName), clone(DBCollections[colName]), BATCH_SIZE_PULL);
   const replicationState = db[colName].syncGraphQL({
     url: syncURL,
     headers: headers,
@@ -255,7 +260,7 @@ function setupTwoWayReplication(db: TranscrobesDatabase, colName: DBTwoWayCollec
      * when something has changed,
      * we can set the liveInterval to a high value
      */
-    liveInterval: 1000 * (DBTwoWayCollections[colName].subscription ? LIVE_INTERVAL_WITH_SUBSCRIPTION : LIVE_INTERVAL),
+    liveInterval: 1000 * (DBCollections[colName].subscription ? LIVE_INTERVAL_WITH_SUBSCRIPTION : LIVE_INTERVAL),
     deletedFlag: "deleted",
   });
 
@@ -275,11 +280,15 @@ function setupTwoWayReplication(db: TranscrobesDatabase, colName: DBTwoWayCollec
   return replicationState;
 }
 
-function setupPullReplication(db: TranscrobesDatabase, colName: DBPullCollectionKeys, syncURL: string) {
+function setupPullReplication(
+  db: TranscrobesDatabase,
+  colName: DBPullCollectionKeys | DBTeacherPullCollectionKeys,
+  syncURL: string,
+) {
   console.debug("Start pullonly replication", colName);
   const headers = getHeaders(store.getState().userData.user.accessToken);
   // WARNING! pullQueryBuilderFromRxSchema modifies the input paramater object in place!
-  const col = clone(DBPullCollections[colName]) as any;
+  const col = clone(DBCollections[colName]) as any;
 
   // liveInterval is in ms, so seconds * 1000
   const liveInterval =
@@ -516,13 +525,31 @@ async function loadFromExports(
     );
   }
   progressCallback(polyglot.t("database.files_loaded"), false);
-  const replStates = new Map<DBPullCollectionKeys | DBTwoWayCollectionKeys, RxGraphQLReplicationState<any>>();
+  const replStates = new Map<
+    DBPullCollectionKeys | DBTwoWayCollectionKeys | DBTeacherPullCollectionKeys | DBTeacherTwoWayCollectionKeys,
+    RxGraphQLReplicationState<any>
+  >();
   for (const col in DBTwoWayCollections) {
     replStates.set(col as DBTwoWayCollectionKeys, setupTwoWayReplication(db, col as DBTwoWayCollectionKeys, syncURL));
   }
   for (const col in DBPullCollections) {
     replStates.set(col as DBPullCollectionKeys, setupPullReplication(db, col as DBPullCollectionKeys, syncURL));
   }
+  if (user.isTeacher) {
+    for (const col in DBTeacherPullCollections) {
+      replStates.set(
+        col as DBTeacherPullCollectionKeys,
+        setupPullReplication(db, col as DBTeacherPullCollectionKeys, syncURL),
+      );
+    }
+    for (const col in DBTeacherTwoWayCollections) {
+      replStates.set(
+        col as DBTeacherTwoWayCollectionKeys,
+        setupTwoWayReplication(db, col as DBTeacherTwoWayCollectionKeys, syncURL),
+      );
+    }
+  }
+
   // This can take a while. It will freeze on this if no connection (so no good for offline-first)
   // but it won't be up-to-date otherwise...
   if (justCreated || reinitialise) {

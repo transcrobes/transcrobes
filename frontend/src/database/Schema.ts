@@ -9,15 +9,22 @@ import {
   EventQueueType,
   Goal,
   Import,
+  LanguageClassType,
   PROCESSING,
   PROCESS_TYPE,
   RecentSentencesStoredType,
+  StudentDayModelStatsType,
+  StudentRegistrationType,
+  PersonType,
+  StudentWordModelStatsType,
   SurveyType,
   UserDictionary,
   UserList,
   UserSurvey,
   WordlistType,
   WordModelStatsType,
+  TeacherRegistrationType,
+  RequestQueueType,
 } from "../lib/types";
 
 const CACHE_NAME = "v1";
@@ -29,14 +36,17 @@ const LIVE_INTERVAL_WITH_SUBSCRIPTION = 600;
 const BATCH_SIZE_PULL = 1000000;
 const BATCH_SIZE_PUSH = 1000000;
 
+const TIMESTAMP = { type: "number", minimum: 1000000000, maximum: 9000000000, multipleOf: "0.0000001" };
+const RXPROCESSING = { type: "number", default: PROCESSING.REQUESTED, minimum: 0, maximum: 5, multipleOf: 1 };
+
 const COMMON_INFO = {
   id: { type: "string", maxLength: 36 },
   title: { type: "string", maxLength: 255 },
   description: { type: ["string", "null"] },
   createdBy: { type: "string" },
-  createdAt: { type: "number", minimum: 1000000000, maximum: 9000000000, multipleOf: "0.0000001" },
+  createdAt: TIMESTAMP,
   updatedBy: { type: ["string", "null"] },
-  updatedAt: { type: "number", minimum: 1000000000, maximum: 9000000000, multipleOf: "0.0000001" },
+  updatedAt: TIMESTAMP,
   status: { type: "number" },
   activateDate: { type: "number" },
   deactivateDate: { type: "number" },
@@ -101,7 +111,7 @@ const pullCharsQueryBuilder = (doc: { id: any; updatedAt: any }) => {
   };
 };
 
-const pullDefsQueryBuilder = (doc: { id: any; updatedAt: any }) => {
+function pullDefsQueryBuilder(doc: { id: any; updatedAt: any }) {
   if (!doc) {
     // the first pull does not have a start-document
     doc = {
@@ -140,7 +150,7 @@ const pullDefsQueryBuilder = (doc: { id: any; updatedAt: any }) => {
     query,
     variables: {},
   };
-};
+}
 
 type UserDictionaryDocument = RxDocument<UserDictionary>;
 type UserDictionaryCollection = RxCollection<UserDictionary>;
@@ -181,6 +191,30 @@ const EVENT_QUEUE_SCHEMA: RxJsonSchema<EventQueueType> = {
   },
 };
 
+type RequestQueueDocument = RxDocument<RequestQueueType>;
+type RequestQueueCollection = RxCollection<RequestQueueType>;
+const REQUEST_QUEUE_SCHEMA: RxJsonSchema<RequestQueueType> = {
+  version: 0,
+  required: ["id"],
+  primaryKey: "id",
+  type: "object",
+  properties: {
+    id: {
+      type: "string",
+      maxLength: 36,
+    },
+    type: {
+      type: "string",
+    },
+    endpoint: {
+      type: "string",
+    },
+    requestString: {
+      type: "string",
+    },
+  },
+};
+
 type ContentConfigsDocument = RxDocument<ContentConfigType>;
 type ContentConfigsCollection = RxCollection<ContentConfigType>;
 const CONTENT_CONFIGS_SCHEMA: RxJsonSchema<ContentConfigType> = {
@@ -207,33 +241,18 @@ const DEFINITIONS_SCHEMA: RxJsonSchema<DefinitionType> = {
   type: "object",
   primaryKey: "id",
   properties: {
-    id: {
-      type: "string",
-      maxLength: 36,
-    },
-    graph: {
-      type: "string",
-      maxLength: 100,
-    },
-    sound: {
-      type: "array",
-      items: {
-        type: "string",
-      },
-    },
+    id: { type: "string", maxLength: 36 },
+    graph: { type: "string", maxLength: 100 },
+    sound: { type: "array", items: { type: "string" } },
     synonyms: {
       type: "array",
       items: {
         type: "object",
         properties: {
-          posTag: {
-            type: "string",
-          },
+          posTag: { type: "string" },
           values: {
             type: "array",
-            items: {
-              type: "string",
-            },
+            items: { type: "string" },
           },
         },
       },
@@ -243,22 +262,16 @@ const DEFINITIONS_SCHEMA: RxJsonSchema<DefinitionType> = {
       items: {
         type: "object",
         properties: {
-          provider: {
-            type: "string",
-          },
+          provider: { type: "string" },
           posTranslations: {
             type: "array",
             items: {
               type: "object",
               properties: {
-                posTag: {
-                  type: "string",
-                },
+                posTag: { type: "string" },
                 values: {
                   type: "array",
-                  items: {
-                    type: "string",
-                  },
+                  items: { type: "string" },
                 },
               },
             },
@@ -270,18 +283,12 @@ const DEFINITIONS_SCHEMA: RxJsonSchema<DefinitionType> = {
       //{"pinyin": "de/dí/dì", "wcpm": "50155.13", "wcdp": "100", "pos": ".u.n.", "pos_freq": ".1682369.161."}
       type: "object",
       properties: {
-        wcpm: {
-          type: "string", // could be int
-        },
-        wcdp: {
-          type: "string", // could be int
-        },
-        pos: {
-          type: "string",
-        },
-        pos_freq: {
-          type: "string",
-        },
+        // could be int
+        wcpm: { type: "string" },
+        // could be int
+        wcdp: { type: "string" },
+        pos: { type: "string" },
+        pos_freq: { type: "string" },
       },
       // required: ['wcpm', 'wcdp', 'pos', 'pos_freq']  // FIXME: what will this do to perf?
     },
@@ -290,14 +297,12 @@ const DEFINITIONS_SCHEMA: RxJsonSchema<DefinitionType> = {
       properties: {
         levels: {
           type: "array",
-          items: {
-            type: "integer",
-          },
+          items: { type: "integer" },
         },
       },
     },
     // @ts-ignore
-    updatedAt: { type: "number", minimum: 1000000000, maximum: 9000000000, multipleOf: "0.0000001" },
+    updatedAt: TIMESTAMP,
   },
   indexes: ["updatedAt", "graph"],
 };
@@ -382,48 +387,155 @@ const WORDLISTS_SCHEMA: RxJsonSchema<WordlistType> = {
     default: { type: "boolean", default: false },
     wordIds: { type: "array", items: { type: "string" } },
     // @ts-ignore
-    updatedAt: { type: "number", minimum: 1000000000, maximum: 9000000000, multipleOf: "0.0000001" },
+    updatedAt: TIMESTAMP,
   },
   indexes: ["updatedAt"],
 };
 
 type WordModelStatsDocument = RxDocument<WordModelStatsType>;
 type WordModelStatsCollection = RxCollection<WordModelStatsType>;
+const WORD_MODEL_STATS_SCHEMA_PROPS = {
+  id: { type: "string", maxLength: 36 },
+  nbSeen: { type: "integer", default: 0 },
+  nbSeenSinceLastCheck: { type: "integer", default: 0 },
+  lastSeen: { type: ["number", "null"] },
+  nbChecked: { type: "integer", default: 0 },
+  lastChecked: { type: ["number", "null"] },
+  nbTranslated: { type: "integer", default: 0 },
+  lastTranslated: { type: ["number", "null"] },
+  updatedAt: TIMESTAMP,
+};
 const WORD_MODEL_STATS_SCHEMA: RxJsonSchema<WordModelStatsType> = {
   version: 0,
   required: ["id"],
   primaryKey: "id",
   type: "object",
-  properties: {
-    id: { type: "string", maxLength: 36 },
-    nbSeen: { type: "integer", default: 0 },
-    nbSeenSinceLastCheck: { type: "integer", default: 0 },
-    lastSeen: { type: ["number", "null"] },
-    nbChecked: { type: "integer", default: 0 },
-    lastChecked: { type: ["number", "null"] },
-    nbTranslated: { type: "integer", default: 0 },
-    lastTranslated: { type: ["number", "null"] },
-    // @ts-ignore
-    updatedAt: { type: "number", minimum: 1000000000, maximum: 9000000000, multipleOf: "0.0000001" },
-  },
+  // @ts-ignore
+  properties: WORD_MODEL_STATS_SCHEMA_PROPS,
   indexes: ["updatedAt"],
+};
+
+type StudentWordModelStatsDocument = RxDocument<StudentWordModelStatsType>;
+type StudentWordModelStatsCollection = RxCollection<StudentWordModelStatsType>;
+const STUDENT_WORD_MODEL_STATS_SCHEMA: RxJsonSchema<StudentWordModelStatsType> = {
+  version: 0,
+  required: ["pkId", "id", "studentId"],
+  primaryKey: {
+    key: "pkId",
+    fields: ["id", "studentId"],
+    separator: "|",
+  },
+  type: "object",
+  // @ts-ignore
+  properties: {
+    ...WORD_MODEL_STATS_SCHEMA_PROPS,
+    pkId: { type: "string", maxLength: 100 },
+    studentId: { type: "string", maxLength: 36 },
+  },
+  indexes: ["updatedAt", "studentId"],
 };
 
 type DayModelStatsDocument = RxDocument<DayModelStatsType>;
 type DayModelStatsCollection = RxCollection<DayModelStatsType>;
+const DAY_MODEL_STATS_SCHEMA_PROPS = {
+  id: { type: "string", maxLength: 36 },
+  nbSeen: { type: "integer", default: 0 },
+  nbChecked: { type: "integer", default: 0 },
+  nbSuccess: { type: "integer", default: 0 },
+  nbFailures: { type: "integer", default: 0 },
+  updatedAt: TIMESTAMP,
+};
 const DAY_MODEL_STATS_SCHEMA: RxJsonSchema<DayModelStatsType> = {
+  version: 0,
+  required: ["id"],
+  primaryKey: "id",
+  type: "object",
+  // @ts-ignore
+  properties: DAY_MODEL_STATS_SCHEMA_PROPS,
+  indexes: ["updatedAt"],
+};
+type StudentDayModelStatsDocument = RxDocument<StudentDayModelStatsType>;
+type StudentDayModelStatsCollection = RxCollection<StudentDayModelStatsType>;
+const STUDENT_DAY_MODEL_STATS_SCHEMA: RxJsonSchema<StudentDayModelStatsType> = {
+  version: 0,
+  required: ["pkId", "id", "studentId"],
+  primaryKey: {
+    key: "pkId",
+    fields: ["id", "studentId"],
+    separator: "|",
+  },
+  type: "object",
+  // @ts-ignore
+  properties: {
+    ...DAY_MODEL_STATS_SCHEMA_PROPS,
+    pkId: { type: "string", maxLength: 100 },
+    studentId: { type: "string", maxLength: 36 },
+  },
+  indexes: ["updatedAt", "studentId"],
+};
+
+type LanguageClassDocument = RxDocument<LanguageClassType>;
+type LanguageClassCollection = RxCollection<LanguageClassType>;
+const LANGUAGECLASSES_SCHEMA: RxJsonSchema<LanguageClassType> = {
+  version: 0,
+  required: ["id"],
+  primaryKey: "id",
+  type: "object",
+  // @ts-ignore
+  properties: COMMON_INFO,
+  indexes: ["updatedAt", "title"],
+};
+
+type TeacherRegistrationDocument = RxDocument<TeacherRegistrationType>;
+type TeacherRegistrationCollection = RxCollection<TeacherRegistrationType>;
+const TEACHERREGISTRATIONS_SCHEMA: RxJsonSchema<TeacherRegistrationType> = {
+  version: 0,
+  required: ["id"],
+  primaryKey: "id",
+  type: "object",
+  // @ts-ignore
+  properties: {
+    ...COMMON_INFO,
+    ...{
+      classId: { type: "string", maxLength: 255 },
+      userId: { type: "string", maxLength: 36 },
+    },
+  },
+  indexes: ["updatedAt"],
+};
+
+type StudentRegistrationDocument = RxDocument<StudentRegistrationType>;
+type StudentRegistrationCollection = RxCollection<StudentRegistrationType>;
+const STUDENTREGISTRATIONS_SCHEMA: RxJsonSchema<StudentRegistrationType> = {
+  version: 0,
+  required: ["id"],
+  primaryKey: "id",
+  type: "object",
+  // @ts-ignore
+  properties: {
+    ...COMMON_INFO,
+    ...{
+      classId: { type: "string", maxLength: 255 },
+      userId: { type: "string", maxLength: 36 },
+    },
+  },
+  indexes: ["updatedAt"],
+};
+
+type PersonDocument = RxDocument<PersonType>;
+type PersonCollection = RxCollection<PersonType>;
+const PERSONS_SCHEMA: RxJsonSchema<PersonType> = {
   version: 0,
   required: ["id"],
   primaryKey: "id",
   type: "object",
   properties: {
     id: { type: "string", maxLength: 36 },
-    nbSeen: { type: "integer", default: 0 },
-    nbChecked: { type: "integer", default: 0 },
-    nbSuccess: { type: "integer", default: 0 },
-    nbFailures: { type: "integer", default: 0 },
+    fullName: { type: "string", maxLength: 255 },
+    email: { type: "string", maxLength: 255 },
+    config: { type: "string" },
     // @ts-ignore
-    updatedAt: { type: "number", minimum: 1000000000, maximum: 9000000000, multipleOf: "0.0000001" },
+    updatedAt: TIMESTAMP,
   },
   indexes: ["updatedAt"],
 };
@@ -476,56 +588,21 @@ const CARDS_SCHEMA: RxJsonSchema<CardType> = {
   primaryKey: "id",
   properties: {
     // "{word_id}-{card_type}" - card_type: 1 = L2 written form, 2 = L2 sound representation, 3 = L1 definition
-    id: {
-      type: "string",
-      maxLength: 36,
-    },
-    dueDate: {
-      type: "number",
-    },
-    interval: {
-      type: "integer",
-      default: INTERVAL_DEFAULT,
-    },
-    repetition: {
-      type: "integer",
-      default: REPETITION_DEFAULT,
-    },
-    efactor: {
-      type: "number",
-      default: EFACTOR_DEFAULT,
-    },
-    front: {
-      // manual personalised card front, i.e, not just default generated from the dict
-      type: ["string", "null"],
-    },
-    back: {
-      // manual personalised card back, i.e, not just default generated from the dict
-      type: ["string", "null"],
-    },
-    suspended: {
-      type: "boolean",
-      default: false,
-    },
-    known: {
-      type: "boolean",
-      default: false,
-    },
-    firstRevisionDate: {
-      type: "number",
-      default: 0,
-    },
-    lastRevisionDate: {
-      type: "number",
-      default: 0,
-    },
-    firstSuccessDate: {
-      type: "number",
-      default: 0,
-    },
-    updatedAt: {
-      type: "number",
-    },
+    id: { type: "string", maxLength: 36 },
+    dueDate: { type: "number" },
+    interval: { type: "integer", default: INTERVAL_DEFAULT },
+    repetition: { type: "integer", default: REPETITION_DEFAULT },
+    efactor: { type: "number", default: EFACTOR_DEFAULT },
+    // manual personalised card front, i.e, not just default generated from the dict
+    front: { type: ["string", "null"] },
+    // manual personalised card back, i.e, not just default generated from the dict
+    back: { type: ["string", "null"] },
+    suspended: { type: "boolean", default: false },
+    known: { type: "boolean", default: false },
+    firstRevisionDate: { type: "number", default: 0 },
+    lastRevisionDate: { type: "number", default: 0 },
+    firstSuccessDate: { type: "number", default: 0 },
+    updatedAt: { type: "number" },
   },
 };
 
@@ -540,7 +617,7 @@ const RECENTSENTENCES_SCHEMA: RxJsonSchema<RecentSentencesStoredType> = {
     id: { type: "string", maxLength: 36 },
     lzContent: { type: "string" },
     // @ts-ignore
-    updatedAt: { type: "number", minimum: 1000000000, maximum: 9000000000, multipleOf: "0.0000001" },
+    updatedAt: TIMESTAMP,
   },
   indexes: ["updatedAt"],
 };
@@ -573,14 +650,8 @@ const IMPORTS_SCHEMA: RxJsonSchema<Import> = {
   properties: {
     ...COMMON_INFO,
     ...{
-      processing: { type: "number", default: PROCESSING.REQUESTED, minimum: 0, maximum: 5, multipleOf: 1 },
-      processType: {
-        type: "number",
-        default: PROCESS_TYPE.VOCABULARY_ONLY,
-        minimum: 1,
-        maximum: 3,
-        multipleOf: 1,
-      },
+      processing: RXPROCESSING,
+      processType: { type: "number", default: PROCESS_TYPE.VOCABULARY_ONLY, minimum: 1, maximum: 3, multipleOf: 1 },
       importFile: { type: "string" },
       analysis: { type: ["string", "null"] },
       shared: { type: "boolean", default: false },
@@ -600,7 +671,7 @@ const CONTENTS_SCHEMA: RxJsonSchema<Content> = {
   properties: {
     ...COMMON_INFO,
     ...{
-      processing: { type: "number", default: PROCESSING.NONE, minimum: 0, maximum: 5, multipleOf: 1 },
+      processing: { ...RXPROCESSING, default: PROCESSING.NONE },
       theImport: { type: "string" },
       contentType: { type: "number", minimum: 1, maximum: 5, multipleOf: 1 }, // currently max 2 but leaving some fat
       author: { type: ["string", "null"] },
@@ -623,7 +694,7 @@ const USERLISTS_SCHEMA: RxJsonSchema<UserList> = {
   properties: {
     ...COMMON_INFO,
     ...{
-      processing: { type: "number", default: PROCESSING.REQUESTED, minimum: 0, maximum: 5, multipleOf: 1 },
+      processing: RXPROCESSING,
       shared: { type: "boolean", default: false },
       onlyDictionaryWords: { type: "boolean", default: false },
       wordsAreKnown: { type: "boolean", default: false },
@@ -669,13 +740,7 @@ const GOALS_SCHEMA: RxJsonSchema<Goal> = {
     ...{
       parent: { type: ["string", "null"] },
       userList: { type: "string", maxLength: 36 }, // think about using a proper foreign ref
-      priority: {
-        type: "number",
-        default: 5,
-        minimum: 1,
-        maximum: 10,
-        multipleOf: 1,
-      },
+      priority: { type: "number", default: 5, minimum: 1, maximum: 10, multipleOf: 1 },
     },
   },
   indexes: ["title", "userList", "priority", "createdAt"],
@@ -706,20 +771,12 @@ const DBPullCollections = {
     feedKeys: ["id", "updatedAt"],
     deletedFlag: "deleted",
     subscription: false,
-    // Doesn't require real time updates!
-    // subscriptionParams: {
-    //   token: "String!",
-    // },
   },
   surveys: {
     schema: SURVEYS_SCHEMA,
     feedKeys: ["id", "updatedAt"],
     deletedFlag: "deleted",
     subscription: false,
-    // Doesn't require real time updates!
-    // subscriptionParams: {
-    //   token: "String!",
-    // },
   },
   characters: {
     schema: CHARACTERS_SCHEMA,
@@ -729,9 +786,35 @@ const DBPullCollections = {
     pullQueryBuilder: pullCharsQueryBuilder,
     liveInterval: 1000000, // actually this could be much more, but this is already inconsequential
   },
+  persons: {
+    schema: PERSONS_SCHEMA,
+    feedKeys: ["id", "updatedAt"],
+    deletedFlag: "deleted",
+    subscription: true,
+    subscriptionParams: {
+      token: "String!",
+    },
+  },
 };
 type DBPullCollectionsType = typeof DBPullCollections;
 type DBPullCollectionKeys = keyof DBPullCollectionsType;
+
+const DBTeacherPullCollections = {
+  student_word_model_stats: {
+    schema: STUDENT_WORD_MODEL_STATS_SCHEMA,
+    feedKeys: ["id", "updatedAt"],
+    deletedFlag: "deleted",
+    subscription: false,
+  },
+  student_day_model_stats: {
+    schema: STUDENT_DAY_MODEL_STATS_SCHEMA,
+    feedKeys: ["id", "updatedAt"],
+    deletedFlag: "deleted",
+    subscription: false,
+  },
+};
+type DBTeacherPullCollectionsType = typeof DBTeacherPullCollections;
+type DBTeacherPullCollectionKeys = keyof DBTeacherPullCollectionsType;
 
 const DBTwoWayCollections = {
   goals: {
@@ -816,21 +899,64 @@ const DBTwoWayCollections = {
       token: "String!",
     },
   },
+  languageclasses: {
+    schema: LANGUAGECLASSES_SCHEMA,
+    feedKeys: ["id", "updatedAt"],
+    deletedFlag: "deleted",
+    subscription: true,
+    subscriptionParams: {
+      token: "String!",
+    },
+  },
+  teacherregistrations: {
+    schema: TEACHERREGISTRATIONS_SCHEMA,
+    feedKeys: ["id", "updatedAt"],
+    deletedFlag: "deleted",
+    subscription: true,
+    subscriptionParams: {
+      token: "String!",
+    },
+  },
+  studentregistrations: {
+    schema: STUDENTREGISTRATIONS_SCHEMA,
+    feedKeys: ["id", "updatedAt"],
+    deletedFlag: "deleted",
+    subscription: true,
+    subscriptionParams: {
+      token: "String!",
+    },
+  },
 };
 
 type DBTwoWayCollectionsType = typeof DBTwoWayCollections;
 type DBTwoWayCollectionKeys = keyof typeof DBTwoWayCollections;
 
+const DBTeacherTwoWayCollections = {};
+
+type DBTeacherTwoWayCollectionsType = typeof DBTeacherTwoWayCollections;
+type DBTeacherTwoWayCollectionKeys = keyof typeof DBTeacherTwoWayCollections;
+
 const DBLocalCollections = {
   event_queue: { schema: EVENT_QUEUE_SCHEMA, subscription: false },
+  requestqueue: { schema: REQUEST_QUEUE_SCHEMA, subscription: false },
   content_config: { schema: CONTENT_CONFIGS_SCHEMA, subscription: false },
 };
 type DBLocalCollectionKeys = keyof typeof DBLocalCollections;
 type DBLocalCollectionsType = typeof DBLocalCollections;
 
-const DBCollections = { ...DBTwoWayCollections, ...DBPullCollections, ...DBLocalCollections };
+const DBCollections = {
+  ...DBTwoWayCollections,
+  ...DBPullCollections,
+  ...DBLocalCollections,
+  ...DBTeacherPullCollections,
+  ...DBTeacherTwoWayCollections,
+};
 
-type DBSyncCollectionKeys = DBTwoWayCollectionKeys | DBPullCollectionKeys;
+type DBSyncCollectionKeys =
+  | DBTwoWayCollectionKeys
+  | DBPullCollectionKeys
+  | DBTeacherPullCollectionKeys
+  | DBTeacherTwoWayCollectionKeys;
 type DBCollectionsType = typeof DBCollections;
 type DBCollectionKeys = keyof DBCollectionsType;
 
@@ -846,23 +972,36 @@ type TranscrobesCollections = {
   definitions: DefinitionCollection;
   word_model_stats: WordModelStatsCollection;
   day_model_stats: DayModelStatsCollection;
+  student_word_model_stats: StudentWordModelStatsCollection;
+  student_day_model_stats: StudentDayModelStatsCollection;
+  persons: PersonCollection;
+  studentregistrations: StudentRegistrationCollection;
+  teacherregistrations: TeacherRegistrationCollection;
   surveys: SurveyCollection;
   event_queue: EventQueueCollection;
+  requestqueue: RequestQueueCollection;
   characters: CharacterCollection;
   content_config: ContentConfigsCollection;
   userdictionaries: UserDictionaryCollection;
+  languageclasses: LanguageClassCollection;
 };
 type TranscrobesCollectionsKeys = keyof TranscrobesCollections;
 type TranscrobesDatabase = RxDatabase<TranscrobesCollections>;
 
 type TranscrobesDocumentTypes =
   | EventQueueDocument
+  | RequestQueueDocument
   | ContentConfigsDocument
   | DefinitionDocument
   | CharacterDocument
   | WordlistDocument
   | WordModelStatsDocument
   | DayModelStatsDocument
+  | StudentWordModelStatsDocument
+  | StudentDayModelStatsDocument
+  | PersonDocument
+  | TeacherRegistrationDocument
+  | StudentRegistrationDocument
   | CardDocument
   | SurveyDocument
   | ImportDocument
@@ -871,13 +1010,16 @@ type TranscrobesDocumentTypes =
   | UserSurveyDocument
   | GoalDocument
   | RecentSentencesDocument
-  | UserDictionaryDocument;
+  | UserDictionaryDocument
+  | LanguageClassDocument;
 
 export {
   DBLocalCollections,
   DBCollections,
   DBTwoWayCollections,
   DBPullCollections,
+  DBTeacherPullCollections,
+  DBTeacherTwoWayCollections,
   GRADE,
   CARD_TYPES,
   EFACTOR_DEFAULT,
@@ -894,6 +1036,7 @@ export {
   getCardId,
   getCardTypeAsInt,
 };
+
 export type {
   DBCollectionKeys,
   DBCollectionsType,
@@ -901,38 +1044,28 @@ export type {
   DBTwoWayCollectionsType,
   DBPullCollectionKeys,
   DBPullCollectionsType,
+  DBTeacherPullCollectionKeys,
+  DBTeacherPullCollectionsType,
+  DBTeacherTwoWayCollectionKeys,
+  DBTeacherTwoWayCollectionsType,
   DBLocalCollectionKeys,
   DBLocalCollectionsType,
-  // EventQueueCollection,
   EventQueueDocument,
-  // ContentConfigsCollection,
   ContentConfigsDocument,
-  // DefinitionCollection,
   DefinitionDocument,
-  // RecentSentencesCollection
   RecentSentencesDocument,
-  // CharacterCollection,
   CharacterDocument,
-  // WordlistCollection,
   WordlistDocument,
-  // WordModelStatsCollection,
   WordModelStatsDocument,
-  // DayModelStatsCollection,
   DayModelStatsDocument,
-  // CardCollection,
   CardDocument,
-  // SurveyCollection,
   SurveyDocument,
-  // ImportCollection,
   ImportDocument,
-  // ContentCollection,
   ContentDocument,
-  // UserListCollection,
   UserListDocument,
-  // UserSurveyCollection,
   UserSurveyDocument,
-  // GoalCollection,
   GoalDocument,
+  LanguageClassDocument,
   TranscrobesCollections,
   TranscrobesCollectionsKeys,
   DBSyncCollectionKeys,

@@ -78,6 +78,7 @@ async def get_current_user(
             detail=TOKEN_SIGNATURE_HAS_EXPIRED,
         )
     except (jwt.JWTError, ValidationError) as ex:
+        logger.exception(ex)
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Could not validate credentials",
@@ -100,6 +101,7 @@ async def get_current_good_user(
             detail=TOKEN_SIGNATURE_HAS_EXPIRED,
         )
     except (jwt.JWTError, ValidationError) as ex:
+        logger.exception(ex)
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Could not validate credentials",
@@ -125,9 +127,17 @@ def get_current_active_user(
 
 
 def get_current_active_superuser(
-    current_user: models.AuthUser = Depends(get_current_user),
+    current_user: models.AuthUser = Depends(get_current_active_user),
 ) -> models.AuthUser:
     if not crud.user.is_superuser(current_user):
+        raise HTTPException(status_code=400, detail="The user doesn't have enough privileges")
+    return current_user
+
+
+def get_current_active_teacher(
+    current_user: models.AuthUser = Depends(get_current_active_user),
+) -> models.AuthUser:
+    if not crud.user.is_teacher(current_user):
         raise HTTPException(status_code=400, detail="The user doesn't have enough privileges")
     return current_user
 

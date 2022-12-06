@@ -39,8 +39,7 @@ class AuthUser(Base):
     hashed_password = Column(String, nullable=False)
     is_active = Column(Boolean(), default=True)
     is_superuser = Column(Boolean(), default=False)
-
-    # my additions
+    is_teacher = Column(Boolean(), default=False)
     is_verified = Column(Boolean(), default=False)
 
     cards = relationship("Card", back_populates="user")
@@ -56,6 +55,14 @@ class AuthUser(Base):
 
     # user config as json, think about turning this into real json
     config = Column(Text, nullable=False, default="")
+
+    updated_at = Column(
+        DateTime(True),
+        nullable=False,
+        onupdate=utcnow(),
+        server_default=utcnow(),
+        index=True,
+    )
 
     @property
     def lang_pair(self) -> str:

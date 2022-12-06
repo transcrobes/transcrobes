@@ -1,15 +1,14 @@
-import { Button } from "@mui/material";
-import { Box } from "@mui/system";
+import { Button, Box } from "@mui/material";
 import { useEffect, useState } from "react";
 import { useTranslate } from "react-admin";
 import { useAppSelector } from "../app/hooks";
-import { getVoices, say } from "../lib/funclib";
+import { getVoices, say, toneColour } from "../lib/funclib";
 import { LOCALES, SystemLanguage, SYSTEM_LANG_TO_LOCALE } from "../lib/types";
 
 type Props = {
   graph: string;
   lang: SystemLanguage;
-  sound?: string;
+  sound?: string[];
 };
 
 export default function SayIt({ graph, sound, lang }: Props) {
@@ -37,16 +36,29 @@ export default function SayIt({ graph, sound, lang }: Props) {
       }
       sx={{ marginLeft: ".5em" }}
     >
-      <Button
-        style={sound ? { textTransform: "none", padding: "0" } : {}}
-        disabled={!voice}
-        onClick={() => say(graph, lang, voice)}
-        size="small"
-        variant="outlined"
-        color="primary"
-      >
-        {sound || translate("buttons.general.say_it")}
-      </Button>
+      {voice ? (
+        <Button
+          style={sound?.length ? { textTransform: "none", padding: "0" } : {}}
+          onClick={() => say(graph, lang, voice)}
+          size="small"
+          variant="outlined"
+          color="primary"
+        >
+          {sound
+            ? sound.map((s) => (
+                <Box component="span" sx={{ color: toneColour(s) }}>
+                  {s}
+                </Box>
+              ))
+            : translate("buttons.general.say_it")}
+        </Button>
+      ) : (
+        sound?.map((s) => (
+          <Box component="span" sx={{ color: toneColour(s) }}>
+            {s}
+          </Box>
+        ))
+      )}
     </Box>
   );
 }

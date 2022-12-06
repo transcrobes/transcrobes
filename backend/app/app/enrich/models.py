@@ -9,11 +9,12 @@ from collections import defaultdict
 from typing import TYPE_CHECKING, Tuple
 
 import sqlalchemy
+from app.api.api_v1.subs import publish_message
 from app.cache import TimestampedDict, cache_loading, cached_definitions  # noqa:F401
 from app.data.context import get_broadcast
 from app.etypes import Token
+from app.models.data import CachedDefinition
 from app.models.lookups import BingApiLookup
-from app.models.migrated import CachedDefinition
 from app.ndutils import clean_definitions, lemma, orig_text
 from sqlalchemy import and_, func, or_
 from sqlalchemy.ext.asyncio.session import AsyncSession
@@ -246,8 +247,8 @@ async def definitions(  # pylint: disable=R0914
                 "After cached_entry.save, before publish broadcast definitions",
                 str("43"),
             )
-        await (await get_broadcast()).publish(channel=CachedDefinition.__name__, message=str("42"))
-        # await stats.KAFKA_PRODUCER.send("definitions", str(cached_entry.id))
+
+        await publish_message(CachedDefinition.__name__, None, await get_broadcast(), user_id=str("42"))
         logger.debug("Managed to submit broadcast definitions for  %s", str("42"))
         if refresh:  # we just want to regenerate in the DB, leave now
             return []

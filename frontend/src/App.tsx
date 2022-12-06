@@ -20,6 +20,7 @@ import { setUser } from "./features/user/userSlice";
 import goals from "./goals";
 import Help from "./help/Help";
 import imports from "./imports";
+import languageclasses from "./languageclasses";
 import { Layout } from "./layout";
 import { darkTheme, lightTheme } from "./layout/themes";
 import { ComponentsConfig } from "./lib/complexTypes";
@@ -30,12 +31,14 @@ import Listrobes from "./listrobes/Listrobes";
 import Notrobes from "./notrobes/Notrobes";
 import Repetrobes from "./repetrobes/Repetrobes";
 import Stats from "./stats/Stats";
+import studentregistrations from "./studentregistrations";
 import surveys from "./surveys";
 import Init from "./system/Init";
 import Login from "./system/Login";
 import RecoverPassword from "./system/RecoverPassword";
 import Signup from "./system/Signup";
 import System from "./system/System";
+import teacherregistrations from "./teacherregistrations";
 import userlists from "./userlists";
 
 const GLOBAL_TIMER_DURATION_MS = IS_DEV ? 2000 : 5000;
@@ -153,7 +156,11 @@ function App({ config }: Props): ReactElement {
           history={localHistory}
         >
           {/* disableTelemetry be nice for now */}
-          {(_permissions) => [
+          {(permissions) => [
+            // _permissions === "admin" && <Resource name="users" {...users} />,
+            permissions.includes("teacher") && <Resource name="teacherregistrations" {...teacherregistrations} />,
+            <Resource name="languageclasses" {...languageclasses} />,
+            <Resource name="studentregistrations" {...studentregistrations} />,
             <Resource name="imports" {...imports} />,
             <Resource name="contents" {...contents} />,
             <Resource name="userdictionaries" {...dictionaries} />,

@@ -1,3 +1,19 @@
+from .data import (  # noqa: F401
+    CachedDefinition,
+    Card,
+    Content,
+    Goal,
+    Import,
+    LanguageClass,
+    StudentRegistration,
+    Survey,
+    TeacherRegistration,
+    UserDictionary,
+    UserList,
+    UserListWord,
+    UserRecentSentences,
+    UserSurvey,
+)
 from .lookups import (  # noqa: F401
     BingApiLookup,
     BingApiTranslation,
@@ -7,18 +23,5 @@ from .lookups import (  # noqa: F401
     ZhhansEnABCLookup,
     ZhhansEnCCCLookup,
     ZhHskLookup,
-)
-from .migrated import (  # noqa: F401
-    CachedDefinition,
-    Card,
-    Content,
-    Goal,
-    Import,
-    Survey,
-    UserDictionary,
-    UserList,
-    UserListWord,
-    UserRecentSentences,
-    UserSurvey,
 )
 from .user import AuthUser  # noqa: F401

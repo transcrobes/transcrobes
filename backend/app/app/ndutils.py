@@ -149,3 +149,7 @@ async def gather_with_concurrency(n, *tasks):
             return await task
 
     return await asyncio.gather(*(sem_task(task) for task in tasks))
+
+
+def clean_broadcaster_string(original):
+    return str(original).strip("'").strip('"')

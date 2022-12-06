@@ -18,6 +18,7 @@ import {
   ONE_YEAR_IN_SECS,
   PublicationConfig,
   PUSH_FILES_PROCESS_FREQ,
+  REQUEST_QUEUE_PROCESS_FREQ,
   SerialisableDayCardWords,
   UserDefinitionType,
   WEBPUB_CACHE_NAME,
@@ -83,6 +84,11 @@ async function loadDb(
     // when they have finished. Running multiple intervals is a waste of resources and
     // can cause problems with the database
     setInterval(() => data.sendUserEvents(dbObj, url), EVENT_QUEUE_PROCESS_FREQ, NAME_PREFIX + "sendUserEvents");
+    setInterval(
+      () => data.processRequestQueue(dbObj, url),
+      REQUEST_QUEUE_PROCESS_FREQ,
+      NAME_PREFIX + "processRequestQueue",
+    );
     setInterval(() => data.pushFiles(url, user.username), PUSH_FILES_PROCESS_FREQ, NAME_PREFIX + "pushFiles");
     if (event) {
       postIt(event, { source: message.source, type: message.type, value: "loadDb success" });
@@ -355,35 +361,38 @@ export function manageEvent(sw: ServiceWorkerGlobalScope, event: ExtendableMessa
     case "createCards":
       dayCardWords = null; // simpler to set to null rather than try and merge lots
     // eslint-disable-next-line no-fallthrough
+    case "addRecentSentences":
+    case "createRegistrationRequest":
+    case "practiceCard":
+    case "saveSurvey":
+    case "setContentConfigToStore":
+    case "submitLookupEvents":
+    case "submitContentEnrichRequest":
+    case "submitUserEvents":
+    case "updateRecentSentences":
     case "getCharacterDetails":
     case "getAllFromDB":
     case "getByIds":
-    case "practiceCard":
     case "getWordFromDBs":
     case "getKnownWordIds":
-    case "saveSurvey":
-    case "submitLookupEvents":
+    case "getContentConfigFromStore":
     case "getUserListWords":
     case "getDefaultWordLists":
     case "getWordListWordIds":
-    case "setContentConfigToStore":
-    case "getContentConfigFromStore":
     case "getVocabReviews":
     case "getSRSReviews":
-    case "submitUserEvents":
-    case "updateRecentSentences":
-    case "addRecentSentences":
     case "getRecentSentences":
     case "getFirstSuccessStatsForList":
     case "getFirstSuccessStatsForImport":
     case "getWaitingRevisions":
-    case "submitContentEnrichRequest":
     case "getDayStats":
     case "getWordStatsForExport":
     case "getAllShortWords":
     case "getAllShortChars":
     case "getCardsForExport":
     case "getAllUserDictionaryEntries":
+    case "enqueueRegistrations":
+    case "getLanguageClassParticipants":
       loadDb(message, sw).then(([ldb, msg]) => {
         // @ts-ignore FIXME: can I properly type this somehow and it actually be clean/useful?
         data[message.type](ldb, message.value).then((result) => {

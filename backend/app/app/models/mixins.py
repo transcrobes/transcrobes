@@ -74,6 +74,11 @@ class DetailedMixin(ActivatorMixin, TitleDescriptionMixin, TimestampMixin):
 
 
 @declarative_mixin
+class ActivatorTimestampMixin(ActivatorMixin, TimestampMixin):
+    pass
+
+
+@declarative_mixin
 class JSONLookupMixin:
     id = Column(Integer, primary_key=True)
     source_text = Column(String(2000), nullable=False, index=True)

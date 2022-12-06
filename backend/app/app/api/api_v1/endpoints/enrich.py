@@ -12,7 +12,7 @@ from typing import Any
 import aiofiles
 from app import models, schemas
 from app.api import deps
-from app.api.api_v1.graphql import DefinitionSet
+from app.api.api_v1.graphql import Definitions
 from app.cache import cached_definitions
 from app.core.config import settings
 from app.data.importer import process
@@ -206,7 +206,7 @@ async def word_definitions(
         )
     )
     obj = result.scalar_one()
-    graphql_definition = DefinitionSet.from_model_asdict(obj, providers)
+    graphql_definition = Definitions.from_model_asdict(obj, providers)
 
     other_defs = []
 
@@ -221,7 +221,7 @@ async def word_definitions(
             )
         )
         obj = result.scalar_one()
-        other_defs.append(DefinitionSet.from_model_asdict(obj, providers))
+        other_defs.append(Definitions.from_model_asdict(obj, providers))
 
     # FIXME: iterate on all lookup providers for each lemma returned
     # (plus the original?)
@@ -240,7 +240,7 @@ async def word_definitions(
             )
         )
         obj = result.scalar_one()
-        other_defs.append(DefinitionSet.from_model_asdict(obj, providers))
+        other_defs.append(Definitions.from_model_asdict(obj, providers))
 
     # modelStats = next(
     #     iter(

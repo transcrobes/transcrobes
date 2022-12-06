@@ -8,11 +8,19 @@ import uuid
 from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, List, TypedDict
 
+from app.api.api_v1.subs import publish_message
 from app.data.context import get_broadcast
 from app.data.models import NONE, REQUESTED
 from app.db.base_class import Base
 from app.db.session import async_session
-from app.models.mixins import CachedAPIJSONLookupMixin, DetailedMixin, RevisionableMixin, utcnow
+from app.models.mixins import (
+    ActivatorMixin,
+    ActivatorTimestampMixin,
+    CachedAPIJSONLookupMixin,
+    DetailedMixin,
+    RevisionableMixin,
+    utcnow,
+)
 from app.models.user import AuthUser, absolute_imports_path, absolute_resources_path
 from app.ndutils import to_import
 from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Index, Integer, String, Text, UniqueConstraint
@@ -20,7 +28,8 @@ from sqlalchemy.dialects import postgresql
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.ext.asyncio.session import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import declarative_mixin, relationship
+from sqlalchemy.orm.decl_api import declared_attr
 from sqlalchemy.sql.expression import text, update
 
 logger = logging.getLogger(__name__)
@@ -494,9 +503,9 @@ class UserList(DetailedMixin, Base):
     async def publish_updates(self):
         broadcast = await get_broadcast()
         logger.info(f"Send update to websocket for list {self.id} for user {self.created_by.id}")
-        await broadcast.publish(channel="WordList", message=str(self.created_by.id))
+        await publish_message("WordList", None, broadcast, user_id=str(self.created_by.id))
         if self.word_knowledge:
-            await broadcast.publish(channel=Card.__name__, message=str(self.created_by.id))
+            await publish_message(Card.__name__, None, broadcast, user_id=str(self.created_by.id))
 
 
 class UserSurvey(DetailedMixin, Base):
@@ -568,3 +577,34 @@ class UserListWord(Base):
 
     user_list = relationship("UserList")
     word = relationship("BingApiLookup")
+
+
+@declarative_mixin
+class Registration(ActivatorTimestampMixin):
+    __table_args__ = (UniqueConstraint("user_id", "class_id"),)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    status = Column(Integer, nullable=False, default=ActivatorMixin.INACTIVE_STATUS)
+
+    @declared_attr
+    def class_id(cls):  # pylint: disable=E0213
+        return Column("class_id", ForeignKey("languageclass.id"))
+
+    @declared_attr
+    def user_id(cls):  # pylint: disable=E0213
+        return Column("user_id", ForeignKey("authuser.id"))
+
+
+class StudentRegistration(Registration, Base):
+    class_reg = relationship("LanguageClass", back_populates="students")
+    user = relationship("AuthUser", foreign_keys="StudentRegistration.user_id")
+
+
+class TeacherRegistration(Registration, Base):
+    class_reg = relationship("LanguageClass", back_populates="teachers")
+    user = relationship("AuthUser", foreign_keys="TeacherRegistration.user_id")
+
+
+class LanguageClass(DetailedMixin, Base):
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    teachers = relationship("TeacherRegistration", back_populates="class_reg")
+    students = relationship("StudentRegistration", back_populates="class_reg")
