@@ -1,5 +1,5 @@
 // import { Record as RARecord, Identifier } from "react-admin";
-import { RaRecord, Identifier } from "react-admin";
+import { RaRecord, Identifier, UserIdentity } from "react-admin";
 import { HslColor } from "react-colorful";
 
 import { CardDocument, CharacterDocument, DefinitionDocument, WordModelStatsDocument } from "../database/Schema";
@@ -766,7 +766,7 @@ export interface ComponentsAppConfig extends ReaderState {
   reloadConfig: boolean;
 }
 
-export interface UserDetails {
+export interface UserDetails extends UserIdentity {
   accessToken: string;
   isAdmin: boolean;
   refreshToken: string;
@@ -795,6 +795,7 @@ export const DEFAULT_USER: UserDetails = {
   trackingEndpoint: "",
   translationProviders: [],
   username: "",
+  id: "",
   fromLang: "zh-Hans",
   toLang: "en",
 };

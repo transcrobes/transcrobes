@@ -1,14 +1,14 @@
-import { AnyAction, createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
+import fetchBuilder from "fetch-retry";
+import Cookies from "js-cookie";
 import jwtDecode from "jwt-decode";
 import type { RootState } from "../../app/createStore";
 import { setUserDexie } from "../../database/authdb";
+import { throttleAction } from "../../lib/funclib";
 import { DEFAULT_RETRIES, DEFAULT_USER, INITIAL_USERSTATE, UserDetails, UserState } from "../../lib/types";
 export const ACCESS_TOKEN_PATH = "/api/v1/login/access-token";
 export const REFRESH_TOKEN_PATH = "/api/v1/refresh";
 export const LOGOUT_PATH = "/api/v1/logout";
-import fetchBuilder from "fetch-retry";
-import { throttleAction } from "../../lib/funclib";
-import Cookies from "js-cookie";
 
 const modulePrefix = "user";
 
@@ -16,6 +16,7 @@ function userFromApiResult(result: any, username: string): UserDetails {
   const token_data = jwtDecode(result.access_token) as any;
   return {
     username,
+    id: token_data.id,
     isAdmin: token_data.is_superuser,
     accessToken: result.access_token,
     refreshToken: result.refresh_token,

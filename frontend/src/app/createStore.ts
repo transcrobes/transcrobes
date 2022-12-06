@@ -94,6 +94,9 @@ const reducer = combineReducers({
 
 function jwtTokenAuthProvider(): AuthProvider {
   return {
+    getIdentity: async () => {
+      return store.getState().userData.user || (await getUserDexie()).user;
+    },
     login: async ({ username, password }: { username: string; password: string }) => {
       const user = await doLogin(username, password, location.origin);
       if (user) {
