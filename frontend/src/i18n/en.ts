@@ -405,6 +405,7 @@ const customEnglishMessages: TranslationMessages = {
       no_goal: "None",
       goal_selector: "Show expected content utility for Goal",
       loading: "Loading...",
+      import_create: "+ Import Content",
     },
     surveys: {
       name: "Surveys",

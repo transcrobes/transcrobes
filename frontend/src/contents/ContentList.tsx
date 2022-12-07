@@ -24,6 +24,7 @@ import CacheSwitch from "./CacheSwitch";
 import { ContentGoalSelector } from "./ContentGoalSelector";
 
 function ListActions({ empty, onGoalChange }: { empty?: boolean; onGoalChange?: (event: SelectChangeEvent) => void }) {
+  const translate = useTranslate();
   return (
     <TopToolbar
       sx={{
@@ -31,6 +32,7 @@ function ListActions({ empty, onGoalChange }: { empty?: boolean; onGoalChange?: 
       }}
     >
       <ContentGoalSelector showResult={false} onChange={onGoalChange} />
+      <Link to="/imports/create">{translate("resources.contents.import_create")}</Link>
       {!empty && <SortButton fields={["createdAt", "title", "processing"]} />}
       <HelpButton url={`//${DOCS_DOMAIN}/page/software/configure/contents/`} />
     </TopToolbar>

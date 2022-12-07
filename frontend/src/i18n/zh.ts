@@ -405,6 +405,7 @@ const customChineseMessages: TranslationMessages = {
       no_goal: "没有任何",
       goal_selector: "显示目标的预期内容效用",
       loading: "加载中...",
+      import_create: "+ 导入内容",
     },
     surveys: {
       name: "调查",
