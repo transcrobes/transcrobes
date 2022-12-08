@@ -1,4 +1,3 @@
-import { NodeGlobalsPolyfillPlugin } from "@esbuild-plugins/node-globals-polyfill";
 import { NodeModulesPolyfillPlugin } from "@esbuild-plugins/node-modules-polyfill";
 import replace, { RollupReplaceOptions } from "@rollup/plugin-replace";
 import react from "@vitejs/plugin-react";
@@ -133,15 +132,10 @@ export default defineConfig({
       // Node.js global to browser globalThis
       define: {
         global: "globalThis",
+        "process.env.NODE_DEBUG": "false",
       },
       // Enable esbuild polyfill plugins
-      plugins: [
-        NodeGlobalsPolyfillPlugin({
-          process: true,
-          buffer: true,
-        }),
-        NodeModulesPolyfillPlugin(),
-      ],
+      plugins: [NodeModulesPolyfillPlugin()],
     },
   },
   plugins: [

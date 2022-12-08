@@ -42,6 +42,7 @@ const chineseMessages: TranslationMessages = {
       move_down: "下移",
       open: "打开",
       toggle_theme: "切换主题",
+      clear_array_input: "清空",
     },
     boolean: {
       true: "是",
@@ -93,7 +94,7 @@ const chineseMessages: TranslationMessages = {
       not_found: "您输入了错误的URL或者错误的链接.",
       unsaved_changes: "修改未保存. 放弃修改吗?",
       yes: "是",
-
+      clear_array_input: "清空",
       bulk_update_content: "您确定要更新 %{name}? |||| 您确定要更新 %{smart_count} 项?",
       details: "详情",
       bulk_update_title: "更新 %{name} |||| 更新 %{smart_count} 项 %{name}",
