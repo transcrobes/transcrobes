@@ -1,9 +1,10 @@
-import { Button, Box } from "@mui/material";
+import { Box, Button } from "@mui/material";
 import { useEffect, useState } from "react";
 import { useTranslate } from "react-admin";
 import { useAppSelector } from "../app/hooks";
-import { getVoices, say, toneColour } from "../lib/funclib";
+import { getVoices, say } from "../lib/funclib";
 import { LOCALES, SystemLanguage, SYSTEM_LANG_TO_LOCALE } from "../lib/types";
+import SoundBox from "./SoundBox";
 
 type Props = {
   graph: string;
@@ -38,26 +39,21 @@ export default function SayIt({ graph, sound, lang }: Props) {
     >
       {voice ? (
         <Button
-          style={sound?.length ? { textTransform: "none", padding: "0" } : {}}
+          sx={{
+            ...{ lineHeight: "1.25em", fontSize: "1em" },
+            ...(sound?.length ? { textTransform: "none", padding: "0" } : {}),
+          }}
           onClick={() => say(graph, lang, voice)}
           size="small"
           variant="outlined"
           color="primary"
         >
           {sound
-            ? sound.map((s) => (
-                <Box component="span" sx={{ color: toneColour(s) }}>
-                  {s}
-                </Box>
-              ))
+            ? sound.map((s, index) => <SoundBox key={`${s}${index}`} sound={s} index={index} />)
             : translate("buttons.general.say_it")}
         </Button>
       ) : (
-        sound?.map((s) => (
-          <Box component="span" sx={{ color: toneColour(s) }}>
-            {s}
-          </Box>
-        ))
+        sound?.map((s, index) => <SoundBox key={`${s}${index}`} sound={s} index={index} />)
       )}
     </Box>
   );

@@ -15,7 +15,7 @@ import PracticerInput from "../components/PracticerInput";
 import RecentSentencesElement from "../components/RecentSentencesElement";
 import SayIt from "../components/SayIt";
 import { CARD_TYPES, getCardId, getCardType } from "../database/Schema";
-import { toneColour } from "../lib/funclib";
+import { hasCharacters, hasTones, soundWithSeparators, toneColour } from "../lib/funclib";
 import {
   CardType,
   CharacterType,
@@ -26,6 +26,7 @@ import {
   WordModelStatsType,
 } from "../lib/types";
 import { Box } from "@mui/material";
+import SoundBox from "../components/SoundBox";
 
 const useStyles = makeStyles()({
   characterDetails: {
@@ -332,10 +333,8 @@ function ProviderTranslations({
 function Sound({ definition }: { definition: DefinitionType }): ReactElement {
   return (
     <Box>
-      {definition.sound.map((s) => (
-        <Box component="span" sx={{ color: toneColour(s) }}>
-          {s}
-        </Box>
+      {definition.sound.map((s, index) => (
+        <SoundBox key={`${s}${index}`} sound={s} index={index} />
       ))}
     </Box>
   );

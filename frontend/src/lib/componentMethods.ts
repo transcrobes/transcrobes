@@ -1,3 +1,4 @@
+import { soundWithSeparators } from "./funclib";
 import { bestGuess, complexPosToSimplePosLabels, filterKnown, toSimplePos } from "./libMethods";
 import { platformHelper } from "./proxies";
 import {
@@ -87,16 +88,11 @@ export async function getNormalGloss(
   } else if (glossing == USER_STATS_MODE.L2_SIMPLIFIED) {
     gloss = await getL2Simplified(token, gloss, uCardWords, definitions, fromLang, toLang, readerConfig);
   } else if (glossing == USER_STATS_MODE.TRANSLITERATION) {
-    gloss = (await getSound(token, definitions)).join("");
+    gloss = (await getSound(token, definitions)).map((sound, i) => soundWithSeparators(sound, i, fromLang)).join("");
   } else if (glossing == USER_STATS_MODE.TRANSLITERATION_L1) {
-    gloss = `${(await getSound(token, definitions)).join("")}: ${await getL1(
-      token,
-      definitions,
-      fromLang,
-      toLang,
-      readerConfig,
-      gloss,
-    )}`;
+    gloss = `${(await getSound(token, definitions))
+      .map((sound, i) => soundWithSeparators(sound, i, fromLang))
+      .join("")}: ${await getL1(token, definitions, fromLang, toLang, readerConfig, gloss)}`;
   }
   return gloss;
 }
@@ -194,7 +190,9 @@ export async function getPopoverText(
   const l1 = await getL1(token, definitions, fromLang, systemLang, readerConfig, gloss);
   if (l1 === DEFINITION_LOADING) return DEFINITION_LOADING;
   const l2 = await getL2Simplified(token, l1, uCardWords, definitions, fromLang, systemLang, readerConfig);
-  const sound = await getSound(token, definitions);
+  const sound = (await getSound(token, definitions))
+    .map((sound, i) => soundWithSeparators(sound, i, fromLang))
+    .join("");
   return `${complexPosToSimplePosLabels(token.pos!, fromLang, systemLang)}: ${l1} ${
     l2 != l1 ? `: ${l2}` : ""
   }: ${sound}`;

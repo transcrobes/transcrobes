@@ -1,8 +1,7 @@
 import { Link } from "@mui/material";
 import { ReactElement } from "react";
 import { useAppSelector } from "../app/hooks";
-import { toneColour } from "../lib/funclib";
-import { Box } from "@mui/system";
+import SoundBox from "./SoundBox";
 
 export interface Props {
   graph?: string;
@@ -24,11 +23,7 @@ function DiscoverableWord({ graph, children, sound, newTab }: React.PropsWithChi
   }
   function colours(graph: string, sound?: string[]): JSX.Element[] | string {
     if (sound && sound.length === graph.length) {
-      return graph.split("").map((g, i) => (
-        <Box component="span" sx={{ color: toneColour(sound[i]) }}>
-          {g}
-        </Box>
-      ));
+      return graph.split("").map((g, i) => <SoundBox key={`${g}${i}`} sound={sound[i]} index={i} graph={g} />);
     } else {
       return graph;
     }

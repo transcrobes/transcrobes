@@ -50,6 +50,17 @@ export function toneColour(pinyin: string) {
   return TONE_COLOURS[tone];
 }
 
+export function soundWithSeparators(pinyin: string, index: number, fromLang: InputLanguage) {
+  switch (fromLang) {
+    case "zh-Hans":
+      return index > 0 && pinyin[index - 1] !== "-" && ["a", "e", "o"].includes(pinyin.normalize("NFD")[0])
+        ? `'${pinyin}`
+        : pinyin;
+    default:
+      return pinyin;
+  }
+}
+
 export function findTone(pinyin: string) {
   const n = pinyin.normalize("NFD");
   for (let i = 0; i < n.length; i++) {
@@ -393,6 +404,10 @@ export function reorderArray(list: any[], startIndex: number, endIndex: number):
 
 export function isAlphabetic(lang: SystemLanguage): boolean {
   return ["en"].includes(lang);
+}
+
+export function hasTones(lang: InputLanguage): boolean {
+  return ["zh-Hans"].includes(lang);
 }
 
 export function hasCharacters(lang: SystemLanguage): boolean {
