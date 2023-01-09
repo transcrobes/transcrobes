@@ -14,6 +14,9 @@ const pwaOptions: Partial<VitePWAOptions> = {
   mode: mode,
   base: "/",
   includeAssets: ["static/favicon.ico"],
+  injectManifest: {
+    maximumFileSizeToCacheInBytes: 20000000,
+  },
   manifest: {
     name: "Transcrobes",
     short_name: "Transcrobes",

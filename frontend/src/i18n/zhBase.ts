@@ -98,6 +98,7 @@ const chineseMessages: TranslationMessages = {
       bulk_update_content: "您确定要更新 %{name}? |||| 您确定要更新 %{smart_count} 项?",
       details: "详情",
       bulk_update_title: "更新 %{name} |||| 更新 %{smart_count} 项 %{name}",
+      auth_error: "授权错误",
     },
     navigation: {
       no_results: "结果为空",
