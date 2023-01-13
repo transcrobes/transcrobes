@@ -9,6 +9,6 @@ BASE_DIR=$(dirname $SCRIPT_DIR)
 
 echo $BASE_DIR
 
-docker build $BASE_DIR -f $BASE_DIR/Dockerfile.worker -t ${MAIN_IMAGE} \
+docker build $BASE_DIR --network host -f $BASE_DIR/Dockerfile.worker -t ${MAIN_IMAGE} \
   --build-arg ENVIRONMENT=${ENVIRONMENT} \
   --build-arg TRANSCROBES_DOCKER_REPO=${TRANSCROBES_DOCKER_REPO}

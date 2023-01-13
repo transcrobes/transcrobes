@@ -5,16 +5,24 @@ from __future__ import annotations
 import copy
 import dataclasses
 import json
+import re
 from dataclasses import field
-from typing import Optional
+from typing import Generic, Optional, TypeVar
 
 import strawberry
 from app import models
 from app.db.session import async_session
-from app.models.data import KNOWLEDGE_UNSET
+from app.etypes import KNOWLEDGE_UNSET
 from app.models.mixins import ActivatorMixin
 from sqlalchemy.sql.expression import select
 from strawberry.utils.str_converters import to_camel_case
+
+T = TypeVar("T")
+
+
+def camel_to_snake(name):
+    name = re.sub("(.)([A-Z][a-z]+)", r"\1_\2", name)
+    return re.sub("([a-z0-9])([A-Z])", r"\1_\2", name).lower()
 
 
 @strawberry.type
@@ -617,6 +625,12 @@ class Userlists(CommonType):
 
 
 @strawberry.input
+class PushRow(Generic[T]):
+    assumedMasterState: Optional[T] = None
+    newDocumentState: T
+
+
+@strawberry.input
 class ImportsInput(Imports, CommonType):
     pass
 
@@ -669,3 +683,28 @@ class TeacherregistrationsInput(Teacherregistrations):
 @strawberry.input
 class StudentregistrationsInput(Studentregistrations):
     pass
+
+
+@strawberry.type
+class CollectionChanged:
+    name: str
+
+
+@strawberry.type
+class Checkpoint:
+    # id: Optional[str] = ("",)
+    # updated_at: Optional[float] = (-1,)
+    id: Optional[str] = ""
+    updated_at: Optional[float] = -1
+
+
+@strawberry.type
+class Return(Generic[T]):
+    documents: list[T]
+    checkpoint: Checkpoint
+
+
+@strawberry.input
+class InputCheckpoint(Generic[T]):
+    id: Optional[str] = ""
+    updated_at: Optional[float] = -1

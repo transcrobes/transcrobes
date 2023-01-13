@@ -2578,7 +2578,7 @@ export class IFrameNavigator extends EventEmitter implements Navigator {
 
           if (this.api?.updateCurrentLocation) {
             this.api?.updateCurrentLocation(position).then(async (_) => {
-              log.log("api updated current location", position);
+              // log.log("api updated current location", position);
               return this.annotator?.saveLastReadingPosition(position);
             });
           } else {

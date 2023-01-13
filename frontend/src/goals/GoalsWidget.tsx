@@ -30,7 +30,6 @@ export default function GoalsWidget({ config, inited }: Props): ReactElement {
         type: "getSerialisableCardWords",
         value: {},
       });
-
       const locgoals: GoalDocument[] = await config.proxy.sendMessagePromise<GoalDocument[]>({
         source: DATA_SOURCE,
         type: "getAllFromDB",

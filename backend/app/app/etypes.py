@@ -67,3 +67,8 @@ class Model(TypedDict):
 
 
 LANG_PAIR_SEPARATOR = ":"
+
+KNOWLEDGE_UNSET = 0
+WORD_UNKNOWN = 2
+WORD_HARD = 3
+WORD_KNOWN = 5

@@ -31,7 +31,7 @@ import {
 } from "../common/types";
 import Header from "./Header";
 import injectables from "./injectables";
-import { intervalCollection } from "../../lib/interval/interval-decorator";
+import { intervalCollection, NAME_PREFIX } from "../../lib/interval/interval-decorator";
 
 declare global {
   interface Window {
@@ -155,7 +155,7 @@ export default function BookReader({ proxy }: ContentProps): ReactElement {
         pageMargins: conf.pageMargins,
       };
       window.transcrobesStore = store;
-      console.log("Loading the reader with ", url);
+      console.log("Loading the reader with ", url, userSettings, conf);
       const reader = await D2Reader.load({
         url,
         injectables: injectables,
@@ -175,19 +175,22 @@ export default function BookReader({ proxy }: ContentProps): ReactElement {
         api: {
           updateCurrentLocation: async (loc: any) => {
             // This is needed so that setBookBoundary has the updated "reader" value.
+            console.log("Updating location to ", id, loc);
             dispatch(bookReaderActions.setLocationChanged({ id, value: loc }));
             return loc;
           },
-          onError: function (e: Error) {
+          onError: (e: Error) => {
             setError(e);
           },
         } as any, // FIXME: many params seem to not be *required* here, so any...
       });
+      console.log("Reader loaded", reader, reader.currentLocator);
       window.etfLoaded = new Set<string>();
       setReader(reader);
       enableResizeEvent(reader, dispatch, id);
-      if (readerConfig.location) {
-        reader.goTo(readerConfig.location);
+      const curLoc = readerConfig.location || userSettings.location;
+      if (curLoc) {
+        reader.goTo(curLoc);
         // FIXME: am i necessary?
         // D2Reader.applyUserSettings({ fontSize: readerConfig.fontSize * 100 });
         reader.applyUserSettings({ fontSize: 100 });
@@ -201,16 +204,20 @@ export default function BookReader({ proxy }: ContentProps): ReactElement {
       // for the moment it will suffice.
       // There might be a prettier way of doing this without setting the fontSize to itself, but I couldn't
       // find it.
-      setInterval(() => {
-        if (reader) {
-          if (reader.currentSettings.verticalScroll) {
-            if (window.etfLoaded && window.etfLoaded.delete("loaded")) {
-              reader.applyUserSettings({ fontSize: 100 });
+      setInterval(
+        () => {
+          if (reader) {
+            if (reader.currentSettings.verticalScroll) {
+              if (window.etfLoaded && window.etfLoaded.delete("loaded")) {
+                reader.applyUserSettings({ fontSize: 100 });
+              }
             }
           }
-        }
-        setLoaded(true);
-      }, 1000) as unknown as number;
+          setLoaded(true);
+        },
+        1000,
+        NAME_PREFIX + "r2d2bcHack",
+      );
     })();
     return () => {
       window.etfLoaded = undefined;
@@ -265,7 +272,7 @@ export default function BookReader({ proxy }: ContentProps): ReactElement {
 
   const goBackward = useCallback(async () => {
     if (!reader) return;
-    const isFirstPage = await reader.atStart;
+    const isFirstPage = reader.atStart;
     reader.previousPage();
     if (isFirstPage) {
       dispatch(bookReaderActions.setCurrentTocUrl({ id, value: reader.mostRecentNavigatedTocItem }));

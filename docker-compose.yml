@@ -47,7 +47,7 @@ services:
       - ALLOW_ANONYMOUS_LOGIN=yes
 
   kafka:
-    image: docker.io/bitnami/kafka:3.3
+    image: docker.io/bitnami/kafka:3.4
     volumes:
       - "app-kafka_data:/bitnami"
     environment:
@@ -74,13 +74,15 @@ services:
     env_file:
       - .env
     environment:
-      - SERVER_NAME=${DOMAIN?Variable not set}
-      - SERVER_HOST=https://${DOMAIN?Variable not set}
+      # - SERVER_NAME=${DOMAIN?Variable not set}
+      - HA_HOST=${DOMAIN?Variable not set}
+      - NODE_HOSTS=${NODE_HOSTS?Variable not set}
       # Allow explicit env var override for tests
       - SMTP_HOST=${SMTP_HOST}
     build:
       context: .
       dockerfile: Dockerfile.web
+      network: "host"
       args:
         INSTALL_DEV: ${INSTALL_DEV-true}
         TRANSCROBES_DOCKER_REPO: ${TRANSCROBES_DOCKER_REPO-transcrobes}
@@ -97,8 +99,10 @@ services:
       - .env
     environment:
       - SMTP_HOST=${SMTP_HOST}
-      - SERVER_NAME=${DOMAIN?Variable not set}
-      - SERVER_HOST=https://${DOMAIN?Variable not set}
+      - HA_HOST=${DOMAIN?Variable not set}
+      - NODE_HOSTS=${NODE_HOSTS?Variable not set}
+      # - SERVER_HOST=http://${DOMAIN?Variable not set}
+      # - SERVER_NAME=${DOMAIN?Variable not set}
       - TRANSCROBES_LOG_LEVEL=INFO
       - TRANSCROBES_DATA_LOG_LEVEL=INFO
       - TRANSCROBES_ENRICH_LOG_LEVEL=INFO
@@ -125,7 +129,9 @@ services:
       - .env
     environment:
       - SERVER_NAME=${DOMAIN?Variable not set}
-      - SERVER_HOST=https://${DOMAIN?Variable not set}
+      - NODE_HOSTS=${NODE_HOSTS?Variable not set}
+      - HA_HOST=${DOMAIN?Variable not set}
+
       # Allow explicit env var override for tests
       - SMTP_HOST=${SMTP_HOST?Variable not set}
       - RUN=faust worker -A app.fworker -l info

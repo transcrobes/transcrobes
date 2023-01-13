@@ -1,15 +1,15 @@
 import _ from "lodash";
 import { addRxPlugin, clone, createRxDatabase, removeRxDatabase } from "rxdb";
 import { RxDBDevModePlugin } from "rxdb/plugins/dev-mode";
-import { getRxStorageDexie } from "rxdb/plugins/dexie";
 import { RxDBMigrationPlugin } from "rxdb/plugins/migration";
 import { RxDBQueryBuilderPlugin } from "rxdb/plugins/query-builder";
 import {
   pullQueryBuilderFromRxSchema,
   pushQueryBuilderFromRxSchema,
-  RxDBReplicationGraphQLPlugin,
+  replicateGraphQL,
   RxGraphQLReplicationState,
 } from "rxdb/plugins/replication-graphql";
+import { getRxStorageDexie } from "rxdb/plugins/storage-dexie";
 import { RxDBUpdatePlugin } from "rxdb/plugins/update";
 import { store } from "../app/createStore";
 import { setUser, throttledRefreshToken } from "../features/user/userSlice";
@@ -31,16 +31,23 @@ import {
   DBTwoWayCollectionKeys,
   DBTwoWayCollections,
   DefinitionDocument,
-  LIVE_INTERVAL,
-  LIVE_INTERVAL_WITH_SUBSCRIPTION,
   reloadRequired,
   TranscrobesCollections,
   TranscrobesDatabase,
+  TranscrobesDocumentTypes,
 } from "./Schema";
 
 import Polyglot from "node-polyglot";
 
 import { createClient } from "graphql-ws";
+import { GraphQLServerUrl } from "rxdb/dist/types/types";
+
+type PullableCollectionKeys =
+  | DBPullCollectionKeys
+  | DBTwoWayCollectionKeys
+  | DBTeacherPullCollectionKeys
+  | DBTeacherTwoWayCollectionKeys;
+const replStates = new Map<PullableCollectionKeys, RxGraphQLReplicationState<TranscrobesDocumentTypes, any>>();
 
 declare const self: ServiceWorkerGlobalScope;
 
@@ -54,7 +61,6 @@ if (IS_DEV) {
 }
 addRxPlugin(RxDBMigrationPlugin);
 addRxPlugin(RxDBUpdatePlugin);
-addRxPlugin(RxDBReplicationGraphQLPlugin);
 
 let dbPromise: Promise<TranscrobesDatabase> | null;
 
@@ -92,7 +98,7 @@ async function unloadDatabaseFromMemory(): Promise<void> {
 
 async function loadDatabase(
   db: TranscrobesDatabase,
-  syncURL: string,
+  graphqlServerUrl: GraphQLServerUrl,
   reinitialise: boolean,
   justCreated: boolean,
   initialisationCacheName: string,
@@ -103,7 +109,7 @@ async function loadDatabase(
   const initialisationCache = await getFileStorage(initialisationCacheName);
 
   // FIXME: this is NASTY!!!
-  const baseUrl = new URL(syncURL).origin;
+  const baseUrl = new URL(graphqlServerUrl.http || "").origin;
 
   if (reinitialise && (await initialisationCache.list()).length > 0) {
     console.debug("The initialisation cache existing and we want to reinitialise, deleting");
@@ -206,21 +212,26 @@ async function cacheExports(
   return await initialisationCache.list();
 }
 
+function getErrorMessage(error: any) {
+  const err = error.innerErrors || error.errors;
+  return err[0].message?.toString();
+}
+
 function refreshTokenIfRequired(
   // FIXME: any
-  replicationState: RxGraphQLReplicationState<any>,
+  replicationState: any,
   error: any,
 ) {
   try {
     // this is currently a string, but could be made to be json, meaning an elegant parse of the error. But I suck...
-    const expiredMessage = error.innerErrors && error.innerErrors[0].message?.toString();
+    const expiredMessage = getErrorMessage(error.parameters);
     if (expiredMessage?.includes(EXPIRED_MESSAGE)) {
       console.debug("Looks like the token has expired, trying to refresh");
       store.dispatch(throttledRefreshToken() as any);
       // FIXME: this will set rubbish until the refresh actually happens - is this worth trying to improve upon?
       replicationState.setHeaders(getHeaders(store.getState().userData.user.accessToken));
     } else {
-      console.log("There was an error but apparently not an expiration", expiredMessage);
+      console.log("There was an error but apparently not an expiration", expiredMessage, error);
       console.error(error);
     }
   } catch (error) {
@@ -232,7 +243,7 @@ function refreshTokenIfRequired(
 function setupTwoWayReplication(
   db: TranscrobesDatabase,
   colName: DBTwoWayCollectionKeys | DBTeacherTwoWayCollectionKeys,
-  syncURL: string,
+  graphqlServerUrl: GraphQLServerUrl,
 ) {
   // set up replication
   console.debug(`Start ${colName} replication`);
@@ -241,9 +252,10 @@ function setupTwoWayReplication(
   // WARNING! pushQueryBuilderFromRxSchema modifies the input paramater object in place!
   const pushQuery = pushQueryBuilderFromRxSchema(_.camelCase(colName), clone(DBCollections[colName]));
   // WARNING! pullQueryBuilderFromRxSchema modifies the input paramater object in place!
-  const pullQuery = pullQueryBuilderFromRxSchema(_.camelCase(colName), clone(DBCollections[colName]), BATCH_SIZE_PULL);
-  const replicationState = db[colName].syncGraphQL({
-    url: syncURL,
+  const pullQuery = pullQueryBuilderFromRxSchema(_.camelCase(colName), clone(DBCollections[colName]));
+
+  const replicationState = replicateGraphQL<TranscrobesDocumentTypes, any>({
+    url: graphqlServerUrl,
     headers: headers,
     push: {
       queryBuilder: pushQuery,
@@ -255,13 +267,8 @@ function setupTwoWayReplication(
       batchSize: BATCH_SIZE_PULL,
     },
     live: true,
-    /**
-     * Because the websocket is used to inform the client
-     * when something has changed,
-     * we can set the liveInterval to a high value
-     */
-    liveInterval: 1000 * (DBCollections[colName].subscription ? LIVE_INTERVAL_WITH_SUBSCRIPTION : LIVE_INTERVAL),
-    deletedFlag: "deleted",
+    deletedField: "deleted",
+    collection: db[colName],
   });
 
   // show replication-errors in logs
@@ -283,34 +290,26 @@ function setupTwoWayReplication(
 function setupPullReplication(
   db: TranscrobesDatabase,
   colName: DBPullCollectionKeys | DBTeacherPullCollectionKeys,
-  syncURL: string,
+  graphqlServerUrl: GraphQLServerUrl,
 ) {
   console.debug("Start pullonly replication", colName);
   const headers = getHeaders(store.getState().userData.user.accessToken);
   // WARNING! pullQueryBuilderFromRxSchema modifies the input paramater object in place!
   const col = clone(DBCollections[colName]) as any;
 
-  // liveInterval is in ms, so seconds * 1000
-  const liveInterval =
-    "liveInterval" in col
-      ? col.liveInterval
-      : 1000 * (col.subscription ? LIVE_INTERVAL_WITH_SUBSCRIPTION : LIVE_INTERVAL);
-
   const pullQueryBuilder =
-    "pullQueryBuilder" in col
-      ? col.pullQueryBuilder
-      : pullQueryBuilderFromRxSchema(_.camelCase(colName), col, BATCH_SIZE_PULL);
+    "pullQueryBuilder" in col ? col.pullQueryBuilder : pullQueryBuilderFromRxSchema(_.camelCase(colName), col);
 
-  const replicationState = db[colName].syncGraphQL({
-    url: syncURL,
+  const replicationState = replicateGraphQL<TranscrobesDocumentTypes, any>({
+    url: graphqlServerUrl,
     headers: headers,
     pull: {
       queryBuilder: pullQueryBuilder,
       batchSize: BATCH_SIZE_PULL,
     },
     live: true,
-    liveInterval,
-    deletedFlag: "deleted",
+    collection: db[colName],
+    deletedField: "deleted",
   });
   // show replication-errors in logs
   // @ts-ignore
@@ -343,7 +342,7 @@ async function createCollections(db: TranscrobesDatabase) {
       if (["definitions", "word_model_stats"].includes(colName)) {
         throw new Error(`Can't remove collection ${colName}, bailing`);
       }
-      await db.removeCollection(colName);
+      await db.removeCollectionDoc(colName, col.schema.version);
       await db.addCollections({ [colName]: col });
       reloadRequired.add("true");
     }
@@ -359,7 +358,7 @@ async function createCollections(db: TranscrobesDatabase) {
 
   // FIXME: this is no longer true but anyway
   // look for "de" and "the", if exists, we aren't new
-  return (await db.definitions.findByIds(["670", "253633"])).size === 0;
+  return (await db.definitions.findByIds(["670", "253633"]).exec()).size === 0;
 }
 
 async function deleteDatabase(dbName: string): Promise<void> {
@@ -378,32 +377,37 @@ async function deleteDatabase(dbName: string): Promise<void> {
   dbPromise = null;
 }
 
-function changedQuery(obj: string) {
+function changedQuery(collection: string) {
   return `
-  subscription onChanged${obj}($token: String!) {
-    changed${obj}(token: $token) {
-      id
+  subscription onChanged${_.upperFirst(collection)}($token: String!) {
+    changed${_.upperFirst(collection)}(token: $token) {
+      name
     }
   }
 `;
 }
 
-function setupGraphQLSubscription(
-  replicationState: RxGraphQLReplicationState<any>,
-  query: string,
-  wsEndpointUrl: string,
-  name: string,
-) {
+function collectionChangedQuery() {
+  return `
+  subscription onCollectionChanged($token: String!) {
+    collectionChanged(token: $token) {
+      name
+    }
+  }
+`;
+}
+
+function setupGraphQLSubscription(wsEndpointUrl: string, query: string, sw?: ServiceWorkerGlobalScope) {
   const client = createClient({
     url: wsEndpointUrl,
-    lazy: true, // do NOT put this to true, it will mean many connections fail
+    lazy: false, // do NOT put this to true, it will mean many connections fail
     keepAlive: 10_000,
     on: {
       connected: () => {
-        console.debug("SubscriptionClient.connected for", name);
+        console.debug("SubscriptionClient.connected");
       },
       error(error) {
-        console.warn("run() got error:", query, error);
+        console.warn("run() got error:", error);
       },
     },
     retryAttempts: 10_000,
@@ -417,12 +421,23 @@ function setupGraphQLSubscription(
 
   (async () => {
     const onNext = (data: any) => {
-      console.debug("subscription emitted => trigger run()", data);
-
       if (!!data.errors && data.errors.length > 0) {
         console.error(data.errors);
       }
-      replicationState.notifyAboutRemoteChange();
+      const colName = data.data.collectionChanged?.name?.toLowerCase() || "definitions";
+      console.debug("subscription emitted => trigger run()", colName);
+      const col = replStates.get(colName);
+      if (!col) {
+        console.error("No replication state for", colName, data);
+        return;
+      }
+      if (sw && colName === "cards") {
+        console.debug("Nulling sw.dayCardWords after subscription resync");
+        sw.dayCardWords = null;
+      }
+      // FIXME: work out why this doesn't work
+      // _.throttle(col.reSync, 5000);
+      col.reSync();
     };
 
     // eslint-disable-next-line no-constant-condition
@@ -438,24 +453,24 @@ function setupGraphQLSubscription(
           {
             next: onNext,
             error: (err: any) => {
-              // console.log("There was a client.subscribe error", err);
+              console.error("There was a client.subscribe error", err);
               reject(err);
             },
             complete: () => {
-              console.log("The client.subscribe completed for", name);
+              console.log("The client.subscribe completed");
               resolve(null);
             },
           },
         );
       })
         .then(() => {
-          console.log("The subscription has been successfully setup for", name);
+          console.log("The subscription has been successfully setup");
         })
         .catch((err) => {
           if (err && err.message === EXPIRED_MESSAGE) {
             store.dispatch(throttledRefreshToken() as any);
           }
-          console.error("The subscription setup failed for", name, err);
+          console.error("The subscription setup failed for", err);
         });
       await new Promise((res) => setTimeout(res, 5000));
     }
@@ -488,6 +503,10 @@ async function loadFromExports(
   // FIXME: externalise the string
   const syncURL = new URL("/api/v1/graphql", config.url.origin).href;
   const wsEndpointUrl = `ws${config.url.protocol === "https:" ? "s" : ""}://${config.url.host}/subscriptions`;
+  const graphqlServerUrl: GraphQLServerUrl = {
+    http: syncURL,
+    ws: wsEndpointUrl,
+  };
   const initialisationCacheName = "transcrobes.initialisation"; // was `${config.cacheName}.initialisation`;
 
   if (reinitialise) {
@@ -515,7 +534,7 @@ async function loadFromExports(
     console.log(syncURL, reinitialise, justCreated, initialisationCacheName, user);
     await loadDatabase(
       db,
-      syncURL,
+      graphqlServerUrl,
       reinitialise,
       justCreated,
       initialisationCacheName,
@@ -525,27 +544,29 @@ async function loadFromExports(
     );
   }
   progressCallback(polyglot.t("database.files_loaded"), false);
-  const replStates = new Map<
-    DBPullCollectionKeys | DBTwoWayCollectionKeys | DBTeacherPullCollectionKeys | DBTeacherTwoWayCollectionKeys,
-    RxGraphQLReplicationState<any>
-  >();
   for (const col in DBTwoWayCollections) {
-    replStates.set(col as DBTwoWayCollectionKeys, setupTwoWayReplication(db, col as DBTwoWayCollectionKeys, syncURL));
+    replStates.set(
+      col as DBTwoWayCollectionKeys,
+      setupTwoWayReplication(db, col as DBTwoWayCollectionKeys, graphqlServerUrl),
+    );
   }
   for (const col in DBPullCollections) {
-    replStates.set(col as DBPullCollectionKeys, setupPullReplication(db, col as DBPullCollectionKeys, syncURL));
+    replStates.set(
+      col as DBPullCollectionKeys,
+      setupPullReplication(db, col as DBPullCollectionKeys, graphqlServerUrl),
+    );
   }
   if (user.isTeacher) {
     for (const col in DBTeacherPullCollections) {
       replStates.set(
         col as DBTeacherPullCollectionKeys,
-        setupPullReplication(db, col as DBTeacherPullCollectionKeys, syncURL),
+        setupPullReplication(db, col as DBTeacherPullCollectionKeys, graphqlServerUrl),
       );
     }
     for (const col in DBTeacherTwoWayCollections) {
       replStates.set(
         col as DBTeacherTwoWayCollectionKeys,
-        setupTwoWayReplication(db, col as DBTeacherTwoWayCollectionKeys, syncURL),
+        setupTwoWayReplication(db, col as DBTeacherTwoWayCollectionKeys, graphqlServerUrl),
       );
     }
   }
@@ -565,17 +586,17 @@ async function loadFromExports(
         }),
         false,
       );
-      await rStates[i].awaitInitialReplication();
+      // the initial repl takes MULTIPLE GIGABYTES of memory with lots of defs...
+      // which we don't need to wait for and can free memory up before running
+      if ("definitions" !== colNames[i]) {
+        await rStates[i].awaitInitialReplication();
+      }
     }
   }
   progressCallback(polyglot.t("database.synchronised"), false);
   if (activateSubscription) {
-    for (const [key, state] of replStates.entries()) {
-      if (DBCollections[key].subscription) {
-        const name = key.charAt(0).toUpperCase() + key.slice(1).replaceAll("_", "");
-        setupGraphQLSubscription(state, changedQuery(name), wsEndpointUrl, name);
-      }
-    }
+    setupGraphQLSubscription(wsEndpointUrl, collectionChangedQuery(), sw);
+    setupGraphQLSubscription(wsEndpointUrl, changedQuery("definitions"), sw);
   }
   return testQueries(db).then(() => {
     progressCallback(polyglot.t("database.init_finished"), true);
@@ -608,7 +629,7 @@ async function getDb(
     }
   }
   if (!dbPromise) {
-    dbPromise = loadFromExports(config, reinitialise, progressCallback, userData.user);
+    dbPromise = loadFromExports(config, reinitialise, progressCallback, userData.user, sw);
   }
   const prom = await dbPromise;
   if (!prom) throw Error("DB Promise has not resolved properly");

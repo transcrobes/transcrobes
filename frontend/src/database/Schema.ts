@@ -25,6 +25,8 @@ import {
   WordModelStatsType,
   TeacherRegistrationType,
   RequestQueueType,
+  UserActivityType,
+  SessionType,
 } from "../lib/types";
 
 const CACHE_NAME = "v1";
@@ -76,7 +78,7 @@ function getCardId(wordId: string | number, cardType: string | number): string {
   return `${wordId}${CARD_ID_SEPARATOR}${cardType}`;
 }
 
-const pullCharsQueryBuilder = (doc: { id: any; updatedAt: any }) => {
+function pullCharsQueryBuilder(doc: { id: any; updatedAt: any }) {
   if (!doc) {
     // the first pull does not have a start-document
     doc = {
@@ -85,31 +87,40 @@ const pullCharsQueryBuilder = (doc: { id: any; updatedAt: any }) => {
     };
   }
   const query = `{
-    feedCharacters(id: "${doc.id}", updatedAt: ${doc.updatedAt}, limit: ${BATCH_SIZE_PULL}) {
-      decomposition
-      deleted
-      etymology {
-        hint
-        phonetic
-        semantic
-        type
+    pullCharacters(
+      checkpoint: {id: "${doc.id}", updatedAt: ${doc.updatedAt}}, limit: ${BATCH_SIZE_PULL}
+    ){
+      checkpoint {
+        id
+        updatedAt
       }
-      id
-      pinyin
-      radical
-      updatedAt
-      structure {
-        medians
-        radStrokes
-        strokes
+      documents {
+        decomposition
+        deleted
+        etymology {
+          hint
+          phonetic
+          semantic
+          type
+        }
+        id
+        pinyin
+        radical
+        structure {
+          medians
+          radStrokes
+          strokes
+        }
+        updatedAt
       }
     }
   }`;
+
   return {
     query,
     variables: {},
   };
-};
+}
 
 function pullDefsQueryBuilder(doc: { id: any; updatedAt: any }) {
   if (!doc) {
@@ -120,32 +131,44 @@ function pullDefsQueryBuilder(doc: { id: any; updatedAt: any }) {
     };
   }
   const query = `{
-    feedDefinitions(id: "${doc.id}", updatedAt: ${doc.updatedAt}, limit: ${BATCH_SIZE_PULL}) {
-      frequency {
-        pos
-        posFreq
-        wcdp
-        wcpm
-      }
-      graph
-      hsk { levels }
-      id
-      providerTranslations {
-        posTranslations {
-          posTag
-          values
+      pullDefinitions(
+        checkpoint: {id: "${doc.id}", updatedAt: ${doc.updatedAt}}, limit: ${BATCH_SIZE_PULL}
+        ) {
+        checkpoint {
+          id
+          updatedAt
         }
-        provider
+        documents {
+          deleted
+          frequency {
+            pos
+            posFreq
+            wcdp
+            wcpm
+          }
+          graph
+          hsk {
+            levels
+          }
+          id
+          providerTranslations {
+            posTranslations {
+              posTag
+              values
+            }
+            provider
+          }
+          sound
+          synonyms {
+            posTag
+            values
+          }
+          updatedAt
+        }
       }
-      synonyms {
-        posTag
-        values
-      }
-      sound
-      updatedAt
-      deleted
     }
-  }`;
+  `;
+
   return {
     query,
     variables: {},
@@ -191,6 +214,23 @@ const EVENT_QUEUE_SCHEMA: RxJsonSchema<EventQueueType> = {
   },
 };
 
+type ActivityQueueDocument = RxDocument<UserActivityType>;
+type ActivityQueueCollection = RxCollection<UserActivityType>;
+const ACTIVITY_QUEUE_SCHEMA: RxJsonSchema<UserActivityType> = {
+  version: 0,
+  required: ["id"],
+  primaryKey: "id",
+  type: "object",
+  properties: {
+    id: { type: "string", maxLength: 36 },
+    asessionId: { type: "string" },
+    activityType: { type: "string" },
+    activitySource: { type: "string" },
+    url: { type: "string" },
+    timestamp: { type: "integer" },
+  },
+};
+
 type RequestQueueDocument = RxDocument<RequestQueueType>;
 type RequestQueueCollection = RxCollection<RequestQueueType>;
 const REQUEST_QUEUE_SCHEMA: RxJsonSchema<RequestQueueType> = {
@@ -199,19 +239,10 @@ const REQUEST_QUEUE_SCHEMA: RxJsonSchema<RequestQueueType> = {
   primaryKey: "id",
   type: "object",
   properties: {
-    id: {
-      type: "string",
-      maxLength: 36,
-    },
-    type: {
-      type: "string",
-    },
-    endpoint: {
-      type: "string",
-    },
-    requestString: {
-      type: "string",
-    },
+    id: { type: "string", maxLength: 36 },
+    type: { type: "string" },
+    endpoint: { type: "string" },
+    requestString: { type: "string" },
   },
 };
 
@@ -223,13 +254,21 @@ const CONTENT_CONFIGS_SCHEMA: RxJsonSchema<ContentConfigType> = {
   primaryKey: "id",
   type: "object",
   properties: {
-    id: {
-      type: "string",
-      maxLength: 36,
-    },
-    configString: {
-      type: "string",
-    },
+    id: { type: "string", maxLength: 36 },
+    configString: { type: "string" },
+  },
+};
+
+type SessionDocument = RxDocument<SessionType>;
+type SessionCollection = RxCollection<SessionType>;
+const SESSION_SCHEMA: RxJsonSchema<SessionType> = {
+  version: 0,
+  required: ["id"],
+  primaryKey: "id",
+  type: "object",
+  properties: {
+    id: { type: "string", maxLength: 36 },
+    timestamp: { type: "integer" },
   },
 };
 
@@ -750,50 +789,62 @@ const DBPullCollections = {
   definitions: {
     schema: DEFINITIONS_SCHEMA,
     feedKeys: ["id", "updatedAt"],
-    deletedFlag: "deleted",
+    deletedField: "deleted",
     subscription: true,
     subscriptionParams: {
       token: "String!",
     },
+    checkpointFields: ["id", "updatedAt"],
+    headerFields: ["Authorization"],
     pullQueryBuilder: pullDefsQueryBuilder,
   },
   word_model_stats: {
     schema: WORD_MODEL_STATS_SCHEMA,
     feedKeys: ["id", "updatedAt"],
-    deletedFlag: "deleted",
+    deletedField: "deleted",
     subscription: true,
     subscriptionParams: {
       token: "String!",
     },
+    checkpointFields: ["id", "updatedAt"],
+    headerFields: ["Authorization"],
   },
   day_model_stats: {
     schema: DAY_MODEL_STATS_SCHEMA,
     feedKeys: ["id", "updatedAt"],
-    deletedFlag: "deleted",
+    deletedField: "deleted",
     subscription: false,
+    checkpointFields: ["id", "updatedAt"],
+    headerFields: ["Authorization"],
   },
   surveys: {
     schema: SURVEYS_SCHEMA,
     feedKeys: ["id", "updatedAt"],
-    deletedFlag: "deleted",
+    deletedField: "deleted",
     subscription: false,
+    checkpointFields: ["id", "updatedAt"],
+    headerFields: ["Authorization"],
   },
   characters: {
     schema: CHARACTERS_SCHEMA,
     feedKeys: ["id", "updatedAt"],
-    deletedFlag: "deleted",
+    deletedField: "deleted",
     subscription: false,
+    checkpointFields: ["id", "updatedAt"],
+    headerFields: ["Authorization"],
     pullQueryBuilder: pullCharsQueryBuilder,
     liveInterval: 1000000, // actually this could be much more, but this is already inconsequential
   },
   persons: {
     schema: PERSONS_SCHEMA,
     feedKeys: ["id", "updatedAt"],
-    deletedFlag: "deleted",
+    deletedField: "deleted",
     subscription: true,
     subscriptionParams: {
       token: "String!",
     },
+    checkpointFields: ["id", "updatedAt"],
+    headerFields: ["Authorization"],
   },
 };
 type DBPullCollectionsType = typeof DBPullCollections;
@@ -803,14 +854,18 @@ const DBTeacherPullCollections = {
   student_word_model_stats: {
     schema: STUDENT_WORD_MODEL_STATS_SCHEMA,
     feedKeys: ["id", "updatedAt"],
-    deletedFlag: "deleted",
+    deletedField: "deleted",
     subscription: false,
+    checkpointFields: ["id", "updatedAt"],
+    headerFields: ["Authorization"],
   },
   student_day_model_stats: {
     schema: STUDENT_DAY_MODEL_STATS_SCHEMA,
     feedKeys: ["id", "updatedAt"],
-    deletedFlag: "deleted",
+    deletedField: "deleted",
     subscription: false,
+    checkpointFields: ["id", "updatedAt"],
+    headerFields: ["Authorization"],
   },
 };
 type DBTeacherPullCollectionsType = typeof DBTeacherPullCollections;
@@ -820,111 +875,135 @@ const DBTwoWayCollections = {
   goals: {
     schema: GOALS_SCHEMA,
     feedKeys: ["id", "updatedAt"],
-    deletedFlag: "deleted",
+    deletedField: "deleted",
     subscription: true,
     subscriptionParams: {
       token: "String!",
     },
+    checkpointFields: ["id", "updatedAt"],
+    headerFields: ["Authorization"],
   },
   imports: {
     schema: IMPORTS_SCHEMA,
     feedKeys: ["id", "updatedAt"],
-    deletedFlag: "deleted",
+    deletedField: "deleted",
     subscription: true,
     subscriptionParams: {
       token: "String!",
     },
+    checkpointFields: ["id", "updatedAt"],
+    headerFields: ["Authorization"],
   },
   contents: {
     schema: CONTENTS_SCHEMA,
     feedKeys: ["id", "updatedAt"],
-    deletedFlag: "deleted",
+    deletedField: "deleted",
     subscription: true,
     subscriptionParams: {
       token: "String!",
     },
+    checkpointFields: ["id", "updatedAt"],
+    headerFields: ["Authorization"],
   },
   userlists: {
     schema: USERLISTS_SCHEMA,
     feedKeys: ["id", "updatedAt"],
-    deletedFlag: "deleted",
+    deletedField: "deleted",
     subscription: true,
     subscriptionParams: {
       token: "String!",
     },
+    checkpointFields: ["id", "updatedAt"],
+    headerFields: ["Authorization"],
   },
   usersurveys: {
     schema: USERSURVEYS_SCHEMA,
     feedKeys: ["id", "updatedAt"],
-    deletedFlag: "deleted",
+    deletedField: "deleted",
     subscription: true,
     subscriptionParams: {
       token: "String!",
     },
+    checkpointFields: ["id", "updatedAt"],
+    headerFields: ["Authorization"],
   },
   wordlists: {
     schema: WORDLISTS_SCHEMA,
     feedKeys: ["id", "updatedAt"],
-    deletedFlag: "deleted",
+    deletedField: "deleted",
     subscription: true,
     subscriptionParams: {
       token: "String!",
     },
+    checkpointFields: ["id", "updatedAt"],
+    headerFields: ["Authorization"],
   },
   recentsentences: {
     schema: RECENTSENTENCES_SCHEMA,
     feedKeys: ["id", "updatedAt"],
-    deletedFlag: "deleted",
+    deletedField: "deleted",
     subscription: true,
     subscriptionParams: {
       token: "String!",
     },
+    checkpointFields: ["id", "updatedAt"],
+    headerFields: ["Authorization"],
   },
   cards: {
     schema: CARDS_SCHEMA,
     methods: CardDocumentMethods,
     feedKeys: ["id", "updatedAt"],
-    deletedFlag: "deleted",
+    deletedField: "deleted",
     subscription: true,
     subscriptionParams: {
       token: "String!",
     },
+    checkpointFields: ["id", "updatedAt"],
+    headerFields: ["Authorization"],
   },
   userdictionaries: {
     schema: USER_DICTIONARIES_SCHEMA,
     feedKeys: ["id", "updatedAt"],
-    deletedFlag: "deleted",
+    deletedField: "deleted",
     subscription: true,
     subscriptionParams: {
       token: "String!",
     },
+    checkpointFields: ["id", "updatedAt"],
+    headerFields: ["Authorization"],
   },
   languageclasses: {
     schema: LANGUAGECLASSES_SCHEMA,
     feedKeys: ["id", "updatedAt"],
-    deletedFlag: "deleted",
+    deletedField: "deleted",
     subscription: true,
     subscriptionParams: {
       token: "String!",
     },
+    checkpointFields: ["id", "updatedAt"],
+    headerFields: ["Authorization"],
   },
   teacherregistrations: {
     schema: TEACHERREGISTRATIONS_SCHEMA,
     feedKeys: ["id", "updatedAt"],
-    deletedFlag: "deleted",
+    deletedField: "deleted",
     subscription: true,
     subscriptionParams: {
       token: "String!",
     },
+    checkpointFields: ["id", "updatedAt"],
+    headerFields: ["Authorization"],
   },
   studentregistrations: {
     schema: STUDENTREGISTRATIONS_SCHEMA,
     feedKeys: ["id", "updatedAt"],
-    deletedFlag: "deleted",
+    deletedField: "deleted",
     subscription: true,
     subscriptionParams: {
       token: "String!",
     },
+    checkpointFields: ["id", "updatedAt"],
+    headerFields: ["Authorization"],
   },
 };
 
@@ -940,6 +1019,8 @@ const DBLocalCollections = {
   event_queue: { schema: EVENT_QUEUE_SCHEMA, subscription: false },
   requestqueue: { schema: REQUEST_QUEUE_SCHEMA, subscription: false },
   content_config: { schema: CONTENT_CONFIGS_SCHEMA, subscription: false },
+  activityqueue: { schema: ACTIVITY_QUEUE_SCHEMA, subscription: false },
+  sessions: { schema: SESSION_SCHEMA, subscription: false },
 };
 type DBLocalCollectionKeys = keyof typeof DBLocalCollections;
 type DBLocalCollectionsType = typeof DBLocalCollections;
@@ -967,6 +1048,7 @@ type TranscrobesCollections = {
   userlists: UserListCollection;
   usersurveys: UserSurveyCollection;
   wordlists: WordlistCollection;
+
   recentsentences: RecentSentencesCollection;
   cards: CardCollection;
   definitions: DefinitionCollection;
@@ -980,10 +1062,12 @@ type TranscrobesCollections = {
   surveys: SurveyCollection;
   event_queue: EventQueueCollection;
   requestqueue: RequestQueueCollection;
+  activityqueue: ActivityQueueCollection;
   characters: CharacterCollection;
   content_config: ContentConfigsCollection;
   userdictionaries: UserDictionaryCollection;
   languageclasses: LanguageClassCollection;
+  sessions: SessionCollection;
 };
 type TranscrobesCollectionsKeys = keyof TranscrobesCollections;
 type TranscrobesDatabase = RxDatabase<TranscrobesCollections>;
@@ -991,6 +1075,7 @@ type TranscrobesDatabase = RxDatabase<TranscrobesCollections>;
 type TranscrobesDocumentTypes =
   | EventQueueDocument
   | RequestQueueDocument
+  | ActivityQueueDocument
   | ContentConfigsDocument
   | DefinitionDocument
   | CharacterDocument
@@ -1050,6 +1135,7 @@ export type {
   DBTeacherTwoWayCollectionsType,
   DBLocalCollectionKeys,
   DBLocalCollectionsType,
+  ActivityQueueDocument,
   EventQueueDocument,
   ContentConfigsDocument,
   DefinitionDocument,

@@ -9,7 +9,8 @@ from collections import defaultdict
 from typing import TYPE_CHECKING, Tuple
 
 import sqlalchemy
-from app.api.api_v1.subs import publish_message
+from app.api.api_v1 import types
+from app.api.api_v1.subs import publish_readonly_collection
 from app.cache import TimestampedDict, cache_loading, cached_definitions  # noqa:F401
 from app.data.context import get_broadcast
 from app.etypes import Token
@@ -43,7 +44,6 @@ async def update_cache(db: AsyncSession, from_lang: str, to_lang: str, cached_ma
     if not cached_definitions[cache_key] and cache_loading.get(cache_key):
         raise Exception("Cache loading, please come again")
 
-    # cache_loading = True  # avoid trashing with a global flag to reduce the number of loads, saving the DB
     cache_loading[cache_key] = True  # avoid trashing with a global flag to reduce the number of loads, saving the DB
 
     if cached_max_timestamp == 0 and cached_definitions[cache_key]:
@@ -131,7 +131,6 @@ def all_def_entries(manager: EnrichmentManager, oword: str, word: str):
 async def definitions(  # pylint: disable=R0914
     db: AsyncSession, manager: EnrichmentManager, otoken: Token, refresh: bool = False
 ):  # noqa:C901  # pylint: disable=R0912
-
     word = lemma(otoken)
     oword = orig_text(otoken)
     if not word:  # calling the api with empty string will put rubbish in the DB
@@ -248,7 +247,7 @@ async def definitions(  # pylint: disable=R0914
                 str("43"),
             )
 
-        await publish_message(CachedDefinition.__name__, None, await get_broadcast(), user_id=str("42"))
+        await publish_readonly_collection(await get_broadcast(), types.Definitions.__name__)
         logger.debug("Managed to submit broadcast definitions for  %s", str("42"))
         if refresh:  # we just want to regenerate in the DB, leave now
             return []

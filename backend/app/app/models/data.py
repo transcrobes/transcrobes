@@ -8,11 +8,13 @@ import uuid
 from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, List, TypedDict
 
+from app.api.api_v1 import types
 from app.api.api_v1.subs import publish_message
 from app.data.context import get_broadcast
 from app.data.models import NONE, REQUESTED
 from app.db.base_class import Base
 from app.db.session import async_session
+from app.etypes import KNOWLEDGE_UNSET, WORD_HARD, WORD_KNOWN, WORD_UNKNOWN
 from app.models.mixins import (
     ActivatorMixin,
     ActivatorTimestampMixin,
@@ -33,11 +35,6 @@ from sqlalchemy.orm.decl_api import declared_attr
 from sqlalchemy.sql.expression import text, update
 
 logger = logging.getLogger(__name__)
-
-KNOWLEDGE_UNSET = 0
-WORD_UNKNOWN = 2
-WORD_HARD = 3
-WORD_KNOWN = 5
 
 if TYPE_CHECKING:
     from app.enrich.data import EnrichmentManager
@@ -281,7 +278,6 @@ class UserList(DetailedMixin, Base):
     the_import = relationship("Import")
 
     def filter_words(self, import_frequencies, from_lang: str):
-
         # FIXME: nasty hardcoding
         # abs_frequency_table = manager.metadata()[1]  # 0 = HSK, 1 = Subtlex
         word_list = []
@@ -503,9 +499,9 @@ class UserList(DetailedMixin, Base):
     async def publish_updates(self):
         broadcast = await get_broadcast()
         logger.info(f"Send update to websocket for list {self.id} for user {self.created_by.id}")
-        await publish_message("WordList", None, broadcast, user_id=str(self.created_by.id))
+        await publish_message(types.Wordlists.__name__, None, broadcast, user_id=str(self.created_by.id))
         if self.word_knowledge:
-            await publish_message(Card.__name__, None, broadcast, user_id=str(self.created_by.id))
+            await publish_message(types.Cards.__name__, None, broadcast, user_id=str(self.created_by.id))
 
 
 class UserSurvey(DetailedMixin, Base):

@@ -32,17 +32,8 @@ import {
 import { TimelineModule } from "./modules/positions/TimelineModule";
 import { ContentProtectionModule } from "./modules/protection/ContentProtectionModule";
 import { SearchModule } from "./modules/search/SearchModule";
-import {
-  ITTSUserSettings,
-  TTSIncrementable,
-  TTSSettings,
-} from "./modules/TTS/TTSSettings";
-import {
-  IFrameNavigator,
-  IFrameAttributes,
-  ReaderConfig,
-  ReaderRights,
-} from "./navigator/IFrameNavigator";
+import { ITTSUserSettings, TTSIncrementable, TTSSettings } from "./modules/TTS/TTSSettings";
+import { IFrameNavigator, IFrameAttributes, ReaderConfig, ReaderRights } from "./navigator/IFrameNavigator";
 import LocalAnnotator from "./store/LocalAnnotator";
 import LocalStorageStore from "./store/LocalStorageStore";
 import { findElement, findRequiredElement } from "./utils/HTMLUtilities";
@@ -85,7 +76,7 @@ export default class D2Reader {
     private readonly pageBreakModule?: PageBreakModule,
     private readonly lineFocusModule?: LineFocusModule,
     private readonly historyModule?: HistoryModule,
-    private readonly citationModule?: CitationModule
+    private readonly citationModule?: CitationModule,
   ) {}
 
   addEventListener() {
@@ -115,9 +106,7 @@ export default class D2Reader {
 
     // Enforces supported browsers
     if (rights.enableContentProtection && initialConfig.protection) {
-      await ContentProtectionModule.setupPreloadProtection(
-        initialConfig.protection
-      );
+      await ContentProtectionModule.setupPreloadProtection(initialConfig.protection);
     }
 
     const mainElement = findRequiredElement(document, "#D2Reader-Container");
@@ -127,18 +116,12 @@ export default class D2Reader {
     const footerMenu = findElement(document, "#footerMenu");
 
     let webPubManifestUrl = initialConfig.url;
-    let publication;
+    let publication: Publication;
     if (initialConfig.publication) {
-      publication = TaJsonDeserialize<Publication>(
-        initialConfig.publication,
-        Publication
-      );
+      publication = TaJsonDeserialize<Publication>(initialConfig.publication, Publication);
       publication.manifestUrl = new URL(webPubManifestUrl);
     } else {
-      publication = await Publication.fromUrl(
-        webPubManifestUrl,
-        initialConfig.requestConfig
-      );
+      publication = await Publication.fromUrl(webPubManifestUrl, initialConfig.requestConfig);
     }
 
     const store = new LocalStorageStore({
@@ -172,14 +155,11 @@ export default class D2Reader {
       if (initialConfig.services?.positions) {
         await publication.fetchPositionsFromService(
           initialConfig.services?.positions.href,
-          initialConfig.requestConfig
+          initialConfig.requestConfig,
         );
       }
       if (initialConfig.services?.weight) {
-        await publication.fetchWeightsFromService(
-          initialConfig.services?.weight.href,
-          initialConfig.requestConfig
-        );
+        await publication.fetchWeightsFromService(initialConfig.services?.weight.href, initialConfig.requestConfig);
       }
     }
 
@@ -195,12 +175,8 @@ export default class D2Reader {
         (publication.Metadata.Rendition?.Layout ?? "unknown") === "fixed"
           ? initialConfig.injectablesFixed
           : initialConfig.injectables,
-      layout:
-        (publication.Metadata.Rendition?.Layout ?? "unknown") === "fixed"
-          ? "fixed"
-          : "reflowable",
+      layout: (publication.Metadata.Rendition?.Layout ?? "unknown") === "fixed" ? "fixed" : "reflowable",
     });
-
     // Navigator
     const navigator = await IFrameNavigator.create({
       mainElement: mainElement,
@@ -391,7 +367,7 @@ export default class D2Reader {
       pageBreakModule,
       lineFocusModule,
       historyModule,
-      citationModule
+      citationModule,
     );
   }
 
@@ -581,22 +557,12 @@ export default class D2Reader {
   };
 
   private isTTSIncrementable(
-    incremental:
-      | UserSettingsIncrementable
-      | TTSIncrementable
-      | MediaOverlayIncrementable
+    incremental: UserSettingsIncrementable | TTSIncrementable | MediaOverlayIncrementable,
   ): incremental is TTSIncrementable {
-    return (
-      incremental === "pitch" ||
-      incremental === "rate" ||
-      incremental === "volume"
-    );
+    return incremental === "pitch" || incremental === "rate" || incremental === "volume";
   }
   private isMOIncrementable(
-    incremental:
-      | UserSettingsIncrementable
-      | TTSIncrementable
-      | MediaOverlayIncrementable
+    incremental: UserSettingsIncrementable | TTSIncrementable | MediaOverlayIncrementable,
   ): incremental is MediaOverlayIncrementable {
     return incremental === "mo_rate" || incremental === "mo_volume";
   }
@@ -605,12 +571,7 @@ export default class D2Reader {
    * Used to increase anything that can be increased,
    * such as pitch, rate, volume, fontSize
    */
-  increase = async (
-    incremental:
-      | UserSettingsIncrementable
-      | TTSIncrementable
-      | MediaOverlayIncrementable
-  ) => {
+  increase = async (incremental: UserSettingsIncrementable | TTSIncrementable | MediaOverlayIncrementable) => {
     if (this.isTTSIncrementable(incremental)) {
       if (this.navigator.rights.enableTTS) {
         await this.ttsSettings?.increase(incremental);
@@ -628,12 +589,7 @@ export default class D2Reader {
    * Used to decrease anything that can be decreased,
    * such as pitch, rate, volume, fontSize
    */
-  decrease = async (
-    incremental:
-      | UserSettingsIncrementable
-      | TTSIncrementable
-      | MediaOverlayIncrementable
-  ) => {
+  decrease = async (incremental: UserSettingsIncrementable | TTSIncrementable | MediaOverlayIncrementable) => {
     if (this.isTTSIncrementable(incremental)) {
       if (this.navigator.rights.enableTTS) {
         await this.ttsSettings?.decrease(incremental);
@@ -690,9 +646,7 @@ export default class D2Reader {
       await this.mediaOverlaySettings?.resetMediaOverlaySettings();
     }
   };
-  applyMediaOverlaySettings = async (
-    settings: Partial<IMediaOverlayUserSettings>
-  ) => {
+  applyMediaOverlaySettings = async (settings: Partial<IMediaOverlayUserSettings>) => {
     if (this.navigator.rights.enableMediaOverlays) {
       await this.mediaOverlaySettings?.applyMediaOverlaySettings(settings);
     }
@@ -747,11 +701,8 @@ export default class D2Reader {
     if (userSettings.lines) {
       if (this.lineFocusModule) {
         const lines = this.lineFocusModule.properties.lines ?? 1;
-        this.lineFocusModule.index =
-          (this.lineFocusModule.index * lines) / parseInt(userSettings.lines);
-        this.lineFocusModule.index = Math.abs(
-          parseInt(this.lineFocusModule.index.toFixed())
-        );
+        this.lineFocusModule.index = (this.lineFocusModule.index * lines) / parseInt(userSettings.lines);
+        this.lineFocusModule.index = Math.abs(parseInt(this.lineFocusModule.index.toFixed()));
         this.lineFocusModule.properties.lines = parseInt(userSettings.lines);
         if (this.lineFocusModule.isActive) {
           await this.lineFocusModule.enableLineFocus();
@@ -811,10 +762,7 @@ export default class D2Reader {
   };
 }
 
-function updateConfig(
-  rights: Partial<ReaderRights>,
-  publication: Publication
-): Partial<ReaderRights> {
+function updateConfig(rights: Partial<ReaderRights>, publication: Publication): Partial<ReaderRights> {
   // Some settings must be disabled for fixed-layout publications
   // maybe we should warn the user we are disabling them here.
   if (publication.isFixedLayout) {

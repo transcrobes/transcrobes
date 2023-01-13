@@ -9,6 +9,7 @@ from typing import Any, Dict, Optional
 import emails
 from app.core.config import settings
 from emails.template import JinjaTemplate
+from fastapi import Request
 from jose import jwt
 
 
@@ -48,12 +49,13 @@ def send_test_email(email_to: str) -> None:
     )
 
 
-def send_reset_password_email(email_to: str, email: str, token: str) -> None:
+def send_reset_password_email(email_to: str, email: str, token: str, request: Request) -> None:
     project_name = settings.PROJECT_NAME
     subject = f"{project_name} - Password recovery for user {email}"
     with open(Path(settings.EMAIL_TEMPLATES_DIR) / "reset_password.html", encoding="utf8") as f:
         template_str = f.read()
-    link = f"{settings.SERVER_HOST}/#/reset-password?token={token}"
+    host = f"{request.url.scheme}://{request.url.hostname}"
+    link = f"{host}/#/reset-password?token={token}"
     send_email(
         email_to=email_to,
         subject_template=subject,
@@ -68,12 +70,13 @@ def send_reset_password_email(email_to: str, email: str, token: str) -> None:
     )
 
 
-def send_new_account_email(email_to: str, username: str) -> None:
+def send_new_account_email(email_to: str, username: str, request: Request) -> None:
     project_name = settings.PROJECT_NAME
     subject = f"{project_name} - New account for user {username}"
     with open(Path(settings.EMAIL_TEMPLATES_DIR) / "new_account.html", encoding="utf8") as f:
         template_str = f.read()
-    link = f"{settings.SERVER_HOST}{settings.API_V1_STR}/validate-email/{generate_validation_token(email_to)}"
+    host = f"{request.url.scheme}://{request.url.hostname}"
+    link = f"{host}{settings.API_V1_STR}/validate-email/{generate_validation_token(email_to)}"
     send_email(
         email_to=email_to,
         subject_template=subject,

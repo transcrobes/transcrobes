@@ -5,10 +5,6 @@ from typing import Any, Dict, List, Literal, Optional, Union
 from pydantic import AnyHttpUrl, BaseSettings, EmailStr, PostgresDsn, validator
 
 
-class AsyncPostgresDsn(PostgresDsn):
-    allowed_schemes = {"postgres+asyncpg", "postgresql+asyncpg"}
-
-
 class Settings(BaseSettings):
     TRANSCROBES_LOG_LEVEL: str = "INFO"
     TRANSCROBES_DATA_LOG_LEVEL: str = "ERROR"
@@ -63,8 +59,10 @@ class Settings(BaseSettings):
     # 60 minutes * 24 hours * 30 days = 30 days
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
     REFRESH_TOKEN_EXPIRE_MINUTES: int = 60 * 24
-    SERVER_NAME: str
-    SERVER_HOST: AnyHttpUrl
+
+    HA_HOST: str
+    NODE_HOSTS: List[str]
+
     # BACKEND_CORS_ORIGINS is a JSON-formatted list of origins
     # e.g: '["http://localhost", "http://localhost:4200", "http://localhost:3000", \
     # "http://localhost:8080", "http://local.dockertoolbox.tiangolo.com"]'
@@ -88,7 +86,7 @@ class Settings(BaseSettings):
     POSTGRES_PASSWORD: str
     POSTGRES_DB: str
     POSTGRES_PORT: Optional[str]
-    SQLALCHEMY_DATABASE_URI: Optional[AsyncPostgresDsn] = None
+    SQLALCHEMY_DATABASE_URI: Optional[PostgresDsn] = None
     SQLALCHEMY_DATABASE_SYNC_URI: Optional[PostgresDsn] = None
     SQLALCHEMY_POOL_SIZE: int = 10
     SQLALCHEMY_POOL_MAX_OVERFLOW: int = 20
@@ -98,8 +96,8 @@ class Settings(BaseSettings):
     def assemble_db_connection(cls, v: Optional[str], values: Dict[str, Any]) -> Any:
         if isinstance(v, str):
             return v
-        return AsyncPostgresDsn.build(
-            scheme="postgresql+asyncpg",
+        return PostgresDsn.build(
+            scheme="postgresql+psycopg",
             user=values.get("POSTGRES_USER"),
             password=values.get("POSTGRES_PASSWORD"),
             host=values.get("POSTGRES_SERVER"),
@@ -113,7 +111,7 @@ class Settings(BaseSettings):
         if isinstance(v, str):
             return v
         return PostgresDsn.build(
-            scheme="postgresql+psycopg2",
+            scheme="postgresql+psycopg",
             user=values.get("POSTGRES_USER"),
             password=values.get("POSTGRES_PASSWORD"),
             host=values.get("POSTGRES_SERVER"),
@@ -126,7 +124,7 @@ class Settings(BaseSettings):
     STATS_POSTGRES_PASSWORD: str
     STATS_POSTGRES_DB: str
     STATS_POSTGRES_PORT: Optional[str]
-    STATS_SQLALCHEMY_DATABASE_URI: Optional[AsyncPostgresDsn] = None
+    STATS_SQLALCHEMY_DATABASE_URI: Optional[PostgresDsn] = None
     STATS_SQLALCHEMY_DATABASE_SYNC_URI: Optional[PostgresDsn] = None
     STATS_SQLALCHEMY_POOL_SIZE: int = 10
     STATS_SQLALCHEMY_POOL_MAX_OVERFLOW: int = 20
@@ -136,8 +134,8 @@ class Settings(BaseSettings):
     def stats_assemble_db_connection(cls, v: Optional[str], values: Dict[str, Any]) -> Any:
         if isinstance(v, str):
             return v
-        return AsyncPostgresDsn.build(
-            scheme="postgresql+asyncpg",
+        return PostgresDsn.build(
+            scheme="postgresql+psycopg",
             user=values.get("STATS_POSTGRES_USER"),
             password=values.get("STATS_POSTGRES_PASSWORD"),
             host=values.get("STATS_POSTGRES_SERVER"),
@@ -151,7 +149,7 @@ class Settings(BaseSettings):
         if isinstance(v, str):
             return v
         return PostgresDsn.build(
-            scheme="postgresql+psycopg2",
+            scheme="postgresql+psycopg",
             user=values.get("STATS_POSTGRES_USER"),
             password=values.get("STATS_POSTGRES_PASSWORD"),
             host=values.get("STATS_POSTGRES_SERVER"),
@@ -270,6 +268,10 @@ class Settings(BaseSettings):
     EN_SUBTLEX_FREQ_INMEM: bool = False
     EN_CMU_DICT_INMEM: bool = False
     EN_CORENLP_HOST: str = "corenlpen:9001"
+
+    @property
+    def ALL_HOSTS(self) -> List[str]:
+        return [self.HA_HOST] + self.NODE_HOSTS
 
     @property
     def LANG_PAIRS(self):
@@ -422,6 +424,12 @@ class Settings(BaseSettings):
 
     class Config:
         case_sensitive = True
+
+        @classmethod
+        def parse_env_var(cls, field_name: str, raw_val: str) -> Any:
+            if field_name == "NODE_HOSTS":
+                return [x.strip() for x in raw_val.split(",")]
+            return cls.json_loads(raw_val)
 
 
 settings = Settings()

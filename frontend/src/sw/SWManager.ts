@@ -19,7 +19,6 @@ import {
   PublicationConfig,
   PUSH_FILES_PROCESS_FREQ,
   REQUEST_QUEUE_PROCESS_FREQ,
-  SerialisableDayCardWords,
   UserDefinitionType,
   WEBPUB_CACHE_NAME,
 } from "../lib/types";
@@ -28,8 +27,6 @@ import { WebpubManifest } from "../lib/WebpubManifestTypes/WebpubManifest";
 
 const VERSION = "v2";
 
-// FIXME: move to redux!!! or something less nasty!!!
-let dayCardWords: SerialisableDayCardWords | null;
 const dictionaries: Record<string, Record<string, UserDefinitionType>> = {};
 let db: TranscrobesDatabase | null;
 let url: URL;
@@ -90,6 +87,7 @@ async function loadDb(
       NAME_PREFIX + "processRequestQueue",
     );
     setInterval(() => data.pushFiles(url, user.username), PUSH_FILES_PROCESS_FREQ, NAME_PREFIX + "pushFiles");
+    setInterval(() => data.sendActivities(dbObj, url), EVENT_QUEUE_PROCESS_FREQ, NAME_PREFIX + "sendActivity");
     if (event) {
       postIt(event, { source: message.source, type: message.type, value: "loadDb success" });
     }
@@ -98,12 +96,12 @@ async function loadDb(
 }
 
 async function getLocalCardWords(message: EventData, sw: ServiceWorkerGlobalScope) {
-  if (!dayCardWords) {
+  if (!sw.dayCardWords) {
     const [ldb] = await loadDb(message, sw);
     const val = await data.getSerialisableCardWords(ldb);
-    dayCardWords = val;
+    sw.dayCardWords = val;
   }
-  return dayCardWords;
+  return sw.dayCardWords;
 }
 
 async function getUserDictionary(ldb: TranscrobesDatabase, dictionaryId: string) {
@@ -113,9 +111,9 @@ async function getUserDictionary(ldb: TranscrobesDatabase, dictionaryId: string)
   return dictionaries[dictionaryId];
 }
 
-export async function resetDBConnections(): Promise<void> {
+export async function resetDBConnections(sw: ServiceWorkerGlobalScope): Promise<void> {
   db = null;
-  dayCardWords = null;
+  sw.dayCardWords = null;
   intervalCollection.removeAll();
   await unloadDatabaseFromMemory();
 }
@@ -359,7 +357,7 @@ export function manageEvent(sw: ServiceWorkerGlobalScope, event: ExtendableMessa
     case "updateCard":
     // @ts-ignore - actually here we DO want to use the default case
     case "createCards":
-      dayCardWords = null; // simpler to set to null rather than try and merge lots
+      sw.dayCardWords = null; // simpler to set to null rather than try and merge lots
     // eslint-disable-next-line no-fallthrough
     case "addRecentSentences":
     case "createRegistrationRequest":
@@ -392,7 +390,9 @@ export function manageEvent(sw: ServiceWorkerGlobalScope, event: ExtendableMessa
     case "getCardsForExport":
     case "getAllUserDictionaryEntries":
     case "enqueueRegistrations":
+    case "submitActivityEvent":
     case "getLanguageClassParticipants":
+    case "refreshSession":
       loadDb(message, sw).then(([ldb, msg]) => {
         // @ts-ignore FIXME: can I properly type this somehow and it actually be clean/useful?
         data[message.type](ldb, message.value).then((result) => {

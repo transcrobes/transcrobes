@@ -146,6 +146,16 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
           });
         });
     });
+  } else if (message.type === "submitActivityEvent") {
+    loadDb(console.debug, message).then((ldb) => {
+      data.submitActivityEvent(ldb, message.value).then(() => {
+        sendResponse({
+          source: message.source,
+          type: message.type,
+          value: "Activity Events submitted",
+        });
+      });
+    });
   } else if (message.type === "submitUserEvents") {
     loadDb(console.debug, message).then((ldb) => {
       data.submitUserEvents(ldb, message.value).then(() => {
@@ -234,6 +244,12 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
   } else if (message.type === "getRecentSentences") {
     loadDb(console.debug, message).then((ldb) => {
       data.getRecentSentences(ldb, message.value).then((result) => {
+        sendResponse({ source: message.source, type: message.type, value: result });
+      });
+    });
+  } else if (message.type === "refreshSession") {
+    loadDb(console.debug, message).then((ldb) => {
+      data.refreshSession(ldb, message.value).then((result) => {
         sendResponse({ source: message.source, type: message.type, value: result });
       });
     });

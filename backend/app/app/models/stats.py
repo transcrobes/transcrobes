@@ -1,5 +1,15 @@
+from app.data.models import ActivityTypes
 from app.db.base_class import StatsBase
-from sqlalchemy import Column, Float, Integer, String
+from sqlalchemy import BigInteger, Column, Float, Identity, Integer, SmallInteger, String
+
+
+class UserActivity(StatsBase):
+    aid = Column(Integer, Identity(), primary_key=True)
+    user_id = Column(Integer, nullable=False)
+    activity_type = Column(SmallInteger, default=ActivityTypes.DASHBOARD, nullable=False)
+    activity_start = Column(BigInteger, nullable=False)
+    activity_end = Column(BigInteger, nullable=False)
+    data = Column(String(2000), nullable=True)
 
 
 class UserDay(StatsBase):

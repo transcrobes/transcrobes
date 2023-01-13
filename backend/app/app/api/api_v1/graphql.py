@@ -21,6 +21,8 @@ from app.api.api_v1.types import (
     Cards,
     CardsInput,
     Characters,
+    Checkpoint,
+    CollectionChanged,
     CommonType,
     Contents,
     ContentsInput,
@@ -30,11 +32,14 @@ from app.api.api_v1.types import (
     GoalsInput,
     Imports,
     ImportsInput,
+    InputCheckpoint,
     Languageclasses,
     LanguageclassesInput,
     Persons,
+    PushRow,
     Recentsentences,
     RecentsentencesInput,
+    Return,
     StudentDayModelStats,
     Studentregistrations,
     StudentregistrationsInput,
@@ -79,6 +84,16 @@ from strawberry.types import ExecutionContext, Info
 from strawberry.utils.logging import StrawberryLogger
 
 logger = logging.getLogger(__name__)
+
+
+def construct_return(objs):
+    damed = Return(
+        documents=objs,
+        checkpoint=Checkpoint(
+            id=objs[-1].id if len(objs) > 0 else "", updated_at=objs[-1].updated_at if len(objs) > 0 else -1
+        ),
+    )
+    return damed
 
 
 # Utility functions
@@ -197,7 +212,7 @@ async def filter_day_model_stats(
         objs = [DayModelStats.from_model(user_day) for user_day in obj_list]
 
         logger.debug(f"filter_day_model_stats finished: {user_id=}, {limit=} {updated_at=}")
-    return objs
+    return construct_return(objs)
 
 
 async def filter_student_day_model_stats(
@@ -471,7 +486,6 @@ async def filter_wordlists(
     id: Optional[str] = "",
     updated_at: Optional[float] = -1,
 ) -> list[CommonType]:
-
     logger.debug(
         f"filter_wordlists started: {user.id=}, {limit=}, {id=}, {updated_at=}, {Wordlists=}, {models.UserList=}"
     )
@@ -509,7 +523,7 @@ async def filter_wordlists(
     query = stmt.order_by("updated_at", "id").limit(limit)
     result = await db.execute(query)
     obj_list = result.scalars().all()
-    objs = [Wordlists.from_model(dj_model) for dj_model in obj_list]
+    objs = [await Wordlists.from_model(dj_model) for dj_model in obj_list]
     logger.debug(
         f"filter_wordlists finished: {user.id=}, {limit=}, {id=}, {updated_at=}, {Wordlists=}, {models.UserList=}"
     )
@@ -739,7 +753,6 @@ async def filter_standard(
     id: Optional[str] = "",
     updated_at: Optional[float] = -1,
 ) -> list[CommonType]:
-
     logger.debug(f"filter_standard started: {user_id=}, {limit=}, {id=}, {updated_at=}, {ref=}, {model_ref=}")
 
     stmt = select(model_ref).where(model_ref.created_by_id == user_id).options(selectinload(model_ref.created_by))
@@ -764,7 +777,7 @@ async def filter_standard(
     obj_list = result.scalars().all()
     objs = [ref.from_model(dj_model) for dj_model in obj_list]
     logger.debug(f"filter_standard finished: {user_id=}, {limit=}, {id=}, {updated_at=}, {ref=} , {model_ref=}  ")
-    return objs
+    return construct_return(objs)
 
 
 @strawberry.type
@@ -785,6 +798,16 @@ class Query:
             return await filter_standard(db, user.id, limit, Languageclasses, models.LanguageClass, id, updated_at)
 
     @strawberry.field
+    async def pull_languageclasses(  # pylint: disable=E0213
+        info: Info[Context, Any],
+        limit: int,
+        checkpoint: Optional[InputCheckpoint[Languageclasses]] = None,
+    ) -> Return[Languageclasses]:
+        return await Query.feed_languageclasses(
+            info, limit, checkpoint.id if checkpoint else "", checkpoint.updated_at if checkpoint else -1
+        )
+
+    @strawberry.field
     async def feed_studentregistrations(  # pylint: disable=E0213
         info: Info[Context, Any],
         limit: int,
@@ -796,6 +819,18 @@ class Query:
             return await filter_student_registrations(db, user.id, limit, id, updated_at)
 
     @strawberry.field
+    async def pull_studentregistrations(  # pylint: disable=E0213
+        info: Info[Context, Any],
+        limit: int,
+        checkpoint: Optional[InputCheckpoint[Studentregistrations]] = None,
+    ) -> Return[Studentregistrations]:
+        return construct_return(
+            await Query.feed_studentregistrations(
+                info, limit, checkpoint.id if checkpoint else "", checkpoint.updated_at if checkpoint else -1
+            )
+        )
+
+    @strawberry.field
     async def feed_teacherregistrations(  # pylint: disable=E0213
         info: Info[Context, Any],
         limit: int,
@@ -805,9 +840,18 @@ class Query:
         async with async_session() as db:
             user = await get_user(db, info.context.request)
             return await filter_teacher_registrations(db, user.id, limit, id, updated_at)
-            # return await filter_standard(
-            #     db, user.id, limit, Teacherregistrations, models.TeacherRegistration, id, updated_at
-            # )
+
+    @strawberry.field
+    async def pull_teacherregistrations(  # pylint: disable=E0213
+        info: Info[Context, Any],
+        limit: int,
+        checkpoint: Optional[InputCheckpoint[Teacherregistrations]] = None,
+    ) -> Return[Teacherregistrations]:
+        return construct_return(
+            await Query.feed_teacherregistrations(
+                info, limit, checkpoint.id if checkpoint else "", checkpoint.updated_at if checkpoint else -1
+            )
+        )
 
     @strawberry.field
     async def feed_persons(  # pylint: disable=E0213
@@ -821,6 +865,18 @@ class Query:
             return await filter_persons(db, user.id, updated_at)
 
     @strawberry.field
+    async def pull_persons(  # pylint: disable=E0213
+        info: Info[Context, Any],
+        limit: int,
+        checkpoint: Optional[InputCheckpoint[Persons]] = None,
+    ) -> Return[Persons]:
+        return construct_return(
+            await Query.feed_persons(
+                info, limit, checkpoint.id if checkpoint else "", checkpoint.updated_at if checkpoint else -1
+            )
+        )
+
+    @strawberry.field
     async def feed_imports(  # pylint: disable=E0213
         info: Info[Context, Any],
         limit: int,
@@ -830,6 +886,16 @@ class Query:
         async with async_session() as db:
             user = await get_user(db, info.context.request)
             return await filter_standard(db, user.id, limit, Imports, models.Import, id, updated_at)
+
+    @strawberry.field
+    async def pull_imports(  # pylint: disable=E0213
+        info: Info[Context, Any],
+        limit: int,
+        checkpoint: Optional[InputCheckpoint[Imports]] = None,
+    ) -> Return[Imports]:
+        return await Query.feed_imports(
+            info, limit, checkpoint.id if checkpoint else "", checkpoint.updated_at if checkpoint else -1
+        )
 
     @strawberry.field
     async def feed_userlists(  # pylint: disable=E0213
@@ -843,6 +909,16 @@ class Query:
             return await filter_standard(db, user.id, limit, Userlists, models.UserList, id, updated_at)
 
     @strawberry.field
+    async def pull_userlists(  # pylint: disable=E0213
+        info: Info[Context, Any],
+        limit: int,
+        checkpoint: Optional[InputCheckpoint[Userlists]] = None,
+    ) -> Return[Userlists]:
+        return await Query.feed_userlists(
+            info, limit, checkpoint.id if checkpoint else "", checkpoint.updated_at if checkpoint else -1
+        )
+
+    @strawberry.field
     async def feed_userdictionaries(  # pylint: disable=E0213
         info: Info[Context, Any],
         limit: int,
@@ -852,6 +928,16 @@ class Query:
         async with async_session() as db:
             user = await get_user(db, info.context.request)
             return await filter_standard(db, user.id, limit, Userdictionaries, models.UserDictionary, id, updated_at)
+
+    @strawberry.field
+    async def pull_userdictionaries(  # pylint: disable=E0213
+        info: Info[Context, Any],
+        limit: int,
+        checkpoint: Optional[InputCheckpoint[Userdictionaries]] = None,
+    ) -> Return[Userdictionaries]:
+        return await Query.feed_userdictionaries(
+            info, limit, checkpoint.id if checkpoint else "", checkpoint.updated_at if checkpoint else -1
+        )
 
     @strawberry.field
     async def feed_contents(  # pylint: disable=E0213
@@ -865,6 +951,16 @@ class Query:
             return await filter_standard(db, user.id, limit, Contents, models.Content, id, updated_at)
 
     @strawberry.field
+    async def pull_contents(  # pylint: disable=E0213
+        info: Info[Context, Any],
+        limit: int,
+        checkpoint: Optional[InputCheckpoint[Contents]] = None,
+    ) -> Return[Contents]:
+        return await Query.feed_contents(
+            info, limit, checkpoint.id if checkpoint else "", checkpoint.updated_at if checkpoint else -1
+        )
+
+    @strawberry.field
     async def feed_goals(  # pylint: disable=E0213
         info: Info[Context, Any],
         limit: int,
@@ -876,6 +972,16 @@ class Query:
             return await filter_standard(db, user.id, limit, Goals, models.Goal, id, updated_at)
 
     @strawberry.field
+    async def pull_goals(  # pylint: disable=E0213
+        info: Info[Context, Any],
+        limit: int,
+        checkpoint: Optional[InputCheckpoint[Goals]] = None,
+    ) -> Return[Goals]:
+        return await Query.feed_goals(
+            info, limit, checkpoint.id if checkpoint else "", checkpoint.updated_at if checkpoint else -1
+        )
+
+    @strawberry.field
     async def feed_usersurveys(  # pylint: disable=E0213
         info: Info[Context, Any],
         limit: int,
@@ -885,6 +991,16 @@ class Query:
         async with async_session() as db:
             user = await get_user(db, info.context.request)
             return await filter_standard(db, user.id, limit, Usersurveys, models.UserSurvey, id, updated_at)
+
+    @strawberry.field
+    async def pull_usersurveys(  # pylint: disable=E0213
+        info: Info[Context, Any],
+        limit: int,
+        checkpoint: Optional[InputCheckpoint[Usersurveys]] = None,
+    ) -> Return[Usersurveys]:
+        return await Query.feed_usersurveys(
+            info, limit, checkpoint.id if checkpoint else "", checkpoint.updated_at if checkpoint else -1
+        )
 
     @strawberry.field
     async def feed_characters(  # pylint: disable=E0213
@@ -901,9 +1017,25 @@ class Query:
                 if f.is_file() and re.match(HANZI_JSON_CACHE_FILE_REGEX, f.name):
                     with open(f.path) as f:
                         characters += Characters.from_dict(json.load(f), last_updated)
-            return characters
+        return characters
+
+    @strawberry.field
+    async def pull_characters(  # pylint: disable=E0213
+        info: Info[Context, Any],
+        limit: int,
+        checkpoint: Optional[InputCheckpoint[Characters]] = None,
+    ) -> Return[Characters]:
+        async with async_session() as db:
+            user = await get_user(db, info.context.request)
+
+        # FIXME: this should work with all potential char languages
+        if user.from_lang != "zh-Hans":
+            objs = []
         else:
-            return []
+            objs = await Query.feed_characters(
+                info, limit, checkpoint.id if checkpoint else "", checkpoint.updated_at if checkpoint else -1
+            )
+        return construct_return(objs)
 
     @strawberry.field
     async def feed_student_word_model_stats(  # pylint: disable=E0213
@@ -920,8 +1052,17 @@ class Query:
         if settings.DEBUG:
             async with async_session() as db:
                 await ensure_cache_preloaded(db, get_from_lang(lang_pair), get_to_lang(lang_pair))
-
         return await filter_student_word_model_stats(user_id, lang_pair, limit, int(id) if id else 0, updated_at)
+
+    @strawberry.field
+    async def pull_student_word_model_stats(  # pylint: disable=E0213
+        info: Info[Context, Any],
+        limit: int,
+        checkpoint: Optional[InputCheckpoint[StudentWordModelStats]] = None,
+    ) -> Return[StudentWordModelStats]:
+        return await Query.feed_student_word_model_stats(
+            info, limit, checkpoint.id if checkpoint else "", checkpoint.updated_at if checkpoint else -1
+        )
 
     @strawberry.field
     async def feed_word_model_stats(  # pylint: disable=E0213
@@ -939,7 +1080,20 @@ class Query:
             async with async_session() as db:
                 await ensure_cache_preloaded(db, get_from_lang(lang_pair), get_to_lang(lang_pair))
 
-        return await filter_word_model_stats(user_id, lang_pair, limit, int(id) if id else 0, updated_at)
+        async with async_stats_session() as db:
+            return await filter_word_model_stats(user_id, lang_pair, limit, int(id) if id else 0, updated_at)
+
+    @strawberry.field
+    async def pull_word_model_stats(  # pylint: disable=E0213
+        info: Info[Context, Any],
+        limit: int,
+        checkpoint: Optional[InputCheckpoint[WordModelStats]] = None,
+    ) -> Return[WordModelStats]:
+        return construct_return(
+            await Query.feed_word_model_stats(
+                info, limit, checkpoint.id if checkpoint else "", checkpoint.updated_at if checkpoint else -1
+            )
+        )
 
     @strawberry.field
     async def feed_day_model_stats(  # pylint: disable=E0213
@@ -955,6 +1109,16 @@ class Query:
         return await filter_day_model_stats(user_id, limit, updated_at)
 
     @strawberry.field
+    async def pull_day_model_stats(  # pylint: disable=E0213
+        info: Info[Context, Any],
+        limit: int,
+        checkpoint: Optional[InputCheckpoint[DayModelStats]] = None,
+    ) -> Return[DayModelStats]:
+        return await Query.feed_day_model_stats(
+            info, limit, checkpoint.id if checkpoint else "", checkpoint.updated_at if checkpoint else -1
+        )
+
+    @strawberry.field
     async def feed_student_day_model_stats(  # pylint: disable=E0213
         info: Info[Context, Any],
         limit: int,
@@ -964,8 +1128,17 @@ class Query:
         async with async_session() as db:
             user = await get_user(db, info.context.request)
             user_id = user.id
-
         return await filter_student_day_model_stats(user_id, limit, updated_at)
+
+    @strawberry.field
+    async def pull_student_day_model_stats(  # pylint: disable=E0213
+        info: Info[Context, Any],
+        limit: int,
+        checkpoint: Optional[InputCheckpoint[DayModelStats]] = None,
+    ) -> Return[DayModelStats]:
+        return await Query.feed_student_day_model_stats(
+            info, limit, checkpoint.id if checkpoint else "", checkpoint.updated_at if checkpoint else -1
+        )
 
     @strawberry.field
     async def feed_wordlists(  # pylint: disable=E0213
@@ -979,6 +1152,18 @@ class Query:
             return await filter_wordlists(db, user, limit, id, updated_at)
 
     @strawberry.field
+    async def pull_wordlists(  # pylint: disable=E0213
+        info: Info[Context, Any],
+        limit: int,
+        checkpoint: Optional[InputCheckpoint[Wordlists]] = None,
+    ) -> Return[Wordlists]:
+        return construct_return(
+            await Query.feed_wordlists(
+                info, limit, checkpoint.id if checkpoint else "", checkpoint.updated_at if checkpoint else -1
+            )
+        )
+
+    @strawberry.field
     async def feed_cards(  # pylint: disable=E0213
         info: Info[Context, Any],
         limit: int,
@@ -988,6 +1173,18 @@ class Query:
         async with async_session() as db:
             user = await get_user(db, info.context.request)
             return await filter_cards(db, user.id, limit, id, updated_at)
+
+    @strawberry.field
+    async def pull_cards(  # pylint: disable=E0213
+        info: Info[Context, Any],
+        limit: int,
+        checkpoint: Optional[InputCheckpoint[Cards]] = None,
+    ) -> Return[Cards]:
+        return construct_return(
+            await Query.feed_cards(
+                info, limit, checkpoint.id if checkpoint else "", checkpoint.updated_at if checkpoint else -1
+            )
+        )
 
     @strawberry.field
     async def feed_recentsentences(  # pylint: disable=E0213
@@ -1001,6 +1198,18 @@ class Query:
             return await filter_recentsentences(db, user.id, limit, id, updated_at)
 
     @strawberry.field
+    async def pull_recentsentences(  # pylint: disable=E0213
+        info: Info[Context, Any],
+        limit: int,
+        checkpoint: Optional[InputCheckpoint[Recentsentences]] = None,
+    ) -> Return[Recentsentences]:
+        return construct_return(
+            await Query.feed_recentsentences(
+                info, limit, checkpoint.id if checkpoint else "", checkpoint.updated_at if checkpoint else -1
+            )
+        )
+
+    @strawberry.field
     async def feed_definitions(  # pylint: disable=E0213
         info: Info[Context, Any],
         limit: int,
@@ -1010,6 +1219,18 @@ class Query:
         async with async_session() as db:
             user = await get_user(db, info.context.request)
             return await filter_cached_definitions(db, user, limit, id, updated_at)
+
+    @strawberry.field
+    async def pull_definitions(  # pylint: disable=E0213
+        info: Info[Context, Any],
+        limit: int,
+        checkpoint: Optional[InputCheckpoint[Definitions]] = None,
+    ) -> Return[Definitions]:
+        return construct_return(
+            await Query.feed_definitions(
+                info, limit, checkpoint.id if checkpoint else "", checkpoint.updated_at if checkpoint else -1
+            )
+        )
 
     @strawberry.field
     async def feed_surveys(  # pylint: disable=E0213
@@ -1023,7 +1244,17 @@ class Query:
             objs = await filter_surveys(db, user.from_lang, user.to_lang, limit, id, updated_at)
             for obj in objs:
                 obj.survey_json = json.dumps(obj.survey_json)
-            return objs
+            return construct_return(objs)
+
+    @strawberry.field
+    async def pull_surveys(  # pylint: disable=E0213
+        info: Info[Context, Any],
+        limit: int,
+        checkpoint: Optional[InputCheckpoint[Surveys]] = None,
+    ) -> Return[Surveys]:
+        return await Query.feed_surveys(
+            info, limit, checkpoint.id if checkpoint else "", checkpoint.updated_at if checkpoint else -1
+        )
 
 
 async def get_user(db: AsyncSession, request: Request) -> models.AuthUser:
@@ -1239,15 +1470,19 @@ async def set_objects(
 @strawberry.type
 class Mutation:
     @strawberry.mutation
-    async def set_cards(
-        self, info: Info[Context, Any], cards: Optional[list[Optional[CardsInput]]] = None
+    async def push_cards(
+        self, info: Info[Context, Any], cardsPushRow: Optional[list[Optional[PushRow[CardsInput]]]] = None
     ) -> list[Cards]:
-        logger.debug(f"The info is: {info=}, and the cards are: {cards=}")
+        obj = []
+        for row in cardsPushRow:
+            obj.append(row.newDocumentState)
+
+        logger.debug(f"The info is: {info=}, and the cards are: {obj=}")
         async with async_session() as db:
             user = await get_user(db, info.context.request)
             card_unities = []
             tup = tuple_(models.Card.user_id, models.Card.card_type, models.Card.word_id)
-            for card in cards:
+            for card in obj:
                 word_id, card_type = map(int, card.id.split("-"))
                 card_unities.append((user.id, card_type, word_id))
 
@@ -1264,7 +1499,7 @@ class Mutation:
                     )
                 ] = dj_obj
 
-            for card in cards:
+            for card in obj:
                 word_id, card_type = map(int, card.id.split("-"))
                 if (
                     user.id,
@@ -1297,91 +1532,96 @@ class Mutation:
                 dj_card.back = card.back
                 dj_card.known = card.known
                 dj_card.suspended = card.suspended
-                # FIXME: does this get done automatically???
-                # dj_card.updated_at = datetime.now(pytz.utc)  # int(time.time())  # time_ns()? something else?
                 dj_card.deleted = card.deleted
                 db.add(dj_card)
 
             try:
                 await db.commit()
             except Exception as e:
-                logger.exception(f"Error saving updated card: {json.dumps(dataclasses.asdict(cards))}")
+                logger.exception(f"Error saving updated card: {json.dumps(dataclasses.asdict(obj))}")
                 logger.error(e)
                 raise
 
-            result = await db.execute(
-                select(models.Card)
-                .where(tup.in_(card_unities))
-                .order_by("updated_at")
-                .options(selectinload(models.Card.user))
-            )
-            return_vals = [Cards.from_model(dj_card) for dj_card in result.scalars().all()]
-
-            await publish_message(models.Card.__name__, return_vals, info.context.broadcast, user)
-            return return_vals
+            await publish_message(Cards.__name__, None, info.context.broadcast, user)
+            return []
 
     @strawberry.mutation
-    async def set_imports(
-        self,
-        info: Info[Context, Any],
-        imports: Optional[list[Optional[ImportsInput]]] = None,
+    async def push_imports(
+        self, info: Info[Context, Any], importsPushRow: Optional[list[Optional[PushRow[ImportsInput]]]] = None
     ) -> list[Imports]:
-        obj = imports
+        obj = []
+        for row in importsPushRow:
+            obj.append(row.newDocumentState)
+
         logger.debug(f"The info is: {info=}, and the channel {Imports.__name__=} is: {obj=}")
-        return await set_objects(obj, models.Import, info, models.Import.__name__, Imports, fill_import)
+        await set_objects(obj, models.Import, info, Imports.__name__, Imports, fill_import)
+        return []
 
     @strawberry.mutation
-    async def set_languageclasses(
+    async def push_languageclasses(
         self,
         info: Info[Context, Any],
-        languageclasses: Optional[list[Optional[LanguageclassesInput]]] = None,
+        languageclassesPushRow: Optional[list[Optional[PushRow[LanguageclassesInput]]]] = None,
     ) -> list[Languageclasses]:
-        obj = languageclasses
+        obj = []
+        for row in languageclassesPushRow:
+            obj.append(row.newDocumentState)
+
         logger.debug(f"The info is: {info=}, and the channel {Languageclasses.__name__=} is: {obj=}")
-        return await set_objects(obj, models.LanguageClass, info, models.LanguageClass.__name__, Languageclasses)
+        await set_objects(obj, models.LanguageClass, info, Languageclasses.__name__, Languageclasses)
+        return []
 
     @strawberry.mutation
-    async def set_contents(
-        self, info: Info[Context, Any], contents: Optional[list[Optional[ContentsInput]]] = None
+    async def push_contents(
+        self, info: Info[Context, Any], contentsPushRow: Optional[list[Optional[PushRow[ContentsInput]]]] = None
     ) -> list[Contents]:
-        obj = contents
+        obj = []
+        for row in contentsPushRow:
+            obj.append(row.newDocumentState)
+
         logger.debug(f"The info is: {info=}, and the channel {Contents.__name__=} is: {obj=}")
         content_list: list[Contents] = await set_objects(
-            obj, models.Content, info, models.Content.__name__, Contents, fill_content
+            obj, models.Content, info, Contents.__name__, Contents, fill_content
         )
         for content in content_list:
             if content.processing == REQUESTED:
                 await content_process_topic.send(value=ProcessData(type="content", id=content.id))
-        return content_list
+        return []
 
     @strawberry.mutation
-    async def set_userlists(
-        self, info: Info[Context, Any], userlists: Optional[list[Optional[UserlistsInput]]] = None
+    async def push_userlists(
+        self, info: Info[Context, Any], userlistsPushRow: Optional[list[Optional[PushRow[UserlistsInput]]]] = None
     ) -> list[Userlists]:
-        obj = userlists
+        obj = []
+        for row in userlistsPushRow:
+            obj.append(row.newDocumentState)
         logger.debug(f"The info is: {info=}, and the channel {Userlists.__name__=} is: {obj=}")
         ulists: list[Userlists] = await set_objects(
-            obj, models.UserList, info, models.UserList.__name__, Userlists, fill_user_list
+            obj, models.UserList, info, Userlists.__name__, Userlists, fill_user_list
         )
         for ulist in ulists:
             if ulist.processing == REQUESTED:
                 await list_process_topic.send(value=ProcessData(type="list", id=ulist.id))
-        return ulists
+        return []
 
     @strawberry.mutation
-    async def set_recentsentences(
-        self, info: Info[Context, Any], recentsentences: Optional[list[Optional[RecentsentencesInput]]] = None
+    async def push_recentsentences(
+        self,
+        info: Info[Context, Any],
+        recentsentencesPushRow: Optional[list[Optional[PushRow[RecentsentencesInput]]]] = None,
     ) -> list[Recentsentences]:
-        objs = recentsentences
-        logger.debug(f"The info is: {info=}, and the channel {Recentsentences.__name__=} is: {objs=}")
+        obj = []
+        for row in recentsentencesPushRow:
+            obj.append(row.newDocumentState)
+
+        logger.debug(f"The info is: {info=}, and the channel {Recentsentences.__name__=} is: {obj=}")
 
         async with async_session() as db:
             user = await get_user(db, info.context.request)
-
             obj_unities = []
             tup = tuple_(models.UserRecentSentences.user_id, models.UserRecentSentences.word_id)
-            for obj in objs:
-                obj_unities.append((user.id, int(obj.id)))
+            for ob in obj:
+                obj_unities.append((user.id, int(ob.id)))
 
             result = await db.execute(
                 select(models.UserRecentSentences)
@@ -1397,8 +1637,8 @@ class Mutation:
                     )
                 ] = dj_obj
 
-            for obj in objs:
-                word_id = int(obj.id)
+            for ob in obj:
+                word_id = int(ob.id)
                 if (
                     user.id,
                     word_id,
@@ -1411,181 +1651,113 @@ class Mutation:
                     ]
                 else:
                     dj_obj = models.UserRecentSentences(word_id=word_id, user=user)
-                dj_obj.lz_content = obj.lz_content
-                dj_obj.deleted = obj.deleted
+                dj_obj.lz_content = ob.lz_content
+                dj_obj.deleted = ob.deleted
                 db.add(dj_obj)
             try:
                 await db.commit()
             except Exception as e:
-                logger.exception(f"Error saving updated recentsentence: {json.dumps(dataclasses.asdict(obj))}")
+                logger.exception(f"Error saving updated recentsentence: {json.dumps(dataclasses.asdict(ob))}")
                 logger.error(e)
                 raise
 
-            result = await db.execute(
-                select(models.UserRecentSentences)
-                .where(tup.in_(obj_unities))
-                .order_by("updated_at")
-                .options(selectinload(models.UserRecentSentences.user))
-            )
-            return_vals = [Recentsentences.from_model(dj_obj) for dj_obj in result.scalars().all()]
-            await publish_message(models.UserRecentSentences.__name__, return_vals, info.context.broadcast, user)
-            return return_vals
+            await publish_message(Recentsentences.__name__, None, info.context.broadcast, user)
+            return []
 
     @strawberry.mutation
-    async def set_userdictionaries(
-        self, info: Info[Context, Any], userdictionaries: Optional[list[Optional[UserdictionariesInput]]] = None
+    async def push_userdictionaries(
+        self,
+        info: Info[Context, Any],
+        userdictionariesPushRow: Optional[list[Optional[PushRow[UserdictionariesInput]]]] = None,
     ) -> list[Userdictionaries]:
-        obj = userdictionaries
+        obj = []
+        for row in userdictionariesPushRow:
+            obj.append(row.newDocumentState)
+
         logger.debug(f"The info is: {info=}, and the channel {Userdictionaries.__name__=} is: {obj=}")
-        userdictionaries: list[Userdictionaries] = await set_objects(
-            obj, models.UserDictionary, info, models.UserDictionary.__name__, Userdictionaries, fill_userdictionary
+        await set_objects(
+            obj, models.UserDictionary, info, Userdictionaries.__name__, Userdictionaries, fill_userdictionary
         )
-        return userdictionaries
+        return []
 
     @strawberry.mutation
-    async def set_studentregistrations(
-        self, info: Info[Context, Any], studentregistrations: Optional[list[Optional[StudentregistrationsInput]]] = None
+    async def push_studentregistrations(
+        self,
+        info: Info[Context, Any],
+        studentregistrationsPushRow: Optional[list[Optional[PushRow[StudentregistrationsInput]]]] = None,
     ) -> list[Studentregistrations]:
-        obj = studentregistrations
-        logger.debug(f"The info is: {info=}, and the channel {Studentregistrations.__name__=} is: {obj=}")
-        return await set_registrations(
-            obj, models.StudentRegistration, info, models.StudentRegistration.__name__, Studentregistrations
+        obj = []
+        for row in studentregistrationsPushRow:
+            obj.append(row.newDocumentState)
+
+        logger.debug(f"The info is: {info=}, and the channel {Goals.__name__=} is: {obj=}")
+        await set_registrations(
+            obj, models.StudentRegistration, info, Studentregistrations.__name__, Studentregistrations
         )
+        return []
 
     @strawberry.mutation
-    async def set_teacherregistrations(
-        self, info: Info[Context, Any], teacherregistrations: Optional[list[Optional[TeacherregistrationsInput]]] = None
+    async def push_teacherregistrations(
+        self,
+        info: Info[Context, Any],
+        teacherregistrationsPushRow: Optional[list[Optional[PushRow[TeacherregistrationsInput]]]] = None,
     ) -> list[Teacherregistrations]:
-        obj = teacherregistrations
-        logger.debug(f"The info is: {info=}, and the channel {Teacherregistrations.__name__=} is: {obj=}")
-        return await set_registrations(
+        obj = []
+        for row in teacherregistrationsPushRow:
+            obj.append(row.newDocumentState)
+
+        logger.debug(f"The info is: {info=}, and the channel {Goals.__name__=} is: {obj=}")
+        await set_registrations(
             obj, models.TeacherRegistration, info, Teacherregistrations.__name__, Teacherregistrations
         )
+        return []
 
     @strawberry.mutation
-    async def set_goals(
-        self, info: Info[Context, Any], goals: Optional[list[Optional[GoalsInput]]] = None
+    async def push_goals(
+        self, info: Info[Context, Any], goalsPushRow: Optional[list[Optional[PushRow[GoalsInput]]]] = None
     ) -> list[Goals]:
-        obj = goals
+        obj = []
+        for row in goalsPushRow:
+            obj.append(row.newDocumentState)
+
         logger.debug(f"The info is: {info=}, and the channel {Goals.__name__=} is: {obj=}")
-        return await set_objects(obj, models.Goal, info, models.Goal.__name__, Goals, fill_goal)
+        await set_objects(obj, models.Goal, info, Goals.__name__, Goals, fill_goal)
+        return []
 
     @strawberry.mutation
-    async def set_usersurveys(
-        self, info: Info[Context, Any], usersurveys: Optional[list[Optional[UsersurveysInput]]] = None
+    async def push_usersurveys(
+        self, info: Info[Context, Any], usersurveysPushRow: Optional[list[Optional[PushRow[UsersurveysInput]]]] = None
     ) -> list[Usersurveys]:
-        obj = usersurveys
+        obj = []
+        for row in usersurveysPushRow:
+            obj.append(row.newDocumentState)
+
         logger.debug(f"The info is: {info=}, and the channel {Usersurveys.__name__=} is: {obj=}")
-        return await set_objects(
-            obj, models.UserSurvey, info, models.UserSurvey.__name__, Usersurveys, fill_user_survey
-        )
-
-
-async def changed_standard(info: Info[Context, Any], token: str, ref: type[Base]) -> list[CommonType]:
-    user_id = get_user_id_from_token(token)
-    logger.debug("Setting up %ss subscription for user %s", ref.__name__, user_id)
-    async with info.context.broadcast.subscribe(channel=ref.__name__) as subscriber:
-        async for event in subscriber:
-            if clean_broadcaster_string(event.message) == str(user_id):
-                logger.debug(f"Got a {ref.__name__} subscription event for {event.message}")
-                yield ref(id="42")
+        await set_objects(obj, models.UserSurvey, info, Usersurveys.__name__, Usersurveys, fill_user_survey)
+        return []
 
 
 @strawberry.type
 class Subscription:
     @strawberry.subscription
-    async def changed_cards(self, info: Info[Context, Any], token: str) -> Cards:
-        user_id = get_user_id_from_token(token)
-        logger.debug("Setting up models.Card.__name__ subscription for user %s", user_id)
-        async with info.context.broadcast.subscribe(channel=models.Card.__name__) as subscriber:
-            async for event in subscriber:
-                if clean_broadcaster_string(event.message) == str(user_id):
-                    logger.debug(f"Got a models.Card.__name__ subscription event for {user_id}")
-                    yield Cards(id="42")
-
-    @strawberry.subscription
-    async def changed_daymodelstats(self, info: Info[Context, Any], token: str) -> DayModelStats:
-        user_id = get_user_id_from_token(token)
-        logger.debug("Setting up stats.UserDay.__name__ subscription for user %s", user_id)
-        async with info.context.broadcast.subscribe(channel=stats.UserDay.__name__) as subscriber:
-            async for event in subscriber:
-                if clean_broadcaster_string(event.message) == str(user_id):
-                    logger.debug(f"Got a stats.UserDay.__name__ subscription event for {user_id}")
-                    yield DayModelStats(id="42")
-
-    @strawberry.subscription
-    async def changed_wordmodelstats(self, info: Info[Context, Any], token: str) -> WordModelStats:
-        user_id = get_user_id_from_token(token)
-        logger.debug("Setting up stats.UserWord.__name__ subscription for user %s", user_id)
-        async with info.context.broadcast.subscribe(channel=stats.UserWord.__name__) as subscriber:
-            async for event in subscriber:
-                if clean_broadcaster_string(event.message) == str(user_id):
-                    logger.debug(f"Got a stats.UserWord.__name__ subscription event for {user_id}")
-                    yield WordModelStats(id="42")
-
-    @strawberry.subscription
-    async def changed_wordlists(self, info: Info[Context, Any], token: str) -> Wordlists:
-        user_id = get_user_id_from_token(token)
-        logger.debug("Setting up WordList subscription for user %s", user_id)
-        async with info.context.broadcast.subscribe(channel="WordList") as subscriber:
-            async for event in subscriber:
-                if clean_broadcaster_string(event.message) == str(user_id):
-                    logger.debug(f"Got a WordList subscription event for {user_id}")
-                    yield Wordlists(id="42", name="tmol", word_ids=["42"])
-
-    @strawberry.subscription
     async def changed_definitions(self, info: Info[Context, Any], token: str) -> Definitions:
         user_id = get_user_id_from_token(token)
         logger.debug("Setting up models.CachedDefinition.__name__ subscription for user %s", user_id)
 
-        async with info.context.broadcast.subscribe(channel=models.CachedDefinition.__name__) as subscriber:
+        async with info.context.broadcast.subscribe(channel=f"changed{Definitions.__name__}") as subscriber:
             async for event in subscriber:
-                logger.debug(f"Got a models.CachedDefinition.__name__ subscription event for {event.message}")
-                yield Definitions(id="42", graph="四十二", sound=["42"])
+                logger.debug(f"Got a Definitions.__name__ subscription event for {event.message}")
+                yield CollectionChanged(name=Definitions.__name__)
 
     @strawberry.subscription
-    async def changed_persons(self, info: Info[Context, Any], token: str) -> Persons:
-        return changed_standard(info, token, models.AuthUser)
-
-    @strawberry.subscription
-    async def changed_languageclasses(self, info: Info[Context, Any], token: str) -> Languageclasses:
-        return changed_standard(info, token, models.LanguageClass)
-
-    @strawberry.subscription
-    async def changed_teacherregistrations(self, info: Info[Context, Any], token: str) -> Teacherregistrations:
-        return changed_standard(info, token, models.TeacherRegistration)
-
-    @strawberry.subscription
-    async def changed_studentregistrations(self, info: Info[Context, Any], token: str) -> Studentregistrations:
-        return changed_standard(info, token, models.StudentRegistration)
-
-    @strawberry.subscription
-    async def changed_imports(self, info: Info[Context, Any], token: str) -> Imports:
-        return changed_standard(info, token, models.Import)
-
-    @strawberry.subscription
-    async def changed_recentsentences(self, info: Info[Context, Any], token: str) -> Recentsentences:
-        return changed_standard(info, token, models.UserRecentSentences)
-
-    @strawberry.subscription
-    async def changed_goals(self, info: Info[Context, Any], token: str) -> Goals:
-        return changed_standard(info, token, models.Goal)
-
-    @strawberry.subscription
-    async def changed_contents(self, info: Info[Context, Any], token: str) -> Contents:
-        return changed_standard(info, token, models.Content)
-
-    @strawberry.subscription
-    async def changed_userlists(self, info: Info[Context, Any], token: str) -> Userlists:
-        return changed_standard(info, token, models.UserList)
-
-    @strawberry.subscription
-    async def changed_usersurveys(self, info: Info[Context, Any], token: str) -> Usersurveys:
-        return changed_standard(info, token, models.UserSurvey)
-
-    @strawberry.subscription
-    async def changed_userdictionaries(self, info: Info[Context, Any], token: str) -> Userdictionaries:
-        return changed_standard(info, token, models.UserDictionary)
+    async def collection_changed(self, info: Info[Context, Any], token: str) -> CollectionChanged:
+        user_id = get_user_id_from_token(token)
+        logger.info("Setting up collection_changed subscription for user %s", user_id)
+        async with info.context.broadcast.subscribe(channel=f"changed{user_id}") as subscriber:
+            async for event in subscriber:
+                collection = clean_broadcaster_string(event.message)
+                logger.info(f"Got a collection_changed subscription event for {user_id=} for {collection=}")
+                yield CollectionChanged(name=collection)
 
 
 EXPIRED_MESSAGE = '{"statusCode":"401","detail":"token_signature_has_expired"}'

@@ -17,6 +17,8 @@ export const ADMIN_EMAILS = (import.meta.env.VITE_ADMIN_EMAILS || "admin@example
   .split(",")
   .map((x: string) => x.trim());
 
+export const DEFINITION_LOADING = "loading...";
+
 export const LOCALES: { locale: SystemLanguage; name: string }[] = [
   { locale: "en", name: "English" },
   { locale: "zh-Hans", name: "中文" },
@@ -98,11 +100,12 @@ export const IDEAL_GLOSS_STRING_LENGTH = 5; // pretty random but https://arxiv.o
 export const POPOVER_MIN_LOOKED_AT_EVENT_DURATION = 1500; // milliseconds
 export const POPOVER_MIN_LOOKED_AT_SOUND_DURATION = 750; // milliseconds
 
-export const MAX_IMPORT_SIZE_BYTES = 15000000;
-
+export const MAX_IMPORT_SIZE_BYTES = 15_000_000;
 export const MIN_KNOWN_BEFORE_ADVANCED = 500;
-
 export const MIN_LENGTH_FOR_SENTENCE = 5;
+export const ACTIVITY_TIMEOUT = 180_000; // milliseconds
+export const ACTIVITY_DEBOUNCE = 1_000; // milliseconds
+export const ACTIVITY_EVENTS_THROTTLE = 500; // milliseconds
 
 export const YOUTUBE_CHANNEL = "https://www.youtube.com/channel/UCEXMQOmPKNM1wIWZb3ceG-A";
 export const SIGNUP_YT_VIDEO = "https://youtu.be/XwZNzFw51lA";
@@ -256,6 +259,32 @@ export function isZhTreebankPOS(value: string): value is ZhTreebankPosType {
   return value in ZH_TREEBANK_POS_VALUES_OBJ;
 }
 export type WordOrdering = "Natural" | "WCPM" | "Personal";
+
+export type ActivityType = "start" | "end" | "continue";
+
+export type ActivitySource = "readium" | "web" | "extension";
+
+export interface SessionType {
+  id: string;
+  timestamp: number; // last active timestamp
+}
+
+// FIXME: these types are badly named
+export interface UserActivityType {
+  id: string;
+  asessionId: string;
+  timestamp: number;
+  activityType: ActivityType;
+  activitySource: ActivitySource;
+  url: string;
+}
+
+export interface UserActivity {
+  end: number;
+  start: number;
+  type: "activity";
+  url: string;
+}
 
 export const USER_DEFINITION_SOUND_SEPARATOR = " ";
 

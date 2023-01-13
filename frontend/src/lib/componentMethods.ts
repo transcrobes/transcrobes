@@ -1,11 +1,16 @@
-import { soundWithSeparators } from "./funclib";
+import _ from "lodash";
+import { soundWithSeparators, UUID } from "./funclib";
 import { bestGuess, complexPosToSimplePosLabels, filterKnown, toSimplePos } from "./libMethods";
-import { platformHelper } from "./proxies";
+import { AbstractWorkerProxy, platformHelper } from "./proxies";
 import {
+  ActivitySource,
+  ActivityType,
+  ACTIVITY_DEBOUNCE,
   AnyTreebankPosType,
   BOOCROBES_HEADER_HEIGHT,
   DefinitionsState,
   DefinitionType,
+  DEFINITION_LOADING,
   EventCoordinates,
   InputLanguage,
   PopupPosition,
@@ -15,10 +20,10 @@ import {
   SerialisableDayCardWords,
   SystemLanguage,
   TokenType,
+  UserActivityType,
   USER_STATS_MODE,
 } from "./types";
 
-const DEFINITION_LOADING = "loading...";
 const DATA_SOURCE = "componentMethods.ts";
 const NUMBER_POS = new Set<AnyTreebankPosType>(["OD", "NT", "CD"]);
 
@@ -56,7 +61,9 @@ export async function getL1(
   readerConfig: ReaderState,
   defaultL1: string,
 ): Promise<string> {
-  if (defaultL1 && !readerConfig.strictProviderOrdering) return defaultL1;
+  if (defaultL1 && !readerConfig.strictProviderOrdering) {
+    return defaultL1;
+  }
   let gloss = defaultL1;
   const defs = await getDefinitions(token, definitions);
   if (defs[0] && defs[0].providerTranslations) {
@@ -153,7 +160,6 @@ async function getL2Simplified(
     gloss = token.us[0];
   } else {
     // try and get a local user known synonym
-    // const dictDefinition = (token.id && definitions[token.id]) || (await getWord(token.l));
     const defs = await getDefinitions(token, definitions);
     if (!defs[0]) return DEFINITION_LOADING;
     // FIXME: should I just be using the first here? why? why not?
@@ -203,6 +209,60 @@ export function eventCoordinates(event: React.MouseEvent<HTMLElement>): EventCoo
     eventX: window.frameElement ? event.clientX : event.pageX,
     eventY: window.frameElement ? event.clientY + BOOCROBES_HEADER_HEIGHT : event.pageY,
   };
+}
+
+function getActivityUrl(url: string): string {
+  if (url.includes("/api/v1/data/content/")) {
+    // We are in the iframe, and need to convert the url to the parent url
+
+    const urlObj = new URL(url);
+    return `${urlObj.origin}/#/contents/${url.split("/api/v1/data/content/")[1].split("/")[0]}/read`;
+  } else {
+    return url;
+  }
+}
+
+export async function submitActivity(
+  proxy: AbstractWorkerProxy,
+  activityType: ActivityType,
+  activitySource: ActivitySource,
+  url: string,
+  sessionId: string,
+  getTimestamp: () => number,
+) {
+  const timestamp = getTimestamp();
+  if (!timestamp) throw new Error("No timestamp");
+
+  const activity = {
+    id: UUID().toString(),
+    asessionId: sessionId,
+    activityType,
+    activitySource,
+    url: getActivityUrl(url),
+    timestamp,
+  } as UserActivityType;
+  await proxy.sendMessagePromise<boolean>({
+    source: activitySource,
+    type: "submitActivityEvent",
+    value: activity,
+  });
+}
+
+export function sessionActivityUpdate(proxy: AbstractWorkerProxy, sessionId: string) {
+  function updateSessionActivity() {
+    proxy.sendMessagePromise<boolean>({
+      source: DATA_SOURCE,
+      type: "refreshSession",
+      value: {
+        id: sessionId,
+        timestamp: Date.now().toString(),
+      },
+    });
+  }
+  let events = ["load", "mousedown", "mousemove", "keydown", "scroll", "touchstart"];
+  events.forEach((name) => {
+    document.addEventListener(name, _.debounce(updateSessionActivity, ACTIVITY_DEBOUNCE), true);
+  });
 }
 
 export function positionPopup(

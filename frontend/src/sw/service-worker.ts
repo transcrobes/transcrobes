@@ -9,7 +9,13 @@ import { precacheAndRoute } from "workbox-precaching";
 import { CacheFirst } from "workbox-strategies";
 import { getUserDexie } from "../database/authdb";
 import { TranscrobesDatabase } from "../database/Schema";
-import { IS_DEV, ONE_YEAR_IN_SECS, PRECACHE_PUBLICATIONS, WEBPUB_CACHE_NAME } from "../lib/types";
+import {
+  IS_DEV,
+  ONE_YEAR_IN_SECS,
+  PRECACHE_PUBLICATIONS,
+  SerialisableDayCardWords,
+  WEBPUB_CACHE_NAME,
+} from "../lib/types";
 import RxDBProvider from "../ra-data-rxdb";
 import { cachePublications, log, manageEvent, resetDBConnections } from "./SWManager";
 
@@ -25,6 +31,7 @@ declare global {
   interface ServiceWorkerGlobalScope {
     tcb: Promise<TranscrobesDatabase> | null;
     needsReload: boolean;
+    dayCardWords: SerialisableDayCardWords | null;
     needsSWReload: boolean; // FIXME: unused
   }
 }
@@ -99,9 +106,10 @@ self.addEventListener("message", (event) => {
     console.log("reset db connections");
     dataProvider = null;
     self.tcb = null;
-    resetDBConnections().then(() => {
+    resetDBConnections(self).then(() => {
       console.log("Database unloaded");
       event.ports[0].postMessage("Database unloaded");
+      self.needsReload = true;
     });
   } else if (event.data && event.data.type === "NEEDS_RELOAD") {
     event.ports[0].postMessage({

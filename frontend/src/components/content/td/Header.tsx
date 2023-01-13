@@ -26,7 +26,6 @@ export default function Header({ classes, token, bestGuess, extrasOpen, onToggle
 
   useEffect(() => {
     (async () => {
-      console.log("token", token);
       setSound((token.p && token.p) || (await getSound(token, definitions)));
     })();
   }, [token]);
@@ -56,7 +55,7 @@ export default function Header({ classes, token, bestGuess, extrasOpen, onToggle
             <Fullscreen sx={{ fontSize: "24px" }} className={classes.icons} />
           )}
         </IconButton>
-        <IconButton sx={{ padding: "3px" }} onClick={closePopup} aria-label="Close" size="large">
+        <IconButton sx={{ padding: "3px 3px 3px 6px" }} onClick={closePopup} aria-label="Close" size="large">
           {/* FIXME: how TF??? do I set the guarantee fontSize cleanly??? */}
           <CloseIcon sx={{ fontSize: "24px" }} className={classes.icons} />
         </IconButton>

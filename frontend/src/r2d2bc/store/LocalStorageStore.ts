@@ -24,7 +24,7 @@ export interface LocalStorageStoreConfig {
   /** String to prepend to keys in localStorage. If the same prefix is shared
         across LocalStorageStores on the same domain, they will have the same
         value for each key. */
-  prefix: string;
+  prefix: string | URL;
   useLocalStorage: boolean;
 }
 
@@ -32,7 +32,7 @@ export interface LocalStorageStoreConfig {
     but falls back to an in-memory store. */
 export default class LocalStorageStore implements Store {
   private readonly fallbackStore: MemoryStore | null;
-  private readonly prefix: string;
+  private readonly prefix: string | URL;
   private readonly useLocalStorage: boolean;
 
   public constructor(config: LocalStorageStoreConfig) {

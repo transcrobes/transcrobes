@@ -3,12 +3,13 @@ from typing import Any, List
 
 from app import crud, models, schemas
 from app.api import deps
+from app.api.api_v1 import types
 from app.api.api_v1.subs import publish_message
 from app.core.config import settings
 from app.data.context import get_broadcast
 from app.models import mixins
 from app.utils import send_new_account_email
-from fastapi import APIRouter, Body, Depends, HTTPException
+from fastapi import APIRouter, Body, Depends, HTTPException, Request
 from fastapi.encoders import jsonable_encoder
 from pydantic.networks import EmailStr
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -37,6 +38,7 @@ async def create_user(
     *,
     db: AsyncSession = Depends(deps.get_db),
     user_in: schemas.UserCreate,
+    request: Request,
     # _current_user: models.AuthUser = Depends(deps.get_current_active_superuser),
 ) -> Any:
     """
@@ -50,7 +52,7 @@ async def create_user(
         )
     user = await crud.user.create(db, obj_in=user_in)
     if settings.EMAILS_ENABLED and user_in.email:
-        send_new_account_email(email_to=user_in.email, username=user_in.username)
+        send_new_account_email(email_to=user_in.email, username=user_in.username, request=request)
     return user
 
 
@@ -115,15 +117,17 @@ async def register_classes(
 
         if registration.is_teacher:
             RegType = models.TeacherRegistration
+            publish_type = types.Teacherregistrations.__name__
             teachers_to_notify[user.id] = user
         else:
             RegType = models.StudentRegistration
+            publish_type = types.Studentregistrations.__name__
             students_to_notify[user.id] = user
         stmt = select(RegType).where(RegType.class_id == registration.class_id).where(RegType.user_id == user.id)
         result = await db.execute(stmt)
         if result.scalar_one_or_none():
             failures.append(registration)
-            await publish_message(RegType.__name__, None, await get_broadcast(), user)
+            await publish_message(publish_type, None, await get_broadcast(), user)
             logger.warning(
                 f"Regristree {registration.email} is already registered for {registration.class_id} by {current_user}."
             )
@@ -151,9 +155,9 @@ async def register_classes(
     logger.warning(f"Failed to register {len(failures)} users for {current_user}.")
 
     for user in students_to_notify.values():
-        await publish_message(models.StudentRegistration.__name__, None, await get_broadcast(), user)
+        await publish_message(types.Studentregistrations.__name__, None, await get_broadcast(), user)
     for user in teachers_to_notify.values():
-        await publish_message(models.TeacherRegistration.__name__, None, await get_broadcast(), user)
+        await publish_message(types.Teacherregistrations.__name__, None, await get_broadcast(), user)
 
     return {"successes": successes, "failures": failures}
 

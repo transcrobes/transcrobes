@@ -137,7 +137,7 @@ export default defineConfig({
         global: "globalThis",
         "process.env.NODE_DEBUG": "false",
       },
-      // Enable esbuild polyfill plugins
+      // @ts-ignore
       plugins: [NodeModulesPolyfillPlugin()],
     },
   },

@@ -10,5 +10,5 @@ BASE_DIR=$(dirname $SCRIPT_DIR)
 
 echo $BASE_DIR
 
-docker build $BASE_DIR -f $BASE_DIR/Dockerfile.backups -t ${MAIN_IMAGE} \
+docker build $BASE_DIR --network host -f $BASE_DIR/Dockerfile.backups -t ${MAIN_IMAGE} \
   --build-arg SOURCES_OVERRIDE=${SOURCES_OVERRIDE}

@@ -2,6 +2,7 @@ import asyncio
 import logging
 
 from app.db.session import async_session
+from sqlalchemy.sql import text
 from tenacity import after_log, before_log, retry, stop_after_attempt, wait_fixed
 
 logging.basicConfig(level=logging.INFO)
@@ -21,7 +22,7 @@ async def init() -> None:
     try:
         async with async_session() as db:
             # Try to create session to check if DB is awake
-            await db.execute("SELECT 1")
+            await db.execute(text("SELECT 1"))
     except Exception as e:
         logger.error(e)
         raise e

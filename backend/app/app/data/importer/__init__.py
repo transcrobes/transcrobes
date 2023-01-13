@@ -224,7 +224,6 @@ def get_or_create_content(the_import: Import) -> Content:
 
 
 async def unpack_epub_file(db: AsyncSession, the_import: Import, manager: EnrichmentManager):  # pylint: disable=R0914
-
     import_path = absolute_imports_path(the_import.created_by.id, the_import.import_file)
     with open(import_path, "rb") as f, dawn.open(f) as upload:
         manifest = make_manifest(upload, manager)
@@ -709,23 +708,23 @@ async def process_import(file_event: ProcessData):
         db.add(an_import)
         await db.commit()
 
-        # await (await get_broadcast()).publish(channel=Import.__name__, message=str(an_import.created_by.id))
-
         result = await db.execute(select(Import).where(Import.id == import_id))
         an_import: Import = result.scalar_one()
 
         await publish_message(
-            Import.__name__, types.Imports.from_model(an_import), await get_broadcast(), an_import.created_by
+            types.Imports.__name__,
+            None,
+            await get_broadcast(),
+            an_import.created_by,
         )
 
         if not an_import.import_file.endswith(".csv"):
             await publish_message(
-                Content.__name__,
-                types.Contents.from_model(an_import.content),
+                types.Contents.__name__,
+                None,
                 await get_broadcast(),
                 an_import.content.created_by,
             )
-            # await (await get_broadcast()).publish(channel=Content.__name__, message=str(an_import.created_by.id))
         logger.info("Finished running import %s", file_event.id)
 
 
@@ -762,9 +761,11 @@ async def process_list(list_event: ProcessData):
         db.add(a_list)
         await db.commit()
 
-        # await (await get_broadcast()).publish(channel=UserList.__name__, message=str(a_list.created_by.id))
         await publish_message(
-            UserList.__name__, types.Userlists.from_model(a_list), await get_broadcast(), a_list.created_by
+            types.Userlists.__name__,
+            None,
+            await get_broadcast(),
+            a_list.created_by,
         )
         logger.info("Finished running list %s", list_event.id)
 
@@ -799,8 +800,10 @@ async def process_content(content_event: ProcessData):
         db.add(content)
         await db.commit()
 
-        # await (await get_broadcast()).publish(channel=Content.__name__, message=str(content.created_by.id))
         await publish_message(
-            Content.__name__, types.Contents.from_model(content), await get_broadcast(), content.created_by
+            types.Contents.__name__,
+            None,
+            await get_broadcast(),
+            content.created_by,
         )
         logger.info("Finished running content %s", content.id)

@@ -1,5 +1,4 @@
 FROM python:3.11-slim
-
 LABEL maintainer="Anton Melser <anton@transcrob.es>"
 
 WORKDIR /app/
@@ -14,7 +13,8 @@ RUN bash -c "if [ ! -z $PIP_INDEX_URL ] ; then echo '[global]\nindex-url=$PIP_IN
 RUN apt-get update && apt-get upgrade -y && apt-get install -y \
   libmagic1 git make build-essential wget curl libgflags-dev libsnappy-dev \
   zlib1g-dev libbz2-dev liblz4-dev libzstd-dev libmagic-dev \
-  && apt-get -y clean
+  && apt-get -y clean \
+  && rm -rf /var/lib/apt/lists/*
 
 RUN /usr/local/bin/python -m pip install --upgrade pip setuptools
 

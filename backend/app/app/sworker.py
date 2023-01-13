@@ -7,11 +7,13 @@ from datetime import datetime
 
 import orjson
 from aiokafka import AIOKafkaConsumer
+from app.api.api_v1 import types
 from app.core.config import settings
+from app.data.models import ActivityTypes
 from app.data.stats import push_user_stats_update_to_clients
 from app.db.session import async_stats_session
-from app.models.stats import UserDay, UserWord
-from app.stats import ACTION_EVENT_TOPIC_NAME, CARD_EVENT_TOPIC_NAME, VOCAB_EVENT_TOPIC_NAME
+from app.models.stats import UserActivity, UserDay, UserWord
+from app.stats import ACTION_EVENT_TOPIC_NAME, ACTIVITY_EVENT_TOPIC_NAME, CARD_EVENT_TOPIC_NAME, VOCAB_EVENT_TOPIC_NAME
 from sqlalchemy import case
 from sqlalchemy.dialects import postgresql
 
@@ -20,7 +22,12 @@ logging.config.dictConfig(settings.LOGGING)
 logger = logging.getLogger(__name__)
 
 CONSUMER_GROUP_ID = "tcstats"
-STATS_TOPICS_TO_CONSUME = [VOCAB_EVENT_TOPIC_NAME, ACTION_EVENT_TOPIC_NAME, CARD_EVENT_TOPIC_NAME]
+STATS_TOPICS_TO_CONSUME = [
+    VOCAB_EVENT_TOPIC_NAME,
+    ACTION_EVENT_TOPIC_NAME,
+    CARD_EVENT_TOPIC_NAME,
+    ACTIVITY_EVENT_TOPIC_NAME,
+]
 
 
 def get_event_dates(tstamp):
@@ -38,9 +45,93 @@ async def send_updates(word_updates, day_updates, update_ids, include_success=Fa
         await db.commit()
 
     if len(day_updates) > 0:
-        await push_user_stats_update_to_clients(update_ids, UserDay.__name__),
+        # await push_user_stats_update_to_clients(update_ids, UserDay.__name__),
+        await push_user_stats_update_to_clients(update_ids, types.camel_to_snake(types.DayModelStats.__name__)),
     if len(word_updates) > 0:
-        await push_user_stats_update_to_clients(update_ids, UserWord.__name__),
+        # await push_user_stats_update_to_clients(update_ids, UserWord.__name__),
+        await push_user_stats_update_to_clients(update_ids, types.camel_to_snake(types.WordModelStats.__name__)),
+
+
+def activity_from_url(origurl: str) -> ActivityTypes:
+    url = origurl.strip().removeprefix("https://").removeprefix("http://")
+    internal = False
+    for host in settings.ALL_HOSTS:
+        if url.startswith(host):
+            url = url.removeprefix(host).removeprefix("/#").strip()
+            internal = True
+            break
+    if not internal:
+        return ActivityTypes.EXTENSION
+    if url == "/":
+        return ActivityTypes.DASHBOARD
+    # common learning activities - these are the most common
+    if url.startswith("/repetrobes"):
+        return ActivityTypes.REPETROBES
+    if url.startswith("/textcrobes"):
+        return ActivityTypes.TEXTCROBES
+    if url.startswith("/contents") and url.endswith("/read"):
+        return ActivityTypes.CONTENTEPUB
+    if url.startswith("/contents") and url.endswith("/watch"):
+        return ActivityTypes.CONTENTVIDEO
+    if url.startswith("/contents"):
+        return ActivityTypes.CONTENTS
+    if url.startswith("/notrobes"):
+        return ActivityTypes.NOTROBES
+
+    # common management activities
+    if url.startswith("/goals"):
+        return ActivityTypes.GOALS
+    if url.startswith("/userlists"):
+        return ActivityTypes.LISTS
+    if url.startswith("/stats"):
+        return ActivityTypes.MYSTATS
+    if url.startswith("/studentregistrations"):
+        return ActivityTypes.CLASSES
+    if url.startswith("/listrobes"):
+        return ActivityTypes.LISTROBES
+    if url.startswith("/imports"):
+        return ActivityTypes.IMPORTS
+    if url.startswith("/userdictionaries"):
+        return ActivityTypes.DICTIONARIES
+    if url.startswith("/exports"):
+        return ActivityTypes.EXPORTS
+
+    # common settings activities and help - should be rare
+    if url.startswith("/brocrobes"):
+        return ActivityTypes.BROCROBES
+    if url.startswith("/surveys"):
+        return ActivityTypes.SURVEYS
+    if url.startswith("/system"):
+        return ActivityTypes.SETTINGS
+    if url.startswith("/help"):
+        return ActivityTypes.HELP
+
+    # TODO: should probably raise an error here instead
+    return ActivityTypes.UNKNOWN
+
+
+async def activity_event(events):
+    if not events:
+        logger.warning("Empty activity events received")
+        return
+    logger.info(f"{len(events)} activity events received")
+    activities = []
+    for event in events:
+        activities.append(
+            {
+                "user_id": event["user_id"],
+                "activity_type": activity_from_url(event["data"] or "").value,
+                "activity_start": int(event["start"]),
+                "activity_end": int(event["end"]),
+                "data": event["data"],
+            }
+        )
+    stmt = postgresql.insert(UserActivity).values(activities)
+    async with async_stats_session() as db:
+        await db.execute(stmt)
+        await db.commit()
+
+    logger.info(f"{len(events)} activity events saved")
 
 
 async def action_event(events, tstamp):
@@ -251,7 +342,11 @@ async def main():
                 )
             )
             try:
-                if msg.topic == VOCAB_EVENT_TOPIC_NAME:
+                if msg.topic == ACTIVITY_EVENT_TOPIC_NAME:
+                    logger.info(f"Received activity_event_topic message: {msg.timestamp}")
+                    # await activity_event(orjson.loads(msg.value), msg.timestamp)
+                    await activity_event(orjson.loads(msg.value))
+                elif msg.topic == VOCAB_EVENT_TOPIC_NAME:
                     logger.info(f"Received vocab_event_topic message: {msg.timestamp}")
                     await vocab_event(orjson.loads(msg.value), msg.timestamp)
                 elif msg.topic == ACTION_EVENT_TOPIC_NAME:

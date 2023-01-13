@@ -30,6 +30,7 @@ USER_STATS_MODE = [
 KAFKA_PRODUCER: AIOKafkaProducer
 
 VOCAB_EVENT_TOPIC_NAME = "vocab_event_topic"
+ACTIVITY_EVENT_TOPIC_NAME = "activity_event_topic"
 CARD_EVENT_TOPIC_NAME = "card_event_topic"
 ACTION_EVENT_TOPIC_NAME = "action_event_topic"
 

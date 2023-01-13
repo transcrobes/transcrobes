@@ -37,10 +37,20 @@ async def user_events(
 ) -> Any:  # FIXME: Any?
     vocab = []
     card = []
+    activities = []
     other = []
     try:
         for e in events:
-            if e["type"] in ["bulk_vocab"]:
+            if e["type"] in ["activity"]:
+                event = {
+                    "type": e["type"],
+                    "start": int(e["start"]),
+                    "end": int(e["end"]),
+                    "data": e["url"],
+                    "user_id": current_user.id,
+                }
+                activities.append(event)
+            elif e["type"] in ["bulk_vocab"]:
                 event = {
                     "data": e["data"],
                     "type": e["type"],
@@ -71,6 +81,8 @@ async def user_events(
                     "target_sentence": e["data"].get("target_sentence"),
                 }
                 other.append(event)
+        if activities:
+            await aioproducer.send_and_wait(stats.ACTIVITY_EVENT_TOPIC_NAME, orjson.dumps(activities))
         if vocab:
             await aioproducer.send_and_wait(stats.VOCAB_EVENT_TOPIC_NAME, orjson.dumps(vocab))
         if card:

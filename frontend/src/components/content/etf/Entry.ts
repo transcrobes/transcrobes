@@ -8,6 +8,7 @@ import { eventCoordinates, getNormalGloss, getWord, isNumberToken } from "../../
 import {
   BOOK_READER_TYPE,
   DefinitionType,
+  DEFINITION_LOADING,
   EXTENSION_READER_TYPE,
   GLOSS_NUMBER_NOUNS,
   HasTextChildren,
@@ -47,7 +48,6 @@ type StatedEntryProps = EntryProps & {
   strictProviderOrdering?: boolean;
 };
 
-const DEFINITION_LOADING = "loading...";
 const RETRY_DEFINITION_MS = 5000;
 const RETRY_DEFINITION_MAX_TRIES = 20;
 
@@ -194,7 +194,13 @@ class Entry extends Component<StatedEntryProps, LocalEntryState> {
         this.context.store.dispatch(addDefinitions([{ ...def, glossToggled: false }]));
         getNormalGloss(token, readerConfig || this.props.readerConfig, knownCards, definitions, fromLang, toLang).then(
           (gloss) => {
-            this.setState({ gloss });
+            // FIXME: how on earth does this happen??? Somehow this is getting called twice (even in prod mode)
+            // and the second time the definition is undefined. I don't know why.
+            if (!gloss.startsWith(DEFINITION_LOADING)) {
+              this.setState({ gloss });
+            } else {
+              console.debug("Very strange, gloss bug", token.l, gloss, def);
+            }
           },
         );
       }

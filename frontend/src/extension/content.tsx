@@ -20,8 +20,10 @@ import { addModelsToState } from "../features/stats/statsSlice";
 import { setLoading, setTokenDetails } from "../features/ui/uiSlice";
 import { setUser } from "../features/user/userSlice";
 import { popupDarkTheme, popupLightTheme } from "../layout/themes";
+import { sessionActivityUpdate, submitActivity } from "../lib/componentMethods";
 import { ensureDefinitionsLoaded, refreshDictionaries } from "../lib/dictionary";
-import { isScriptioContinuo, missingWordIdsFromModels, toEnrich } from "../lib/funclib";
+import { isScriptioContinuo, missingWordIdsFromModels, toEnrich, UUID } from "../lib/funclib";
+import { NAME_PREFIX } from "../lib/interval/interval-decorator";
 import { enrichChildren, getI18nProvider, getMessages } from "../lib/libMethods";
 import { AbstractWorkerProxy, BackgroundWorkerProxy, setPlatformHelper } from "../lib/proxies";
 import { observerFunc } from "../lib/stats";
@@ -69,8 +71,21 @@ const readObserver = new IntersectionObserver(observerFunc(getReaderConfig, mode
   threshold: [1.0],
 });
 
+window.getTimestamp = () => {
+  const now = Date.now();
+  if (window.lastTimestamp && window.lastTimestamp > now) {
+    window.lastTimestamp += 1;
+  } else {
+    window.lastTimestamp = now;
+  }
+  return window.lastTimestamp;
+};
+
 const proxy = new BackgroundWorkerProxy();
 setPlatformHelper(proxy);
+const sessionId = UUID().toString();
+
+sessionActivityUpdate(proxy, sessionId);
 
 let classes: ETFStylesProps["classes"] | null = null;
 const id = EXTENSION_READER_ID;
@@ -153,12 +168,24 @@ proxy.sendMessagePromise<UserState>({ source: DATA_SOURCE, type: "getUser", valu
         </Provider>,
       );
     });
+    submitActivity(proxy, "start", "extension", window.location.href, sessionId, window.getTimestamp);
   });
   // This ensures that when the transcrobed tab has focus, the background script will
   // be active or reactivated if unloaded (which happens regularly)
-  setInterval(() => {
-    proxy.sendMessagePromise({ source: DATA_SOURCE, type: "getWordFromDBs", value: "的" });
-  }, KEEPALIVE_QUERY_FREQUENCY_MS);
+  setInterval(
+    () => {
+      if (document.visibilityState === "visible") {
+        proxy.sendMessagePromise({ source: DATA_SOURCE, type: "getWordFromDBs", value: "的" });
+        submitActivity(proxy, "continue", "extension", window.location.href, sessionId, window.getTimestamp);
+      }
+    },
+    KEEPALIVE_QUERY_FREQUENCY_MS,
+    NAME_PREFIX + "contentKeepAlive",
+  );
+
+  window.addEventListener("beforeunload", () => {
+    submitActivity(proxy, "end", "extension", window.location.href, sessionId, window.getTimestamp);
+  });
 });
 
 export function onEntryId(entries: IntersectionObserverEntry[]): void {

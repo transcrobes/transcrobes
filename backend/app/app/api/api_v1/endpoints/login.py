@@ -13,7 +13,7 @@ from app.core import security
 from app.core.config import settings
 from app.core.security import ALGORITHM, get_password_hash
 from app.utils import generate_validation_token, send_reset_password_email, verify_validation_token
-from fastapi import APIRouter, Body, Depends, HTTPException
+from fastapi import APIRouter, Body, Depends, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from jose import jwt
@@ -138,7 +138,7 @@ def logout(response: Response):
 
 
 @router.post("/password-recovery/{email}", response_model=schemas.Msg)
-async def recover_password(email: str, db: AsyncSession = Depends(deps.get_db)) -> Any:
+async def recover_password(email: str, request: Request, db: AsyncSession = Depends(deps.get_db)) -> Any:
     """
     Password Recovery
     """
@@ -155,7 +155,7 @@ async def recover_password(email: str, db: AsyncSession = Depends(deps.get_db)) 
     assert user.email is not None
     # assert email is not None
     # assert password_reset_token is not None
-    send_reset_password_email(email_to=user.email, email=email, token=password_reset_token)
+    send_reset_password_email(email_to=user.email, email=email, token=password_reset_token, request=request)
     return {"msg": "Password recovery email sent"}
 
 

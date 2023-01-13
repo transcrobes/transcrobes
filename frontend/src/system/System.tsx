@@ -16,6 +16,9 @@ import { darkTheme, lightTheme } from "../layout/themes";
 import { AbstractWorkerProxy } from "../lib/proxies";
 import { DOCS_DOMAIN, ThemeName } from "../lib/types";
 import { fetcher } from "../lib/fetcher";
+import { NAME_PREFIX } from "../lib/interval/interval-decorator";
+
+const CONNECTION_CHECK_FREQUENCY_MS = 10000;
 
 const useStyles = makeStyles()({
   label: { width: "10em", display: "inline-block" },
@@ -60,9 +63,9 @@ interface ReloadDBButtonProps {
 function ReloadDBButton({ proxy }: ReloadDBButtonProps): ReactElement {
   const { classes } = useStyles();
   const translate = useTranslate();
+  const username = useAppSelector((state) => state.userData.username);
 
   async function handleClick() {
-    const username = useAppSelector((state) => state.userData.username);
     if (username) {
       await proxy.sendMessagePromise<string>({ source: "System", type: "resetDBConnections", value: "" });
       await proxy.asyncInit({ username: username });
@@ -164,22 +167,27 @@ function System({ proxy }: Props): ReactElement {
         console.log("Server ping error", error);
         setTimedServerAvailableMessage(translate("screens.system.server_unavailable"));
       });
-    const interval = setInterval(() => {
-      fetcher
-        .fetchPlus<{ exp?: string }>("/api/v1/utils/authed")
-        .then((manif) => {
-          if (manif.exp) {
-            console.log("Server ping success", manif, new Date(manif.exp || 0).toLocaleTimeString());
-            setTimedServerAvailableMessage(translate("screens.system.server_available"));
-          } else {
-            throw new Error(JSON.stringify(manif));
-          }
-        })
-        .catch((error) => {
-          console.log("Server ping error", error);
-          setTimedServerAvailableMessage(translate("screens.system.server_unavailable"));
-        });
-    }, 10000);
+    const interval = setInterval(
+      () => {
+        fetcher
+          .fetchPlus<{ exp?: string }>("/api/v1/utils/authed")
+          .then((manif) => {
+            if (manif.exp) {
+              console.log("Server ping success", manif, new Date(manif.exp || 0).toLocaleTimeString());
+              setTimedServerAvailableMessage(translate("screens.system.server_available"));
+            } else {
+              throw new Error(JSON.stringify(manif));
+            }
+          })
+          .catch((error) => {
+            console.log("Server ping error", error);
+            setTimedServerAvailableMessage(translate("screens.system.server_unavailable"));
+          });
+      },
+      CONNECTION_CHECK_FREQUENCY_MS,
+      NAME_PREFIX + "connectionCheck",
+    );
+
     return () => clearInterval(interval);
   }, []);
   return (

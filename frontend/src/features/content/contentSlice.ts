@@ -21,6 +21,7 @@ export function handleConfigUpdate<T extends ReaderState>(newConfig: T, id: stri
     id: id,
     configString: JSON.stringify({ readerState: newConfig }),
   };
+  console.log("Saving config to store", configToSave);
   proxy.sendMessagePromise({
     source: "contentSlice.ts",
     type: "setContentConfigToStore",

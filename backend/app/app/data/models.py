@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 from __future__ import annotations
 
+from enum import Enum
+
 MANIFEST_JSON = "manifest.json"
 PARSE_JSON_SUFFIX = ".parse.json"
 ENRICH_JSON_SUFFIX = ".enrich.json"
@@ -10,6 +12,32 @@ SRT_EXTENTION = ".srt"
 VTT_EXTENTION = ".vtt"
 CSV_EXTENTION = ".csv"
 WEBVTT_FILE = "subtitles.vtt"
+
+
+class ActivityTypes(Enum):
+    DASHBOARD = 0
+    EXTENSION = 1
+    UNKNOWN = 2
+    IMPORTS = 3
+    NOTROBES = 4
+    LISTROBES = 5
+    DICTIONARIES = 6
+    CLASSES = 7
+    MYSTATS = 8
+    STUDENTSTATS = 9
+    EXPORTS = 10
+    GOALS = 11
+    LISTS = 12
+    REPETROBES = 13
+    TEXTCROBES = 14
+    CONTENTS = 15
+    CONTENTVIDEO = 16
+    CONTENTEPUB = 17
+    BROCROBES = 18
+    SURVEYS = 19
+    SETTINGS = 20
+    HELP = 21
+
 
 NONE = 0
 REQUESTED = 1

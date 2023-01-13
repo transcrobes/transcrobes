@@ -6,6 +6,7 @@ import watch from "redux-watch";
 import { ETFStyles } from "../../components/Common";
 import EnrichedTextFragment from "../../components/content/etf/EnrichedTextFragment";
 import { setLoading, setTokenDetails } from "../../features/ui/uiSlice";
+import { sessionActivityUpdate } from "../../lib/componentMethods";
 import { ensureDefinitionsLoaded } from "../../lib/dictionary";
 import { isScriptioContinuo, missingWordIdsFromModels, tokensInModel } from "../../lib/funclib";
 import { setPlatformHelper } from "../../lib/proxies";
@@ -23,6 +24,7 @@ const MAX_TOKENS_FOR_PRE_ENRICHMENT = 30000;
 const proxy = window.parent.componentsConfig.proxy;
 const store = window.parent.transcrobesStore;
 const bookId = window.parent.bookId;
+const sessionId = window.parent.asessionId;
 const readerConfig = store.getState().bookReader[bookId];
 const currentModels = window.transcrobesModel;
 const definitions = store.getState().definitions;
@@ -37,6 +39,8 @@ const readObserver = new IntersectionObserver(observerFunc(getReaderConfig, curr
 document.addEventListener("click", () => {
   store.dispatch(setTokenDetails(undefined));
 });
+
+sessionActivityUpdate(proxy, sessionId);
 
 store.dispatch(setLoading(true));
 
@@ -109,7 +113,6 @@ store.subscribe(
 );
 
 ensureDefinitionsLoaded(proxy, [...uniqueIds], store).then(() => {
-  const container = document.body.appendChild(document.createElement("div"));
   if (tokensInModel(currentModels) > MAX_TOKENS_FOR_PRE_ENRICHMENT) {
     for (const etf of document.getElementsByTagName("enriched-text-fragment")) {
       if (!etf.id) continue;

@@ -3,11 +3,12 @@ import draftToHtml from "draftjs-to-html";
 import _ from "lodash";
 import LZString from "lz-string";
 import { clone, isRxDocument } from "rxdb";
-import { MangoQuery, RxStorageBulkWriteError } from "rxdb/dist/types/types";
+import { MangoQuery, RxStorageWriteError } from "rxdb/dist/types/types";
 import { $enum } from "ts-enum-util";
 import { v4 as uuidv4 } from "uuid";
 import { getDatabaseName } from "../database/Database";
 import {
+  ActivityQueueDocument,
   CardDocument,
   CARD_TYPES,
   CharacterDocument,
@@ -35,6 +36,7 @@ import { cleanAnalysis, fetchPlus, shortMeaning, simpOnly, sortByWcpm } from "./
 import { practice } from "./review";
 import {
   ActionEvent,
+  ACTIVITY_TIMEOUT,
   CalculatedContentStats,
   CalculatedContentValueStats,
   CardType,
@@ -63,10 +65,13 @@ import {
   SelectableListElementType,
   SerialisableDayCardWords,
   SerialisableStringSet,
+  SessionType,
   ShortChar,
   ShortWord,
   StudentRegistrationType,
   TeacherRegistrationType,
+  UserActivity,
+  UserActivityType,
   UserDefinitionType,
   UserListWordType,
   VocabReview,
@@ -129,6 +134,18 @@ export async function enqueueRegistrations(
   return true;
 }
 
+export async function refreshSession(
+  db: TranscrobesDatabase,
+  { id, timestamp }: { id: string; timestamp: number },
+): Promise<{ status: string }> {
+  if (db && id) {
+    await db.sessions.incrementalUpsert({ id, timestamp });
+    return { status: "success" };
+  } else {
+    return { status: "uninitialised" };
+  }
+}
+
 export async function processRequestQueue(
   db: TranscrobesDatabase,
   url: URL,
@@ -162,7 +179,6 @@ export async function processRequestQueue(
     const apiEndPoint = new URL(endpoint, url.origin).href;
     console.log("sending requests", endpoint, apiEndPoint, requests);
     const data = await fetchPlus(apiEndPoint, JSON.stringify(requests));
-    // db.requestqueue.bulkRemove(allRequestIds[endpoint]);
     if (!data || !("successes" in data) || !("failures" in data)) {
       throw new Error("user_event update failed due to return status incorrect!");
     } else {
@@ -173,6 +189,139 @@ export async function processRequestQueue(
       // remove from queue, but no need to wait
       db.requestqueue.bulkRemove(allRequestIds[endpoint]);
     }
+  }
+  return { status: "success" };
+}
+
+export async function sendActivities(
+  db: TranscrobesDatabase,
+  url: URL,
+  maxSendEvents = 500,
+): Promise<{ status: string }> {
+  if (!db) {
+    return { status: "uninitialised" };
+  }
+
+  const eventsToDelete: string[] = [];
+  const rawSessionEvents: {
+    [key: string]: ActivityQueueDocument[];
+  } = {};
+  const activities: UserActivity[] = [];
+
+  const allEntries = await db.activityqueue.find({ limit: maxSendEvents }).sort("timestamp").exec();
+  const allEvents = new Map<string, ActivityQueueDocument>();
+
+  const allSessionDocuments = await db.sessions.find().exec();
+  const liveSessions = new Map<string, SessionType>();
+  const deadSessions = new Map<string, SessionType>();
+  const now = Date.now();
+  for (const session of allSessionDocuments) {
+    if (now - parseInt(session.timestamp.toString()) > ACTIVITY_TIMEOUT) {
+      deadSessions.set(session.id, session);
+    } else {
+      liveSessions.set(session.id, session);
+    }
+  }
+
+  if (!allEntries.length) {
+    // console.debug("Queue empty");
+    return { status: "empty_queue" };
+  }
+  for (let i = 0; i < allEntries.length; i++) {
+    const event = allEntries[i];
+    allEvents.set(event.id, event);
+    const eventSessionId = event.asessionId;
+
+    if (!rawSessionEvents[eventSessionId]) {
+      rawSessionEvents[eventSessionId] = [];
+    }
+    const sessionEventsQueue = rawSessionEvents[eventSessionId];
+    const lastEvent = sessionEventsQueue[sessionEventsQueue.length - 1];
+    if (
+      (event.activityType === "end" && sessionEventsQueue.length === 0) ||
+      (event.activityType === "start" && lastEvent?.activityType === "start" && lastEvent.url === event.url)
+    ) {
+      console.debug("Ignoring event initial end or start:start", lastEvent?.toJSON(), event.toJSON());
+      eventsToDelete.push(event.id);
+      continue;
+    } else if (event.activityType === "end" && lastEvent.activityType === "end" && lastEvent.url === event.url) {
+      console.debug("Ignoring event end:end", lastEvent?.toJSON(), event.toJSON());
+      sessionEventsQueue.pop();
+    }
+    sessionEventsQueue.push(event);
+  }
+
+  for (const session of Object.keys(rawSessionEvents)) {
+    const sessionEventsQueue = rawSessionEvents[session];
+    let curActivity: UserActivity | null = null;
+    let curActivityEvents: ActivityQueueDocument[] = [];
+
+    for (let i = 0; i < sessionEventsQueue.length; i++) {
+      const event = sessionEventsQueue[i];
+      const last = sessionEventsQueue[i - 1];
+      if (curActivity && event.url === curActivity.url) {
+        curActivityEvents.push(event);
+        curActivity.end = event.timestamp;
+        if (
+          event.activityType === "end" ||
+          (i === sessionEventsQueue.length - 1 &&
+            (deadSessions.has(event.asessionId) || !liveSessions.has(event.asessionId)))
+        ) {
+          if (curActivity.end > curActivity.start) activities.push(curActivity);
+          for (const anevent of curActivityEvents) {
+            eventsToDelete.push(anevent.id);
+          }
+          curActivityEvents = [];
+          curActivity = null;
+        }
+      } else {
+        if (curActivity) {
+          const ts = (deadSessions.get(last.asessionId) || liveSessions.get(last.asessionId))?.timestamp;
+          if (ts) curActivity.end = ts;
+          if (curActivity.end > curActivity.start) activities.push(curActivity);
+          for (const anevent of curActivityEvents) {
+            eventsToDelete.push(anevent.id);
+          }
+          curActivityEvents = [];
+        }
+        curActivityEvents.push(event);
+        curActivity = {
+          end: event.timestamp,
+          start: event.timestamp,
+          type: "activity",
+          url: event.url,
+        };
+      }
+    }
+  }
+  if (allEntries.length < maxSendEvents) {
+    // we have processed all the entries, we can remove all the old sessions
+    await db.sessions.bulkRemove([...deadSessions.keys()]);
+  }
+
+  if (eventsToDelete.length === 0) {
+    // console.debug("Queue length:", allEntries.length);
+  } else {
+    for (const act of activities) {
+      console.debug("Sending", act.end - act.start, JSON.stringify(act));
+    }
+    // console.debug("Deleting", eventsToDelete);
+    db.activityqueue.bulkRemove(eventsToDelete);
+  }
+
+  if (activities.length > 0) {
+    // FIXME: externalise URL
+    const apiEndPoint = new URL("/api/v1/data/user_events", url.origin).href;
+    const data = await fetchPlus(apiEndPoint, JSON.stringify(activities));
+
+    if (!data || !data["status"] || !(data["status"] === "success")) {
+      throw new Error("user_event update failed due to return status incorrect!");
+    } else {
+      // remove from queue, but no need to wait
+      await db.activityqueue.bulkRemove(eventsToDelete);
+    }
+  } else if (eventsToDelete.length > 0) {
+    await db.activityqueue.bulkRemove(eventsToDelete);
   }
   return { status: "success" };
 }
@@ -205,7 +354,7 @@ export async function sendUserEvents(
   const apiEndPoint = new URL("/api/v1/data/user_events", url.origin).href;
   const data = await fetchPlus(apiEndPoint, JSON.stringify(allEvents));
   if (!data || !data["status"] || !(data["status"] === "success")) {
-    throw "user_event update failed due to return status incorrect!";
+    throw new Error("user_event update failed due to return status incorrect!");
   } else {
     // remove from queue, but no need to wait
     db.event_queue.bulkRemove(allEventIds);
@@ -215,7 +364,9 @@ export async function sendUserEvents(
 
 export async function getAllFromDB(
   db: TranscrobesDatabase,
-  { collection, queryObj }: { collection: TranscrobesCollectionsKeys; queryObj?: MangoQuery<TranscrobesDocumentTypes> },
+  // FIXME: WARNING! Using `TranscrobesCollectionsKeys` instead of `any` makes tsc take MINUTES!
+  // { collection, queryObj }: { collection: TranscrobesCollectionsKeys; queryObj?: MangoQuery<TranscrobesDocumentTypes> },
+  { collection, queryObj }: { collection: any; queryObj?: MangoQuery<TranscrobesDocumentTypes> },
 ): // TODO: see whether this could be properly typed
 Promise<any[]> {
   const values = await db[collection].find(queryObj).exec();
@@ -228,7 +379,7 @@ export async function getByIds(
 ): // TODO: see whether this could be properly typed
 Promise<any[]> {
   if (ids.length === 0) return [];
-  const values = await db[collection].findByIds(ids);
+  const values = await db[collection].findByIds(ids).exec();
   return [...values.values()].map((def) => def.toJSON());
 }
 
@@ -265,7 +416,7 @@ async function getKnownCards(db: TranscrobesDatabase): Promise<Map<string, CardT
 
 async function getGraphs(db: TranscrobesDatabase, wordIds: string[]): Promise<Map<string, string>> {
   const graphs = new Map<string, string>();
-  const defs = [...(await db.definitions.findByIds(wordIds)).values()];
+  const defs = [...(await db.definitions.findByIds(wordIds).exec()).values()];
   for (const def of defs) {
     graphs.set(def.id, def.graph);
   }
@@ -277,12 +428,12 @@ export async function getImportUtilityStatsForList(
   { importId, userlistId, fromLang }: { importId: string; userlistId: string; fromLang: InputLanguage },
   cardWords: SerialisableDayCardWords,
 ): Promise<CalculatedContentValueStats | null> {
-  const theImport = (await db.imports.findByIds([importId])).get(importId);
+  const theImport = (await db.imports.findByIds([importId]).exec()).get(importId);
   if (!theImport?.analysis || theImport.analysis.length === 0) return null;
   const analysis: ImportAnalysis = JSON.parse(theImport.analysis);
-  const wordlist = (await db.wordlists.findByIds([userlistId])).get(userlistId)?.wordIds;
+  const wordlist = (await db.wordlists.findByIds([userlistId]).exec()).get(userlistId)?.wordIds;
   const defs = new Set<string>();
-  for (const def of (await db.definitions.findByIds(wordlist || [])).values()) {
+  for (const def of (await db.definitions.findByIds(wordlist || []).exec()).values()) {
     defs.add(def.graph);
   }
   const buckets = cleanAnalysis(analysis, fromLang);
@@ -318,13 +469,6 @@ export async function getImportUtilityStatsForList(
       }
     }
   }
-  const knownWordsTotalTypes = Object.keys(knownFoundWords || {}).length + Object.keys(knownNotFoundWords || {}).length;
-  const unknownTotalTypes = Object.keys(foundWords || {}).length + Object.keys(notFoundWords || {}).length;
-
-  const foundWordsTotalTypes = Object.keys(knownFoundWords || {}).length + Object.keys(foundWords || {}).length;
-  const notFoundWordsTotalTypes =
-    Object.keys(knownNotFoundWords || {}).length + Object.keys(notFoundWords || {}).length;
-
   return {
     unknownFoundWordsTotalTypes: Object.keys(foundWords || {}).length,
     unknownNotFoundWordsTotalTypes: Object.keys(notFoundWords || {}).length,
@@ -363,7 +507,7 @@ export async function getContentAccuracyStatsForImport(
     if (analysisString) {
       analysis = JSON.parse(analysisString);
     } else if (importId) {
-      const theImport = (await db.imports.findByIds([importId])).get(importId);
+      const theImport = (await db.imports.findByIds([importId]).exec()).get(importId);
       if (!theImport?.analysis || theImport.analysis.length === 0) return null;
       analysis = JSON.parse(theImport.analysis);
     } else {
@@ -415,7 +559,7 @@ export async function getContentStatsForImport(
   if (analysisString) {
     analysis = JSON.parse(analysisString);
   } else if (importId) {
-    const theImport = (await db.imports.findByIds([importId])).get(importId);
+    const theImport = (await db.imports.findByIds([importId]).exec()).get(importId);
     if (!theImport?.analysis || theImport.analysis.length === 0) return null;
     analysis = JSON.parse(theImport.analysis);
   } else {
@@ -480,7 +624,7 @@ export async function getFirstSuccessStatsForImport(
   if (analysisString) {
     analysis = JSON.parse(analysisString);
   } else if (importId) {
-    const theImport = (await db.imports.findByIds([importId])).get(importId);
+    const theImport = (await db.imports.findByIds([importId]).exec()).get(importId);
     // this is actually ok, if you have "deleted" the import but there is still a content
     //if (!theImport) throw new Error("Invalid, import not found");
     if (!theImport?.analysis || theImport.analysis.length === 0) return null;
@@ -555,7 +699,7 @@ export async function getFirstSuccessStatsForList(
   let allListGraphs: Map<string, string>;
   let knownGraphs = new Map<string, string>();
   if (listId) {
-    const goalWordList = (await db.wordlists.findByIds([listId])).get(listId);
+    const goalWordList = (await db.wordlists.findByIds([listId]).exec()).get(listId);
     if (!goalWordList) {
       return null;
     }
@@ -622,7 +766,7 @@ export async function getSerialisableCardWords(db: TranscrobesDatabase): Promise
     ).flatMap((x) => x.wordId()),
   );
 
-  const allCardWords = await db.definitions.findByIds(allCardWordIds);
+  const allCardWords = await db.definitions.findByIds(allCardWordIds).exec();
   const allCardWordGraphs: SerialisableStringSet = {};
   const knownCardWordGraphs: SerialisableStringSet = {};
   const knownCardWordChars: SerialisableStringSet = {};
@@ -661,7 +805,7 @@ export async function submitContentEnrichRequest(
     console.error("Unable to find content for updating", contentId);
     return "failure";
   }
-  await content.atomicPatch({ processing: PROCESSING.REQUESTED });
+  await content.incrementalPatch({ processing: PROCESSING.REQUESTED });
   console.debug("Updated content > processing: PROCESSING.REQUESTED", content);
   return "success";
 }
@@ -677,7 +821,7 @@ export async function saveSurvey(
     .exec();
   if (userSurvey && isRxDocument(userSurvey)) {
     // It's an update
-    await userSurvey.atomicPatch({
+    await userSurvey.incrementalPatch({
       data: dataValue,
     });
   } else {
@@ -693,7 +837,7 @@ export async function saveSurvey(
 }
 
 export async function getWordListWordIds(db: TranscrobesDatabase, wordListId: string): Promise<string[]> {
-  const wordList = await db.wordlists.findByIds([wordListId]);
+  const wordList = await db.wordlists.findByIds([wordListId]).exec();
   return wordList.get(wordListId)?.wordIds || [];
 }
 
@@ -754,7 +898,7 @@ export async function getCardsForExport(db: TranscrobesDatabase) {
   const allCards = await db.cards
     .find({ selector: { $or: [{ known: { $eq: true } }, { firstSuccessDate: { $gt: 0 } }] } })
     .exec();
-  const definitions = await db.definitions.findByIds(allCards.map((card) => getWordId(card)));
+  const definitions = await db.definitions.findByIds(allCards.map((card) => getWordId(card))).exec();
 
   const output = allCards
     .map((card) => card.toJSON())
@@ -792,9 +936,9 @@ export async function getWordStatsForExport(db: TranscrobesDatabase) {
     .find({ selector: { $or: [{ known: { $eq: true } }, { firstSuccessDate: { $gt: 0 } }] } })
     .exec();
   const wordModelStats = await db.word_model_stats.find().exec();
-  const definitions = await db.definitions.findByIds(
-    wordModelStats.map((wms) => wms.id).concat(allCards.map((card) => getWordId(card))),
-  );
+  const definitions = await db.definitions
+    .findByIds(wordModelStats.map((wms) => wms.id).concat(allCards.map((card) => getWordId(card))))
+    .exec();
   const exportStats: Record<string, ExportDetails> = {};
   for (const wms of wordModelStats) {
     const word = definitions.get(wms.id);
@@ -857,12 +1001,14 @@ async function getWordDetailsUnsafe(db: TranscrobesDatabase, graph: string): Pro
     .exec();
 
   if (word) {
-    const cards = await db.cards.findByIds(
-      $enum(CARD_TYPES)
-        .getValues()
-        .map((cardType) => getCardId(word.id, cardType)),
-    );
-    const wordModelStats = [...(await db.word_model_stats.findByIds([word.id])).values()][0];
+    const cards = await db.cards
+      .findByIds(
+        $enum(CARD_TYPES)
+          .getValues()
+          .map((cardType) => getCardId(word.id, cardType)),
+      )
+      .exec();
+    const wordModelStats = [...(await db.word_model_stats.findByIds([word.id]).exec()).values()][0];
     const characters = await getCharacterDetailsUnsafe(db, graph.split(""));
     const sents = await getRecentSentences(db, [word.id]);
     const recentPosSentences = (sents.length > 0 && sents[0][1].posSentences) || null;
@@ -897,13 +1043,13 @@ async function getCharacterDetailsUnsafe(
   db: TranscrobesDatabase,
   graphs: string[],
 ): Promise<Map<string, CharacterDocument>> {
-  return await db.characters.findByIds(graphs);
+  return await db.characters.findByIds(graphs).exec();
 }
 
 export async function createCards(
   db: TranscrobesDatabase,
   newCards: CardType[],
-): Promise<{ success: CardType[]; error: RxStorageBulkWriteError<CardType>[] }> {
+): Promise<{ success: CardType[]; error: RxStorageWriteError<CardType>[] }> {
   const values = await db.cards.bulkInsert(newCards);
   const success = values.success.map((x) => x.toJSON());
   return { error: values.error, success };
@@ -912,7 +1058,7 @@ export async function createCards(
 export async function updateRecentSentences(db: TranscrobesDatabase, sentences: RecentSentencesType[]): Promise<void> {
   for (const s of cleanSentences(sentences)) {
     // Don't wait. Is this Ok?
-    db.recentsentences.atomicUpsert({
+    db.recentsentences.incrementalUpsert({
       id: s.id.toString(),
       lzContent: LZString.compressToUTF16(JSON.stringify(s.posSentences)),
     });
@@ -949,7 +1095,7 @@ export async function getRecentSentences(
   ids: string[],
 ): Promise<Array<[string, RecentSentencesType]>> {
   const sents = new Array<[string, RecentSentencesType]>();
-  for (const [key, value] of (await db.recentsentences.findByIds(ids)).entries()) {
+  for (const [key, value] of (await db.recentsentences.findByIds(ids).exec()).entries()) {
     const recents = recentSentencesFromLZ(key, value.lzContent);
     if (recents) sents.push([key, recents]);
   }
@@ -978,11 +1124,17 @@ export async function setContentConfigToStore(
   db: TranscrobesDatabase,
   contentConfig: ContentConfigType,
 ): Promise<boolean> {
-  await db.content_config.atomicUpsert({
+  await db.content_config.incrementalUpsert({
     id: contentConfig.id.toString(),
     configString: JSON.stringify(contentConfig),
   });
   // FIXME: what about false?
+  return true;
+}
+
+export async function submitActivityEvent(db: TranscrobesDatabase, activity: UserActivityType): Promise<boolean> {
+  // console.log("submitActivityEvent", activity);
+  await db.activityqueue.insert(activity);
   return true;
 }
 
@@ -1061,7 +1213,7 @@ export async function practiceCard(
       firstSuccessDate: cardToSave.firstSuccessDate,
       lastRevisionDate: newDate,
     };
-    await cardObject.atomicPatch(newValues);
+    await cardObject.incrementalPatch(newValues);
   } else {
     if (!cardToSave.firstRevisionDate) {
       cardToSave.firstRevisionDate = newDate;
@@ -1083,11 +1235,13 @@ export async function practiceCardsForWord(
   const wordInfo = practiceDetails.wordInfo;
   const grade = practiceDetails.grade;
 
-  const existing = await db.cards.findByIds(
-    $enum(CARD_TYPES)
-      .getValues()
-      .map((cardType) => getCardId(wordInfo.id, cardType)),
-  );
+  const existing = await db.cards
+    .findByIds(
+      $enum(CARD_TYPES)
+        .getValues()
+        .map((cardType) => getCardId(wordInfo.id, cardType)),
+    )
+    .exec();
 
   for (const cardType of $enum(CARD_TYPES).getValues()) {
     const cardId = getCardId(wordInfo.id, cardType);
@@ -1104,12 +1258,12 @@ async function orderVocabReviews(
 ): Promise<DefinitionDocument[]> {
   const existingCards = new Set<string>((await db.cards.find().exec()).flatMap((x) => x.wordId()));
   const wordIdsNoCard = [...new Set<string>(potentialWordIds.filter((x) => !existingCards.has(x)))];
-  const potentialWordsMap = await db.definitions.findByIds(wordIdsNoCard);
+  const potentialWordsMap = await db.definitions.findByIds(wordIdsNoCard).exec();
   let potentialWords: DefinitionDocument[] = [];
   if (ordering === "WCPM") {
     potentialWords = [...potentialWordsMap.values()].sort(sortByWcpm);
   } else if (ordering === "Personal") {
-    const seenWords = await db.word_model_stats.findByIds(wordIdsNoCard);
+    const seenWords = await db.word_model_stats.findByIds(wordIdsNoCard).exec();
     const orderedSeenWords = [...seenWords.values()].sort((a, b) => {
       return (b.nbSeen || 0) - (a.nbSeen || 0);
     });
@@ -1152,7 +1306,7 @@ export async function getVocabReviews(
     console.debug("No wordLists, not trying to find reviews");
     return null;
   }
-  const wordListObjects = (await db.wordlists.findByIds(selectedLists)).values();
+  const wordListObjects = (await db.wordlists.findByIds(selectedLists).exec()).values();
   const potentialWordIds = [...new Set<string>([...wordListObjects].flatMap((x) => x.wordIds))];
 
   const potentialWords = await orderVocabReviews(db, graderConfig.itemOrdering, potentialWordIds);
@@ -1204,7 +1358,7 @@ async function orderedPotentialCardsMap(
     return potentialCardsMap;
   } else if (ordering === "Personal") {
     const cardWordIds = [...new Set<string>([...inPotentialCardsMap.keys()].map((x) => getWordId(x)))];
-    const seenWords = await db.word_model_stats.findByIds(cardWordIds);
+    const seenWords = await db.word_model_stats.findByIds(cardWordIds).exec();
     const orderedSeenWords = [...seenWords.values()].sort((a, b) => {
       return (b.nbSeen || 0) - (a.nbSeen || 0);
     });
@@ -1242,7 +1396,7 @@ async function getPotentialWordIds(
         .map((x) => x.id),
     );
     const selectedLists = (await getDefaultWordLists(db)).filter((x) => x.selected).map((x) => x.value);
-    const selectedListsWordIds = await db.wordlists.findByIds(selectedLists);
+    const selectedListsWordIds = await db.wordlists.findByIds(selectedLists).exec();
     for (const sl of selectedLists) {
       const wordlist = selectedListsWordIds.get(sl);
       if (wordlist) {
@@ -1256,7 +1410,7 @@ async function getPotentialWordIds(
     const selectedLists = (activityConfig.wordLists || []).filter((x) => x.selected).map((x) => x.value);
     // wordIds that *haven't* already been reviewed today and are in the right lists
     // so this is BOTH the possible new words *and* reviews
-    const selectedListsWordIds = await db.wordlists.findByIds(selectedLists);
+    const selectedListsWordIds = await db.wordlists.findByIds(selectedLists).exec();
     // the ids of the potential words, ordered by list order (first by list, then by ordering within
     // the list)
     const potentialWordIds = new Set<string>(
@@ -1316,9 +1470,9 @@ export async function getSRSReviews(
   // Get all the wordIds for the existing cards
   const allWordIdsForExistingCards = new Set<string>([...existingCards.keys()].map((ec) => getWordId(ec)));
   // get all of the recentSentences
-  const recentSentences: Map<string, RecentSentencesDocument> = await db.recentsentences.findByIds(
-    [...allWordIdsForExistingCards].concat([...potentialCardsMap.keys()]),
-  );
+  const recentSentences: Map<string, RecentSentencesDocument> = await db.recentsentences
+    .findByIds([...allWordIdsForExistingCards].concat([...potentialCardsMap.keys()]))
+    .exec();
   // FIXME: to decide
   // we actually need to know all the words that have been reviewed today, so
   // even though we can use these for revisions, we still need them...
@@ -1355,9 +1509,9 @@ export async function getSRSReviews(
     }
   }
   // get all the definitions for both the existing and potential news
-  const allReviewableDefinitions: Map<string, DefinitionDocument> = await db.definitions.findByIds(
-    [...potentialCardsMap.keys()].concat([...allWordIdsForExistingCards]),
-  );
+  const allReviewableDefinitions: Map<string, DefinitionDocument> = await db.definitions
+    .findByIds([...potentialCardsMap.keys()].concat([...allWordIdsForExistingCards]))
+    .exec();
 
   // now clean the potential news and definitions that might have invalid graphs (for reviewing anyway!)
   const cleanReviewableDefinitions = new Map<string, DefinitionType>();
@@ -1385,9 +1539,9 @@ export async function getSRSReviews(
   }
 
   // Get all the chars that we have for all the definitions graphs
-  const allPotentialCharacters: Map<string, CharacterDocument> = await db.characters.findByIds([
-    ...new Set<string>([...allReviewableDefinitions.values()].map((x) => x.graph).join("")),
-  ]);
+  const allPotentialCharacters: Map<string, CharacterDocument> = await db.characters
+    .findByIds([...new Set<string>([...allReviewableDefinitions.values()].map((x) => x.graph).join(""))])
+    .exec();
   return {
     allReviewableDefinitions: cleanReviewableDefinitions,
     potentialCardsMap,
@@ -1409,8 +1563,8 @@ export async function saveDictionaryEntries(
   db: TranscrobesDatabase,
   { entries, dictionaryId }: { entries: Record<string, UserDefinitionType>; dictionaryId: string },
 ): Promise<void> {
-  const dictionary = (await db.userdictionaries.findByIds([dictionaryId])).get(dictionaryId);
-  await dictionary?.atomicPatch({ lzContent: LZString.compressToUTF16(JSON.stringify(entries)) });
+  const dictionary = (await db.userdictionaries.findByIds([dictionaryId]).exec()).get(dictionaryId);
+  await dictionary?.incrementalPatch({ lzContent: LZString.compressToUTF16(JSON.stringify(entries)) });
 }
 
 export async function getAllShortChars(db: TranscrobesDatabase): Promise<Record<string, ShortChar>> {
@@ -1440,7 +1594,7 @@ export async function getDictionaryEntries(
   db: TranscrobesDatabase,
   { dictionaryId }: { dictionaryId: string },
 ): Promise<Record<string, UserDefinitionType>> {
-  const entry = (await db.userdictionaries.findByIds([dictionaryId])).get(dictionaryId);
+  const entry = (await db.userdictionaries.findByIds([dictionaryId]).exec()).get(dictionaryId);
   return (
     (entry?.lzContent &&
       (JSON.parse(LZString.decompressFromUTF16(entry?.lzContent) || "{}") as Record<string, UserDefinitionType>)) ||
@@ -1467,7 +1621,7 @@ export async function getLanguageClassParticipants(
   { classId, className }: { classId: string; className?: string },
 ): Promise<Participants> {
   if (!className) {
-    const classDoc = (await db.languageclasses.findByIds([classId])).get(classId);
+    const classDoc = (await db.languageclasses.findByIds([classId]).exec()).get(classId);
     if (!classDoc) {
       throw new Error(`Class ${classId} not found`);
     }
@@ -1493,7 +1647,7 @@ export async function getLanguageClassParticipants(
     studentIds.set(registration.userId, registration);
   }
 
-  const users = [...(await db.persons.findByIds([...teacherIds.keys(), ...studentIds.keys()])).values()];
+  const users = [...(await db.persons.findByIds([...teacherIds.keys(), ...studentIds.keys()]).exec()).values()];
   const participants: Participants = {
     students: [],
     teachers: [],

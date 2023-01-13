@@ -92,19 +92,19 @@ export default class EventHandler {
    *
    */
   private isReadingOrderInternal = (clickedLink: HTMLAnchorElement): boolean => {
-    log.log("clickedLink: ", clickedLink);
+    //log.log("clickedLink: ", clickedLink);
     const isEpubInternal = this.linkInPublication(this.navigator.publication.readingOrder, clickedLink.href);
     return isEpubInternal;
   };
 
   private isResourceInternal = (clickedLink: HTMLAnchorElement): boolean => {
-    log.log("clickedLink: ", clickedLink);
+    // log.log("clickedLink: ", clickedLink);
     const isEpubInternal = this.linkInPublication(this.navigator.publication.resources, clickedLink.href);
     return isEpubInternal;
   };
 
   private handleLinks = async (event: MouseEvent | TouchEvent): Promise<void> => {
-    log.log("R2 Click Handler");
+    // log.log("R2 Click Handler");
 
     const link = this.checkForLink(event);
     if (link) {

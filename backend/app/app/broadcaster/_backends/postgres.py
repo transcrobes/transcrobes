@@ -1,10 +1,13 @@
 import asyncio
+import logging
 from typing import Any
 
 import asyncpg
 
 from .._base import Event
 from .base import BroadcastBackend
+
+logger = logging.getLogger(__name__)
 
 
 class PostgresBackend(BroadcastBackend):
@@ -32,6 +35,7 @@ class PostgresBackend(BroadcastBackend):
 
     async def subscribe(self, channel: str) -> None:
         await self.ensure_connection()
+        logger.warn(f"subscribing for: {channel}")
         await self._conn.add_listener(channel, self._listener)
 
     async def unsubscribe(self, channel: str) -> None:
@@ -41,12 +45,16 @@ class PostgresBackend(BroadcastBackend):
     async def publish(self, channel: str, message: str) -> None:
         await self.ensure_pool()
         async with self._pool.acquire() as conn:
+            logger.debug(f"sending event: {channel} {message}")
             await conn.execute("SELECT pg_notify($1, $2);", channel, message)
 
     def _listener(self, *args: Any) -> None:
         _connection, _pid, channel, payload = args
         event = Event(channel=channel, message=payload)
+        logger.debug(f"Got _listener event: {event}")
         self._listen_queue.put_nowait(event)
 
     async def next_published(self) -> Event:
-        return await self._listen_queue.get()
+        event = await self._listen_queue.get()
+        logger.debug(f"Got event: {event}")
+        return event

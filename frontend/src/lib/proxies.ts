@@ -255,10 +255,7 @@ class BackgroundWorkerProxy extends AbstractWorkerProxy {
         return mwc.callback(returnMessage.value);
       } else if (mwc.callback && !returnMessage) {
         // FIXME: should probably throw an error here...
-        console.warn(
-          "No return message found for callback, is the method implemented in the service worker?",
-          mwc.callback.name,
-        );
+        console.warn("No return message found for callback, is the method implemented in the service worker?", mwc);
       }
       return "";
     });

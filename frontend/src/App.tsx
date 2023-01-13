@@ -1,7 +1,8 @@
 import { ReactElement, useEffect, useState } from "react";
 import { Admin, CustomRoutes, Resource } from "react-admin";
+import { useIdleTimer } from "react-idle-timer";
 import { Route } from "react-router-dom";
-import { authProvider, dataProvider, history as localHistory, store } from "./app/createStore";
+import { authProvider, dataProvider, history as history2, history as localHistory, store } from "./app/createStore";
 import { useAppDispatch, useAppSelector } from "./app/hooks";
 import Brocrobes from "./Brocrobes";
 import NolayoutWrapper from "./components/NolayoutWrapper";
@@ -24,9 +25,18 @@ import languageclasses from "./languageclasses";
 import { Layout } from "./layout";
 import { darkTheme, lightTheme } from "./layout/themes";
 import { ComponentsConfig } from "./lib/complexTypes";
+import { submitActivity } from "./lib/componentMethods";
 import { refreshDictionaries } from "./lib/dictionary";
+import { UUID } from "./lib/funclib";
+import { NAME_PREFIX } from "./lib/interval/interval-decorator";
 import { getDefaultLanguageDictionaries, getI18nProvider } from "./lib/libMethods";
-import { IS_DEV, SerialisableDayCardWords } from "./lib/types";
+import {
+  ACTIVITY_DEBOUNCE,
+  ACTIVITY_EVENTS_THROTTLE,
+  ACTIVITY_TIMEOUT,
+  IS_DEV,
+  SerialisableDayCardWords,
+} from "./lib/types";
 import Listrobes from "./listrobes/Listrobes";
 import Notrobes from "./notrobes/Notrobes";
 import Repetrobes from "./repetrobes/Repetrobes";
@@ -41,42 +51,90 @@ import System from "./system/System";
 import teacherregistrations from "./teacherregistrations";
 import userlists from "./userlists";
 
+declare global {
+  interface Window {
+    asessionId: string;
+    getTimestamp: () => number;
+    lastTimestamp: number;
+  }
+}
+
+window.getTimestamp = () => {
+  const now = Date.now();
+  if (window.lastTimestamp && window.lastTimestamp > now) {
+    window.lastTimestamp += 1;
+  } else {
+    window.lastTimestamp = now;
+  }
+  return window.lastTimestamp;
+};
+
 const GLOBAL_TIMER_DURATION_MS = IS_DEV ? 2000 : 5000;
 
 const EVENT_SOURCE = "App.tsx";
 const DATA_SOURCE = "App.tsx";
 
-setInterval(async () => {
-  const needsReload = await window.componentsConfig.proxy.sendMessagePromise<boolean>({
-    source: EVENT_SOURCE,
-    type: "NEEDS_RELOAD",
-  });
-  if (needsReload) {
-    console.log("Reloading after NEEDS_RELOAD");
-    location.reload();
-  }
-}, GLOBAL_TIMER_DURATION_MS);
-
 interface Props {
   config: ComponentsConfig;
 }
 
+const sessionId = (window.asessionId = UUID().toString());
+
 function App({ config }: Props): ReactElement {
   const [inited, setInited] = useState(false);
   const dispatch = useAppDispatch();
-
   const theme = useAppSelector((state) => (state.theme === "dark" ? darkTheme : lightTheme));
+  useIdleTimer({
+    onAction: () => {
+      if (inited) {
+        config.proxy.sendMessagePromise<boolean>({
+          source: "App.tsx",
+          type: "refreshSession",
+          value: {
+            id: sessionId,
+            timestamp: Date.now().toString(),
+          },
+        });
+      }
+    },
+    onIdle: () => {
+      submitActivity(config.proxy, "end", "web", location.href, sessionId, window.getTimestamp);
+    },
+    onActive: () => {
+      submitActivity(config.proxy, "start", "web", location.href, sessionId, window.getTimestamp);
+    },
+    timeout: ACTIVITY_TIMEOUT,
+    debounce: ACTIVITY_DEBOUNCE,
+    eventsThrottle: ACTIVITY_EVENTS_THROTTLE,
+  });
+
+  function tds() {
+    dispatch(setTokenDetails(undefined));
+  }
+  function mo() {
+    dispatch(setMouseover(undefined));
+  }
+  let unlisten: Function | undefined;
+
   useEffect(() => {
     (async () => {
       const dexieUser = await getUserDexie();
       dispatch(setUser(dexieUser));
       dispatch(addDictionaryProviders(getDefaultLanguageDictionaries(dexieUser.user.fromLang)));
     })();
-    document.addEventListener("click", () => dispatch(setTokenDetails(undefined)));
-    document.addEventListener("click", () => dispatch(setMouseover(undefined)));
+    document.addEventListener("click", tds);
+    document.addEventListener("click", mo);
+    unlisten = history2?.listen(() => {
+      submitActivity(config.proxy, "start", "web", window.location.href, sessionId, window.getTimestamp);
+    });
+    window.addEventListener("beforeunload", () => {
+      submitActivity(config.proxy, "end", "web", window.location.href, sessionId, window.getTimestamp);
+    });
+
     return () => {
-      document.removeEventListener("click", () => dispatch(setTokenDetails(undefined)));
-      document.removeEventListener("click", () => dispatch(setMouseover(undefined)));
+      document.removeEventListener("click", tds);
+      document.removeEventListener("click", mo);
+      if (unlisten) unlisten();
     };
   }, []);
   const {
@@ -109,6 +167,14 @@ function App({ config }: Props): ReactElement {
 
         if (await isInitialisedAsync(username)) {
           await config.proxy.asyncInit({ username: username });
+          await config.proxy.sendMessagePromise<boolean>({
+            source: DATA_SOURCE,
+            type: "refreshSession",
+            value: {
+              id: sessionId,
+              timestamp: Date.now().toString(),
+            },
+          });
           dispatch(
             setCardWordsState(
               await config.proxy.sendMessagePromise<SerialisableDayCardWords>({
@@ -119,6 +185,34 @@ function App({ config }: Props): ReactElement {
           );
           await refreshDictionaries(store, config.proxy, fromLang);
           setInited(true);
+          submitActivity(config.proxy, "start", "web", window.location.href, sessionId, window.getTimestamp);
+          setInterval(
+            () => {
+              window.componentsConfig.proxy
+                .sendMessagePromise<boolean>({
+                  source: EVENT_SOURCE,
+                  type: "NEEDS_RELOAD",
+                })
+                .then((needsReload) => {
+                  if (needsReload) {
+                    console.log("Reloading after NEEDS_RELOAD");
+                    location.reload();
+                  }
+                });
+              if (document.visibilityState === "visible") {
+                submitActivity(
+                  window.componentsConfig.proxy,
+                  "continue",
+                  "web",
+                  window.location.href,
+                  sessionId,
+                  window.getTimestamp,
+                );
+              }
+            },
+            GLOBAL_TIMER_DURATION_MS,
+            NAME_PREFIX + "globalTimer",
+          );
         } else if (shouldRedirectUninited(window.location.href)) {
           window.location.href = "/#/init";
         }

@@ -165,7 +165,6 @@ export class UserSettings implements IUserSettings {
           prop.value = settings.verticalScroll;
           await settings.saveProperty(prop);
         }
-        log.log(settings.verticalScroll);
       }
       if (initialUserSettings.appearance) {
         settings.appearance = UserSettings.appearanceValues.findIndex(
@@ -176,7 +175,6 @@ export class UserSettings implements IUserSettings {
           prop.value = settings.appearance;
           await settings.saveProperty(prop);
         }
-        log.log(settings.appearance);
       }
       if (initialUserSettings.fontSize) {
         settings.fontSize = initialUserSettings.fontSize;
@@ -185,7 +183,6 @@ export class UserSettings implements IUserSettings {
           prop.value = settings.fontSize;
           await settings.saveProperty(prop);
         }
-        log.log(settings.fontSize);
       }
       if (initialUserSettings.fontFamily) {
         settings.fontFamily = UserSettings.fontFamilyValues.findIndex(
@@ -196,7 +193,6 @@ export class UserSettings implements IUserSettings {
           prop.value = settings.fontFamily;
           await settings.saveProperty(prop);
         }
-        log.log(settings.fontFamily);
         if (settings.fontFamily !== 0) {
           settings.fontOverride = true;
         }
@@ -211,7 +207,6 @@ export class UserSettings implements IUserSettings {
           await settings.saveProperty(prop);
         }
         // settings.publisherDefaults = false;
-        log.log(settings.textAlignment);
       }
       if (initialUserSettings.columnCount) {
         settings.columnCount = UserSettings.columnCountValues.findIndex(
@@ -222,7 +217,6 @@ export class UserSettings implements IUserSettings {
           prop.value = settings.columnCount;
           await settings.saveProperty(prop);
         }
-        log.log(settings.columnCount);
       }
       if (initialUserSettings.wordSpacing) {
         settings.wordSpacing = initialUserSettings.wordSpacing;
@@ -231,7 +225,6 @@ export class UserSettings implements IUserSettings {
           prop.value = settings.wordSpacing;
           await settings.saveProperty(prop);
         }
-        log.log(settings.wordSpacing);
       }
       if (initialUserSettings.letterSpacing) {
         settings.letterSpacing = initialUserSettings.letterSpacing;
@@ -240,7 +233,6 @@ export class UserSettings implements IUserSettings {
           prop.value = settings.letterSpacing;
           await settings.saveProperty(prop);
         }
-        log.log(settings.letterSpacing);
       }
       if (initialUserSettings.pageMargins) {
         settings.pageMargins = initialUserSettings.pageMargins;
@@ -249,7 +241,6 @@ export class UserSettings implements IUserSettings {
           prop.value = settings.pageMargins;
           await settings.saveProperty(prop);
         }
-        log.log(settings.pageMargins);
       }
       if (initialUserSettings.lineHeight) {
         settings.lineHeight = initialUserSettings.lineHeight;
@@ -258,7 +249,6 @@ export class UserSettings implements IUserSettings {
           prop.value = settings.lineHeight;
           await settings.saveProperty(prop);
         }
-        log.log(settings.lineHeight);
       }
       settings.userProperties = settings.getUserSettings();
       await settings.initialise();

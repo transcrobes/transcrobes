@@ -68,6 +68,7 @@ export default function RxDBProvider(params: RxDBDataProviderParams): DbDataProv
     },
     getOne: async (resource: TranscrobesCollectionsKeys, params: GetOneParams) => {
       const db = await dbProm();
+      // @ts-ignore TS2590: Expression produces a union type that is too complex to represent.
       const res = await db[resource].findOne({ selector: { id: { $eq: params.id.toString() } } }).exec();
       const data = res?.toJSON();
 
@@ -86,7 +87,7 @@ export default function RxDBProvider(params: RxDBDataProviderParams): DbDataProv
     },
     getMany: async (resource: TranscrobesCollectionsKeys, params: GetManyParams) => {
       const db = await dbProm();
-      const res = await db[resource].findByIds(params.ids.map((id) => id.toString()));
+      const res = await db[resource].findByIds(params.ids.map((id) => id.toString())).exec();
       const resArr = [...res.values()].map((val) => val.toJSON());
       return { data: resArr };
     },
@@ -132,6 +133,7 @@ export default function RxDBProvider(params: RxDBDataProviderParams): DbDataProv
     },
     update: async (resource: TranscrobesCollectionsKeys, params: UpdateParams) => {
       const db = await dbProm();
+      // @ts-ignore
       const one = await db[resource].findOne({ selector: { id: { $eq: params.id.toString() } } }).exec();
       if (one) {
         delete params.data.id; // FIXME: there must be a less nasty way...
@@ -143,7 +145,7 @@ export default function RxDBProvider(params: RxDBDataProviderParams): DbDataProv
             params.data["deactivateDate"] = dayjs().valueOf() / 1000;
           }
         }
-        const res = await one.atomicPatch(params.data);
+        const res = await one.incrementalPatch(params.data);
         return { data: res.toJSON() };
       } else {
         return { data: null };
@@ -151,10 +153,10 @@ export default function RxDBProvider(params: RxDBDataProviderParams): DbDataProv
     },
     updateMany: async (resource: TranscrobesCollectionsKeys, params: UpdateManyParams) => {
       const db = await dbProm();
-      const many = [...(await db[resource].findByIds(params.ids.map((id) => id.toString()))).values()];
+      const many = [...(await db[resource].findByIds(params.ids.map((id) => id.toString())).exec()).values()];
       const updates: string[] = [];
       for (const upper of many) {
-        await upper.atomicPatch(params.data);
+        await upper.incrementalPatch(params.data);
         updates.push(upper.id.toString());
       }
       return { data: updates };

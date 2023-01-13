@@ -16,7 +16,7 @@
       let supported = false;
       if (['yandexbrowser', 'edge-chromium', 'chrome', 'opera-mini', 'opera'].includes(browser.name)) {
         supported = true;
-      } else if (browser.name === 'firefox' && browser.os !== 'Android OS') {
+      } else if (browser.name === 'firefox') {
         supported = true;
       } else if (browser.os === 'iOS' || browser.name === 'safari') {
         supported = true;
