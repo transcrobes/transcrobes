@@ -6,11 +6,15 @@ FROM node:18 as build-stage
 LABEL maintainer="Anton Melser <anton@transcrob.es>"
 
 ENV npm_config_registry=$NPM_OVERRIDE
+ENV http_proxy=$http_proxy
+ENV https_proxy=$https_proxy
 
 WORKDIR /app
 COPY ./frontend/package*.json /app/
 
-RUN npm install
+RUN npm config set proxy $http_proxy
+RUN npm config set https-proxy $https_proxy
+RUN npm install --loglevel silly
 
 COPY ./frontend/ /app/
 

@@ -269,6 +269,19 @@ export function filterFakeL1Definitions(entries: string[], phone: string[]): str
   return filtered;
 }
 
+export function shortProviderTranslations(definition: DefinitionType, maxLength: number = 100): string {
+  let transes: Set<string> = new Set();
+  for (const provider of definition.providerTranslations) {
+    for (const posTranslation of provider.posTranslations) {
+      const cleanDefs = filterFakeL1Definitions(posTranslation.values, definition.sound);
+      for (const def of cleanDefs.slice(0, 3)) {
+        transes.add(def.toLocaleLowerCase());
+      }
+    }
+  }
+  return [...transes].join(", ").slice(0, maxLength);
+}
+
 export function enrichChildren(
   root: HTMLElement,
   transcroberObserver: IntersectionObserver,

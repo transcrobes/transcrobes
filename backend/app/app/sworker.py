@@ -45,10 +45,8 @@ async def send_updates(word_updates, day_updates, update_ids, include_success=Fa
         await db.commit()
 
     if len(day_updates) > 0:
-        # await push_user_stats_update_to_clients(update_ids, UserDay.__name__),
         await push_user_stats_update_to_clients(update_ids, types.camel_to_snake(types.DayModelStats.__name__)),
     if len(word_updates) > 0:
-        # await push_user_stats_update_to_clients(update_ids, UserWord.__name__),
         await push_user_stats_update_to_clients(update_ids, types.camel_to_snake(types.WordModelStats.__name__)),
 
 

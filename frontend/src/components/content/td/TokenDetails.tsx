@@ -1,13 +1,13 @@
-import { Box } from "@mui/system";
+import { Box, Divider } from "@mui/material";
 import { ReactElement, useEffect, useState } from "react";
 import { makeStyles } from "tss-react/mui";
 import useResizeObserver from "use-resize-observer";
 import { useAppSelector } from "../../../app/hooks";
-import { getDefinitions, getWord, positionPopup } from "../../../lib/componentMethods";
+import { getDefinitions, positionPopup } from "../../../lib/componentMethods";
 import { originalSentenceFromTokens } from "../../../lib/funclib";
 import { bestGuess } from "../../../lib/libMethods";
 import { platformHelper } from "../../../lib/proxies";
-import { DefinitionType, ExtensionReaderState, IS_EXT, PopupPosition, ReaderState } from "../../../lib/types";
+import { ExtensionReaderState, IS_EXT, PopupPosition, ReaderState } from "../../../lib/types";
 import ReaderConfigProvider from "../../ReaderConfigProvider";
 import Container from "./Container";
 import Extras from "./Extras";
@@ -162,7 +162,7 @@ export default function TokenDetails({ readerConfig }: Props): ReactElement {
             <a className={classes.suggestions} href="#" onClick={openOptions}>
               Add pinyin? Change position, colour, size...?
             </a>
-            <hr />
+            <Divider />
           </Box>
         )}
         <Header

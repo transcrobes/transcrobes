@@ -1,4 +1,4 @@
-import { ClassNameMap } from "@mui/material";
+import { ClassNameMap, Divider } from "@mui/material";
 import { ReactElement, useEffect, useState } from "react";
 import { useTranslate } from "react-admin";
 import { getRecentSentences } from "../../../lib/componentMethods";
@@ -27,7 +27,7 @@ export default function RecentSentences({ token, classes, definition }: Props): 
 
   return recentSentences ? (
     <div className={classes.recentSentences}>
-      <hr />
+      <Divider />
       <div>
         <div>{translate("widgets.popup.recent_sentences")}</div>
         {Object.values(recentSentences.posSentences).map((recentSentence, i) => {
@@ -50,6 +50,7 @@ export default function RecentSentences({ token, classes, definition }: Props): 
           );
         })}
       </div>
+      <Divider />
     </div>
   ) : (
     <></>

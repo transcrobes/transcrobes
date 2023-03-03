@@ -258,6 +258,9 @@ const customChineseMessages: TranslationMessages = {
       book: "书",
       video: "视频",
     },
+    subwords: {
+      title: "子词",
+    },
     word_order_selector: {
       ordering: "单词顺序",
       personal: "个性化",

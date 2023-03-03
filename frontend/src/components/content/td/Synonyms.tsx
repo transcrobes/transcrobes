@@ -1,3 +1,4 @@
+import { Divider } from "@mui/material";
 import { ReactElement, useEffect, useState } from "react";
 import { useAppSelector } from "../../../app/hooks";
 import { toSimplePos } from "../../../lib/libMethods";
@@ -23,7 +24,7 @@ export default function Synonyms({ token, definition }: Props): ReactElement {
 
   return syns.length > 0 ? (
     <div>
-      <hr />
+      <Divider />
       <span>
         {syns
           .map<React.ReactNode>((v) => <DiscoverableWord newTab key={v} graph={v} />)

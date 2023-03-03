@@ -175,7 +175,6 @@ export default function BookReader({ proxy }: ContentProps): ReactElement {
         api: {
           updateCurrentLocation: async (loc: any) => {
             // This is needed so that setBookBoundary has the updated "reader" value.
-            console.log("Updating location to ", id, loc);
             dispatch(bookReaderActions.setLocationChanged({ id, value: loc }));
             return loc;
           },
@@ -184,7 +183,6 @@ export default function BookReader({ proxy }: ContentProps): ReactElement {
           },
         } as any, // FIXME: many params seem to not be *required* here, so any...
       });
-      console.log("Reader loaded", reader, reader.currentLocator);
       window.etfLoaded = new Set<string>();
       setReader(reader);
       enableResizeEvent(reader, dispatch, id);
@@ -192,7 +190,6 @@ export default function BookReader({ proxy }: ContentProps): ReactElement {
       if (curLoc) {
         reader.goTo(curLoc);
         // FIXME: am i necessary?
-        // D2Reader.applyUserSettings({ fontSize: readerConfig.fontSize * 100 });
         reader.applyUserSettings({ fontSize: 100 });
       }
       // This is a hack to make sure that the D2Reader resizes after all the web components have

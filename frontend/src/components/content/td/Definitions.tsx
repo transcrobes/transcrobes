@@ -1,4 +1,4 @@
-import { ClassNameMap } from "@mui/material";
+import { ClassNameMap, Divider } from "@mui/material";
 import { Fragment, ReactElement, useContext, useEffect, useState } from "react";
 import { useAppSelector } from "../../../app/hooks";
 import { orderTranslations, toPosLabels } from "../../../lib/libMethods";
@@ -25,17 +25,15 @@ export default function Definitions({ definition, classes }: Props): ReactElemen
       {orderedTranslations.map((provider) => {
         return (
           <Fragment key={provider.provider}>
-            <hr />
+            <Divider />
             <div className={classes.source} key={provider.provider}>
               <div className={classes.sourceName}>{dictionaries[provider.provider] || provider.provider}</div>
               {provider.posTranslations.map((translation) => {
                 return (
                   <Fragment key={provider.provider + translation.posTag + translation.sounds}>
                     <div className={classes.sourcePos}>
-                      {toPosLabels(translation.posTag, toLang)} {translation.sounds}
-                    </div>
-                    <div className={classes.sourcePosDefs}>
-                      <span>{translation.values.join(", ")}</span>
+                      {toPosLabels(translation.posTag, toLang)}
+                      {translation.sounds ? ` ${translation.sounds}` : ""}: <span>{translation.values.join(", ")}</span>
                     </div>
                   </Fragment>
                 );

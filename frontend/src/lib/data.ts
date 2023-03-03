@@ -993,6 +993,25 @@ export async function getWordStatsForExport(db: TranscrobesDatabase) {
   return output;
 }
 
+export async function getWordsByGraphs(
+  db: TranscrobesDatabase,
+  { graphs }: { graphs: string[] },
+): Promise<DefinitionType[]> {
+  return (
+    await Promise.all(
+      graphs.map((s) =>
+        db.definitions
+          .findOne({
+            selector: { graph: { $eq: s } },
+          })
+          .exec(),
+      ),
+    )
+  )
+    .filter((s: any) => !!s)
+    .map((s) => clone(s!.toJSON()));
+}
+
 async function getWordDetailsUnsafe(db: TranscrobesDatabase, graph: string): Promise<WordDetailsRxType> {
   const word = await db.definitions
     .findOne({

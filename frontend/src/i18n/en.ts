@@ -264,6 +264,9 @@ const customEnglishMessages: TranslationMessages = {
       good: "Good",
       known: "Known",
     },
+    subwords: {
+      title: "Subwords",
+    },
     word_order_selector: {
       ordering: "Ordering",
       personal: "Personalised",
@@ -291,7 +294,7 @@ const customEnglishMessages: TranslationMessages = {
       grammar_patterns: "Nb grammar patterns",
     },
     frequency: {
-      title: "Frequency:",
+      title: "Freq:",
       description: "Frequency in the Subtlex Open Subtitles database",
       wcpm_description: "Word Count Per Million",
       wcdp_description: "Percentage of all films where the word appears",

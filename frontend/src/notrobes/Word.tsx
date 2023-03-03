@@ -1,5 +1,7 @@
+import { Box, Divider } from "@mui/material";
+import { CSSProperties } from "@mui/styled-engine";
 import dayjs from "dayjs";
-import { ReactElement } from "react";
+import React, { ReactElement } from "react";
 import { useTranslate } from "react-admin";
 import { $enum } from "ts-enum-util";
 import { makeStyles } from "tss-react/mui";
@@ -7,6 +9,7 @@ import { useAppSelector } from "../app/hooks";
 import { ThinHR } from "../components/Common";
 import DefinitionGraph from "../components/DefinitionGraph";
 import DefinitionTranslations from "../components/DefinitionTranslations";
+import DiscoverableWord from "../components/DiscoverableWord";
 import DW from "../components/DiscoverableWord";
 import { Frequency } from "../components/Frequency";
 import Header from "../components/Header";
@@ -14,8 +17,10 @@ import PosItem from "../components/PosItem";
 import PracticerInput from "../components/PracticerInput";
 import RecentSentencesElement from "../components/RecentSentencesElement";
 import SayIt from "../components/SayIt";
+import SoundBox from "../components/SoundBox";
 import { CARD_TYPES, getCardId, getCardType } from "../database/Schema";
-import { hasCharacters, hasTones, soundWithSeparators, toneColour } from "../lib/funclib";
+import useDecomposition from "../hooks/useDecomposition";
+import { shortProviderTranslations } from "../lib/libMethods";
 import {
   CardType,
   CharacterType,
@@ -25,8 +30,6 @@ import {
   SortableListElementType,
   WordModelStatsType,
 } from "../lib/types";
-import { Box } from "@mui/material";
-import SoundBox from "../components/SoundBox";
 
 const useStyles = makeStyles()({
   characterDetails: {
@@ -204,6 +207,12 @@ function CharacterDetails({
   classes: any;
 }): ReactElement {
   const translate = useTranslate();
+  const [decomp, subs] = useDecomposition(
+    characters
+      .map((x) => x?.id)
+      .filter((x) => x)
+      .join(""),
+  );
   return (
     <>
       <ThinHR />
@@ -214,25 +223,49 @@ function CharacterDetails({
             {characters
               .filter((x) => x)
               .map((char, ind) => {
+                const def = decomp?.get(char!.id);
                 return (
-                  <div key={ind}>
-                    <span className={classes.characterDetails}>
-                      <DW graph={char?.id} /> : <DW graph={char?.radical} /> : {char?.decomposition}
-                    </span>
-                    <span>
-                      {char?.etymology?.type
-                        ? ` => Type: ${char?.etymology?.type}${
-                            char?.etymology?.phonetic ? ", Phonetic: " + char?.etymology?.phonetic : ""
-                          }${char?.etymology?.semantic ? ", Semantic: " + char?.etymology?.semantic : ""} ${
-                            char?.etymology?.hint ? "(" + char?.etymology?.hint + ")" : ""
-                          }`
-                        : ""}
-                    </span>
-                  </div>
+                  <React.Fragment key={ind}>
+                    <div>
+                      <span className={classes.characterDetails}>
+                        <DW graph={char?.id} sound={def?.sound} /> :{" "}
+                        <SoundBox index={0} sound={def?.sound.join("") || ""} /> : <DW graph={char?.radical} /> :{" "}
+                        {char?.decomposition}
+                      </span>
+                      <span>
+                        {char?.etymology?.type
+                          ? ` => Type: ${char?.etymology?.type}${
+                              char?.etymology?.phonetic ? ", Phonetic: " + char?.etymology?.phonetic : ""
+                            }${char?.etymology?.semantic ? ", Semantic: " + char?.etymology?.semantic : ""} ${
+                              char?.etymology?.hint ? "(" + char?.etymology?.hint + ")" : ""
+                            }`
+                          : ""}
+                      </span>
+                      {def && <Box sx={{ marginLeft: "0.5em" }}>-&gt; {shortProviderTranslations(def)}</Box>}
+                      <Divider />
+                    </div>
+                  </React.Fragment>
                 );
               })}
           </div>
         )) || <div className={classes.infoBox}>{translate("screens.notrobes.no_radicals")}</div>}
+        {/* {subs?.size || (0 > 0 && <div>{translate("widgets.subwords.title")}</div>)} */}
+        {subs && subs?.size > 0 && (
+          <>
+            <Divider /> <span>{translate("widgets.subwords.title")}</span>
+            <Box sx={{ marginLeft: "0.5em" }}>
+              {[...subs?.values()].map((d, i) => (
+                <div key={d.graph + i}>
+                  <DiscoverableWord newTab graph={d.graph} sound={d.sound} />:{" "}
+                  {d.sound.map((s, index) => (
+                    <SoundBox key={`${s}${index}`} sound={s} index={index} />
+                  ))}
+                  : {shortProviderTranslations(d)}
+                </div>
+              ))}
+            </Box>
+          </>
+        )}
       </div>
     </>
   );
@@ -330,11 +363,18 @@ function ProviderTranslations({
   );
 }
 
-function Sound({ definition }: { definition: DefinitionType }): ReactElement {
+// FIXME: what about properly typing the leftMargin...
+function Sound({
+  definition,
+  marginLeft = "0.2em",
+}: {
+  definition: DefinitionType;
+  marginLeft?: string;
+}): ReactElement {
   return (
     <Box>
       {definition.sound.map((s, index) => (
-        <SoundBox key={`${s}${index}`} sound={s} index={index} />
+        <SoundBox key={`${s}${index}`} sound={s} index={index} marginLeft={marginLeft} />
       ))}
     </Box>
   );

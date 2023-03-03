@@ -22,14 +22,14 @@ const useStyles = makeStyles()((theme) => ({
   toolbar: { alignItems: "center", maxHeight: "64px" },
 }));
 
-const jsonexportPromise = (wordStats: any) => {
+function jsonexportPromise(wordStats: any): Promise<string> {
   return new Promise((resolve, reject) => {
     jsonexport(wordStats, (err: Error, csv: string) => {
       if (err) reject(err);
       resolve(csv);
     });
   });
-};
+}
 
 export default function Exports({ proxy }: Props): ReactElement {
   const { classes } = useStyles();

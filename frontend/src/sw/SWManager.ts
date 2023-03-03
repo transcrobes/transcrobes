@@ -371,6 +371,7 @@ export function manageEvent(sw: ServiceWorkerGlobalScope, event: ExtendableMessa
     case "getCharacterDetails":
     case "getAllFromDB":
     case "getByIds":
+    case "getWordsByGraphs":
     case "getWordFromDBs":
     case "getKnownWordIds":
     case "getContentConfigFromStore":

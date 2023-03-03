@@ -50,6 +50,16 @@ export function toneColour(pinyin: string) {
   return TONE_COLOURS[tone];
 }
 
+export function buildSubstrings(str = "") {
+  const res: string[] = [];
+  for (let i = 0; i < str.length; i++) {
+    for (let j = i + 1; j < str.length + 1; j++) {
+      res.push(str.slice(i, j));
+    }
+  }
+  return res;
+}
+
 export function soundWithSeparators(pinyin: string, index: number, fromLang: InputLanguage) {
   switch (fromLang) {
     case "zh-Hans":
