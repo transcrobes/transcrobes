@@ -1,5 +1,4 @@
 import { Box, Divider } from "@mui/material";
-import { CSSProperties } from "@mui/styled-engine";
 import dayjs from "dayjs";
 import React, { ReactElement } from "react";
 import { useTranslate } from "react-admin";
@@ -9,8 +8,7 @@ import { useAppSelector } from "../app/hooks";
 import { ThinHR } from "../components/Common";
 import DefinitionGraph from "../components/DefinitionGraph";
 import DefinitionTranslations from "../components/DefinitionTranslations";
-import DiscoverableWord from "../components/DiscoverableWord";
-import DW from "../components/DiscoverableWord";
+import { default as DiscoverableWord, default as DW } from "../components/DiscoverableWord";
 import { Frequency } from "../components/Frequency";
 import Header from "../components/Header";
 import PosItem from "../components/PosItem";
@@ -249,7 +247,6 @@ function CharacterDetails({
               })}
           </div>
         )) || <div className={classes.infoBox}>{translate("screens.notrobes.no_radicals")}</div>}
-        {/* {subs?.size || (0 > 0 && <div>{translate("widgets.subwords.title")}</div>)} */}
         {subs && subs?.size > 0 && (
           <>
             <Divider /> <span>{translate("widgets.subwords.title")}</span>
