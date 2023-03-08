@@ -17,6 +17,8 @@ export const ADMIN_EMAILS = (import.meta.env.VITE_ADMIN_EMAILS || "admin@example
   .split(",")
   .map((x: string) => x.trim());
 
+export const MIN_ACTIVITY_LENGTH = 5000; // ms, apart from notrobes, could maybe be more, like 10k, 20k
+
 export const DEFINITION_LOADING = "loading...";
 
 export const LOCALES: { locale: SystemLanguage; name: string }[] = [

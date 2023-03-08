@@ -55,6 +55,7 @@ import {
   ImportFirstSuccessStats,
   InputLanguage,
   ListFirstSuccessStats,
+  MIN_ACTIVITY_LENGTH,
   Participants,
   PracticeDetailsType,
   PROCESSING,
@@ -206,7 +207,7 @@ export async function sendActivities(
   const rawSessionEvents: {
     [key: string]: ActivityQueueDocument[];
   } = {};
-  const activities: UserActivity[] = [];
+  let activities: UserActivity[] = [];
 
   const allEntries = await db.activityqueue.find({ limit: maxSendEvents }).sort("timestamp").exec();
   const allEvents = new Map<string, ActivityQueueDocument>();
@@ -299,12 +300,14 @@ export async function sendActivities(
     await db.sessions.bulkRemove([...deadSessions.keys()]);
   }
 
+  activities = activities.filter((act) => {
+    console.log("Send activity", act.end - act.start > MIN_ACTIVITY_LENGTH, act.end - act.start, JSON.stringify(act));
+    return act.end - act.start > MIN_ACTIVITY_LENGTH;
+  });
+
   if (eventsToDelete.length === 0) {
     // console.debug("Queue length:", allEntries.length);
   } else {
-    for (const act of activities) {
-      console.debug("Sending", act.end - act.start, JSON.stringify(act));
-    }
     // console.debug("Deleting", eventsToDelete);
     db.activityqueue.bulkRemove(eventsToDelete);
   }

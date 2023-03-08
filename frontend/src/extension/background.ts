@@ -109,18 +109,6 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
     chrome.runtime.openOptionsPage(() => console.debug("Show options from", message.source));
   } else if (message.type === "heartbeat") {
     sendResponse({ source: message.source, type: message.type, value: dayjs().format() });
-  } else if (message.type === "getByIds") {
-    loadDb(debug, message).then((ldb) => {
-      data.getByIds(ldb, message.value).then((values) => {
-        sendResponse({ source: message.source, type: message.type, value: values });
-      });
-    });
-  } else if (message.type === "getWordFromDBs") {
-    loadDb(debug, message).then((ldb) => {
-      data.getWordFromDBs(ldb, message.value).then((values) => {
-        sendResponse({ source: message.source, type: message.type, value: values });
-      });
-    });
   } else if (message.type === "getSerialisableCardWords") {
     getLocalCardWords(message).then((dayCW) => {
       sendResponse({
@@ -145,26 +133,6 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
             value: "Lookup Events submitted",
           });
         });
-    });
-  } else if (message.type === "submitActivityEvent") {
-    loadDb(console.debug, message).then((ldb) => {
-      data.submitActivityEvent(ldb, message.value).then(() => {
-        sendResponse({
-          source: message.source,
-          type: message.type,
-          value: "Activity Events submitted",
-        });
-      });
-    });
-  } else if (message.type === "submitUserEvents") {
-    loadDb(console.debug, message).then((ldb) => {
-      data.submitUserEvents(ldb, message.value).then(() => {
-        sendResponse({
-          source: message.source,
-          type: message.type,
-          value: "User Events submitted",
-        });
-      });
     });
   } else if (message.type === "addOrUpdateCardsForWord") {
     const practiceDetails = message.value;
@@ -229,46 +197,12 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
     getUserDexie().then((user) => {
       sendResponse({ source: message.source, type: message.type, value: user });
     });
-  } else if (message.type === "updateRecentSentences") {
+  } else if (message.type === "getContentAccuracyStatsForImport") {
     loadDb(console.debug, message).then((ldb) => {
-      data.updateRecentSentences(ldb, message.value).then((result) => {
-        sendResponse({ source: message.source, type: message.type, value: result });
-      });
-    });
-  } else if (message.type === "addRecentSentences") {
-    loadDb(console.debug, message).then((ldb) => {
-      data.addRecentSentences(ldb, message.value).then((result) => {
-        sendResponse({ source: message.source, type: message.type, value: result });
-      });
-    });
-  } else if (message.type === "getRecentSentences") {
-    loadDb(console.debug, message).then((ldb) => {
-      data.getRecentSentences(ldb, message.value).then((result) => {
-        sendResponse({ source: message.source, type: message.type, value: result });
-      });
-    });
-  } else if (message.type === "refreshSession") {
-    loadDb(console.debug, message).then((ldb) => {
-      data.refreshSession(ldb, message.value).then((result) => {
-        sendResponse({ source: message.source, type: message.type, value: result });
-      });
-    });
-  } else if (message.type === "getContentConfigFromStore") {
-    loadDb(console.debug, message).then((ldb) => {
-      data.getContentConfigFromStore(ldb, message.value).then((result) => {
-        sendResponse({ source: message.source, type: message.type, value: result });
-      });
-    });
-  } else if (message.type === "setContentConfigToStore") {
-    loadDb(console.debug, message).then((ldb) => {
-      data.setContentConfigToStore(ldb, message.value).then((result) => {
-        sendResponse({ source: message.source, type: message.type, value: result });
-      });
-    });
-  } else if (message.type === "getDictionaryEntries") {
-    loadDb(console.debug, message).then((ldb) => {
-      getUserDictionary(ldb, message.value.dictionaryId).then((entries) => {
-        sendResponse({ source: message.source, type: message.type, value: entries });
+      getLocalCardWords(message).then((dayCW) => {
+        data.getContentAccuracyStatsForImport(ldb, message.value, dayCW).then((result) => {
+          sendResponse({ source: message.source, type: message.type, value: result });
+        });
       });
     });
   } else if (message.type === "getDictionaryEntriesByGraph") {
@@ -281,18 +215,26 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
         sendResponse({ source: message.source, type: message.type, value: outputEntries });
       });
     });
-  } else if (message.type === "getAllFromDB") {
+  } else if (
+    [
+      "getRecentSentences",
+      "addRecentSentences",
+      "getByIds",
+      "getWordFromDBs",
+      "submitActivityEvent",
+      "submitUserEvents",
+      "updateRecentSentences",
+      "refreshSession",
+      "getContentConfigFromStore",
+      "setContentConfigToStore",
+      "getDictionaryEntries",
+      "getAllFromDB",
+      "getWordsByGraphs",
+    ].includes(message.type)
+  ) {
     loadDb(console.debug, message).then((ldb) => {
-      data.getAllFromDB(ldb, message.value).then((result) => {
+      data[message.type](ldb, message.value).then((result: any) => {
         sendResponse({ source: message.source, type: message.type, value: result });
-      });
-    });
-  } else if (message.type === "getContentAccuracyStatsForImport") {
-    loadDb(console.debug, message).then((ldb) => {
-      getLocalCardWords(message).then((dayCW) => {
-        data.getContentAccuracyStatsForImport(ldb, message.value, dayCW).then((result) => {
-          sendResponse({ source: message.source, type: message.type, value: result });
-        });
       });
     });
   } else {
