@@ -25,7 +25,7 @@ export default function Container({ tokenDetails, definition, classes }: Props):
       <Divider />
       <Actions className={classes.actions} tokenDetails={tokenDetails} definition={definition} />
       <Definitions definition={definition} classes={classes} />
-      {hasCharacters(fromLang) && (
+      {hasCharacters(fromLang) && tokenDetails.token.l.length > 1 && (
         <>
           <Divider /> <Substrings token={tokenDetails.token} />
         </>

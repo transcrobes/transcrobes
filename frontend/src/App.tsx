@@ -34,6 +34,7 @@ import {
   ACTIVITY_DEBOUNCE,
   ACTIVITY_EVENTS_THROTTLE,
   ACTIVITY_TIMEOUT,
+  GLOBAL_TIMER_DURATION_MS,
   IS_DEV,
   SerialisableDayCardWords,
 } from "./lib/types";
@@ -68,8 +69,6 @@ window.getTimestamp = () => {
   }
   return window.lastTimestamp;
 };
-
-const GLOBAL_TIMER_DURATION_MS = IS_DEV ? 2000 : 5000;
 
 const EVENT_SOURCE = "App.tsx";
 const DATA_SOURCE = "App.tsx";

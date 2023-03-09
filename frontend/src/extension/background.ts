@@ -99,9 +99,7 @@ chrome.action.onClicked.addListener(function (tab) {
   });
 });
 
-chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
-  const message = request;
-  const debug = console.debug;
+chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message.type === "syncDB") {
     console.log("Starting a background syncDB db load");
     loadDb(sendResponse, message);

@@ -11,6 +11,7 @@ import * as data from "../lib/data";
 import { intervalCollection, NAME_PREFIX } from "../lib/interval/interval-decorator";
 import { fetchPlus } from "../lib/libMethods";
 import {
+  ACTIVITY_QUEUE_PROCESS_FREQ,
   DEFAULT_RETRIES,
   EventData,
   EVENT_QUEUE_PROCESS_FREQ,
@@ -87,7 +88,7 @@ async function loadDb(
       NAME_PREFIX + "processRequestQueue",
     );
     setInterval(() => data.pushFiles(url, user.username), PUSH_FILES_PROCESS_FREQ, NAME_PREFIX + "pushFiles");
-    setInterval(() => data.sendActivities(dbObj, url), EVENT_QUEUE_PROCESS_FREQ, NAME_PREFIX + "sendActivity");
+    setInterval(() => data.sendActivities(dbObj, url), ACTIVITY_QUEUE_PROCESS_FREQ, NAME_PREFIX + "sendActivity");
     if (event) {
       postIt(event, { source: message.source, type: message.type, value: "loadDb success" });
     }

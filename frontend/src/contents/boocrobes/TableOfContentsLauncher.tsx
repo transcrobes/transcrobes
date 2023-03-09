@@ -33,22 +33,23 @@ function TableOfContents({ manifest, onClickChapter }: Props): ReactElement {
     <MenuList>
       {manifest.toc && manifest.toc.length > 0 ? (
         manifest.toc.map((content: ReadiumLink, i) => (
-          <MenuItem key={content.title} aria-label={content.title} onClick={() => tocLinkHandler(getLinkHref(content))}>
+          <MenuItem
+            key={(content.title || "") + i}
+            aria-label={content.title}
+            onClick={() => tocLinkHandler(getLinkHref(content))}
+          >
             {/* FIXME: make sure it's safe!!! */}
             <span dangerouslySetInnerHTML={{ __html: content.title ?? "" }} />
-            {content.children && (
-              <>
-                {content.children.map((subLink) => (
-                  <MenuItem
-                    aria-label={subLink.title}
-                    key={subLink.title}
-                    onClick={() => tocLinkHandler(getLinkHref(subLink))}
-                  >
-                    <span dangerouslySetInnerHTML={{ __html: subLink.title ?? "" }} />
-                  </MenuItem>
-                ))}
-              </>
-            )}
+            {content.children &&
+              content.children.map((subLink, i) => (
+                <MenuItem
+                  aria-label={subLink.title}
+                  key={(subLink.title || "") + i}
+                  onClick={() => tocLinkHandler(getLinkHref(subLink))}
+                >
+                  <span dangerouslySetInnerHTML={{ __html: subLink.title ?? "" }} />
+                </MenuItem>
+              ))}
           </MenuItem>
         ))
       ) : (

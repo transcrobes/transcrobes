@@ -87,13 +87,12 @@ logger = logging.getLogger(__name__)
 
 
 def construct_return(objs):
-    damed = Return(
+    return Return(
         documents=objs,
         checkpoint=Checkpoint(
             id=objs[-1].id if len(objs) > 0 else "", updated_at=objs[-1].updated_at if len(objs) > 0 else -1
         ),
     )
-    return damed
 
 
 # Utility functions
@@ -212,7 +211,7 @@ async def filter_day_model_stats(
         objs = [DayModelStats.from_model(user_day) for user_day in obj_list]
 
         logger.debug(f"filter_day_model_stats finished: {user_id=}, {limit=} {updated_at=}")
-    return construct_return(objs)
+    return objs
 
 
 async def filter_student_day_model_stats(
@@ -752,7 +751,7 @@ async def filter_standard(
     model_ref: DetailedMixin,
     id: Optional[str] = "",
     updated_at: Optional[float] = -1,
-) -> list[CommonType]:
+) -> Return[CommonType]:
     logger.debug(f"filter_standard started: {user_id=}, {limit=}, {id=}, {updated_at=}, {ref=}, {model_ref=}")
 
     stmt = select(model_ref).where(model_ref.created_by_id == user_id).options(selectinload(model_ref.created_by))
@@ -787,36 +786,22 @@ class Query:
         return "world"
 
     @strawberry.field
-    async def feed_languageclasses(  # pylint: disable=E0213
-        info: Info[Context, Any],
-        limit: int,
-        id: Optional[str] = "",
-        updated_at: Optional[float] = -1,
-    ) -> list[Languageclasses]:
-        async with async_session() as db:
-            user = await get_user(db, info.context.request)
-            return await filter_standard(db, user.id, limit, Languageclasses, models.LanguageClass, id, updated_at)
-
-    @strawberry.field
     async def pull_languageclasses(  # pylint: disable=E0213
         info: Info[Context, Any],
         limit: int,
         checkpoint: Optional[InputCheckpoint[Languageclasses]] = None,
     ) -> Return[Languageclasses]:
-        return await Query.feed_languageclasses(
-            info, limit, checkpoint.id if checkpoint else "", checkpoint.updated_at if checkpoint else -1
-        )
-
-    @strawberry.field
-    async def feed_studentregistrations(  # pylint: disable=E0213
-        info: Info[Context, Any],
-        limit: int,
-        id: Optional[str] = "",
-        updated_at: Optional[float] = -1,
-    ) -> list[Studentregistrations]:
         async with async_session() as db:
             user = await get_user(db, info.context.request)
-            return await filter_student_registrations(db, user.id, limit, id, updated_at)
+            return await filter_standard(
+                db,
+                user.id,
+                limit,
+                Languageclasses,
+                models.LanguageClass,
+                checkpoint.id if checkpoint else "",
+                checkpoint.updated_at if checkpoint else -1,
+            )
 
     @strawberry.field
     async def pull_studentregistrations(  # pylint: disable=E0213
@@ -824,22 +809,13 @@ class Query:
         limit: int,
         checkpoint: Optional[InputCheckpoint[Studentregistrations]] = None,
     ) -> Return[Studentregistrations]:
-        return construct_return(
-            await Query.feed_studentregistrations(
-                info, limit, checkpoint.id if checkpoint else "", checkpoint.updated_at if checkpoint else -1
-            )
-        )
-
-    @strawberry.field
-    async def feed_teacherregistrations(  # pylint: disable=E0213
-        info: Info[Context, Any],
-        limit: int,
-        id: Optional[str] = "",
-        updated_at: Optional[float] = -1,
-    ) -> list[Teacherregistrations]:
         async with async_session() as db:
             user = await get_user(db, info.context.request)
-            return await filter_teacher_registrations(db, user.id, limit, id, updated_at)
+            return construct_return(
+                await filter_student_registrations(
+                    db, user.id, limit, checkpoint.id if checkpoint else "", checkpoint.updated_at if checkpoint else -1
+                )
+            )
 
     @strawberry.field
     async def pull_teacherregistrations(  # pylint: disable=E0213
@@ -847,22 +823,13 @@ class Query:
         limit: int,
         checkpoint: Optional[InputCheckpoint[Teacherregistrations]] = None,
     ) -> Return[Teacherregistrations]:
-        return construct_return(
-            await Query.feed_teacherregistrations(
-                info, limit, checkpoint.id if checkpoint else "", checkpoint.updated_at if checkpoint else -1
-            )
-        )
-
-    @strawberry.field
-    async def feed_persons(  # pylint: disable=E0213
-        info: Info[Context, Any],
-        limit: int,
-        id: Optional[str] = "",
-        updated_at: Optional[float] = -1,
-    ) -> list[Persons]:
         async with async_session() as db:
             user = await get_user(db, info.context.request)
-            return await filter_persons(db, user.id, updated_at)
+            return construct_return(
+                await filter_teacher_registrations(
+                    db, user.id, limit, checkpoint.id if checkpoint else "", checkpoint.updated_at if checkpoint else -1
+                )
+            )
 
     @strawberry.field
     async def pull_persons(  # pylint: disable=E0213
@@ -870,22 +837,9 @@ class Query:
         limit: int,
         checkpoint: Optional[InputCheckpoint[Persons]] = None,
     ) -> Return[Persons]:
-        return construct_return(
-            await Query.feed_persons(
-                info, limit, checkpoint.id if checkpoint else "", checkpoint.updated_at if checkpoint else -1
-            )
-        )
-
-    @strawberry.field
-    async def feed_imports(  # pylint: disable=E0213
-        info: Info[Context, Any],
-        limit: int,
-        id: Optional[str] = "",
-        updated_at: Optional[float] = -1,
-    ) -> list[Imports]:
         async with async_session() as db:
             user = await get_user(db, info.context.request)
-            return await filter_standard(db, user.id, limit, Imports, models.Import, id, updated_at)
+            return construct_return(await filter_persons(db, user.id, checkpoint.updated_at if checkpoint else -1))
 
     @strawberry.field
     async def pull_imports(  # pylint: disable=E0213
@@ -893,20 +847,17 @@ class Query:
         limit: int,
         checkpoint: Optional[InputCheckpoint[Imports]] = None,
     ) -> Return[Imports]:
-        return await Query.feed_imports(
-            info, limit, checkpoint.id if checkpoint else "", checkpoint.updated_at if checkpoint else -1
-        )
-
-    @strawberry.field
-    async def feed_userlists(  # pylint: disable=E0213
-        info: Info[Context, Any],
-        limit: int,
-        id: Optional[str] = "",
-        updated_at: Optional[float] = -1,
-    ) -> list[Userlists]:
         async with async_session() as db:
             user = await get_user(db, info.context.request)
-            return await filter_standard(db, user.id, limit, Userlists, models.UserList, id, updated_at)
+            return await filter_standard(
+                db,
+                user.id,
+                limit,
+                Imports,
+                models.Import,
+                checkpoint.id if checkpoint else "",
+                checkpoint.updated_at if checkpoint else -1,
+            )
 
     @strawberry.field
     async def pull_userlists(  # pylint: disable=E0213
@@ -914,20 +865,17 @@ class Query:
         limit: int,
         checkpoint: Optional[InputCheckpoint[Userlists]] = None,
     ) -> Return[Userlists]:
-        return await Query.feed_userlists(
-            info, limit, checkpoint.id if checkpoint else "", checkpoint.updated_at if checkpoint else -1
-        )
-
-    @strawberry.field
-    async def feed_userdictionaries(  # pylint: disable=E0213
-        info: Info[Context, Any],
-        limit: int,
-        id: Optional[str] = "",
-        updated_at: Optional[float] = -1,
-    ) -> list[Userdictionaries]:
         async with async_session() as db:
             user = await get_user(db, info.context.request)
-            return await filter_standard(db, user.id, limit, Userdictionaries, models.UserDictionary, id, updated_at)
+            return await filter_standard(
+                db,
+                user.id,
+                limit,
+                Userlists,
+                models.UserList,
+                checkpoint.id if checkpoint else "",
+                checkpoint.updated_at if checkpoint else -1,
+            )
 
     @strawberry.field
     async def pull_userdictionaries(  # pylint: disable=E0213
@@ -935,20 +883,17 @@ class Query:
         limit: int,
         checkpoint: Optional[InputCheckpoint[Userdictionaries]] = None,
     ) -> Return[Userdictionaries]:
-        return await Query.feed_userdictionaries(
-            info, limit, checkpoint.id if checkpoint else "", checkpoint.updated_at if checkpoint else -1
-        )
-
-    @strawberry.field
-    async def feed_contents(  # pylint: disable=E0213
-        info: Info[Context, Any],
-        limit: int,
-        id: Optional[str] = "",
-        updated_at: Optional[float] = -1,
-    ) -> list[Contents]:
         async with async_session() as db:
             user = await get_user(db, info.context.request)
-            return await filter_standard(db, user.id, limit, Contents, models.Content, id, updated_at)
+            return await filter_standard(
+                db,
+                user.id,
+                limit,
+                Userdictionaries,
+                models.UserDictionary,
+                checkpoint.id if checkpoint else "",
+                checkpoint.updated_at if checkpoint else -1,
+            )
 
     @strawberry.field
     async def pull_contents(  # pylint: disable=E0213
@@ -956,20 +901,17 @@ class Query:
         limit: int,
         checkpoint: Optional[InputCheckpoint[Contents]] = None,
     ) -> Return[Contents]:
-        return await Query.feed_contents(
-            info, limit, checkpoint.id if checkpoint else "", checkpoint.updated_at if checkpoint else -1
-        )
-
-    @strawberry.field
-    async def feed_goals(  # pylint: disable=E0213
-        info: Info[Context, Any],
-        limit: int,
-        id: Optional[str] = "",
-        updated_at: Optional[float] = -1,
-    ) -> list[Goals]:
         async with async_session() as db:
             user = await get_user(db, info.context.request)
-            return await filter_standard(db, user.id, limit, Goals, models.Goal, id, updated_at)
+            return await filter_standard(
+                db,
+                user.id,
+                limit,
+                Contents,
+                models.Content,
+                checkpoint.id if checkpoint else "",
+                checkpoint.updated_at if checkpoint else -1,
+            )
 
     @strawberry.field
     async def pull_goals(  # pylint: disable=E0213
@@ -977,20 +919,17 @@ class Query:
         limit: int,
         checkpoint: Optional[InputCheckpoint[Goals]] = None,
     ) -> Return[Goals]:
-        return await Query.feed_goals(
-            info, limit, checkpoint.id if checkpoint else "", checkpoint.updated_at if checkpoint else -1
-        )
-
-    @strawberry.field
-    async def feed_usersurveys(  # pylint: disable=E0213
-        info: Info[Context, Any],
-        limit: int,
-        id: Optional[str] = "",
-        updated_at: Optional[float] = -1,
-    ) -> list[Usersurveys]:
         async with async_session() as db:
             user = await get_user(db, info.context.request)
-            return await filter_standard(db, user.id, limit, Usersurveys, models.UserSurvey, id, updated_at)
+            return await filter_standard(
+                db,
+                user.id,
+                limit,
+                Goals,
+                models.Goal,
+                checkpoint.id if checkpoint else "",
+                checkpoint.updated_at if checkpoint else -1,
+            )
 
     @strawberry.field
     async def pull_usersurveys(  # pylint: disable=E0213
@@ -998,26 +937,17 @@ class Query:
         limit: int,
         checkpoint: Optional[InputCheckpoint[Usersurveys]] = None,
     ) -> Return[Usersurveys]:
-        return await Query.feed_usersurveys(
-            info, limit, checkpoint.id if checkpoint else "", checkpoint.updated_at if checkpoint else -1
-        )
-
-    @strawberry.field
-    async def feed_characters(  # pylint: disable=E0213
-        info: Info[Context, Any],
-        limit: int,
-        id: Optional[str] = "",
-        updated_at: Optional[float] = -1,
-    ) -> list[Characters]:
-        json_path = latest_character_json_dir_path()
-        last_updated = int(os.path.basename(json_path) or 0)
-        characters = []
-        if last_updated > updated_at:
-            for f in os.scandir(latest_character_json_dir_path()):
-                if f.is_file() and re.match(HANZI_JSON_CACHE_FILE_REGEX, f.name):
-                    with open(f.path) as f:
-                        characters += Characters.from_dict(json.load(f), last_updated)
-        return characters
+        async with async_session() as db:
+            user = await get_user(db, info.context.request)
+            return await filter_standard(
+                db,
+                user.id,
+                limit,
+                Usersurveys,
+                models.UserSurvey,
+                checkpoint.id if checkpoint else "",
+                checkpoint.updated_at if checkpoint else -1,
+            )
 
     @strawberry.field
     async def pull_characters(  # pylint: disable=E0213
@@ -1028,31 +958,18 @@ class Query:
         async with async_session() as db:
             user = await get_user(db, info.context.request)
 
+        objs = []
         # FIXME: this should work with all potential char languages
-        if user.from_lang != "zh-Hans":
-            objs = []
-        else:
-            objs = await Query.feed_characters(
-                info, limit, checkpoint.id if checkpoint else "", checkpoint.updated_at if checkpoint else -1
-            )
-        return construct_return(objs)
+        if user.from_lang == "zh-Hans":
+            json_path = latest_character_json_dir_path()
+            last_updated = int(os.path.basename(json_path) or 0)
+            if last_updated > checkpoint.updated_at if checkpoint else -1:
+                for f in os.scandir(latest_character_json_dir_path()):
+                    if f.is_file() and re.match(HANZI_JSON_CACHE_FILE_REGEX, f.name):
+                        with open(f.path) as f:
+                            objs += Characters.from_dict(json.load(f), last_updated)
 
-    @strawberry.field
-    async def feed_student_word_model_stats(  # pylint: disable=E0213
-        info: Info[Context, Any],
-        limit: int,
-        id: Optional[str] = "",
-        updated_at: Optional[float] = -1,
-    ) -> list[StudentWordModelStats]:
-        async with async_session() as db:
-            user = await get_user(db, info.context.request)
-            user_id = user.id
-            lang_pair = user.lang_pair
-        logger.debug(f"Getting word model stats query: {user_id=}, {limit=}, {id=}, {updated_at=}, {lang_pair=}")
-        if settings.DEBUG:
-            async with async_session() as db:
-                await ensure_cache_preloaded(db, get_from_lang(lang_pair), get_to_lang(lang_pair))
-        return await filter_student_word_model_stats(user_id, lang_pair, limit, int(id) if id else 0, updated_at)
+        return construct_return(objs)
 
     @strawberry.field
     async def pull_student_word_model_stats(  # pylint: disable=E0213
@@ -1060,28 +977,22 @@ class Query:
         limit: int,
         checkpoint: Optional[InputCheckpoint[StudentWordModelStats]] = None,
     ) -> Return[StudentWordModelStats]:
-        return await Query.feed_student_word_model_stats(
-            info, limit, checkpoint.id if checkpoint else "", checkpoint.updated_at if checkpoint else -1
-        )
-
-    @strawberry.field
-    async def feed_word_model_stats(  # pylint: disable=E0213
-        info: Info[Context, Any],
-        limit: int,
-        id: Optional[str] = "",
-        updated_at: Optional[float] = -1,
-    ) -> list[WordModelStats]:
         async with async_session() as db:
             user = await get_user(db, info.context.request)
             user_id = user.id
             lang_pair = user.lang_pair
-        logger.debug(f"Getting word model stats query: {user_id=}, {limit=}, {id=}, {updated_at=}, {lang_pair=}")
+        updated_at = checkpoint.updated_at if checkpoint else -1
+        # FIXME: is this the student_id or word_id???
+        student_id = int(checkpoint.id) if checkpoint and checkpoint.id else 0
+
+        logger.debug(
+            f"Getting word model stats query: {user_id=}, {limit=}, {student_id=}, {updated_at=}, {lang_pair=}"
+        )
+
         if settings.DEBUG:
             async with async_session() as db:
                 await ensure_cache_preloaded(db, get_from_lang(lang_pair), get_to_lang(lang_pair))
-
-        async with async_stats_session() as db:
-            return await filter_word_model_stats(user_id, lang_pair, limit, int(id) if id else 0, updated_at)
+        return await filter_student_word_model_stats(user_id, lang_pair, limit, student_id, updated_at)
 
     @strawberry.field
     async def pull_word_model_stats(  # pylint: disable=E0213
@@ -1089,24 +1000,21 @@ class Query:
         limit: int,
         checkpoint: Optional[InputCheckpoint[WordModelStats]] = None,
     ) -> Return[WordModelStats]:
-        return construct_return(
-            await Query.feed_word_model_stats(
-                info, limit, checkpoint.id if checkpoint else "", checkpoint.updated_at if checkpoint else -1
-            )
-        )
-
-    @strawberry.field
-    async def feed_day_model_stats(  # pylint: disable=E0213
-        info: Info[Context, Any],
-        limit: int,
-        id: Optional[str] = "",
-        updated_at: Optional[float] = -1,
-    ) -> list[DayModelStats]:
         async with async_session() as db:
             user = await get_user(db, info.context.request)
             user_id = user.id
+            lang_pair = user.lang_pair
+        updated_at = checkpoint.updated_at if checkpoint else -1
+        word_id = int(checkpoint.id) if checkpoint and checkpoint.id else 0
 
-        return await filter_day_model_stats(user_id, limit, updated_at)
+        logger.debug(f"Getting word model stats query: {user_id=}, {limit=}, {word_id=}, {updated_at=}, {lang_pair=}")
+
+        if settings.DEBUG:
+            async with async_session() as db:
+                await ensure_cache_preloaded(db, get_from_lang(lang_pair), get_to_lang(lang_pair))
+
+        async with async_stats_session() as db:
+            return construct_return(await filter_word_model_stats(user_id, lang_pair, limit, word_id, updated_at))
 
     @strawberry.field
     async def pull_day_model_stats(  # pylint: disable=E0213
@@ -1114,21 +1022,12 @@ class Query:
         limit: int,
         checkpoint: Optional[InputCheckpoint[DayModelStats]] = None,
     ) -> Return[DayModelStats]:
-        return await Query.feed_day_model_stats(
-            info, limit, checkpoint.id if checkpoint else "", checkpoint.updated_at if checkpoint else -1
-        )
-
-    @strawberry.field
-    async def feed_student_day_model_stats(  # pylint: disable=E0213
-        info: Info[Context, Any],
-        limit: int,
-        id: Optional[str] = "",
-        updated_at: Optional[float] = -1,
-    ) -> list[StudentDayModelStats]:
         async with async_session() as db:
             user = await get_user(db, info.context.request)
             user_id = user.id
-        return await filter_student_day_model_stats(user_id, limit, updated_at)
+        return construct_return(
+            await filter_day_model_stats(user_id, limit, checkpoint.updated_at if checkpoint else -1)
+        )
 
     @strawberry.field
     async def pull_student_day_model_stats(  # pylint: disable=E0213
@@ -1136,20 +1035,10 @@ class Query:
         limit: int,
         checkpoint: Optional[InputCheckpoint[DayModelStats]] = None,
     ) -> Return[DayModelStats]:
-        return await Query.feed_student_day_model_stats(
-            info, limit, checkpoint.id if checkpoint else "", checkpoint.updated_at if checkpoint else -1
-        )
-
-    @strawberry.field
-    async def feed_wordlists(  # pylint: disable=E0213
-        info: Info[Context, Any],
-        limit: int,
-        id: Optional[str] = "",
-        updated_at: Optional[float] = -1,
-    ) -> list[Wordlists]:
         async with async_session() as db:
             user = await get_user(db, info.context.request)
-            return await filter_wordlists(db, user, limit, id, updated_at)
+            user_id = user.id
+        return await filter_student_day_model_stats(user_id, limit, checkpoint.updated_at if checkpoint else -1)
 
     @strawberry.field
     async def pull_wordlists(  # pylint: disable=E0213
@@ -1157,22 +1046,13 @@ class Query:
         limit: int,
         checkpoint: Optional[InputCheckpoint[Wordlists]] = None,
     ) -> Return[Wordlists]:
-        return construct_return(
-            await Query.feed_wordlists(
-                info, limit, checkpoint.id if checkpoint else "", checkpoint.updated_at if checkpoint else -1
-            )
-        )
-
-    @strawberry.field
-    async def feed_cards(  # pylint: disable=E0213
-        info: Info[Context, Any],
-        limit: int,
-        id: Optional[str] = "",
-        updated_at: Optional[float] = -1,
-    ) -> list[Cards]:
         async with async_session() as db:
             user = await get_user(db, info.context.request)
-            return await filter_cards(db, user.id, limit, id, updated_at)
+            return construct_return(
+                await filter_wordlists(
+                    db, user, limit, checkpoint.id if checkpoint else "", checkpoint.updated_at if checkpoint else -1
+                )
+            )
 
     @strawberry.field
     async def pull_cards(  # pylint: disable=E0213
@@ -1180,22 +1060,13 @@ class Query:
         limit: int,
         checkpoint: Optional[InputCheckpoint[Cards]] = None,
     ) -> Return[Cards]:
-        return construct_return(
-            await Query.feed_cards(
-                info, limit, checkpoint.id if checkpoint else "", checkpoint.updated_at if checkpoint else -1
-            )
-        )
-
-    @strawberry.field
-    async def feed_recentsentences(  # pylint: disable=E0213
-        info: Info[Context, Any],
-        limit: int,
-        id: Optional[str] = "",
-        updated_at: Optional[float] = -1,
-    ) -> list[Recentsentences]:
         async with async_session() as db:
             user = await get_user(db, info.context.request)
-            return await filter_recentsentences(db, user.id, limit, id, updated_at)
+            return construct_return(
+                await filter_cards(
+                    db, user.id, limit, checkpoint.id if checkpoint else "", checkpoint.updated_at if checkpoint else -1
+                )
+            )
 
     @strawberry.field
     async def pull_recentsentences(  # pylint: disable=E0213
@@ -1203,22 +1074,13 @@ class Query:
         limit: int,
         checkpoint: Optional[InputCheckpoint[Recentsentences]] = None,
     ) -> Return[Recentsentences]:
-        return construct_return(
-            await Query.feed_recentsentences(
-                info, limit, checkpoint.id if checkpoint else "", checkpoint.updated_at if checkpoint else -1
-            )
-        )
-
-    @strawberry.field
-    async def feed_definitions(  # pylint: disable=E0213
-        info: Info[Context, Any],
-        limit: int,
-        id: Optional[str] = "",
-        updated_at: Optional[float] = -1,
-    ) -> list[Definitions]:
         async with async_session() as db:
             user = await get_user(db, info.context.request)
-            return await filter_cached_definitions(db, user, limit, id, updated_at)
+            return construct_return(
+                await filter_recentsentences(
+                    db, user.id, limit, checkpoint.id if checkpoint else "", checkpoint.updated_at if checkpoint else -1
+                )
+            )
 
     @strawberry.field
     async def pull_definitions(  # pylint: disable=E0213
@@ -1226,25 +1088,13 @@ class Query:
         limit: int,
         checkpoint: Optional[InputCheckpoint[Definitions]] = None,
     ) -> Return[Definitions]:
-        return construct_return(
-            await Query.feed_definitions(
-                info, limit, checkpoint.id if checkpoint else "", checkpoint.updated_at if checkpoint else -1
-            )
-        )
-
-    @strawberry.field
-    async def feed_surveys(  # pylint: disable=E0213
-        info: Info[Context, Any],
-        limit: int,
-        id: Optional[str] = "",
-        updated_at: Optional[float] = -1,
-    ) -> list[Surveys]:
         async with async_session() as db:
-            user = await get_user(db, info.context.request)  # raises exception if no logged in user
-            objs = await filter_surveys(db, user.from_lang, user.to_lang, limit, id, updated_at)
-            for obj in objs:
-                obj.survey_json = json.dumps(obj.survey_json)
-            return construct_return(objs)
+            user = await get_user(db, info.context.request)
+            return construct_return(
+                await filter_cached_definitions(
+                    db, user, limit, checkpoint.id if checkpoint else "", checkpoint.updated_at if checkpoint else -1
+                )
+            )
 
     @strawberry.field
     async def pull_surveys(  # pylint: disable=E0213
@@ -1252,9 +1102,19 @@ class Query:
         limit: int,
         checkpoint: Optional[InputCheckpoint[Surveys]] = None,
     ) -> Return[Surveys]:
-        return await Query.feed_surveys(
-            info, limit, checkpoint.id if checkpoint else "", checkpoint.updated_at if checkpoint else -1
-        )
+        async with async_session() as db:
+            user = await get_user(db, info.context.request)  # raises exception if no logged in user
+            objs = await filter_surveys(
+                db,
+                user.from_lang,
+                user.to_lang,
+                limit,
+                checkpoint.id if checkpoint else "",
+                checkpoint.updated_at if checkpoint else -1,
+            )
+            for obj in objs:
+                obj.survey_json = json.dumps(obj.survey_json)
+            return construct_return(objs)
 
 
 async def get_user(db: AsyncSession, request: Request) -> models.AuthUser:
