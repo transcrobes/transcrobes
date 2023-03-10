@@ -254,7 +254,7 @@ class StudentDayModelStats(DayModelStats):
             nb_failures=dj_model.nb_failures,
             updated_at=dj_model.updated_at,
             student_id=dj_model.user_id,
-            pk_id=f"{dj_model.id}|{dj_model.user_id}",
+            pk_id=f"{dj_model.day}|{dj_model.user_id}",
         )
 
 
@@ -294,7 +294,7 @@ class StudentWordModelStats(WordModelStats):
 
     @staticmethod
     def from_list(wmlist: list):
-        ws = WordModelStats(
+        ws = StudentWordModelStats(
             id=wmlist[8],
             nb_seen=wmlist[1],
             last_seen=wmlist[2],

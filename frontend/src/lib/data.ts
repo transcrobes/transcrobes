@@ -69,6 +69,7 @@ import {
   SessionType,
   ShortChar,
   ShortWord,
+  StudentDayModelStatsType,
   StudentRegistrationType,
   TeacherRegistrationType,
   UserActivity,
@@ -1577,8 +1578,21 @@ export async function getSRSReviews(
   };
 }
 
-export async function getDayStats(db: TranscrobesDatabase): Promise<DayModelStatsType[]> {
-  return [...(await db.day_model_stats.find().exec())].map((stat) => stat.toJSON());
+export async function getDayStats(
+  db: TranscrobesDatabase,
+  { studentId }: { studentId?: number },
+): Promise<DayModelStatsType[]> {
+  if (studentId) {
+    return [
+      ...(await db.student_day_model_stats
+        .find({
+          selector: { studentId: { $eq: studentId } },
+        })
+        .exec()),
+    ].map((stat) => stat.toJSON());
+  } else {
+    return [...(await db.day_model_stats.find().exec())].map((stat) => stat.toJSON());
+  }
 }
 
 export async function saveDictionaryEntries(

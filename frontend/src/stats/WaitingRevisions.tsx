@@ -20,9 +20,10 @@ interface Props {
   yIsNumber?: boolean;
   nbPeriods?: number;
   periodType?: ManipulateType;
+  studentId?: number;
 }
 
-export function WaitingRevisions({ yIsNumber = true, periodType = "week" }: Props) {
+export function WaitingRevisions({ studentId, yIsNumber = true, periodType = "week" }: Props) {
   const [data, setData] = useState<ListGraphData[]>([]);
   const [revisions, setRevisions] = useState<CardType[]>([]);
   const translate = useTranslate();
@@ -71,7 +72,7 @@ export function WaitingRevisions({ yIsNumber = true, periodType = "week" }: Prop
 
   const theme = useTheme();
   const dims = useWindowDimensions();
-  return revisions ? (
+  return revisions && revisions.length > 0 ? (
     <Grid container spacing={3} justifyContent="center">
       <Grid item paddingLeft="0px !important">
         <LineChart width={Math.min(dims.width - 10, 600)} height={300} data={data}>
@@ -96,7 +97,7 @@ export function WaitingRevisions({ yIsNumber = true, periodType = "week" }: Prop
         </table>
       </Grid>
     </Grid>
-  ) : revisions === null ? (
+  ) : revisions.length === 0 ? (
     <div>{translate("screens.stats.no_revision_stats")}</div>
   ) : (
     <div>{translate("screens.stats.generating")}</div>

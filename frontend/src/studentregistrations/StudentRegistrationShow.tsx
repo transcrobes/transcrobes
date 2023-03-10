@@ -4,7 +4,9 @@ import { DOCS_DOMAIN } from "../lib/types";
 
 export default function StudentRegistrationShow() {
   return (
-    <Show actions={<HelpShowActions helpUrl={`//${DOCS_DOMAIN}/page/software/configure/studentregistrations/`} />}>
+    <Show
+      actions={<HelpShowActions forceEdit helpUrl={`//${DOCS_DOMAIN}/page/software/configure/studentregistrations/`} />}
+    >
       <SimpleShowLayout>
         <TextField source="id" />
         <ReferenceField source="classId" reference="languageclasses" link="show">

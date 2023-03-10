@@ -23,6 +23,7 @@ import notrobes from "../notrobes";
 import repetrobes from "../repetrobes";
 import stats from "../stats";
 import studentregistrations from "../studentregistrations";
+import studentstats from "../studentstats";
 import teacherregistrations from "../teacherregistrations";
 import languageclasses from "../languageclasses";
 import surveys from "../surveys";
@@ -236,6 +237,14 @@ function Menu({ dense = false }: MenuProps): ReactElement {
                       smart_count: 2,
                     })}
                     leftIcon={<languageclasses.icon />}
+                    dense={dense}
+                  />
+                  <MenuItemLink
+                    to={`/studentstats`}
+                    primaryText={translate(`screens.studentstats.name`, {
+                      smart_count: 2,
+                    })}
+                    leftIcon={<studentstats.icon />}
                     dense={dense}
                   />
                 </SubMenu>

@@ -22,9 +22,10 @@ interface Props {
   yIsNumber?: boolean;
   nbPeriods?: number;
   periodType?: ManipulateType;
+  studentId?: number;
 }
 
-export function ListProgress({ yIsNumber = false, nbPeriods = 8, periodType = "week" }: Props) {
+export function ListProgress({ studentId, yIsNumber = false, nbPeriods = 8, periodType = "week" }: Props) {
   const [data, setData] = useState<ListGraphData[]>([]);
   const [stats, setStats] = useState<ListFirstSuccessStats | null>();
   const obj = useRecordContext();
@@ -115,9 +116,9 @@ export function ListProgress({ yIsNumber = false, nbPeriods = 8, periodType = "w
         </table>
       </Grid>
     </Grid>
-  ) : stats === null ? (
-    <div>There are no list stats available</div>
+  ) : studentId !== 0 && stats === null ? (
+    <div>{translate("screens.stats.no_list_stats")}</div>
   ) : (
-    <div>The stats are still being generated</div>
+    <div>{translate("screens.stats.generating")}</div>
   );
 }

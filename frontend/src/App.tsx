@@ -35,7 +35,6 @@ import {
   ACTIVITY_EVENTS_THROTTLE,
   ACTIVITY_TIMEOUT,
   GLOBAL_TIMER_DURATION_MS,
-  IS_DEV,
   SerialisableDayCardWords,
 } from "./lib/types";
 import Listrobes from "./listrobes/Listrobes";
@@ -43,6 +42,7 @@ import Notrobes from "./notrobes/Notrobes";
 import Repetrobes from "./repetrobes/Repetrobes";
 import Stats from "./stats/Stats";
 import studentregistrations from "./studentregistrations";
+import Studentstats from "./studentstats/Stats";
 import surveys from "./surveys";
 import Init from "./system/Init";
 import Login from "./system/Login";
@@ -261,7 +261,9 @@ function App({ config }: Props): ReactElement {
             <Resource name="userlists" {...userlists} />,
             <Resource name="surveys" {...surveys} />,
             <CustomRoutes>
-              <Route path="/notrobes" element={<Notrobes proxy={config.proxy} url={config.url} />} />
+              permissions.includes("teacher") && ( <Route path="/studentstats" element={<Studentstats />} />
+              ),
+              <Route path="/notrobes" element={<Notrobes proxy={config.proxy} url={config.url} />} />,
               <Route path="/listrobes" element={<Listrobes proxy={config.proxy} />} />,
               <Route path="/stats" element={<Stats />} />,
               <Route path="/exports" element={<Exports proxy={config.proxy} />} />,

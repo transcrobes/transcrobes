@@ -235,6 +235,7 @@ async def filter_student_day_model_stats(
             )
         )
     )
+    # print("on transdb: ", dastmt.compile(compile_kwargs={"literal_binds": True}))
     async with async_session() as db:
         stud_ids = (await db.execute(dastmt)).scalars().all()
 
@@ -245,9 +246,13 @@ async def filter_student_day_model_stats(
         base_query = stats.UserDay.updated_at > updated_at
         stmt = stmt.where(base_query)
 
+    # print("on statsdb: ", stmt.compile(compile_kwargs={"literal_binds": True}))
+
+    # print(stmt.compile(compile_kwargs={"literal_binds": True}))
     async with async_stats_session() as db:
         result = await db.execute(stmt.order_by("updated_at", "day").limit(limit))
         obj_list = result.scalars().all()
+    # print("and i;m getting back", obj_list)
     objs = [StudentDayModelStats.from_model(user_day) for user_day in obj_list]
 
     logger.debug(f"filter_student_day_model_stats finished: {user_id=}, {limit=} {updated_at=}")

@@ -683,7 +683,12 @@ const customChineseMessages: TranslationMessages = {
       revisions_waiting: "等待修订（总计）",
       generating: "正在生成统计信息",
       no_revision_stats: "没有可用的修订统计信息",
+      no_read_stats: "没有可用的阅读统计信息",
+      no_revised_stats: "没有可用的修订统计信息",
       total_revisions_waiting: "等待修订（总计）",
+    },
+    studentstats: {
+      name: "学生统计",
     },
     system: {
       name: "系统",

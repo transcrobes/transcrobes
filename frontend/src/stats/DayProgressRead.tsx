@@ -30,12 +30,13 @@ const PERIODS: ManipulateType[] = ["year", "month", "week", "day"];
 interface Props {
   nbPeriods?: number;
   periodType?: PeriodType;
+  studentId?: number;
 }
 type Totals = {
   nbSeen: number;
   nbChecked: number;
 };
-export function DayProgressRead({ nbPeriods = 8, periodType = 2 }: Props) {
+export function DayProgressRead({ nbPeriods = 8, periodType = 2, studentId }: Props) {
   const [data, setData] = useState<DayGraphData[]>([]);
   const [stats, setStats] = useState<DayModelStatsType[]>();
   const [totals, setTotals] = useState<Totals>({ nbSeen: 0, nbChecked: 0 });
@@ -47,8 +48,10 @@ export function DayProgressRead({ nbPeriods = 8, periodType = 2 }: Props) {
       const locStats = await window.componentsConfig.proxy.sendMessagePromise<DayModelStatsType[]>({
         source: DATA_SOURCE,
         type: "getDayStats",
+        value: { studentId },
       });
-      if (!locStats) return;
+      setStats(locStats);
+      if (!locStats || locStats.length < 1) return;
       locStats.sort((a, b) => parseInt(a.id) - parseInt(b.id));
       const t = { nbSeen: 0, nbChecked: 0 };
       for (const stat of locStats) {
@@ -61,7 +64,6 @@ export function DayProgressRead({ nbPeriods = 8, periodType = 2 }: Props) {
       if (currentPeriod < 0) {
         currentPeriod = 0;
       }
-      setStats(locStats);
       const firstDay = locStats[0].id;
       const end = dayjs().add(1, "day");
       const start = Math.max(
@@ -102,11 +104,11 @@ export function DayProgressRead({ nbPeriods = 8, periodType = 2 }: Props) {
       }
       setData(locData);
     })();
-  }, [window.componentsConfig.proxy.loaded]);
+  }, [window.componentsConfig.proxy.loaded, studentId]);
 
   const theme = useTheme();
   const dims = useWindowDimensions();
-  return stats ? (
+  return stats && stats.length > 0 ? (
     <Grid container spacing={3} justifyContent="center">
       <Grid item paddingLeft="0px !important">
         <LineChart width={Math.min(dims.width - 10, 600)} height={300} data={data}>
@@ -140,6 +142,8 @@ export function DayProgressRead({ nbPeriods = 8, periodType = 2 }: Props) {
         </table>
       </Grid>
     </Grid>
+  ) : studentId === 0 || (stats && stats.length === 0) ? (
+    <div>{translate("screens.stats.no_read_stats")}</div>
   ) : (
     <div>{translate("screens.stats.generating")}</div>
   );

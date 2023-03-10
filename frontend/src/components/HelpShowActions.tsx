@@ -21,6 +21,7 @@ export const HelpShowActions = ({
   helpLabel,
   ytUrl,
   noCreate,
+  forceEdit,
   ...rest
 }: ShowActionsProps & ExtendedActionProps): ReactElement => {
   const { record } = useShowContext(rest);
@@ -30,9 +31,10 @@ export const HelpShowActions = ({
     <TopToolbar className={className} {...sanitizeRestProps(rest)}>
       {hasCreate && !noCreate && <CreateButton />}
       {hasEdit &&
-        (!record || !(record as CommonRecord)?.createdBy || userId === (record as CommonRecord).createdBy) && (
-          <EditButton record={record} />
-        )}
+        (forceEdit ||
+          !record ||
+          !(record as CommonRecord)?.createdBy ||
+          userId === (record as CommonRecord).createdBy) && <EditButton record={record} />}
       {hasList && <ListButton />}
       {ytUrl && <WatchDemo url={ytUrl} />}
       <HelpButton url={helpUrl} text={helpLabel} />
