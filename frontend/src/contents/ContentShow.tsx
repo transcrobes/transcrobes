@@ -24,24 +24,24 @@ const DATA_SOURCE = "ContentShow.tsx";
 
 export default function ContentShow() {
   const { id = "" } = useParams();
-  const { data, isLoading } = useGetOne<Content>("contents", { id });
+  const { data: content, isLoading } = useGetOne<Content>("contents", { id });
   const [stats, setStats] = useState<ImportFirstSuccessStats | null>();
   const fromLang = useAppSelector((state) => state.userData.user.fromLang);
   const translate = useTranslate();
   useEffect(() => {
     if (window.componentsConfig.proxy.loaded) {
       (async function () {
-        if (isLoading || !data?.theImport) return;
+        if (isLoading || !content?.theImport) return;
         const locStats: ImportFirstSuccessStats | null =
           await window.componentsConfig.proxy.sendMessagePromise<ImportFirstSuccessStats | null>({
             source: DATA_SOURCE,
             type: "getFirstSuccessStatsForImport",
-            value: { importId: data.theImport, fromLang },
+            value: { importId: content.theImport, fromLang },
           });
         setStats(locStats);
       })();
     }
-  }, [data, window.componentsConfig.proxy.loaded]);
+  }, [content, window.componentsConfig.proxy.loaded]);
 
   return (
     <Box>

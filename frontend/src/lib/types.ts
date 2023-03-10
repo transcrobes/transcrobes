@@ -1212,6 +1212,7 @@ export type UserListPositionType = {
 };
 
 export interface ExtendedActionProps {
+  noCreate?: boolean;
   noEdit?: boolean;
   helpUrl: string;
   helpLabel?: string;

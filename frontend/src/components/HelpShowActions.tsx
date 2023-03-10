@@ -5,8 +5,8 @@ import {
   ListButton,
   ShowActionsProps,
   TopToolbar,
-  useEditContext,
   useResourceDefinition,
+  useShowContext,
 } from "react-admin";
 import { useAppSelector } from "../app/hooks";
 import { CommonRecord, ExtendedActionProps } from "../lib/types";
@@ -20,16 +20,17 @@ export const HelpShowActions = ({
   helpUrl,
   helpLabel,
   ytUrl,
+  noCreate,
   ...rest
 }: ShowActionsProps & ExtendedActionProps): ReactElement => {
-  const { record } = useEditContext(rest);
+  const { record } = useShowContext(rest);
   const { hasEdit, hasList, hasCreate } = useResourceDefinition();
   const userId = useAppSelector((state) => state.userData.user.id);
   return (
     <TopToolbar className={className} {...sanitizeRestProps(rest)}>
-      {hasCreate && <CreateButton />}
+      {hasCreate && !noCreate && <CreateButton />}
       {hasEdit &&
-        (!record || !(record as CommonRecord)?.created_by || userId === (record as CommonRecord).created_by) && (
+        (!record || !(record as CommonRecord)?.createdBy || userId === (record as CommonRecord).createdBy) && (
           <EditButton record={record} />
         )}
       {hasList && <ListButton />}

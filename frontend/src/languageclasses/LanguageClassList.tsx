@@ -1,14 +1,16 @@
 import { BooleanField, CreateButton, Datagrid, List, SortButton, TextField, TopToolbar } from "react-admin";
+import { useAppSelector } from "../app/hooks";
 import HelpButton from "../components/HelpButton";
 import { ListEmpty } from "../components/ListEmpty";
 import { DOCS_DOMAIN } from "../lib/types";
 
 function ListActions({ empty }: { empty?: boolean }) {
+  const user = useAppSelector((state) => state.userData.user);
   return (
     <TopToolbar>
-      {!empty && <CreateButton />}
+      {(user.isAdmin || user.isTeacher) && <CreateButton />}
       {!empty && <SortButton fields={["createdAt", "title"]} />}
-      {/* <WatchDemo url={IMPORTS_YT_VIDEO} /> */}
+      {/* <WatchDemo url={LANGUAGE_CLASS_YT_VIDEO} /> */}
       <HelpButton url={`//${DOCS_DOMAIN}/page/software/configure/languageclasses/`} />
     </TopToolbar>
   );

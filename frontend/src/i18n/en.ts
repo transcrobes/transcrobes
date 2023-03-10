@@ -378,6 +378,9 @@ const customEnglishMessages: TranslationMessages = {
         updatedAt: "Updated At",
         status: "Status",
       },
+      classParticipants: "Class Participants",
+      teachers: "Teachers",
+      students: "Students",
     },
     studentregistrations: {
       name: "Classes",

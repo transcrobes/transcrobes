@@ -269,7 +269,7 @@ def add_word_ids(user_words: list, lang_pair: str) -> list:
     for uw in filtered_words:
         val = (cached_definitions[lang_pair].get(uw[0].lower()) or [None, {}])[1].get(uw[0])
         if not val:
-            print(uw)
+            logger.error(uw)
             raise MissingCacheValueException(
                 f"Unable to find entry in cache for {uw[0]}, this should not be possible..."
             )
@@ -575,6 +575,56 @@ async def filter_surveys(
     return objs
 
 
+async def filter_language_classes(
+    db: AsyncSession,
+    user_id: int,
+    limit: int,
+    id: Optional[str] = "",
+    updated_at: Optional[float] = -1,
+) -> list[Languageclasses]:
+    logger.debug(f"filter_language_classes started: {user_id=}, {updated_at=}")
+    stmt = (
+        select(models.LanguageClass)
+        .distinct()
+        .join(models.TeacherRegistration, isouter=True)
+        .join(models.StudentRegistration, isouter=True)
+        .where(
+            or_(
+                models.TeacherRegistration.user_id == user_id,
+                models.StudentRegistration.user_id == user_id,
+                models.LanguageClass.created_by_id == user_id,
+            )
+        )
+    )
+
+    if updated_at and updated_at > 0:
+        updated_at_datetime = datetime.fromtimestamp(updated_at, pytz.utc)
+        base_query = or_(
+            models.TeacherRegistration.updated_at > updated_at_datetime,
+            models.StudentRegistration.updated_at > updated_at_datetime,
+            models.LanguageClass.updated_at > updated_at_datetime,
+        )
+
+        if not id:
+            stmt = stmt.where(base_query)
+        else:
+            stmt = stmt.where(
+                or_(
+                    base_query,
+                    and_(
+                        models.TeacherRegistration.updated_at == updated_at_datetime,
+                        models.TeacherRegistration.id > id,
+                    ),
+                )
+            )
+    stmt = stmt.order_by(text("languageclass.updated_at"), text("languageclass.id")).limit(limit)
+    # print("Languageclasses graphql query",  str(stmt))
+    result = await db.execute(stmt)
+    objs = [Languageclasses.from_model(dj_model) for dj_model in result.scalars().all()]
+    logger.debug(f"filter_language_classes finished: {updated_at=}")
+    return objs
+
+
 async def filter_teacher_registrations(
     db: AsyncSession,
     user_id: int,
@@ -595,9 +645,6 @@ async def filter_teacher_registrations(
             )
         )
     )
-
-    if updated_at and updated_at > 0:
-        updated_at_datetime = datetime.fromtimestamp(updated_at, pytz.utc)
 
     if updated_at and updated_at > 0:
         updated_at_datetime = datetime.fromtimestamp(updated_at, pytz.utc)
@@ -708,24 +755,19 @@ async def filter_persons(
         .join(models.LanguageClass)
         .join(models.TeacherRegistration)
         .where(
-            and_(
-                or_(
-                    models.TeacherRegistration.user_id == user_id,
-                    models.LanguageClass.created_by_id == user_id,
-                ),
-                models.AuthUser.id == models.StudentRegistration.user_id,
+            or_(
+                models.TeacherRegistration.user_id == user_id,
+                models.LanguageClass.created_by_id == user_id,
             ),
         )
     )
     teachers_select = (
         select(models.AuthUser)
-        .join(models.StudentRegistration, onclause=models.StudentRegistration.user_id == models.AuthUser.id)
+        .join(models.TeacherRegistration, onclause=models.TeacherRegistration.user_id == models.AuthUser.id)
         .join(models.LanguageClass)
-        .join(models.TeacherRegistration)
+        .join(models.StudentRegistration)
         .where(
             and_(
-                models.TeacherRegistration.user_id == models.AuthUser.id,
-                models.AuthUser.id == models.StudentRegistration.user_id,
                 models.StudentRegistration.user_id == user_id,
             )
         )
@@ -793,14 +835,10 @@ class Query:
     ) -> Return[Languageclasses]:
         async with async_session() as db:
             user = await get_user(db, info.context.request)
-            return await filter_standard(
-                db,
-                user.id,
-                limit,
-                Languageclasses,
-                models.LanguageClass,
-                checkpoint.id if checkpoint else "",
-                checkpoint.updated_at if checkpoint else -1,
+            return construct_return(
+                await filter_language_classes(
+                    db, user.id, limit, checkpoint.id if checkpoint else "", checkpoint.updated_at if checkpoint else -1
+                )
             )
 
     @strawberry.field
@@ -992,7 +1030,10 @@ class Query:
         if settings.DEBUG:
             async with async_session() as db:
                 await ensure_cache_preloaded(db, get_from_lang(lang_pair), get_to_lang(lang_pair))
-        return await filter_student_word_model_stats(user_id, lang_pair, limit, student_id, updated_at)
+
+        return construct_return(
+            await filter_student_word_model_stats(user_id, lang_pair, limit, student_id, updated_at)
+        )
 
     @strawberry.field
     async def pull_word_model_stats(  # pylint: disable=E0213
@@ -1033,12 +1074,14 @@ class Query:
     async def pull_student_day_model_stats(  # pylint: disable=E0213
         info: Info[Context, Any],
         limit: int,
-        checkpoint: Optional[InputCheckpoint[DayModelStats]] = None,
-    ) -> Return[DayModelStats]:
+        checkpoint: Optional[InputCheckpoint[StudentDayModelStats]] = None,
+    ) -> Return[StudentDayModelStats]:
         async with async_session() as db:
             user = await get_user(db, info.context.request)
             user_id = user.id
-        return await filter_student_day_model_stats(user_id, limit, checkpoint.updated_at if checkpoint else -1)
+        return construct_return(
+            await filter_student_day_model_stats(user_id, limit, checkpoint.updated_at if checkpoint else -1)
+        )
 
     @strawberry.field
     async def pull_wordlists(  # pylint: disable=E0213

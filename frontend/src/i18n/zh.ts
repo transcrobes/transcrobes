@@ -372,6 +372,9 @@ const customChineseMessages: TranslationMessages = {
         updatedAt: "更新时间",
         status: "活跃",
       },
+      classParticipants: "班级参与者",
+      teachers: "老师",
+      students: "学生",
     },
     surveys: {
       name: "调查",
