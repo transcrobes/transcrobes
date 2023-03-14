@@ -47,7 +47,7 @@ type PullableCollectionKeys =
   | DBTwoWayCollectionKeys
   | DBTeacherPullCollectionKeys
   | DBTeacherTwoWayCollectionKeys;
-const replStates = new Map<PullableCollectionKeys, RxGraphQLReplicationState<TranscrobesDocumentTypes, any>>();
+export const replStates = new Map<PullableCollectionKeys, RxGraphQLReplicationState<TranscrobesDocumentTypes, any>>();
 
 declare const self: ServiceWorkerGlobalScope;
 

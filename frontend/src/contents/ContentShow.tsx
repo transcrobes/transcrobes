@@ -15,6 +15,7 @@ import { useAppSelector } from "../app/hooks";
 import { DocumentProgress } from "../components/DocumentProgress";
 import { HelpShowActions } from "../components/HelpShowActions";
 import { ProcessingField } from "../components/ProcessingField";
+import UnixFieldAsDate from "../components/UnixFieldAsDate";
 import { Content, CONTENT_TYPE, DOCS_DOMAIN, ImportFirstSuccessStats, reverseEnum } from "../lib/types";
 import ActionButton from "./ActionButton";
 import CacheSwitch from "./CacheSwitch";
@@ -51,6 +52,8 @@ export default function ContentShow() {
           <TextField source="id" />
           <TextField source="title" />
           <TextField source="description" />
+          <UnixFieldAsDate source="createdAt" />
+          <UnixFieldAsDate source="updatedAt" />
           <ReferenceField source="theImport" reference="imports" link="show">
             <TextField source="title" />
           </ReferenceField>
@@ -63,6 +66,7 @@ export default function ContentShow() {
           <TextField source="cover" />
           <TextField source="lang" />
           <BooleanField source="shared" />
+          <TextField source="sourceUrl" />
           <ActionButton label={translate("resources.contents.action")} />
           <CacheSwitch label={translate("resources.contents.offline")} />
           <hr />

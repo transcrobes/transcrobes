@@ -1147,12 +1147,16 @@ export async function setContentConfigToStore(
   db: TranscrobesDatabase,
   contentConfig: ContentConfigType,
 ): Promise<boolean> {
-  await db.content_config.incrementalUpsert({
-    id: contentConfig.id.toString(),
-    configString: JSON.stringify(contentConfig),
-  });
-  // FIXME: what about false?
-  return true;
+  if (!contentConfig.id.toString()) {
+    console.warn("Trying to save a contentConfig without an id", contentConfig);
+    return false;
+  } else {
+    await db.content_config.incrementalUpsert({
+      id: contentConfig.id.toString(),
+      configString: JSON.stringify(contentConfig),
+    });
+    return true;
+  }
 }
 
 export async function submitActivityEvent(db: TranscrobesDatabase, activity: UserActivityType): Promise<boolean> {

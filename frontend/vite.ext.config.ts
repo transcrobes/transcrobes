@@ -5,7 +5,7 @@ import { resolve } from "path";
 import rollupNodePolyFill from "rollup-plugin-node-polyfills";
 import { defineConfig } from "vite";
 import svgr from "vite-plugin-svgr";
-import manifest from "./manifest.json";
+import manifest from "./manifest.config";
 
 const mode = process.env.NODE_ENV === "development" ? "development" : "production";
 
@@ -15,7 +15,6 @@ const replaceOptions: RollupReplaceOptions = {
 };
 
 export default defineConfig({
-  // root: resolve(__dirname, "src/extension"),
   envDir: resolve(__dirname),
   build: {
     outDir: resolve(__dirname, "extbuild"),
@@ -69,7 +68,6 @@ export default defineConfig({
     },
   },
   server: {
-    // port: 5000,
     host: "0.0.0.0",
     hmr: {
       port: 5555,
@@ -77,7 +75,6 @@ export default defineConfig({
   },
   plugins: [
     svgr(),
-    // react({ jsxRuntime: "classic" }),
     react(),
     // @ts-ignore
     replace(replaceOptions),

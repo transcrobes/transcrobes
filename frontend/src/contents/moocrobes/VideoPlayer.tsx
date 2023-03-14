@@ -1,10 +1,8 @@
-import Container from "@mui/material/Container";
-import Grid from "@mui/material/Grid";
+import { Box, Container, Grid } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import useEventListener from "@use-it/event-listener";
 import { forwardRef, ReactElement, useEffect, useImperativeHandle, useRef, useState } from "react";
 import ReactPlayer from "react-player";
-import { useParams } from "react-router-dom";
-import { makeStyles } from "tss-react/mui";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import Mouseover from "../../components/content/td/Mouseover";
 import TokenDetails from "../../components/content/td/TokenDetails";
@@ -12,13 +10,16 @@ import { videoReaderActions } from "../../features/content/videoReaderSlice";
 import useFullscreen from "../../hooks/useFullscreen";
 import useWindowDimensions from "../../hooks/WindowDimensions";
 import { overrideTextTrackListeners } from "../../lib/eventlisteners";
-import { ContentParams, DEFAULT_VIDEO_READER_CONFIG_STATE, KeyedModels } from "../../lib/types";
+import { DEFAULT_VIDEO_READER_CONFIG_STATE, KeyedModels } from "../../lib/types";
 import PrettoSlider, { ValueLabelComponent } from "./PrettoSlider";
 import SubtitleControl from "./SubtitleControl";
+import TranscrobesLayerPlayer from "../../extension/TranscrobesLayerPlayer";
 import VideoBottomControls from "./VideoBottomControls";
 import VideoCentralControls from "./VideoCentralControls";
 import VideoHeaderControls from "./VideoHeaderControls";
+import { Cue } from "webvtt-parser";
 
+ReactPlayer.addCustomPlayer(TranscrobesLayerPlayer as any); // FIXME: the upstream typing is wrong here
 overrideTextTrackListeners();
 
 let count = 0;
@@ -27,89 +28,6 @@ let timeoutId = 0;
 // FIXME: don't hardcode here
 const TIMER_CLEAR_PREVIOUS_MS = 5000;
 const SEEK_SECONDS = 5;
-
-const useStyles = makeStyles()((theme) => ({
-  playerContainer: {
-    overflow: "auto",
-  },
-  playerWrapper: {
-    width: "100%",
-    position: "relative",
-    [theme.breakpoints.down("md").toString() + " and (display-mode: !fullscreen)"]: {
-      margin: `${theme.spacing(1)} 0`,
-    },
-    [theme.breakpoints.up("sm").toString() + " and (display-mode: !fullscreen)"]: {
-      margin: `${theme.spacing(2)} 0`,
-    },
-  },
-  controlsWrapper: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    background: "rgba(0,0,0,0.4)",
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "space-between",
-  },
-  middleControls: {
-    [theme.breakpoints.down("md")]: {
-      padding: `0 ${theme.spacing(1)} ${theme.spacing(1)}`,
-    },
-    [theme.breakpoints.up("sm")]: {
-      padding: theme.spacing(2),
-    },
-  },
-  bottomWrapper: {
-    display: "flex",
-    flexDirection: "column",
-    [theme.breakpoints.down("md")]: {
-      padding: theme.spacing(1),
-    },
-    [theme.breakpoints.up("sm")]: {
-      padding: theme.spacing(2),
-    },
-  },
-  bottomControls: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  button: {
-    margin: theme.spacing(1),
-  },
-  select: {
-    justifyContent: "center",
-    color: "#777",
-    [theme.breakpoints.down("md")]: {
-      fontSize: 15,
-    },
-    [theme.breakpoints.up("sm")]: {
-      fontSize: 30,
-    },
-    transform: "scale(0.9)",
-    "&:hover": {
-      color: theme.palette.getContrastText(theme.palette.background.default),
-      transform: "scale(1)",
-    },
-  },
-  switch: {
-    justifyContent: "center",
-    color: "#777",
-    [theme.breakpoints.down("md")]: {
-      fontSize: 15,
-    },
-    [theme.breakpoints.up("sm")]: {
-      fontSize: 30,
-    },
-    transform: "scale(0.9)",
-    "&:hover": {
-      color: theme.palette.getContrastText(theme.palette.background.default),
-      transform: "scale(1)",
-    },
-  },
-}));
 
 function format(seconds: number) {
   if (isNaN(seconds)) {
@@ -126,8 +44,11 @@ function format(seconds: number) {
 }
 
 interface Props {
+  id: string;
+  topToolbar?: ReactElement;
   models: KeyedModels;
-  subsUrl: string;
+  subsUrl?: string;
+  cues?: Cue[];
   videoUrl: string;
   contentLabel?: string;
   srcLang?: string;
@@ -137,10 +58,16 @@ interface Props {
 export type VideoPlayerHandle = {
   shiftSubs: (delay: number) => void;
 };
-const VideoPlayer = forwardRef<VideoPlayerHandle, Props>(
-  ({ models, subsUrl, videoUrl, contentLabel, srcLang }, ref) => {
-    const { classes } = useStyles();
 
+export interface OnProgressProps {
+  played: number;
+  playedSeconds: number;
+  loaded: number;
+  loadedSeconds: number;
+}
+
+const VideoPlayer = forwardRef<VideoPlayerHandle, Props>(
+  ({ cues, models, subsUrl, videoUrl, contentLabel, srcLang, id, topToolbar }, ref) => {
     const playerRef = useRef<ReactPlayer>(null);
     const playerContainerRef = useRef<HTMLDivElement>(null);
     const [playing, setPlaying] = useState(true);
@@ -151,7 +78,6 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, Props>(
     const [currentPlaybackRate, setCurrentPlaybackRate] = useState(1.0);
     const dispatch = useAppDispatch();
 
-    const { id = "" } = useParams<ContentParams>();
     const readerConfig = useAppSelector((state) => state.videoReader[id] || DEFAULT_VIDEO_READER_CONFIG_STATE);
 
     useImperativeHandle(ref, () => ({
@@ -159,6 +85,13 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, Props>(
         shiftSubs(delay);
       },
     }));
+    useEffect(() => {
+      // This emulates the FilePlayer url getting loaded and causes
+      // our Transcrobifier player to get wired up properly and be "isReady"
+      if (playerRef?.current?.getInternalPlayer()) {
+        playerRef.current.getInternalPlayer().dispatchEvent(new Event("canplay"));
+      }
+    }, [playerRef?.current]);
 
     const [isFullscreen, toggleFullscreen] = useFullscreen();
     useEffect(() => {
@@ -176,10 +109,12 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, Props>(
     }, []);
 
     useEffect(() => {
-      const htmlTrack = playerContainerRef.current?.querySelector("track");
-      const textTrack = htmlTrack?.track;
+      const htmlTrack = (
+        (playerRef.current?.getInternalPlayer() as HTMLVideoElement) || playerContainerRef.current
+      )?.querySelector("track");
+      const textTrack = htmlTrack?.track || (playerRef.current?.getInternalPlayer()?.textTracks[0] as TextTrack);
       if (textTrack) {
-        textTrack.clearEventListeners("cuechange");
+        textTrack.oncuechange = null;
         readContent(textTrack);
       }
     }, [readerConfig.playbackRate, readerConfig.subPlaybackRate]);
@@ -247,19 +182,18 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, Props>(
 
     function doCueChange(e: Event): void {
       const cues = (e?.currentTarget as TextTrack).activeCues;
-      if (cues && cues[0] !== undefined) {
+      if (cues?.[0]) {
         clearTimeout(timeoutId);
         setCurrentCue((cues[0] as VTTCue).text);
         setCurrentPlaybackRate(readerConfig.subPlaybackRate);
       } else {
         // keep the subs until they get replaced or TIMER_CLEAR_PREVIOUS_MS after they would have been removed
-        const mto = window.setTimeout(() => {
+        timeoutId = window.setTimeout(() => {
           if ((() => playing)()) {
             setCurrentCue("");
             setCurrentPlaybackRate(readerConfig.playbackRate);
           }
         }, TIMER_CLEAR_PREVIOUS_MS);
-        timeoutId = mto;
       }
       return;
     }
@@ -270,7 +204,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, Props>(
       loaded: number;
       loadedSeconds: number;
     }): void {
-      if (count > 2) {
+      if (count > 10) {
         setControlsVisibility("hidden");
         count = 0;
       }
@@ -285,17 +219,18 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, Props>(
 
     function readContent(track: TextTrack) {
       if (track.oncuechange) return;
-
-      track.addEventListener("cuechange", doCueChange, true);
+      track.oncuechange = doCueChange;
     }
 
     function handleReady() {
-      const htmlTrack = playerContainerRef.current?.querySelector("track");
-      const textTrack = htmlTrack?.track;
+      const htmlTrack = (
+        (playerRef.current?.getInternalPlayer() as HTMLVideoElement) || playerContainerRef.current
+      )?.querySelector("track");
+      const textTrack = htmlTrack?.track || (playerRef.current?.getInternalPlayer()?.textTracks[0] as TextTrack);
       if (textTrack && !track) {
         setTrack(textTrack);
         textTrack.mode = "hidden";
-        if (htmlTrack?.readyState === 2) {
+        if (!htmlTrack || htmlTrack.readyState === 2) {
           readContent(textTrack);
           if (readerConfig.subDelay !== 0) {
             if (textTrack.cues) {
@@ -306,10 +241,10 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, Props>(
             }
           }
         } else {
-          htmlTrack.addEventListener("load", () => {
+          htmlTrack?.addEventListener("load", () => {
             readContent(textTrack);
             if (readerConfig.subDelay !== 0) {
-              if (textTrack.cues) {
+              if (textTrack.cues && textTrack.cues.length > 0) {
                 Array.from(textTrack.cues).forEach((cue) => {
                   cue.startTime += readerConfig.subDelay;
                   cue.endTime += readerConfig.subDelay;
@@ -399,16 +334,26 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, Props>(
       readerConfig.timeDisplayFormat == "normal" ? format(currentTime) : `-${format(duration - currentTime)}`;
     const totalDuration = format(duration);
     const dimensions = useWindowDimensions();
-
+    const theme = useTheme();
     return (
       <>
-        <Container
-          sx={{
-            padding: 0,
-          }}
-        >
-          <div ref={playerContainerRef} className={classes.playerContainer}>
-            <div onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave} className={classes.playerWrapper}>
+        <Container sx={{ padding: 0 }}>
+          <Box ref={playerContainerRef} sx={{ overflow: "hidden" }}>
+            <Box
+              onMouseMove={handleMouseMove}
+              onMouseLeave={handleMouseLeave}
+              sx={{
+                width: "100%",
+                // FIXME: hack to decide whether we are in TC or not - topToolbar is only when used as extension
+                position: topToolbar ? undefined : "relative",
+                [theme.breakpoints.down("md").toString() + " and (display-mode: !fullscreen)"]: {
+                  margin: `${theme.spacing(1)} 0`,
+                },
+                [theme.breakpoints.up("sm").toString() + " and (display-mode: !fullscreen)"]: {
+                  margin: `${theme.spacing(2)} 0`,
+                },
+              }}
+            >
               {/* {subsPosition === "above" && (
               <Grid container direction="row" alignItems="center" justifyContent="center">
                 <SubtitleControl classes={{ color: "#fff" }} currentCue={currentCue} />
@@ -416,7 +361,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, Props>(
             )} */}
 
               <ReactPlayer
-                ref={playerRef as any}
+                ref={playerRef}
                 width="100%"
                 height="100%"
                 url={videoUrl}
@@ -426,9 +371,11 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, Props>(
                 volume={readerConfig.volume}
                 muted={readerConfig.muted}
                 onProgress={handleProgress}
-                progressInterval={2000}
+                progressInterval={500}
                 onReady={handleReady}
                 config={{
+                  // @ts-ignore
+                  transcrobesLayer: { cues },
                   file: {
                     attributes: {
                       crossOrigin: "anonymous",
@@ -436,7 +383,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, Props>(
                     tracks: [
                       {
                         kind: "subtitles",
-                        src: subsUrl,
+                        src: subsUrl || "",
                         default: true,
                         label: contentLabel || "",
                         srcLang: srcLang || "",
@@ -445,7 +392,19 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, Props>(
                   },
                 }}
               />
-              <div className={classes.controlsWrapper}>
+              <Box
+                sx={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  background: "rgba(0,0,0,0.4)",
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "space-between",
+                }}
+              >
                 <Grid
                   container
                   direction="column"
@@ -458,10 +417,11 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, Props>(
                 >
                   {readerConfig.subPosition === "top" && currentCue && (
                     <Grid container direction="row" alignItems="center" justifyContent="center">
-                      <SubtitleControl models={models} currentCue={currentCue} />
+                      <SubtitleControl id={id} models={models} currentCue={currentCue} />
                     </Grid>
                   )}
 
+                  {controlsVisibility === "visible" && topToolbar}
                   {controlsVisibility === "visible" && (
                     <>
                       {dimensions.width > 600 && <VideoHeaderControls title={contentLabel || ""} />}
@@ -480,12 +440,26 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, Props>(
                     direction="row"
                     justifyContent="space-between"
                     alignItems="center"
-                    className={classes.middleControls}
+                    sx={{
+                      [theme.breakpoints.down("md")]: {
+                        padding: `0 ${theme.spacing(1)} ${theme.spacing(1)}`,
+                      },
+                      [theme.breakpoints.up("sm")]: {
+                        padding: theme.spacing(2),
+                      },
+                    }}
                   >
                     {readerConfig.subPosition === "bottom" && currentCue && (
-                      <Grid item xs={12}>
+                      <Grid
+                        sx={{
+                          position: readerConfig.subRaise !== 0 ? "relative" : undefined,
+                          bottom: readerConfig.subRaise !== 0 ? `${readerConfig.subRaise}px` : undefined,
+                        }}
+                        item
+                        xs={12}
+                      >
                         <Grid container direction="row" alignItems="flex-end" justifyContent="center">
-                          <SubtitleControl models={models} currentCue={currentCue} />
+                          <SubtitleControl id={id} models={models} currentCue={currentCue} />
                         </Grid>
                       </Grid>
                     )}
@@ -509,6 +483,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, Props>(
                     )}
                     {controlsVisibility === "visible" && (
                       <VideoBottomControls
+                        id={id}
                         containerRef={playerContainerRef}
                         isFullscreen={isFullscreen}
                         playing={playing}
@@ -528,16 +503,16 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, Props>(
                     )}
                   </Grid>
                 </Grid>
-              </div>
-            </div>
+              </Box>
+            </Box>
             {readerConfig.subPosition === "under" && currentCue && (
               <Grid container direction="row" alignItems="center" justifyContent="center">
-                <SubtitleControl models={models} currentCue={currentCue} />
+                <SubtitleControl id={id} models={models} currentCue={currentCue} />
               </Grid>
             )}
             <TokenDetails readerConfig={readerConfig} />
             <Mouseover readerConfig={readerConfig} />
-          </div>
+          </Box>
         </Container>
       </>
     );

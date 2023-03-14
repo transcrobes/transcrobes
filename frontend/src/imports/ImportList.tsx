@@ -13,6 +13,7 @@ import { ContentStatsField } from "../components/ContentStatsField";
 import HelpButton from "../components/HelpButton";
 import { ListEmpty } from "../components/ListEmpty";
 import { ProcessingField } from "../components/ProcessingField";
+import UnixFieldAsDate from "../components/UnixFieldAsDate";
 import WatchDemo from "../components/WatchDemo";
 import { DOCS_DOMAIN, IMPORTS_YT_VIDEO, PROCESS_TYPE, reverseEnum } from "../lib/types";
 
@@ -38,6 +39,7 @@ export default function ImportList() {
     >
       <Datagrid rowClick="show">
         <TextField source="title" />
+        <UnixFieldAsDate source="createdAt" />
         <FunctionField
           source="processType"
           render={(record: any) => translate(`widgets.process_type.${PROCESS_TYPE[record.processType].toLowerCase()}`)}

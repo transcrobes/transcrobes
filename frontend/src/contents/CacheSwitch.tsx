@@ -84,7 +84,10 @@ export default function CacheSwitch({ label }: { label?: string }): ReactElement
       }
     }
   }, [cached]);
-  if (content.processing === PROCESSING.FINISHED) {
+  if (
+    content.processing === PROCESSING.FINISHED &&
+    !(content.sourceUrl && content.contentType === CONTENT_TYPE.VIDEO)
+  ) {
     return (
       <Switch
         checked={cached}

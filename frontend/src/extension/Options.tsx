@@ -33,6 +33,7 @@ import { BackgroundWorkerProxy, setPlatformHelper } from "../lib/proxies";
 import {
   BROCROBES_YT_VIDEO,
   DEFAULT_EXTENSION_READER_CONFIG_STATE,
+  DEFAULT_SERVER_URL,
   DOCS_DOMAIN,
   ExtensionReaderState,
   EXTENSION_READER_ID,
@@ -44,8 +45,6 @@ import { RxDBDataProviderParams } from "../ra-data-rxdb";
 import Initialisation from "./components/Initialisation";
 import Intro from "./components/Intro";
 import ExtensionConfig from "./ExtensionReaderConfig";
-
-const DEFAULT_SERVER_URL = `http${IS_DEV ? "" : "s"}://${SITE_DOMAIN}`;
 
 type FormProps = {
   username: string;
@@ -130,11 +129,9 @@ export default function Options(): ReactElement {
     (async () => {
       dispatch(setUser(await getUserDexie()));
       const userData = store.getState().userData;
-      // setLocale(userData.user.toLang);
       setPassword(userData.password);
       setUsername(userData.username);
       setBaseUrl(userData.baseUrl || DEFAULT_SERVER_URL);
-
       const linit = await isInitialisedAsync(userData.username);
       setInited(linit);
       let conf: ExtensionReaderState = { ...DEFAULT_EXTENSION_READER_CONFIG_STATE, id };
@@ -143,6 +140,7 @@ export default function Options(): ReactElement {
         await refreshDictionaries(store, proxy, userData.user.fromLang);
         conf = await getRefreshedState<ExtensionReaderState>(proxy, DEFAULT_EXTENSION_READER_CONFIG_STATE, id);
       }
+      setLocale(conf.locale);
       dispatch(changeTheme(conf.themeName));
       dispatch(extensionReaderActions.setState({ id, value: conf }));
       setLoaded(true);
@@ -157,6 +155,9 @@ export default function Options(): ReactElement {
       setMessage("");
     }
   }, [userData.error]);
+  useEffect(() => {
+    dispatch(extensionReaderActions.setLocale({ id, value: locale }));
+  }, [locale]);
   useEffect(() => {
     if (loaded) {
       (async () => {

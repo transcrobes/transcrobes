@@ -6,6 +6,7 @@ import preset from "jss-preset-default";
 import Polyglot from "node-polyglot";
 import { I18nContextProvider } from "react-admin";
 import { createRoot } from "react-dom/client";
+import { QueryClient, QueryClientProvider } from "react-query";
 import { Provider } from "react-redux";
 import { AdminStore, store } from "../app/createStore";
 import { ETFStyles, ETFStylesProps } from "../components/Common";
@@ -22,9 +23,9 @@ import { setUser } from "../features/user/userSlice";
 import { popupDarkTheme, popupLightTheme } from "../layout/themes";
 import { sessionActivityUpdate, submitActivity } from "../lib/componentMethods";
 import { ensureDefinitionsLoaded, refreshDictionaries } from "../lib/dictionary";
-import { isScriptioContinuo, missingWordIdsFromModels, toEnrich, UUID } from "../lib/funclib";
+import { getLanguageFromNavigator, isScriptioContinuo, missingWordIdsFromModels, toEnrich, UUID } from "../lib/funclib";
 import { NAME_PREFIX } from "../lib/interval/interval-decorator";
-import { enrichChildren, getI18nProvider, getMessages } from "../lib/libMethods";
+import { enrichChildren, getI18nProvider, getMessages, streamingSite } from "../lib/libMethods";
 import { AbstractWorkerProxy, BackgroundWorkerProxy, setPlatformHelper } from "../lib/proxies";
 import { observerFunc } from "../lib/stats";
 import {
@@ -32,8 +33,8 @@ import {
   ComponentFunction,
   DEFAULT_EXTENSION_READER_CONFIG_STATE,
   DOCS_DOMAIN,
-  ExtensionReaderState,
   EXTENSION_READER_ID,
+  ExtensionReaderState,
   KeyedModels,
   ModelType,
   SerialisableDayCardWords,
@@ -42,20 +43,24 @@ import {
 } from "../lib/types";
 import ContentAnalysisAccuracyBrocrobes from "./ContentAnalysisAccuracyBrocrobes";
 import ContentAnalysisBrocrobes from "./ContentAnalysisBrocrobes";
+import { streamOverrides } from "./streaming";
+import VideoPlayerScreen from "./VideoPlayerScreen";
 
 const DATA_SOURCE = "content.ts";
 const KEEPALIVE_QUERY_FREQUENCY_MS = 5000;
 
+const queryClient = new QueryClient();
 const transcroberObserver: IntersectionObserver = new IntersectionObserver(onEntryId, {
   threshold: [0.9],
 });
 
-createRoot(document.body.appendChild(document.createElement("div"))!).render(
-  <Provider store={store}>
-    <Loading position="fixed" />
-  </Provider>,
-);
-
+if (!streamingSite(location.href)) {
+  createRoot(document.body.appendChild(document.createElement("div"))!).render(
+    <Provider store={store}>
+      <Loading position="fixed" />
+    </Provider>,
+  );
+}
 store.dispatch(setLoading(true));
 
 const models: KeyedModels = {};
@@ -115,34 +120,23 @@ async function ensureAllLoaded(platformHelper: AbstractWorkerProxy, store: Admin
 
   await refreshDictionaries(store, platformHelper, fromLang());
 }
-
-proxy.sendMessagePromise<UserState>({ source: DATA_SOURCE, type: "getUser", value: "" }).then((userData) => {
+proxy.sendMessagePromise<UserState>({ source: DATA_SOURCE, type: "getUser" }).then((userData) => {
   if (!userData.username || !userData.password || !userData.baseUrl) {
-    // FIXME: externalise this?
-    let language = "en";
-    for (const lang of navigator.languages) {
-      if (lang.startsWith("en")) {
-        break;
-      } else if (lang.startsWith("zh")) {
-        language = "zh-Hans";
-        break;
-      }
-    }
-    const polyglot = new Polyglot({ phrases: getMessages(language) });
     store.dispatch(setLoading(undefined));
+    const polyglot = new Polyglot({ phrases: getMessages(getLanguageFromNavigator(navigator)) });
     alert(polyglot.t("screen.extension.missing_account", { docs_domain: DOCS_DOMAIN }));
     throw new Error("Unable to find the current username");
   }
   // FIXME: it is DANGEROUS to use this here, as the async thunks do get and set dexie!!!
   store.dispatch(setUser(userData));
 
-  // FIXME: this is a hack to get the user data into the i18n provider
-  const i18nProvider = getI18nProvider(userData.user.fromLang);
-
   proxy.asyncInit({ username: userData.username }).then(() => {
     ensureAllLoaded(proxy, store).then(() => {
       readerConfig = store.getState().extensionReader[id];
-      enrichChildren(document.body, transcroberObserver, userData.user.fromLang);
+      const i18nProvider = getI18nProvider(readerConfig.locale || userData.user.toLang);
+      if (!streamingSite(location.href)) {
+        enrichChildren(document.body, transcroberObserver, userData.user.fromLang);
+      }
       document.addEventListener("click", () => {
         store.dispatch(setTokenDetails(undefined));
       });
@@ -153,13 +147,29 @@ proxy.sendMessagePromise<UserState>({ source: DATA_SOURCE, type: "getUser", valu
         .attach()
         .update({ ...readerConfig, scriptioContinuo: isScriptioContinuo(userData.user.fromLang) }).classes;
 
+      const baseTheme = readerConfig.themeName === "dark" ? popupDarkTheme : popupLightTheme;
+      let themeConfig: any = baseTheme;
+      if (streamingSite(location.href)) {
+        themeConfig = {
+          ...baseTheme,
+          components: { ...baseTheme.components, ...streamOverrides.components },
+          typography: { ...baseTheme.typography, ...streamOverrides.typography },
+        };
+      }
+
       createRoot(document.body.appendChild(document.createElement("div"))!).render(
         <Provider store={store}>
-          <ThemeProvider theme={createTheme(readerConfig.themeName === "dark" ? popupDarkTheme : popupLightTheme)}>
+          <ThemeProvider theme={createTheme({ ...themeConfig })}>
             <I18nContextProvider value={i18nProvider}>
               <ScopedCssBaseline>
                 <TokenDetails readerConfig={readerConfig} />
                 <Mouseover readerConfig={readerConfig} />
+                {!!streamingSite(location.href) && (
+                  // FIXME: find out why the queryclientprovider is necessary...
+                  <QueryClientProvider client={queryClient}>
+                    <VideoPlayerScreen proxy={proxy} />
+                  </QueryClientProvider>
+                )}
                 {readerConfig.analysisPosition !== "none" && <ContentAnalysisBrocrobes />}
                 {userData.showResearchDetails && <ContentAnalysisAccuracyBrocrobes proxy={proxy} />}
               </ScopedCssBaseline>

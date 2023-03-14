@@ -26,7 +26,7 @@ export default function ImportCreate() {
         <Typography sx={{ paddingBottom: "1em" }}>
           {translate("resources.imports.create.form_description_a")}{" "}
           <Typography component={"span"} sx={{ fontWeight: "bold" }}>
-            .csv, .txt, .srt / .vtt and .epub
+            .csv, .txt, .srt / .vtt / .ass and .epub
           </Typography>{" "}
           {translate("resources.imports.create.form_description_b")}{" "}
           <a target="_blank" href={`//${DOCS_DOMAIN}/page/software/configure/imports/`}>
@@ -41,7 +41,7 @@ export default function ImportCreate() {
         <FileInput
           source="importFile"
           maxSize={MAX_IMPORT_SIZE_BYTES}
-          accept=".txt,.csv,.epub,.vtt,.srt"
+          accept=".txt,.csv,.epub,.vtt,.srt,.ass,.xml"
           validate={[required()]}
         >
           <FileField source="src" />

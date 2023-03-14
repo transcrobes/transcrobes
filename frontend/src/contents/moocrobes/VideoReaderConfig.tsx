@@ -1,20 +1,21 @@
 import { ToggleButton, ToggleButtonGroup } from "@mui/material";
 import React, { ReactElement } from "react";
 import { useTranslate } from "react-admin";
-import { useParams } from "react-router-dom";
 import { makeStyles } from "tss-react/mui";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import Conftainer from "../../components/Conftainer";
+import FineControl from "../../components/FineControl";
 import FivePercentFineControl from "../../components/FivePercentFineControl";
 import { videoReaderActions } from "../../features/content/videoReaderSlice";
 import { isOnFullscreen } from "../../hooks/useFullscreen";
-import { ContentParams, DEFAULT_VIDEO_READER_CONFIG_STATE, SubPosition } from "../../lib/types";
+import { DEFAULT_VIDEO_READER_CONFIG_STATE, SubPosition } from "../../lib/types";
 import ReaderConfig from "../common/ContentConfig";
 import PlaybackRate from "./PlaybackRate";
 import SubDelay from "./SubDelay";
 import SubPlaybackRate from "./SubPlaybackRate";
 
 export interface VideoReaderConfigProps {
+  id: string;
   containerRef?: React.RefObject<HTMLDivElement>;
   onSubDelayChange: (delay: number) => void;
 }
@@ -38,10 +39,9 @@ const useStyles = makeStyles()((theme) => ({
   button: { width: "100%" },
 }));
 
-export default function VideoConfig({ containerRef, onSubDelayChange }: VideoReaderConfigProps): ReactElement {
+export default function VideoConfig({ containerRef, onSubDelayChange, id }: VideoReaderConfigProps): ReactElement {
   const { classes: localClasses } = useStyles();
   const translate = useTranslate();
-  const { id = "" } = useParams<ContentParams>();
   const readerConfig = useAppSelector((state) => state.videoReader[id] || { ...DEFAULT_VIDEO_READER_CONFIG_STATE, id });
 
   const dispatch = useAppDispatch();
@@ -98,6 +98,41 @@ export default function VideoConfig({ containerRef, onSubDelayChange }: VideoRea
           className={localClasses.fineControlIcons}
         />
       </Conftainer>
+      <Conftainer label={translate("screens.moocrobes.config.subs_background_blur.title")} id="sbb">
+        <ToggleButtonGroup
+          className={localClasses.button}
+          value={readerConfig.subBackgroundBlur}
+          exclusive
+          onChange={(event: React.MouseEvent<HTMLElement>, value: boolean) => {
+            dispatch(actions.setSubBackgroundBlur({ id, value }));
+          }}
+        >
+          <ToggleButton className={localClasses.button} value={false}>
+            {translate("screens.moocrobes.config.subs_background_blur.none")}
+          </ToggleButton>
+          <ToggleButton className={localClasses.button} value={true}>
+            {translate("screens.moocrobes.config.subs_background_blur.blur")}
+          </ToggleButton>
+        </ToggleButtonGroup>
+      </Conftainer>
+      <Conftainer label={translate("screens.moocrobes.config.subs_raise.title")} id="glossFontSize">
+        <FineControl
+          title={""}
+          labelLess={translate("widgets.fine_control.less", { amount: 10 })}
+          labelMore={translate("widgets.fine_control.more", { amount: 10 })}
+          className={""}
+          isPercent={false}
+          onLess={() => {
+            console.log("onLess", readerConfig.subRaise);
+            dispatch(actions.setSubRaise({ id, value: (readerConfig.subRaise || 0) - 10 }));
+          }}
+          onMore={() => {
+            dispatch(actions.setSubRaise({ id, value: (readerConfig.subRaise || 0) + 10 }));
+          }}
+          value={readerConfig.subRaise || 0}
+        />
+      </Conftainer>
+
       <ReaderConfig
         classes={localClasses}
         containerRef={containerRef}

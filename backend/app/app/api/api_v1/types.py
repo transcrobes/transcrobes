@@ -500,6 +500,8 @@ class Imports(CommonType):
     import_file: Optional[str] = ""
     analysis: Optional[str] = ""
     shared: Optional[bool] = False
+    source_url: Optional[str] = ""
+    extra_data: Optional[str] = ""
 
     @staticmethod
     def from_model(obj):
@@ -509,6 +511,8 @@ class Imports(CommonType):
         out.import_file = obj.import_file
         out.analysis = obj.analysis
         out.shared = obj.shared
+        out.source_url = obj.source_url
+        out.extra_data = obj.extra_data
         return out
 
 
@@ -581,6 +585,8 @@ class Contents(CommonType):
     cover: Optional[str] = ""
     lang: Optional[str] = ""
     shared: Optional[bool] = False
+    source_url: Optional[str] = ""
+    extra_data: Optional[str] = ""
 
     @staticmethod
     def from_model(obj: models.Content):
@@ -592,6 +598,8 @@ class Contents(CommonType):
         out.cover = obj.cover
         out.lang = obj.language
         out.shared = obj.shared
+        out.source_url = obj.source_url
+        out.extra_data = obj.extra_data
         return out
 
 

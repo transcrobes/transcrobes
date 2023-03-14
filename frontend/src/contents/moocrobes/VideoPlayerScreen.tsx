@@ -3,13 +3,13 @@ import Button from "@mui/material/Button";
 import { ReactElement, useEffect, useRef, useState } from "react";
 import { TopToolbar, useGetOne, useTranslate } from "react-admin";
 import { useParams } from "react-router-dom";
-import { makeStyles } from "tss-react/mui";
 import { store } from "../../app/createStore";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import HelpButton from "../../components/HelpButton";
 import WatchDemo from "../../components/WatchDemo";
 import { getRefreshedState } from "../../features/content/contentSlice";
 import { videoReaderActions } from "../../features/content/videoReaderSlice";
+import useWindowDimensions from "../../hooks/WindowDimensions";
 import { ensureDefinitionsLoaded } from "../../lib/dictionary";
 import { getSubsURL, missingWordIdsFromModels } from "../../lib/funclib";
 import { fetchPlus } from "../../lib/libMethods";
@@ -27,16 +27,6 @@ import {
 import VideoPlayer, { VideoPlayerHandle } from "./VideoPlayer";
 import VideoReaderConfigLauncher from "./VideoReaderConfigLauncher";
 
-const useStyles = makeStyles()({
-  button: { padding: "2em" },
-  input: { display: "none" },
-  toolbar: {
-    justifyContent: "space-between",
-    alignItems: "center",
-    maxHeight: "64px",
-  },
-});
-
 export default function VideoPlayerScreen({ proxy }: ContentProps): ReactElement {
   const { id = "" } = useParams<ContentParams>();
   const [fileURL, setFileURL] = useState<string>("");
@@ -45,7 +35,8 @@ export default function VideoPlayerScreen({ proxy }: ContentProps): ReactElement
   const dispatch = useAppDispatch();
   const definitions = useAppSelector((state) => state.definitions);
   const translate = useTranslate();
-  const { classes } = useStyles();
+
+  const dims = useWindowDimensions();
 
   function handleFileSelect(files: FileList | null): void {
     if (files && files.length > 0) {
@@ -59,14 +50,15 @@ export default function VideoPlayerScreen({ proxy }: ContentProps): ReactElement
   useEffect(() => {
     if (!proxy.loaded) return;
     (async () => {
-      const conf = await getRefreshedState<VideoReaderState>(proxy, DEFAULT_VIDEO_READER_CONFIG_STATE, id);
+      const defConfig = {
+        ...DEFAULT_VIDEO_READER_CONFIG_STATE,
+        fontSize: dims.width < 1000 ? 1.5 : dims.width < 1500 ? 2 : 2.6,
+      };
+      const conf = await getRefreshedState<VideoReaderState>(proxy, defConfig, id);
       dispatch(videoReaderActions.setState({ id, value: conf }));
-
       const currentModels = await fetchPlus(`${getSubsURL(id)}${SUBS_DATA_SUFFIX}`);
       setModels(currentModels);
-
       const uniqueIds = missingWordIdsFromModels(currentModels, definitions);
-
       ensureDefinitionsLoaded(proxy, [...uniqueIds], store);
     })();
   }, [proxy.loaded]);
@@ -75,8 +67,15 @@ export default function VideoPlayerScreen({ proxy }: ContentProps): ReactElement
   const vpHandle = useRef<VideoPlayerHandle>(null);
   return (
     <>
-      <TopToolbar className={classes.toolbar}>
+      <TopToolbar
+        sx={{
+          justifyContent: "space-between",
+          alignItems: "center",
+          maxHeight: "64px",
+        }}
+      >
         <VideoReaderConfigLauncher
+          id={id}
           onSubDelayChange={(delay: number) => {
             if (vpHandle.current) {
               vpHandle.current.shiftSubs(delay);
@@ -88,7 +87,7 @@ export default function VideoPlayerScreen({ proxy }: ContentProps): ReactElement
         <HelpButton url={helpUrl} />
       </TopToolbar>
       {!fileURL ? (
-        <Container className={classes.button}>
+        <Container sx={{ padding: "2em" }}>
           <label htmlFor="file-input">
             <Button variant="outlined" component="span">
               {translate("screens.moocrobes.load_video_file")}
@@ -98,12 +97,13 @@ export default function VideoPlayerScreen({ proxy }: ContentProps): ReactElement
             id="file-input"
             type="file"
             accept="video/*"
-            className={classes.input}
+            style={{ display: "none" }}
             onChange={(e) => handleFileSelect(e.target.files)}
           />
         </Container>
       ) : (
         <VideoPlayer
+          id={id}
           models={models}
           ref={vpHandle as any}
           subsUrl={getSubsURL(id)}

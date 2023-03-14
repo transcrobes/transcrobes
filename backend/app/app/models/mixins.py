@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import annotations
 
-from sqlalchemy import Column
+from sqlalchemy import Column, Index, func
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.orm import declarative_mixin, relationship
 from sqlalchemy.orm.decl_api import declared_attr
@@ -83,13 +83,16 @@ class JSONLookupMixin:
     id = Column(Integer, primary_key=True)
     source_text = Column(String(2000), nullable=False, index=True)
     response_json = Column(String(25000), nullable=False)
-    # TODO: alembic doesn't know how to do this, so they were added manually :-(
-    # idx_lower = Index(None, func.lower(source_text))
+
+    @classmethod
+    def lower_index(cls, name):
+        return Index(f"ix_{name}_source_text_lower", func.lower("source_text"))
 
 
 @declarative_mixin
 class CachedAPIJSONLookupMixin(JSONLookupMixin):
     unique = UniqueConstraint("source_text", "from_lang", "to_lang")
+    cached_to_from = Index("cach_cached__6fe42c_idx", "cached_date", "from_lang", "to_lang")
     # TODO: alembic doesn't know how to do this, so it was added manually :-(
     # idx_lower = Index(None, func.lower("source_text"), "from_lang", "to_lang")
 
@@ -104,3 +107,7 @@ class CachedAPIJSONLookupMixin(JSONLookupMixin):
         server_default=utcnow(),
         index=True,
     )
+
+    @classmethod
+    def lower_index(cls, name):
+        return Index(f"ix_{name}_source_text_lower", func.lower("source_text"), "from_lang", "to_lang")

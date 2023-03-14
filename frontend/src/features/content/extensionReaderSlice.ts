@@ -5,6 +5,7 @@ import {
   ExtensionReaderState,
   EXTENSION_READER_TYPE,
   GenericState,
+  SystemLanguage,
   ThemeName,
 } from "../../lib/types";
 import { ContentConfigPayload, createGenericSlice } from "./contentSlice";
@@ -17,6 +18,10 @@ const extensionReaderSlice = createGenericSlice({
     setThemeName(state: GenericState<ExtensionReaderState>, action: PayloadAction<ContentConfigPayload<ThemeName>>) {
       state[action.payload.id] ??= DEFAULT_EXTENSION_READER_CONFIG_STATE;
       state[action.payload.id].themeName = action.payload.value;
+    },
+    setLocale(state: GenericState<ExtensionReaderState>, action: PayloadAction<ContentConfigPayload<SystemLanguage>>) {
+      state[action.payload.id] ??= DEFAULT_EXTENSION_READER_CONFIG_STATE;
+      state[action.payload.id].locale = action.payload.value;
     },
     setShowSuggestions(
       state: GenericState<ExtensionReaderState>,

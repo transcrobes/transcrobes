@@ -12,15 +12,15 @@ import Slider from "@mui/material/Slider";
 import Typography from "@mui/material/Typography";
 import React, { ReactElement } from "react";
 import { Button as RAButton, useTranslate } from "react-admin";
-import { useParams } from "react-router-dom";
 import { makeStyles } from "tss-react/mui";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import { videoReaderActions } from "../../features/content/videoReaderSlice";
-import { ContentParams, DEFAULT_VIDEO_READER_CONFIG_STATE } from "../../lib/types";
+import { DEFAULT_VIDEO_READER_CONFIG_STATE } from "../../lib/types";
 import { VideoReaderConfigProps } from "./VideoReaderConfig";
-import VideoConfigLauncher from "./VideoReaderConfigLauncher";
+import VideoReaderConfigLauncher from "./VideoReaderConfigLauncher";
 
 interface Props extends VideoReaderConfigProps {
+  id: string;
   elapsedTime: string;
   playing: boolean;
   totalDuration: string;
@@ -49,11 +49,11 @@ const useStyles = makeStyles()((theme) => {
       // FIXME: should this colour be changeable?
       color: "#fff",
       [theme.breakpoints.down("md")]: {
-        fontSize: "0.5rem",
+        fontSize: "0.5em",
         marginLeft: theme.spacing(1),
       },
       [theme.breakpoints.up("md")]: {
-        fontSize: "1rem",
+        fontSize: "1em",
         marginLeft: theme.spacing(2),
       },
     },
@@ -81,6 +81,7 @@ const useStyles = makeStyles()((theme) => {
 });
 
 function VideoBottomControls({
+  id,
   elapsedTime,
   playing,
   totalDuration,
@@ -93,7 +94,6 @@ function VideoBottomControls({
   ...props
 }: Props): ReactElement {
   const { classes: localClasses } = useStyles();
-  const { id = "" } = useParams<ContentParams>();
   const { muted, volume, timeDisplayFormat } = useAppSelector(
     (state) => state.videoReader[id] || DEFAULT_VIDEO_READER_CONFIG_STATE,
   );
@@ -149,7 +149,7 @@ function VideoBottomControls({
             </Typography>
           </Button>
 
-          <VideoConfigLauncher {...props} />
+          <VideoReaderConfigLauncher {...props} id={id} />
         </Grid>
       </Grid>
       <Grid item>

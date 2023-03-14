@@ -16,7 +16,7 @@ from app import models, schemas, stats
 from app.api import deps
 from app.core.config import settings
 from app.data.models import DATA_JS_SUFFIX, DATA_JSON_SUFFIX, ENRICH_JSON_SUFFIX, PARSE_JSON_SUFFIX
-from app.models.user import absolute_resources_path
+from app.models.user import SHARED_USER_ID, absolute_resources_path
 from fastapi import APIRouter, Depends
 from fastapi.exceptions import HTTPException
 from fastapi.responses import FileResponse, Response
@@ -103,13 +103,7 @@ async def available_languages():
     return JSONResponse(list(settings.LANG_PAIRS.keys()))
 
 
-@router.get("/content/{resource_path:path}", name="serve_content")
-async def serve_content(  # pylint: disable=R0914  # FIXME: consider reducing
-    resource_path: str,
-    # current_user: models.AuthUser = Depends(deps.get_current_good_user),
-    current_user: models.AuthUser = Depends(deps.get_current_good_tokenpayload),
-):
-    destination = absolute_resources_path(current_user.id, resource_path)
+async def get_content_response(destination, resource_path):
     destination_no_data_suffix = destination.removesuffix(DATA_JS_SUFFIX).removesuffix(DATA_JSON_SUFFIX)
     is_data_file_request = destination.endswith(DATA_JS_SUFFIX) or destination.endswith(DATA_JSON_SUFFIX)
 
@@ -127,8 +121,8 @@ async def serve_content(  # pylint: disable=R0914  # FIXME: consider reducing
     parse_path = f"{destination_no_data_suffix}{PARSE_JSON_SUFFIX}"
     enrich_path = f"{destination_no_data_suffix}{ENRICH_JSON_SUFFIX}"
 
-    if not os.path.isfile(parse_path):
-        logger.warning(f"Can't find {parse_path=}")
+    if not os.path.isfile(parse_path) or not os.path.isfile(enrich_path):
+        logger.warning(f"Can't find {parse_path=} or {enrich_path=}")
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Resource specified is not a file {resource_path=}",
@@ -171,3 +165,23 @@ async def serve_content(  # pylint: disable=R0914  # FIXME: consider reducing
             return resp
         else:
             return JSONResponse(combined)
+
+
+@router.get("/sharedcontent/{resource_path:path}", name="serve_shared_content")
+async def serve_shared_content(  # pylint: disable=R0914  # FIXME: consider reducing
+    resource_path: str,
+    # current_user: models.AuthUser = Depends(deps.get_current_good_user),
+    current_user: models.AuthUser = Depends(deps.get_current_good_tokenpayload),
+):
+    destination = absolute_resources_path(SHARED_USER_ID, resource_path)
+    return await get_content_response(destination, resource_path)
+
+
+@router.get("/content/{resource_path:path}", name="serve_content")
+async def serve_content(  # pylint: disable=R0914  # FIXME: consider reducing
+    resource_path: str,
+    # current_user: models.AuthUser = Depends(deps.get_current_good_user),
+    current_user: models.AuthUser = Depends(deps.get_current_good_tokenpayload),
+):
+    destination = absolute_resources_path(current_user.id, resource_path)
+    return await get_content_response(destination, resource_path)

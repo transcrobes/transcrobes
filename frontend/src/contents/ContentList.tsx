@@ -18,6 +18,7 @@ import ContentValueField from "../components/ContentValueField";
 import HelpButton from "../components/HelpButton";
 import { ListEmpty } from "../components/ListEmpty";
 import { ProcessingField } from "../components/ProcessingField";
+import UnixFieldAsDate from "../components/UnixFieldAsDate";
 import { CONTENT_TYPE, DOCS_DOMAIN } from "../lib/types";
 import ActionButton from "./ActionButton";
 import CacheSwitch from "./CacheSwitch";
@@ -77,6 +78,7 @@ export default function ContentList() {
           <TextField source="title" />
         </ReferenceField>
         <ProcessingField label={translate("resources.contents.processingStatus")} />
+        <UnixFieldAsDate source="createdAt" />
         <FunctionField
           source="contentType"
           render={(record: any) => translate(`widgets.content_type.${CONTENT_TYPE[record.contentType].toLowerCase()}`)}

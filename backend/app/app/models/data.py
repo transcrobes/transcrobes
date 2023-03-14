@@ -23,9 +23,9 @@ from app.models.mixins import (
     RevisionableMixin,
     utcnow,
 )
-from app.models.user import AuthUser, absolute_imports_path, absolute_resources_path
+from app.models.user import SHARED_USER_ID, AuthUser, absolute_imports_path, absolute_resources_path
 from app.ndutils import to_import
-from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Index, Integer, String, Text, UniqueConstraint
+from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, String, Table, Text, UniqueConstraint
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.ext.asyncio.session import AsyncSession
@@ -105,6 +105,8 @@ class Import(DetailedMixin, Base):
     process_type = Column(Integer, nullable=False, default=VOCABULARY_ONLY)
     analysis = Column(Text)
     shared = Column(Boolean, nullable=False, default=False)
+    source_url = Column(Text)
+    extra_data = Column(Text)
 
     content = relationship("Content", back_populates="the_import", uselist=False)
 
@@ -201,7 +203,8 @@ class UserRecentSentences(Base):
 class CachedDefinition(CachedAPIJSONLookupMixin, Base):
     __table_args__ = (
         CachedAPIJSONLookupMixin.unique,
-        Index("cach_cached__6fe42c_idx", "cached_date", "from_lang", "to_lang"),
+        CachedAPIJSONLookupMixin.cached_to_from,
+        CachedAPIJSONLookupMixin.lower_index("CachedDefinition".lower()),
     )
 
     word_id = Column(
@@ -228,6 +231,8 @@ class Content(DetailedMixin, Base):
     author = Column(String(150))
     cover = Column(String(250))
     language = Column(String(30))
+    source_url = Column(Text)
+    extra_data = Column(Text)
     the_import_id = Column(
         ForeignKey("import.id", deferrable=True, initially="DEFERRED"),
         nullable=False,
@@ -239,7 +244,7 @@ class Content(DetailedMixin, Base):
     the_import = relationship("Import", back_populates="content", uselist=False)
 
     def processed_path(self) -> str:
-        return absolute_resources_path(self.created_by.id, self.id)
+        return absolute_resources_path(SHARED_USER_ID if self.shared else self.created_by.id, self.id)
 
 
 class UserListDict(TypedDict, total=False):
@@ -604,3 +609,41 @@ class LanguageClass(DetailedMixin, Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     teachers = relationship("TeacherRegistration", back_populates="class_reg")
     students = relationship("StudentRegistration", back_populates="class_reg")
+
+
+StreamDetailsContent = Table(
+    "streamdetails_content",
+    Base.metadata,
+    Column("streamdetails_id", ForeignKey("streamdetails.id"), primary_key=True),
+    Column("content_id", ForeignKey("content.id"), primary_key=True),
+)
+
+
+class StreamDetails(DetailedMixin, Base):
+    NETFLIX = "netflix"
+    YOUKU = "youku"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    imdb_id = Column(Text)
+    streamer = Column(Text, nullable=False)  # "youku", "netflix", etc
+    canonical_url = Column(Text, nullable=False)
+    streamer_id = Column(Text, nullable=False)
+    category = Column(Text, nullable=False)  # "movie" | "series" | "unknown"
+    language = Column(Text, nullable=False)  # the language of the StreamDetails titles, etc.
+    duration = Column(Integer)
+    subtitles = Column(Text)  # or json?
+    stream_type = Column(Text, nullable=False)  # "trailer" | "full" | "unknown"
+    season_id = Column(Text)
+    season_title = Column(Text)
+    season_short_name = Column(Text)
+    season_number = Column(Text)
+    season_year = Column(Integer)
+    episode = Column(Integer)
+    episode_title = Column(Text)
+    year = Column(Integer)  # year of movie or first season
+    country = Column(Text)
+    show_id = Column(Text)
+    show_title = Column(Text)
+    original_title = Column(Text)
+    show_genre = Column(Text)
+    contents = relationship("Content", secondary=StreamDetailsContent)

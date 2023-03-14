@@ -22,6 +22,10 @@ const videoReaderSlice = createGenericSlice({
       state[action.payload.id] = state[action.payload.id] || DEFAULT_VIDEO_READER_CONFIG_STATE;
       state[action.payload.id].subDelay = action.payload.value;
     },
+    setSubRaise(state: GenericState<VideoReaderState>, action: PayloadAction<ContentConfigPayload<number>>) {
+      state[action.payload.id] = state[action.payload.id] || DEFAULT_VIDEO_READER_CONFIG_STATE;
+      state[action.payload.id].subRaise = action.payload.value;
+    },
     setSubBoxWidth(state: GenericState<VideoReaderState>, action: PayloadAction<ContentConfigPayload<number>>) {
       state[action.payload.id] = state[action.payload.id] || DEFAULT_VIDEO_READER_CONFIG_STATE;
       state[action.payload.id].subBoxWidth = action.payload.value;
@@ -29,6 +33,10 @@ const videoReaderSlice = createGenericSlice({
     setSubPlaybackRate(state: GenericState<VideoReaderState>, action: PayloadAction<ContentConfigPayload<number>>) {
       state[action.payload.id] = state[action.payload.id] || DEFAULT_VIDEO_READER_CONFIG_STATE;
       state[action.payload.id].subPlaybackRate = action.payload.value;
+    },
+    setSubBackgroundBlur(state: GenericState<VideoReaderState>, action: PayloadAction<ContentConfigPayload<boolean>>) {
+      state[action.payload.id] = state[action.payload.id] || DEFAULT_VIDEO_READER_CONFIG_STATE;
+      state[action.payload.id].subBackgroundBlur = action.payload.value;
     },
     setPlaybackRate(state: GenericState<VideoReaderState>, action: PayloadAction<ContentConfigPayload<number>>) {
       state[action.payload.id] = state[action.payload.id] || DEFAULT_VIDEO_READER_CONFIG_STATE;

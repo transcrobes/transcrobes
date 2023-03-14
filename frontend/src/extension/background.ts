@@ -1,24 +1,29 @@
 import dayjs from "dayjs";
 import { store } from "../app/createStore";
-import { getUserDexie } from "../database/authdb";
-import { getDb } from "../database/Database";
+import { getDb, replStates } from "../database/Database";
 import { GRADE, TranscrobesDatabase } from "../database/Schema";
+import { getUserDexie } from "../database/authdb";
 import { setUser, throttledRefreshToken } from "../features/user/userSlice";
 import * as data from "../lib/data";
+import { camelToSnakeCase } from "../lib/funclib";
 import * as utils from "../lib/libMethods";
 import {
   DEFAULT_RETRIES,
-  EventData,
   EVENT_QUEUE_PROCESS_FREQ,
+  EventData,
+  STREAMER_DETAILS,
   SerialisableDayCardWords,
+  StreamDetails,
   UserDefinitionType,
 } from "../lib/types";
 import scriptPath from "./content?script";
+import { getRawYoukuData, getYoukuData } from "./yk";
 
 let db: TranscrobesDatabase;
 let dayCardWords: SerialisableDayCardWords | null;
 const dictionaries: Record<string, Record<string, UserDefinitionType>> = {};
 let eventQueueTimer: number | undefined;
+
 // function stopEventsSender(): void {
 //   clearTimeout(eventQueueTimer);
 // }
@@ -80,13 +85,42 @@ async function loadDb(callback: any, message: EventData) {
   callback({ source: message.source, type: message.type, value: "success" });
   return db;
 }
+let nfData: { language: string; subs: Record<number, [{ url: string }, { url: string }]> } = { language: "", subs: {} };
+let ykData: StreamDetails | undefined;
 
 chrome.action.onClicked.addListener(function (tab) {
-  getUserDexie().then((userData) => {
+  getUserDexie().then(async (userData) => {
     if (tab.id) {
       if (!userData.username || !userData.password || !userData.baseUrl) {
         chrome.runtime.openOptionsPage(() => console.debug("User not initialised"));
       } else {
+        if (tab.url?.match(STREAMER_DETAILS.netflix.ui)) {
+          const urls = await chrome.scripting.executeScript({
+            target: { tabId: tab.id },
+            func: (lang) => {
+              if (!localStorage.getItem("TCLang")) {
+                localStorage.setItem("TCLang", lang);
+                location.reload(); // reload so the content_script has a value from the beginning
+              }
+              return {
+                // @ts-ignore
+                subs: window.nftts,
+                // @ts-ignore
+                language: window.netflix?.reactContext?.models?.geo?.data?.locale?.id?.split("-")[0],
+              };
+            },
+            args: [userData.user.fromLang],
+            world: "MAIN",
+          });
+          nfData = urls[0].result;
+        } else if (tab.url?.match(STREAMER_DETAILS.youku.ui)) {
+          const raw = await chrome.scripting.executeScript({
+            target: { tabId: tab.id },
+            func: getRawYoukuData,
+            world: "MAIN",
+          });
+          ({ data: ykData } = getYoukuData(raw[0].result));
+        }
         chrome.scripting.executeScript({
           target: { tabId: tab.id, allFrames: false },
           files: [scriptPath],
@@ -99,10 +133,50 @@ chrome.action.onClicked.addListener(function (tab) {
   });
 });
 
-chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+chrome.scripting
+  .registerContentScripts([
+    {
+      id: "nf",
+      js: ["nf.iife.js"],
+      persistAcrossSessions: true,
+      matches: ["https://www.netflix.com/watch/*"],
+      runAt: "document_start",
+      world: "MAIN",
+    },
+  ])
+  .catch((err) => console.warn("unexpected error", err));
+
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === "syncDB") {
     console.log("Starting a background syncDB db load");
     loadDb(sendResponse, message);
+  } else if (message.type === "getYoukuData") {
+    sendResponse({ source: message.source, type: message.type, value: { data: ykData } });
+  } else if (message.type === "getNetflixData") {
+    sendResponse({ source: message.source, type: message.type, value: nfData });
+  } else if (message.type === "seekNetflix") {
+    if (sender.tab?.id) {
+      chrome.scripting
+        .executeScript({
+          target: { tabId: sender.tab?.id },
+          func: (timestamp) => {
+            const playManager: any = (window as any).netflix?.appContext?.state?.playerApp?.getAPI?.()?.videoPlayer;
+            const player = playManager?.getVideoPlayerBySessionId(playManager.getAllPlayerSessionIds()?.[0]);
+            if (player && player.getCurrentTime) {
+              player.seek(parseInt(timestamp) * 1000); // convert to ms
+              return true;
+            }
+            return false;
+          },
+          args: [message.value],
+          world: "MAIN",
+        })
+        .then((success) => {
+          sendResponse({ source: message.source, type: message.type, value: success[0].result });
+        });
+    } else {
+      sendResponse({ source: message.source, type: message.type, value: false });
+    }
   } else if (message.type === "showOptions") {
     chrome.runtime.openOptionsPage(() => console.debug("Show options from", message.source));
   } else if (message.type === "heartbeat") {
@@ -175,6 +249,51 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
           sendResponse({ source: message.source, type: message.type, value: translation });
         });
     });
+  } else if (message.type === "forceDefinitionsSync") {
+    loadDb(console.debug, message).then(() => {
+      const rs = replStates.get("definitions");
+      if (rs) {
+        rs.reSync(); // sync method
+      } else {
+        console.error("Unable to force reSync");
+      }
+      sendResponse({
+        source: message.source,
+        type: message.type,
+        value: true,
+      });
+    });
+  } else if (message.type === "serverGet") {
+    loadDb(console.debug, message).then(() => {
+      const { url, retries, isText } = message.value;
+      utils
+        .fetchPlusResponse(store.getState().userData.baseUrl + url, undefined, retries, false, !isText)
+        .then((result) => {
+          if (result.ok) {
+            const res = isText ? result.text() : result.json();
+            res.then((data) => {
+              sendResponse({
+                source: message.source,
+                type: message.type,
+                value: { data },
+              });
+            });
+          } else {
+            sendResponse({
+              source: message.source,
+              type: message.type,
+              value: { error: result.statusText },
+            });
+          }
+        })
+        .catch((e) => {
+          sendResponse({
+            source: message.source,
+            type: message.type,
+            value: { error: e },
+          });
+        });
+    });
   } else if (message.type === "enrichText") {
     loadDb(console.debug, message).then(() => {
       utils
@@ -188,6 +307,50 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
             source: message.source,
             type: message.type,
             value: [parse, message.value],
+          });
+        })
+        .catch((e) => {
+          sendResponse({
+            source: message.source,
+            type: message.type,
+            value: e,
+          });
+        });
+    });
+  } else if (message.type === "streamingTitleSearch") {
+    loadDb(console.debug, message).then(() => {
+      const converted: any = {};
+      const sd: StreamDetails = message.value;
+      for (const [key, value] of Object.entries(sd)) {
+        converted[camelToSnakeCase(key)] = value;
+      }
+      utils
+        .fetchPlusResponse(
+          `${store.getState().userData.baseUrl}/api/v1/enrich/streaming_title_search`,
+          JSON.stringify(converted),
+        )
+        .then((result) => {
+          if (result.ok) {
+            result.json().then((data) => {
+              sendResponse({
+                source: message.source,
+                type: message.type,
+                value: { data },
+              });
+            });
+          } else {
+            sendResponse({
+              source: message.source,
+              type: message.type,
+              value: { error: result.statusText },
+            });
+          }
+        })
+        .catch((e) => {
+          sendResponse({
+            source: message.source,
+            type: message.type,
+            value: e,
           });
         });
     });
@@ -236,7 +399,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       });
     });
   } else {
-    console.warn("An unknown message type was submitted!", message);
+    console.warn("An unknown message type was submitted to the background!", message);
   }
   return true;
 });

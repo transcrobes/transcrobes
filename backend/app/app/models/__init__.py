@@ -5,6 +5,7 @@ from .data import (  # noqa: F401
     Goal,
     Import,
     LanguageClass,
+    StreamDetails,
     StudentRegistration,
     Survey,
     TeacherRegistration,

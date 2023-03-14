@@ -27,6 +27,8 @@ import {
   SerialisableStringSet,
   SIMPLE_POS_CHINESE_NAMES,
   SIMPLE_POS_ENGLISH_NAMES,
+  STREAMER_DETAILS,
+  SupportedStreamer,
   SystemLanguage,
   TokenType,
   ZHHANS_EN_DICT_PROVIDERS,
@@ -41,6 +43,15 @@ export function getMessages(locale: string) {
     default:
       return englishMessages;
   }
+}
+
+export function streamingSite(url: string): SupportedStreamer | null {
+  for (const [name, pattern] of Object.entries(STREAMER_DETAILS)) {
+    if (pattern.ui.test(url)) {
+      return name as SupportedStreamer;
+    }
+  }
+  return null;
 }
 
 export function getI18nProvider(locale?: SystemLanguage) {
@@ -424,8 +435,24 @@ export function cleanAnalysis(analysis: ImportAnalysis, keepLang: InputLanguage)
   return buckets;
 }
 
-export async function fetchPlus(url: string | URL, body?: BodyInit, retries?: number, forcePost = false): Promise<any> {
-  return fetcher.fetchPlus(url, body, retries, forcePost);
+export async function fetchPlusResponse(
+  url: string | URL,
+  body?: BodyInit,
+  retries?: number,
+  forcePost = false,
+  expectJson = true,
+): Promise<Response> {
+  return fetcher.fetchPlusResponse(url, body, retries, forcePost, expectJson);
+}
+
+export async function fetchPlus(
+  url: string | URL,
+  body?: BodyInit,
+  retries?: number,
+  forcePost = false,
+  expectJson = true,
+): Promise<any> {
+  return fetcher.fetchPlus(url, body, retries, forcePost, expectJson);
 }
 
 export function orderTranslations(translations: ProviderTranslationType[], orders: Record<string, number>) {

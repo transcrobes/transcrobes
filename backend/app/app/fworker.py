@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 
 from app.core.config import settings
-from app.data.importer import process_content, process_import, process_list
+from app.data.importer.common import process_content, process_import, process_list
 from app.enrich import data
 from app.enrich.cache import regenerate_character_jsons_multi, regenerate_definitions_jsons_multi
 from app.schemas.cache import DataType, RegenerationType
@@ -46,17 +46,17 @@ async def list_process(lists):
 
 @app.crontab("0 0 * * *")
 async def regenerate_all():
-    await regenerate(RegenerationType(data_type=DataType.both))
+    await regenerate(RegenerationType(data_type=DataType.all))
 
 
 async def regenerate(regen_type: RegenerationType) -> Msg:
     logger.info(f"Attempting to regenerate caches: {regen_type.data_type=}, {regen_type.fakelimit=}")
-    if regen_type.data_type in [DataType.both, DataType.definitions]:
+    if regen_type.data_type in [DataType.all, DataType.definitions]:
         logger.info("Starting regen for en to zh-Hans")
         await regenerate_definitions_jsons_multi(regen_type.fakelimit or 0, from_lang="en", to_lang="zh-Hans")
         logger.info("Starting regen for zh-Hans to en")
         await regenerate_definitions_jsons_multi(regen_type.fakelimit or 0, from_lang="zh-Hans", to_lang="en")
-    if regen_type.data_type in [DataType.both, DataType.characters]:
+    if regen_type.data_type in [DataType.all, DataType.characters]:
         regenerate_character_jsons_multi()
     logger.info("Finished regenerating caches")
 

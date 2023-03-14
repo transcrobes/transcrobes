@@ -49,7 +49,6 @@ export const darkTheme = {
       fixed: { height: "calc(100vh - 4em)" },
       root: { height: "calc(100vh - 4em)" },
     },
-
     MuiButtonBase: {
       defaultProps: {
         // disable ripple for perf reasons

@@ -229,7 +229,7 @@ class Enricher(ABC):
         pass
 
     @abstractmethod
-    def clean_text(self, text: str, remove_whitespace: bool):
+    def clean_text(self, text: str, remove_whitespace: bool) -> str:
         pass
 
     #

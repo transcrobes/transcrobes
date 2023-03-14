@@ -71,6 +71,8 @@ const customChineseMessages: TranslationMessages = {
       watch_demo: "观看演示",
       say_it: "说",
       download: "下载",
+      back_to_netflix: "回到 Netflix",
+      back_to_youku: "回到优酷",
     },
   },
   general: {
@@ -505,6 +507,13 @@ const customChineseMessages: TranslationMessages = {
         top_right: "右上角",
         bottom_right: "右下角",
       },
+      streamer: {
+        looking_for_subs: "正在寻找字幕",
+        processing_subs: "正在处理字幕",
+        sub_content_error: "订阅内容错误",
+        no_available_subs: "没有可用的字幕",
+        bad_subs_lang: "字幕语言错误",
+      },
     },
     help: {
       name: "帮助！",
@@ -586,6 +595,11 @@ const customChineseMessages: TranslationMessages = {
           minus: "0.5秒前",
           plus: "0.5秒后",
         },
+        subs_background_blur: {
+          title: "字幕背景模糊",
+          none: "无",
+          blur: "模糊",
+        },
         playback_rate: {
           title: "播放率",
           minus: "减速 5%",
@@ -595,6 +609,9 @@ const customChineseMessages: TranslationMessages = {
           title: "字幕播放率",
           minus: "减速 5%",
           plus: "加速 5%",
+        },
+        subs_raise: {
+          title: "升起字幕",
         },
       },
     },

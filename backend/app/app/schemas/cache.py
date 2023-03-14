@@ -10,7 +10,7 @@ from pydantic import BaseModel
 class DataType(str, Enum):
     definitions = "definitions"
     characters = "characters"
-    both = "both"
+    all = "all"
 
 
 class RegenerationType(BaseModel):

@@ -336,6 +336,10 @@ function mapStateToProps(state: RootState, props: EntryProps) {
     default:
       throw new Error("Unknown readerType. This is bad!");
   }
+  if (!readerConfig) {
+    console.warn(props.readerConfig.id, state.videoReader, state.videoReader[props.readerConfig.id]);
+    throw new Error("There is somehow no readerConfig");
+  }
   return {
     glossToggled: props.token.id ? state.definitions[props.token.id]?.glossToggled : undefined,
     isKnown: props.token.l in (state.knownCards.knownCardWordGraphs || {}),

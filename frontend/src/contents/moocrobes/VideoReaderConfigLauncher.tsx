@@ -21,7 +21,11 @@ const useStyles = makeStyles()((theme) => ({
   },
 }));
 
-export default function VideoConfigLauncher({ containerRef, onSubDelayChange }: VideoReaderConfigProps): ReactElement {
+export default function VideoReaderConfigLauncher({
+  id,
+  containerRef,
+  onSubDelayChange,
+}: VideoReaderConfigProps): ReactElement {
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const { classes: locClasses } = useStyles();
   const open = Boolean(anchorEl);
@@ -45,7 +49,7 @@ export default function VideoConfigLauncher({ containerRef, onSubDelayChange }: 
       />
       <Drawer container={containerRef?.current} anchor="left" open={open} onClose={handleClose}>
         <Box sx={{ width: width }} role="presentation">
-          <VideoReaderConfig containerRef={containerRef} onSubDelayChange={onSubDelayChange} />
+          <VideoReaderConfig id={id} containerRef={containerRef} onSubDelayChange={onSubDelayChange} />
         </Box>
       </Drawer>
     </>

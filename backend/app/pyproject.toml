@@ -1,11 +1,13 @@
 [project]
 name = "transcrobes"
-version = "0.25.0"
+version = "0.26.0"
 description = ""
 requires-python = ">=3.11"
 authors = [{ name = "Anton Melser", email = "anton@transcrob.es" }]
 license = { file = "LICENSE" }
 dependencies = [
+  "pysubs2",
+  "pyjson5",
   "requests",
   "uvicorn[standard] >= 0.18.1",
   "fastapi >= 0.85.0",

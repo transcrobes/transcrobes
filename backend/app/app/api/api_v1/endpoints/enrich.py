@@ -6,8 +6,9 @@ import json
 import logging
 import os
 import pathlib
+import uuid
 from collections import ChainMap
-from typing import Any
+from typing import Any, Optional
 
 import aiofiles
 from app import models, schemas
@@ -15,17 +16,19 @@ from app.api import deps
 from app.api.api_v1.graphql import Definitions
 from app.cache import cached_definitions
 from app.core.config import settings
-from app.data.importer import process
+from app.data.importer.common import process
 from app.enrich import TokenPhoneType, definitions_json_paths, enrich_html_fragment, hanzi_json_paths
 from app.enrich.cache import ensure_cached_definitions
 from app.enrich.data import EnrichmentManager, managers
 from app.enrich.models import definitions, reload_definitions_cache
 from app.fworker import import_process_topic, regenerate
 from app.models import CachedDefinition, Import
-from app.models.user import absolute_imports_path
+from app.models.data import Content
+from app.models.user import absolute_imports_dir_path, absolute_imports_path
 from app.ndutils import gather_with_concurrency
 from app.schemas.cache import DataType, RegenerationType
 from app.schemas.files import ProcessData
+from app.subs import search_db_for_streamdetails
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.datastructures import UploadFile
 from fastapi.param_functions import Form
@@ -42,13 +45,45 @@ class InfoRequest(BaseModel):
     data: str
 
 
+class Subtitle(BaseModel):
+    url: str
+    lang: Optional[str]
+    label: Optional[str]
+    content: Optional[str]
+
+
+class StreamDetails(BaseModel):
+    imdb_id: Optional[str]
+    streamer: str  # "youku" | "netflix"
+    canonical_url: str
+    streamer_id: str
+    category: str  # "movie" | "series" | "unknown"
+    language: str  # the two-letter language code ('zh', 'fr', 'en') of the StreamDetails titles, etc.
+    duration: int
+    subtitles: Optional[list[Subtitle]]
+    stream_type: Optional[str]  # "trailer" | "full" | "unknown"
+    season_id: Optional[str]
+    season_title: Optional[str]
+    season_short_name: Optional[str]
+    season_number: Optional[int]
+    season_year: Optional[int]
+    episode: Optional[int]
+    episode_title: Optional[str]
+    year: Optional[int]  # year of movie or first season
+    country: Optional[str]
+    show_id: Optional[str]
+    show_title: Optional[str]
+    original_title: Optional[str]
+    show_genre: Optional[str]
+
+
 router = APIRouter()
 
 
 # PROD API
 @router.get("/regenerate_all")
 async def api_regenerate_all(_current_user: models.AuthUser = Depends(deps.get_current_active_superuser)):
-    await regenerate(RegenerationType(data_type=DataType.both))
+    await regenerate(RegenerationType(data_type=DataType.all))
     return {"result": "success"}
 
 
@@ -422,3 +457,127 @@ async def import_file(
     await import_process_topic.send(value=file_event)
 
     return {"status": "success"}
+
+
+@router.post("/streaming_title_search", name="streaming_title_search")
+async def streaming_title_search(
+    stream_details: StreamDetails,
+    current_user: schemas.TokenPayload = Depends(deps.get_current_good_tokenpayload),
+    db: AsyncSession = Depends(deps.get_db),
+):
+    media_lang = current_user.lang_pair.split(":")[0]  # from_lang
+    contents = []
+    existing = await search_db_for_streamdetails(db, stream_details, media_lang)
+    if existing:
+        contents = existing.contents
+
+    content_ids = []
+    import_ids = []
+    output_dir = absolute_imports_dir_path(current_user.id)
+
+    if contents:
+        for content in contents:
+            content_ids.append(content.id)
+    else:
+        sub_details = []
+        valid_subs = []
+        for sub in stream_details.subtitles or []:
+            if (sub.lang == media_lang or sub.lang == "zhe" and media_lang in ["zh-Hans", "en"]) and sub.content:
+                sub_details.append({"lang": sub.lang, "url": sub.url})
+                valid_subs.append(sub)
+
+        if not valid_subs:
+            # for the moment we aren't looking, as Youku is quite heavily censored and intl sites
+            # will never have their version, while NF has almost all subs for the markets they are in.
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No subtitles found")
+
+        sd = models.StreamDetails(
+            title=stream_details.episode_title or stream_details.show_title,
+            created_by_id=current_user.id,
+            updated_by_id=current_user.id,
+            imdb_id=stream_details.imdb_id,
+            streamer=stream_details.streamer,
+            canonical_url=stream_details.canonical_url,
+            streamer_id=stream_details.streamer_id,
+            category=stream_details.category,
+            language=stream_details.language,
+            duration=stream_details.duration,
+            subtitles=json.dumps(sub_details),
+            stream_type=stream_details.stream_type,
+            season_id=stream_details.season_id,
+            season_title=stream_details.season_title,
+            season_short_name=stream_details.season_short_name,
+            season_number=stream_details.season_number,
+            season_year=stream_details.season_year,
+            episode=stream_details.episode,
+            episode_title=stream_details.episode_title,
+            year=stream_details.year,
+            country=stream_details.country,
+            show_id=stream_details.show_id,
+            show_title=stream_details.show_title,
+            original_title=stream_details.original_title,
+            show_genre=stream_details.show_genre,
+        )
+        # we need to download the subtitles and then process them
+        for i, sub in enumerate(valid_subs, start=1):
+            ext = "ass" if stream_details.streamer == "youku" else "vtt"  # FIXME: nasty
+            sub_filename = f"{i}-{sub.lang}-{stream_details.streamer_id}.{ext}"
+            titles = ", ".join(
+                str(x)
+                for x in [
+                    stream_details.episode_title,
+                    stream_details.episode,
+                    stream_details.season_title,
+                    stream_details.show_title,
+                ]
+                if x
+            )
+            logger.debug(f"Going to process {sub_filename=}")
+            impo = Import()
+            impo.id = uuid.uuid4()
+            import_ids.append(impo.id)
+            impo.title = f"{i} : {titles} : {stream_details.category}"
+            impo.description = ""
+            impo.created_by_id = current_user.id
+            impo.updated_by_id = current_user.id
+            impo.shared = True
+            impo.import_file = f"{impo.id}_{sub_filename}"
+            impo.source_url = stream_details.canonical_url
+            sub_file = os.path.join(output_dir, impo.import_file)
+            with open(sub_file, "w") as f:
+                f.write(sub.content)
+            db.add(impo)
+            content = Content()
+            content.id = uuid.uuid4()
+            content_ids.append(content.id)
+            content.title = impo.title
+            content.description = ""
+            content.language = media_lang
+            content.the_import = impo
+            content.created_by_id = current_user.id
+            content.updated_by_id = current_user.id
+            content.content_type = Content.VIDEO
+            content.shared = True
+            content.source_url = stream_details.canonical_url
+            impo.content = content
+            db.add(impo.content)
+            sd.contents.append(content)
+            logger.debug(f"Added {sub_file=}, committing")
+
+        db.add(sd)
+        await db.commit()
+        for import_id in import_ids:
+            file_event = ProcessData(type="import", id=import_id)
+            await import_process_topic.send(value=file_event)
+
+    return {"content_ids": content_ids}
+
+
+@router.post("/resubmit_import", name="resubmit_import")
+async def resubmit_import(  # pylint: disable=R0914  # FIXME: consider reducing
+    info_request: InfoRequest,
+    _current_user: models.AuthUser = Depends(deps.get_current_active_superuser),
+):
+    file_event = ProcessData(type="import", id=info_request.data)
+    await import_process_topic.send(value=file_event)
+    return {"status": "ok"}

@@ -151,12 +151,12 @@ export function handleBadResponse(url: string, response: Response): void {
   }
 }
 
-export function getContentBaseURL(contentId: string): string {
-  return `/api/v1/data/content/${contentId}`;
+export function getContentBaseURL(contentId: string, shared = false): string {
+  return `/api/v1/data/${shared ? "shared" : ""}content/${contentId}`;
 }
 
-export function getSubsURL(contentId: string): string {
-  return `${getContentBaseURL(contentId)}/subtitles.vtt`;
+export function getSubsURL(contentId: string, shared = false): string {
+  return `${getContentBaseURL(contentId, shared)}/subtitles.vtt`;
 }
 
 export function getManifestURL(contentId: string): string {
@@ -444,4 +444,20 @@ export function toEnrich(charstr: string, fromLang: InputLanguage): boolean {
     case "zh-Hans":
       return zhReg.test(charstr);
   }
+}
+
+export function camelToSnakeCase(str: string) {
+  return str.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
+}
+
+export function getLanguageFromNavigator(navigator: Navigator): SystemLanguage {
+  let language: SystemLanguage = "en";
+  for (const lang of navigator.languages) {
+    if (lang.startsWith("en")) {
+      return language;
+    } else if (lang.startsWith("zh")) {
+      return "zh-Hans";
+    }
+  }
+  return language;
 }

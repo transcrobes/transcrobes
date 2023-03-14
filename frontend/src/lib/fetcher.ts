@@ -45,7 +45,18 @@ export class Fetcher {
     body?: BodyInit,
     retries?: number,
     forcePost = false,
+    expectJson = true,
   ): Promise<T> {
+    const fetched = await this.fetchPlusResponse(url, body, retries, forcePost, expectJson);
+    return await (expectJson ? fetched.json() : fetched.text());
+  }
+  public async fetchPlusResponse(
+    url: string | URL,
+    body?: BodyInit,
+    retries?: number,
+    forcePost = false,
+    expectJson = true,
+  ): Promise<Response> {
     const lurl = typeof url === "string" ? url : url.href;
     // TODO: properly determine whether the retries here actually works...
     const opts: RequestInitWithRetry = retries ? { retries: retries } : {};
@@ -55,14 +66,16 @@ export class Fetcher {
     }
     opts.credentials = "include";
     opts.headers = {
-      Accept: "application/json",
       Authorization: "Bearer " + this.store.getState().userData.user.accessToken,
     };
+    if (expectJson) {
+      opts.headers["Accept"] = "application/json";
+    }
     if (!(body instanceof FormData)) {
       opts.headers["Content-Type"] = "application/json";
     }
     opts.cache = "no-cache";
-    return await (await this.#fetch(lurl, opts)).json();
+    return await this.#fetch(lurl, opts);
   }
 }
 

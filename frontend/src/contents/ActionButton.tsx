@@ -3,22 +3,28 @@ import ReadIcon from "@mui/icons-material/LocalLibrary";
 import WatchIcon from "@mui/icons-material/Theaters";
 import dayjs from "dayjs";
 import { ReactElement, useEffect, useState } from "react";
-import { Button, Identifier, useRecordContext, useTranslate } from "react-admin";
+import { Button, useRecordContext, useTranslate } from "react-admin";
 import { NavigateFunction, useNavigate } from "react-router-dom";
-import { Content, CONTENT_TYPE, Import, PROCESSING } from "../lib/types";
+import { CONTENT_TYPE, Content, Import, PROCESSING } from "../lib/types";
 
 const DATA_SOURCE = "ActionButton.tsx";
 type Verb = "Watch" | "Read" | "Enrich" | "Resubmit" | "";
 
-function action(id: Identifier, verb: Verb, navigate: NavigateFunction) {
+function action(content: Content, verb: Verb, navigate: NavigateFunction) {
   if (verb === "Enrich" || verb === "Resubmit") {
     window.componentsConfig.proxy.sendMessagePromise({
       source: DATA_SOURCE,
       type: "submitContentEnrichRequest",
-      value: { contentId: id.toString() },
+      value: { contentId: content.id.toString() },
     });
+    return true;
   } else {
-    navigate(`/contents/${id.toString()}/${verb.toLowerCase()}`);
+    if (verb == "Watch" && content.sourceUrl) {
+      window.open(content.sourceUrl, "_blank");
+    } else {
+      navigate(`/contents/${content.id.toString()}/${verb.toLowerCase()}`);
+    }
+    return false;
   }
 }
 
@@ -71,9 +77,10 @@ export default function ActionButton({ label }: { label?: string }): ReactElemen
       label={verbLabel}
       onClick={(e: React.MouseEvent<HTMLElement>) => {
         e.stopPropagation();
-        action(content.id, verb, navigate);
-        setVerb("");
-        setIcon(<></>);
+        if (action(content, verb, navigate)) {
+          setVerb("");
+          setIcon(<></>);
+        }
       }}
     />
   ) : (

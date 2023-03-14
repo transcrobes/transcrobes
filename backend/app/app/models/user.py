@@ -14,10 +14,22 @@ DEFAULT_DICTIONARY_ORDERING_EN_ZHHANS = (
     f"{BingApiLookup.SHORT_NAME},{EnZhhansABCLookup.SHORT_NAME},{BingApiLookup.FALLBACK_SHORT_NAME}"
 )
 
+SHARED_USER_ID = 0
+
 
 def absolute_imports_path(user_id: int, filename: str) -> str:
     # file uploads for imports will be uploaded to MEDIA_ROOT/user_<id>/imports/<filename>
     return os.path.join(settings.MEDIA_ROOT, user_imports_path(user_id, filename))
+
+
+def absolute_imports_dir_path(user_id: int) -> str:
+    # file uploads for imports will be uploaded to MEDIA_ROOT/user_<id>/imports/
+    return os.path.join(settings.MEDIA_ROOT, user_imports_dir_path(user_id))
+
+
+def absolute_shared_imports_dir_path(filename: str) -> str:
+    # file uploads for imports will be uploaded to MEDIA_ROOT/user_<id>/imports/<filename>
+    return os.path.join(settings.MEDIA_ROOT, user_imports_path(SHARED_USER_ID, filename))
 
 
 def absolute_resources_path(user_id: int, filename: str) -> str:
@@ -25,7 +37,11 @@ def absolute_resources_path(user_id: int, filename: str) -> str:
 
 
 def user_imports_path(user_id: int, filename) -> str:
-    return f"user_{user_id}/imports/{filename}"
+    return f"{user_imports_dir_path(user_id)}/{filename}"
+
+
+def user_imports_dir_path(user_id: int) -> str:
+    return f"user_{user_id}/imports"
 
 
 def user_resources_path(user_id: int, filename) -> str:

@@ -3,14 +3,14 @@ import { soundWithSeparators, UUID } from "./funclib";
 import { bestGuess, complexPosToSimplePosLabels, filterKnown, toSimplePos } from "./libMethods";
 import { AbstractWorkerProxy, platformHelper } from "./proxies";
 import {
+  ACTIVITY_DEBOUNCE,
   ActivitySource,
   ActivityType,
-  ACTIVITY_DEBOUNCE,
   AnyTreebankPosType,
   BOOCROBES_HEADER_HEIGHT,
+  DEFINITION_LOADING,
   DefinitionsState,
   DefinitionType,
-  DEFINITION_LOADING,
   EventCoordinates,
   InputLanguage,
   PopupPosition,
@@ -18,14 +18,105 @@ import {
   RecentSentencesType,
   SentenceType,
   SerialisableDayCardWords,
+  StreamDetails,
+  STREAMER_DETAILS,
+  Subtitle,
+  SupportedStreamer,
   SystemLanguage,
   TokenType,
-  UserActivityType,
   USER_STATS_MODE,
+  UserActivityType,
 } from "./types";
 
 const DATA_SOURCE = "componentMethods.ts";
 const NUMBER_POS = new Set<AnyTreebankPosType>(["OD", "NT", "CD"]);
+
+export async function getNetflixData(proxy: AbstractWorkerProxy, fromLang: InputLanguage, url: string) {
+  const urlMatch = url.match(STREAMER_DETAILS.netflix.ui);
+  const streamerId = parseInt(urlMatch?.[2] || "");
+  const canonicalUrl = "https://" + urlMatch?.[1]!;
+  if (!streamerId) return { error: "extension.streamer.noId" };
+
+  const dataUrl = `https://www.netflix.com/nq/website/memberapi/v88abde99/metadata?movieid=${streamerId}&_=${Date.now()}`;
+  const dataResp = await fetch(dataUrl, { credentials: "include" }); // does need credentials
+  if (!dataResp.ok) {
+    console.warn("Bad dataResp", dataResp);
+    return { error: "extension.streamer.noData" };
+  }
+
+  const netflix = await dataResp.json();
+  const nfData = await proxy.sendMessagePromise<{
+    language: string;
+    subs: Record<number, [{ url: string }, { url: string }]>;
+  }>({
+    source: DATA_SOURCE,
+    type: "getNetflixData",
+  });
+  if (!nfData.subs?.[streamerId]) {
+    console.warn("Bad subsUrl", nfData.subs);
+    return { error: "extension.streamer.noSubs" };
+  }
+  const subtitles = await Promise.all(
+    nfData.subs[streamerId].map((subsUrl) =>
+      fetch(subsUrl.url)
+        .then((x) => {
+          if (x.ok) {
+            return x.text();
+          }
+          return "";
+        })
+        .then((content) => {
+          return { lang: fromLang, url: subsUrl.url, content } as Subtitle;
+        }),
+    ),
+  );
+  const showTitle = netflix.video?.title;
+  const showId = netflix.video?.id;
+  let curEpisode: any = null;
+  let curSeason: any = null;
+  let firstSeason: any = null;
+  const availableSeasons = netflix.video?.seasons || [];
+  for (const season of availableSeasons) {
+    if (season.seq === 1) {
+      firstSeason = season;
+    }
+    for (const episode of season.episodes) {
+      if (episode.id === streamerId) {
+        curEpisode = episode;
+        curSeason = season;
+      }
+    }
+  }
+
+  const duration = curEpisode?.runtime || netflix.video?.runtime;
+  const year = firstSeason?.year || netflix.video?.year || 0;
+  const episode = curEpisode?.seq;
+  const episodeTitle = curEpisode?.title;
+  const category = netflix.video.type === "show" ? "series" : netflix.video.type === "movie" ? "movie" : "unknown";
+  const streamDets: StreamDetails = {
+    streamer: "netflix",
+    streamerId: streamerId.toString(),
+    canonicalUrl,
+    duration,
+    seasonTitle: curSeason?.longName || curSeason?.shortName,
+    seasonShortName: curSeason?.shortName,
+    seasonId: curSeason?.id,
+    streamType: "full", // can this be something else?
+    episode,
+    episodeTitle,
+    seasonNumber: curSeason?.seq,
+    seasonYear: curSeason?.year,
+    category,
+    showTitle,
+    showId,
+    // country,
+    language: nfData.language,
+    year,
+    // showGenre,
+    subtitles,
+  };
+  return { data: streamDets };
+}
 
 export async function getWord(lemma: string): Promise<DefinitionType> {
   return platformHelper.sendMessagePromise<DefinitionType>({
@@ -33,6 +124,23 @@ export async function getWord(lemma: string): Promise<DefinitionType> {
     type: "getWordFromDBs",
     value: lemma,
   });
+}
+
+export function getStreamerVideoElement(document: Document, streamer: SupportedStreamer) {
+  let wrapper: HTMLDivElement | undefined = undefined;
+  switch (streamer) {
+    case "youku":
+      wrapper = document.getElementById("ykPlayer") as HTMLDivElement;
+      break;
+    case "netflix":
+      // there might be a better div, like <div id="{the actual video id}"...
+      wrapper = document.getElementsByClassName("watch-video")[0] as HTMLDivElement;
+      break;
+  }
+  if (wrapper) {
+    return wrapper.getElementsByTagName("video")[0];
+  }
+  return undefined;
 }
 
 export async function getDefinitions(token: TokenType, definitions: DefinitionsState) {

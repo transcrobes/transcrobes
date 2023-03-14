@@ -72,6 +72,8 @@ const customEnglishMessages: TranslationMessages = {
       watch_demo: "Watch Demo",
       say_it: "Say it!",
       download: "Download",
+      back_to_netflix: "Back to Netflix",
+      back_to_youku: "Back to Youku",
     },
   },
   general: {
@@ -546,6 +548,13 @@ const customEnglishMessages: TranslationMessages = {
         top_right: "Top Right",
         bottom_right: "Bottom Right",
       },
+      streamer: {
+        looking_for_subs: "Looking for subs...",
+        processing_subs: "Processing subs...",
+        sub_content_error: "Error processing subs",
+        no_available_subs: "No available subs",
+        bad_subs_lang: "Subs not in the correct language",
+      },
     },
     help: {
       name: "Help!",
@@ -632,6 +641,11 @@ const customEnglishMessages: TranslationMessages = {
           minus: "Behind 0.5s",
           plus: "Ahead 0.5s",
         },
+        subs_background_blur: {
+          title: "Blur behind subs",
+          none: "None",
+          blur: "Blur",
+        },
         playback_rate: {
           title: "Playback Rate",
           minus: "Slow down by 5%",
@@ -641,6 +655,9 @@ const customEnglishMessages: TranslationMessages = {
           title: "Subtitle Playback Rate",
           minus: "Slow down by 5%",
           plus: "Speed up by 5%",
+        },
+        subs_raise: {
+          title: "Raise subs",
         },
       },
     },

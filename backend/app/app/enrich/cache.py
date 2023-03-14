@@ -242,4 +242,6 @@ def regenerate_character_jsons_multi() -> bool:
 
     with open(os.path.join(update_directory, f"hanzi-{cur:03d}.json"), "w", encoding="utf8") as hzf:
         json.dump(entries, hzf)
+
+    logger.info("Successfully regenerated the charater reference files")
     return True

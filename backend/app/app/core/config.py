@@ -222,7 +222,6 @@ class Settings(BaseSettings):
     IMPORT_MAX_UPLOAD_SIZE_KB: int = 5120
     IMPORT_UPLOAD_SAFETY_MARGIN: int = 10000
 
-    # Django-internal, for uploads, the default is 2.5MB, so if not set put to 5MB
     DATA_UPLOAD_MAX_MEMORY_SIZE: int = 5 * 1024 * 1024
     DATA_UPLOAD_MAX_MEMORY_SIZE = (
         IMPORT_MAX_UPLOAD_SIZE_KB * 1024

@@ -1,39 +1,38 @@
+import { Box } from "@mui/system";
 import { ReactElement, useRef } from "react";
-import { useParams } from "react-router-dom";
-import { makeStyles } from "tss-react/mui";
 import { store } from "../../app/createStore";
 import { useAppSelector, useJssStyles } from "../../app/hooks";
 import { enrichETFElements } from "../../components/content/etf/EnrichedTextFragment";
 import { isScriptioContinuo } from "../../lib/funclib";
-import { ContentParams, DEFAULT_VIDEO_READER_CONFIG_STATE, KeyedModels, VideoReaderState } from "../../lib/types";
+import { DEFAULT_VIDEO_READER_CONFIG_STATE, KeyedModels } from "../../lib/types";
 
 interface Props {
+  id: string;
   models: KeyedModels;
   currentCue: string;
 }
 
-const useStyles = makeStyles<VideoReaderState>()((_theme, params) => {
-  return {
-    boxWidth: {
-      maxWidth: `${(params.subBoxWidth || 1) * 100}%`,
-    },
-  };
-});
-
-function SubtitleControl({ currentCue, models }: Props): ReactElement {
-  const { id = "" } = useParams<ContentParams>();
+function SubtitleControl({ currentCue, models, id }: Props): ReactElement {
   const readerConfig = useAppSelector((state) => state.videoReader[id] || DEFAULT_VIDEO_READER_CONFIG_STATE);
-
   const ref = useRef<HTMLDivElement>(null);
-  const { classes } = useStyles(readerConfig);
   const fromLang = useAppSelector((state) => state.userData.user.fromLang);
   const etfClasses = useJssStyles({ ...readerConfig, scriptioContinuo: isScriptioContinuo(fromLang) });
 
   if (ref.current && models) {
     enrichETFElements(ref.current, currentCue, readerConfig, models, store, etfClasses);
   }
-
-  return <div className={classes.boxWidth} ref={ref} />;
+  return (
+    <Box
+      sx={{
+        backdropFilter: readerConfig.subBackgroundBlur ? "blur(6px)" : undefined,
+        minHeight: readerConfig.subBackgroundBlur ? "6em" : undefined,
+        paddingLeft: readerConfig.subBackgroundBlur ? "10em" : undefined,
+        paddingRight: readerConfig.subBackgroundBlur ? "10em" : undefined,
+        maxWidth: `${(readerConfig.subBoxWidth || 1) * 100}%`,
+      }}
+      ref={ref}
+    />
+  );
 }
 
 export default SubtitleControl;
