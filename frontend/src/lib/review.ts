@@ -2,14 +2,6 @@ import dayjs from "dayjs";
 import { EFACTOR_DEFAULT, GRADE } from "../database/Schema";
 import { CardType } from "./types";
 
-function shuffleArray(array: any[]): any[] {
-  for (let i = array.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [array[i], array[j]] = [array[j], array[i]];
-  }
-  return array;
-}
-
 /*
 repetition: the number of continous correct responses. The initial repetition value should be 0.
 interval: inter-repetition interval after the repetitions (in days). The initial interval value should be 0.
@@ -34,7 +26,7 @@ type SuperMemoGrade = 0 | 1 | 2 | 3 | 4 | 5;
 
 // function supermemo( item: SuperMemoItem, grade: SuperMemoGrade): SuperMemoItem {
 // from https://github.com/Maxvien/supermemo
-function supermemo(item: CardType, grade: GRADE) {
+export function supermemo(item: CardType, grade: GRADE) {
   let nextInterval; // let nextInterval: number;
   let nextRepetition; // let nextRepetition: number;
   let nextEfactor; // let nextEfactor: number;
@@ -68,7 +60,7 @@ function supermemo(item: CardType, grade: GRADE) {
   };
 }
 
-function practice(flashcard: CardType, grade: GRADE, failureSeconds: number): CardType {
+export function practice(flashcard: CardType, grade: GRADE, failureSeconds: number): CardType {
   const { interval, repetition, efactor } = supermemo(flashcard, grade);
   const known = grade === GRADE.KNOWN;
   const dueDate = interval > 0 ? dayjs().add(interval, "day").unix() : dayjs().add(failureSeconds, "seconds").unix();
@@ -76,5 +68,3 @@ function practice(flashcard: CardType, grade: GRADE, failureSeconds: number): Ca
   const firstSuccessDate = flashcard.firstSuccessDate || (grade >= GRADE.HARD ? dayjs().unix() : 0);
   return { ...flashcard, interval, repetition, efactor, dueDate, known, firstSuccessDate };
 }
-
-export { shuffleArray, practice };

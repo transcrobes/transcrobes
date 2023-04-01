@@ -555,6 +555,13 @@ const customEnglishMessages: TranslationMessages = {
         no_available_subs: "No available subs",
         bad_subs_lang: "Subs not in the correct language",
       },
+      import: {
+        title: "Import EPUB to Transcrobes",
+        checking: "Checking %{linkUrl} for valid EPUB files...",
+        sending: "Sending %{linkUrl} to Transcrobes server...",
+        link_error: "Error: %{linkUrl} does not point to an EPUB file (%{destUrl})",
+        started: "EPUB import has been successfully sent to the server, please check your imports page for progress.",
+      },
     },
     help: {
       name: "Help!",

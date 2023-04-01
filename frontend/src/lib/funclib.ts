@@ -450,9 +450,9 @@ export function camelToSnakeCase(str: string) {
   return str.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
 }
 
-export function getLanguageFromNavigator(navigator: Navigator): SystemLanguage {
+export function getLanguageFromPreferred(langs: readonly string[]): SystemLanguage {
   let language: SystemLanguage = "en";
-  for (const lang of navigator.languages) {
+  for (const lang of langs) {
     if (lang.startsWith("en")) {
       return language;
     } else if (lang.startsWith("zh")) {

@@ -280,14 +280,7 @@ class BackgroundWorkerProxy extends AbstractWorkerProxy {
     progressCallback?: (x: ProgressCallbackMessage) => string,
     allowInstall = false,
   ): void {
-    if (message.type === "heartbeat") {
-      this.postMessage({
-        message: message,
-        callback: callback,
-        progressCallback: progressCallback,
-      });
-      return;
-    } else if (message.type === "getUser") {
+    if (["getUser", "getImportMessage", "heartbeat"].includes(message.type)) {
       this.postMessage({
         message: message,
         callback: callback,

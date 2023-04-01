@@ -58,6 +58,7 @@ import {
   MIN_ACTIVITY_LENGTH,
   Participants,
   PracticeDetailsType,
+  PROCESS_TYPE,
   PROCESSING,
   PythonCounter,
   RecentSentencesStoredType,
@@ -86,7 +87,7 @@ import {
 const IMPORT_FILE_STORAGE = "import_file_storage";
 
 export async function createRegistrationRequest(db: TranscrobesDatabase, fixme: string[]): Promise<[]> {
-  return [];
+  throw new Error("Not Implemented");
 }
 
 export function getNamedFileStorage(parameters: DBParameters): Promise<IDBFileStorage> {
@@ -94,6 +95,24 @@ export function getNamedFileStorage(parameters: DBParameters): Promise<IDBFileSt
     throw new Error("Unable to find the current user");
   }
   return getFileStorage(`${getDatabaseName(parameters)}_${IMPORT_FILE_STORAGE}`);
+}
+
+export async function createEpubImportFromURL(db: TranscrobesDatabase, url: string, description: string) {
+  const id = uuidv4();
+  const title = url.split("/").pop() || "unknown.epub";
+  const localFileName = `${id}_${title}`;
+
+  await db.imports.insert({
+    id,
+    title,
+    description,
+    sourceUrl: url,
+    importFile: localFileName,
+    processing: PROCESSING.REQUESTED,
+    processType: PROCESS_TYPE.VOCABULARY_ONLY,
+    shared: false,
+  });
+  return localFileName;
 }
 
 export async function pushFiles(url: URL, username: string): Promise<{ status: "success" }> {

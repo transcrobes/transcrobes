@@ -514,6 +514,9 @@ const customChineseMessages: TranslationMessages = {
         no_available_subs: "没有可用的字幕",
         bad_subs_lang: "字幕语言错误",
       },
+      import: {
+        title: "将 EPUB 导入 Transcrobes",
+      },
     },
     help: {
       name: "帮助！",

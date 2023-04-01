@@ -5,19 +5,22 @@ import { GRADE, TranscrobesDatabase } from "../database/Schema";
 import { getUserDexie } from "../database/authdb";
 import { setUser, throttledRefreshToken } from "../features/user/userSlice";
 import * as data from "../lib/data";
-import { camelToSnakeCase } from "../lib/funclib";
+import { camelToSnakeCase, getLanguageFromPreferred } from "../lib/funclib";
 import * as utils from "../lib/libMethods";
 import {
   DEFAULT_RETRIES,
   EVENT_QUEUE_PROCESS_FREQ,
   EventData,
+  ExtensionImportMessage,
   STREAMER_DETAILS,
   SerialisableDayCardWords,
   StreamDetails,
   UserDefinitionType,
 } from "../lib/types";
 import scriptPath from "./content?script";
+import importPopup from "./importPopup?script";
 import { getRawYoukuData, getYoukuData } from "./yk";
+import Polyglot from "node-polyglot";
 
 let db: TranscrobesDatabase;
 let dayCardWords: SerialisableDayCardWords | null;
@@ -27,6 +30,15 @@ let eventQueueTimer: number | undefined;
 // function stopEventsSender(): void {
 //   clearTimeout(eventQueueTimer);
 // }
+let polyglot: Polyglot;
+async function getPolyglot() {
+  if (polyglot) return polyglot;
+  const langs = await chrome.i18n.getAcceptLanguages();
+  polyglot = new Polyglot({
+    phrases: utils.getMessages(getLanguageFromPreferred(langs)),
+  });
+  return polyglot;
+}
 
 const EVENT_SOURCE = "background.ts";
 
@@ -85,52 +97,62 @@ async function loadDb(callback: any, message: EventData) {
   callback({ source: message.source, type: message.type, value: "success" });
   return db;
 }
-let nfData: { language: string; subs: Record<number, [{ url: string }, { url: string }]> } = { language: "", subs: {} };
-let ykData: StreamDetails | undefined;
-
-chrome.action.onClicked.addListener(function (tab) {
-  getUserDexie().then(async (userData) => {
-    if (tab.id) {
-      if (!userData.username || !userData.password || !userData.baseUrl) {
-        chrome.runtime.openOptionsPage(() => console.debug("User not initialised"));
-      } else {
-        if (tab.url?.match(STREAMER_DETAILS.netflix.ui)) {
-          const urls = await chrome.scripting.executeScript({
-            target: { tabId: tab.id },
-            func: (lang) => {
-              if (!localStorage.getItem("TCLang")) {
-                localStorage.setItem("TCLang", lang);
-                location.reload(); // reload so the content_script has a value from the beginning
-              }
-              return {
-                // @ts-ignore
-                subs: window.nftts,
-                // @ts-ignore
-                language: window.netflix?.reactContext?.models?.geo?.data?.locale?.id?.split("-")[0],
-              };
-            },
-            args: [userData.user.fromLang],
-            world: "MAIN",
-          });
-          nfData = urls[0].result;
-        } else if (tab.url?.match(STREAMER_DETAILS.youku.ui)) {
-          const raw = await chrome.scripting.executeScript({
-            target: { tabId: tab.id },
-            func: getRawYoukuData,
-            world: "MAIN",
-          });
-          ({ data: ykData } = getYoukuData(raw[0].result));
-        }
-        chrome.scripting.executeScript({
-          target: { tabId: tab.id, allFrames: false },
-          files: [scriptPath],
-        });
-      }
+// let nfData: { language: string; subs: Record<number, [{ url: string }, { url: string }]> } = { language: "", subs: {} };
+// let ykData: StreamDetails | undefined;
+// let importMessage = "";
+const messages: {
+  getNetflixData: { language: string; subs: Record<number, [{ url: string }, { url: string }]> };
+  getYoukuData?: StreamDetails;
+  getImportMessage: ExtensionImportMessage;
+} = {
+  getNetflixData: {
+    language: "",
+    subs: {},
+  },
+  getImportMessage: { message: "", status: "ongoing" },
+};
+chrome.action.onClicked.addListener(async function (tab) {
+  const userData = await getUserDexie();
+  if (tab.id) {
+    if (!userData.username || !userData.password || !userData.baseUrl) {
+      chrome.runtime.openOptionsPage(() => console.debug("User not initialised"));
     } else {
-      // FIXME: is this useful
-      chrome.runtime.openOptionsPage(() => console.log("No tab.id, not sure how we get here!"));
+      if (tab.url?.match(STREAMER_DETAILS.netflix.ui)) {
+        const urls = await chrome.scripting.executeScript({
+          target: { tabId: tab.id },
+          func: (lang) => {
+            if (!localStorage.getItem("TCLang")) {
+              localStorage.setItem("TCLang", lang);
+              location.reload(); // reload so the content_script has a value from the beginning
+            }
+            return {
+              // @ts-ignore
+              subs: window.nftts,
+              // @ts-ignore
+              language: window.netflix?.reactContext?.models?.geo?.data?.locale?.id?.split("-")[0],
+            };
+          },
+          args: [userData.user.fromLang],
+          world: "MAIN",
+        });
+        messages.getNetflixData = urls[0].result;
+      } else if (tab.url?.match(STREAMER_DETAILS.youku.ui)) {
+        const raw = await chrome.scripting.executeScript({
+          target: { tabId: tab.id },
+          func: getRawYoukuData,
+          world: "MAIN",
+        });
+        ({ data: messages.getYoukuData } = getYoukuData(raw[0].result));
+      }
+      chrome.scripting.executeScript({
+        target: { tabId: tab.id, allFrames: false },
+        files: [scriptPath],
+      });
     }
-  });
+  } else {
+    // FIXME: is this useful
+    chrome.runtime.openOptionsPage(() => console.log("No tab.id, not sure how we get here!"));
+  }
 });
 
 chrome.scripting
@@ -146,14 +168,92 @@ chrome.scripting
   ])
   .catch((err) => console.warn("unexpected error", err));
 
+chrome.runtime.onInstalled.addListener(async () => {
+  chrome.contextMenus.create({
+    id: "Transcrobes",
+    title: (await getPolyglot()).t("screens.extension.import.title"),
+    contexts: ["link"],
+    targetUrlPatterns: ["*://*/*"], // actually very few sites have links with .epub at the end...
+  });
+});
+
+export async function pushFile(url: string, afile: Blob, filename: string): Promise<Response> {
+  const apiEndPoint = new URL("/api/v1/enrich/import_file", url).href;
+  const fd = new FormData();
+  fd.append("afile", afile);
+  fd.append("filename", filename);
+  return await utils.fetchPlusResponse(apiEndPoint, fd);
+}
+
+chrome.contextMenus.onClicked.addListener(async (item, tab) => {
+  const userData = await getUserDexie();
+  if (!userData.username || !userData.password || !userData.baseUrl) {
+    chrome.runtime.openOptionsPage(() => console.debug("User not initialised"));
+    return;
+  }
+  messages.getImportMessage = {
+    // message: { key: "screens.extension.import.checking", params: { linkUrl: item?.linkUrl || "" } },
+    message: (await getPolyglot()).t("screens.extension.import.checking", { linkUrl: item?.linkUrl || "" }),
+    status: "ongoing",
+  };
+  console.log("set message", messages.getImportMessage);
+  if (tab?.id) {
+    chrome.scripting.executeScript({
+      target: { tabId: tab.id, allFrames: false },
+      files: [importPopup],
+    });
+  }
+
+  console.log("something", item, tab);
+  let message = "screens.extension.import.link_error";
+  let destUrl = "";
+  const linkUrl = item?.linkUrl || "";
+  let status: "ongoing" | "error" | "finished" = "error";
+  if (linkUrl) {
+    const resp = await utils.fetchPlusResponse(linkUrl);
+    destUrl = resp.url;
+    if (resp.ok) {
+      if (resp.url.endsWith(".epub")) {
+        const bl = await resp.blob();
+        if (["application/epub+zip", "application/epub"].includes(bl.type)) {
+          messages.getImportMessage = {
+            message: (await getPolyglot()).t("screens.extension.import.sending", { linkUrl, destUrl }),
+            status,
+          };
+          const ldb = await loadDb(() => {}, { type: "syncDB", source: "background" });
+          const filename = await data.createEpubImportFromURL(ldb, linkUrl, item.selectionText || "");
+          replStates.get("imports")?.reSync();
+          const result = await pushFile(userData.baseUrl, bl, filename);
+          if (result.ok) {
+            message = "screens.extension.import.started";
+            status = "finished";
+          } else {
+            console.error(result);
+          }
+        }
+      }
+    }
+  }
+  messages.getImportMessage = {
+    message: (await getPolyglot()).t(message, { linkUrl, destUrl }),
+    status,
+  };
+});
+
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === "syncDB") {
     console.log("Starting a background syncDB db load");
     loadDb(sendResponse, message);
-  } else if (message.type === "getYoukuData") {
-    sendResponse({ source: message.source, type: message.type, value: { data: ykData } });
-  } else if (message.type === "getNetflixData") {
-    sendResponse({ source: message.source, type: message.type, value: nfData });
+  } else if (message.type === "showOptions") {
+    chrome.runtime.openOptionsPage(() => console.debug("Show options from", message.source));
+  } else if (message.type === "heartbeat") {
+    sendResponse({ source: message.source, type: message.type, value: dayjs().format() });
+  } else if (["getImportMessage", "getYoukuData", "getNetflixData"].includes(message.type)) {
+    sendResponse({ source: message.source, type: message.type, value: { data: messages[message.type] } });
+  } else if (message.type === "getUser") {
+    getUserDexie().then((user) => {
+      sendResponse({ source: message.source, type: message.type, value: user });
+    });
   } else if (message.type === "seekNetflix") {
     if (sender.tab?.id) {
       chrome.scripting
@@ -177,10 +277,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     } else {
       sendResponse({ source: message.source, type: message.type, value: false });
     }
-  } else if (message.type === "showOptions") {
-    chrome.runtime.openOptionsPage(() => console.debug("Show options from", message.source));
-  } else if (message.type === "heartbeat") {
-    sendResponse({ source: message.source, type: message.type, value: dayjs().format() });
   } else if (message.type === "getSerialisableCardWords") {
     getLocalCardWords(message).then((dayCW) => {
       sendResponse({
@@ -353,10 +449,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             value: e,
           });
         });
-    });
-  } else if (message.type === "getUser") {
-    getUserDexie().then((user) => {
-      sendResponse({ source: message.source, type: message.type, value: user });
     });
   } else if (message.type === "getContentAccuracyStatsForImport") {
     loadDb(console.debug, message).then((ldb) => {

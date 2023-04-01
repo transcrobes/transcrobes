@@ -631,6 +631,12 @@ export interface GenericState<T extends ReaderState> {
   [key: string]: T;
 }
 
+export type ExtensionImportMessage = {
+  status: "error" | "ongoing" | "finished";
+  // message: { key: string; params?: Record<string, string> };
+  message: string;
+};
+
 export type Subtitle = {
   url: string;
   lang?: string;
@@ -1081,10 +1087,10 @@ export interface Import extends CommonRecord {
   processType: number;
   processing: number;
   importFile: string;
-  analysis: string;
+  analysis?: string;
   shared: boolean;
-  sourceUrl: string;
-  extraData: string;
+  sourceUrl?: string;
+  extraData?: string;
 }
 
 export interface Content extends CommonRecord {

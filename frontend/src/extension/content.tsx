@@ -23,7 +23,7 @@ import { setUser } from "../features/user/userSlice";
 import { popupDarkTheme, popupLightTheme } from "../layout/themes";
 import { sessionActivityUpdate, submitActivity } from "../lib/componentMethods";
 import { ensureDefinitionsLoaded, refreshDictionaries } from "../lib/dictionary";
-import { getLanguageFromNavigator, isScriptioContinuo, missingWordIdsFromModels, toEnrich, UUID } from "../lib/funclib";
+import { getLanguageFromPreferred, isScriptioContinuo, missingWordIdsFromModels, toEnrich, UUID } from "../lib/funclib";
 import { NAME_PREFIX } from "../lib/interval/interval-decorator";
 import { enrichChildren, getI18nProvider, getMessages, streamingSite } from "../lib/libMethods";
 import { AbstractWorkerProxy, BackgroundWorkerProxy, setPlatformHelper } from "../lib/proxies";
@@ -123,7 +123,7 @@ async function ensureAllLoaded(platformHelper: AbstractWorkerProxy, store: Admin
 proxy.sendMessagePromise<UserState>({ source: DATA_SOURCE, type: "getUser" }).then((userData) => {
   if (!userData.username || !userData.password || !userData.baseUrl) {
     store.dispatch(setLoading(undefined));
-    const polyglot = new Polyglot({ phrases: getMessages(getLanguageFromNavigator(navigator)) });
+    const polyglot = new Polyglot({ phrases: getMessages(getLanguageFromPreferred(navigator.languages)) });
     alert(polyglot.t("screen.extension.missing_account", { docs_domain: DOCS_DOMAIN }));
     throw new Error("Unable to find the current username");
   }
