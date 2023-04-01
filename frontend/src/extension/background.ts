@@ -1,4 +1,5 @@
 import dayjs from "dayjs";
+import Polyglot from "node-polyglot";
 import { store } from "../app/createStore";
 import { getDb, replStates } from "../database/Database";
 import { GRADE, TranscrobesDatabase } from "../database/Schema";
@@ -12,6 +13,7 @@ import {
   EVENT_QUEUE_PROCESS_FREQ,
   EventData,
   ExtensionImportMessage,
+  NetflixDetails,
   STREAMER_DETAILS,
   SerialisableDayCardWords,
   StreamDetails,
@@ -20,7 +22,6 @@ import {
 import scriptPath from "./content?script";
 import importPopup from "./importPopup?script";
 import { getRawYoukuData, getYoukuData } from "./yk";
-import Polyglot from "node-polyglot";
 
 let db: TranscrobesDatabase;
 let dayCardWords: SerialisableDayCardWords | null;
@@ -97,11 +98,8 @@ async function loadDb(callback: any, message: EventData) {
   callback({ source: message.source, type: message.type, value: "success" });
   return db;
 }
-// let nfData: { language: string; subs: Record<number, [{ url: string }, { url: string }]> } = { language: "", subs: {} };
-// let ykData: StreamDetails | undefined;
-// let importMessage = "";
 const messages: {
-  getNetflixData: { language: string; subs: Record<number, [{ url: string }, { url: string }]> };
+  getNetflixData: NetflixDetails;
   getYoukuData?: StreamDetails;
   getImportMessage: ExtensionImportMessage;
 } = {
@@ -111,7 +109,8 @@ const messages: {
   },
   getImportMessage: { message: "", status: "ongoing" },
 };
-chrome.action.onClicked.addListener(async function (tab) {
+
+async function runMain(tab: chrome.tabs.Tab) {
   const userData = await getUserDexie();
   if (tab.id) {
     if (!userData.username || !userData.password || !userData.baseUrl) {
@@ -153,6 +152,76 @@ chrome.action.onClicked.addListener(async function (tab) {
     // FIXME: is this useful
     chrome.runtime.openOptionsPage(() => console.log("No tab.id, not sure how we get here!"));
   }
+}
+
+async function pushFile(url: string, afile: Blob, filename: string): Promise<Response> {
+  const apiEndPoint = new URL("/api/v1/enrich/import_file", url).href;
+  const fd = new FormData();
+  fd.append("afile", afile);
+  fd.append("filename", filename);
+  return await utils.fetchPlusResponse(apiEndPoint, fd);
+}
+
+async function runImportEpub(item: chrome.contextMenus.OnClickData, tab?: chrome.tabs.Tab) {
+  const userData = await getUserDexie();
+  if (!userData.username || !userData.password || !userData.baseUrl) {
+    chrome.runtime.openOptionsPage(() => console.debug("User not initialised"));
+    return;
+  }
+  messages.getImportMessage = {
+    message: (await getPolyglot()).t("screens.extension.import.checking", { linkUrl: item?.linkUrl || "" }),
+    status: "ongoing",
+  };
+  if (!tab?.id) return;
+  chrome.scripting.executeScript({
+    target: { tabId: tab.id, allFrames: false },
+    files: [importPopup],
+  });
+  let message = "screens.extension.import.link_error";
+  let destUrl = "";
+  const linkUrl = item?.linkUrl || "";
+  let status: "ongoing" | "error" | "finished" = "error";
+  if (linkUrl) {
+    const resp = await utils.fetchPlusResponse(linkUrl);
+    destUrl = resp.url;
+    if (resp.ok && destUrl) {
+      if (destUrl.endsWith(".epub")) {
+        const bl = await resp.blob();
+        if (["application/epub+zip", "application/epub"].includes(bl.type)) {
+          messages.getImportMessage = {
+            message: (await getPolyglot()).t("screens.extension.import.sending", { linkUrl, destUrl }),
+            status: "ongoing",
+          };
+          const ldb = await loadDb(() => {}, { type: "syncDB", source: "background" });
+          const filename = await data.createEpubImportFromURL(ldb, destUrl, item.selectionText || "");
+          // this doesn't actually work at the moment...
+          replStates.get("imports")!.reSync();
+          const result = await pushFile(userData.baseUrl, bl, filename);
+          if (result.ok) {
+            message = "screens.extension.import.started";
+            status = "finished";
+          } else {
+            console.error(result);
+          }
+        }
+      }
+    }
+  }
+  messages.getImportMessage = {
+    message: (await getPolyglot()).t(message, { linkUrl, destUrl }),
+    status,
+  };
+}
+
+chrome.action.onClicked.addListener(runMain);
+
+chrome.contextMenus.onClicked.addListener(async (item, tab) => {
+  if (item.srcUrl && !item.selectionText) {
+    await runImportEpub(item, tab);
+  } else if (!item.srcUrl) {
+    if (!tab?.id) return;
+    await runMain(tab);
+  }
 });
 
 chrome.scripting
@@ -170,74 +239,23 @@ chrome.scripting
 
 chrome.runtime.onInstalled.addListener(async () => {
   chrome.contextMenus.create({
-    id: "Transcrobes",
+    id: "TCEPUBImporter",
     title: (await getPolyglot()).t("screens.extension.import.title"),
     contexts: ["link"],
     targetUrlPatterns: ["*://*/*"], // actually very few sites have links with .epub at the end...
   });
-});
-
-export async function pushFile(url: string, afile: Blob, filename: string): Promise<Response> {
-  const apiEndPoint = new URL("/api/v1/enrich/import_file", url).href;
-  const fd = new FormData();
-  fd.append("afile", afile);
-  fd.append("filename", filename);
-  return await utils.fetchPlusResponse(apiEndPoint, fd);
-}
-
-chrome.contextMenus.onClicked.addListener(async (item, tab) => {
-  const userData = await getUserDexie();
-  if (!userData.username || !userData.password || !userData.baseUrl) {
-    chrome.runtime.openOptionsPage(() => console.debug("User not initialised"));
-    return;
-  }
-  messages.getImportMessage = {
-    // message: { key: "screens.extension.import.checking", params: { linkUrl: item?.linkUrl || "" } },
-    message: (await getPolyglot()).t("screens.extension.import.checking", { linkUrl: item?.linkUrl || "" }),
-    status: "ongoing",
-  };
-  console.log("set message", messages.getImportMessage);
-  if (tab?.id) {
-    chrome.scripting.executeScript({
-      target: { tabId: tab.id, allFrames: false },
-      files: [importPopup],
-    });
-  }
-
-  console.log("something", item, tab);
-  let message = "screens.extension.import.link_error";
-  let destUrl = "";
-  const linkUrl = item?.linkUrl || "";
-  let status: "ongoing" | "error" | "finished" = "error";
-  if (linkUrl) {
-    const resp = await utils.fetchPlusResponse(linkUrl);
-    destUrl = resp.url;
-    if (resp.ok) {
-      if (resp.url.endsWith(".epub")) {
-        const bl = await resp.blob();
-        if (["application/epub+zip", "application/epub"].includes(bl.type)) {
-          messages.getImportMessage = {
-            message: (await getPolyglot()).t("screens.extension.import.sending", { linkUrl, destUrl }),
-            status,
-          };
-          const ldb = await loadDb(() => {}, { type: "syncDB", source: "background" });
-          const filename = await data.createEpubImportFromURL(ldb, linkUrl, item.selectionText || "");
-          replStates.get("imports")?.reSync();
-          const result = await pushFile(userData.baseUrl, bl, filename);
-          if (result.ok) {
-            message = "screens.extension.import.started";
-            status = "finished";
-          } else {
-            console.error(result);
-          }
-        }
-      }
-    }
-  }
-  messages.getImportMessage = {
-    message: (await getPolyglot()).t(message, { linkUrl, destUrl }),
-    status,
-  };
+  chrome.contextMenus.create({
+    id: "TCPageTranscrober",
+    title: (await getPolyglot()).t("screens.extension.page.title"),
+    contexts: ["page"],
+    targetUrlPatterns: ["*://*/*"],
+  });
+  chrome.contextMenus.create({
+    id: "TCSelectionTranscrober",
+    title: (await getPolyglot()).t("screens.extension.selection.title"),
+    contexts: ["selection"],
+    targetUrlPatterns: ["*://*/*"],
+  });
 });
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {

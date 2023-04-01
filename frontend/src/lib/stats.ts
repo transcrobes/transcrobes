@@ -154,7 +154,6 @@ function vocabCountersFromETF(model: ModelType, glossing: number, knownCards: Pa
 }
 
 // the callback function that will be fired when the enriched-text-fragment element apears in the viewport
-// export function observerFunc(readerConfig: ReaderState, models: KeyedModels, knownCards: SerialisableDayCardWords) {
 export function observerFunc(
   readerConfig: () => ReaderState,
   models: KeyedModels,

@@ -3,7 +3,9 @@ import { createComponentVNode, render } from "inferno";
 import { Provider as InfernoProvider } from "inferno-redux";
 import jss from "jss";
 import preset from "jss-preset-default";
+import _ from "lodash";
 import Polyglot from "node-polyglot";
+import rangy from "rangy";
 import { I18nContextProvider } from "react-admin";
 import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "react-query";
@@ -25,12 +27,13 @@ import { sessionActivityUpdate, submitActivity } from "../lib/componentMethods";
 import { ensureDefinitionsLoaded, refreshDictionaries } from "../lib/dictionary";
 import { getLanguageFromPreferred, isScriptioContinuo, missingWordIdsFromModels, toEnrich, UUID } from "../lib/funclib";
 import { NAME_PREFIX } from "../lib/interval/interval-decorator";
-import { enrichChildren, getI18nProvider, getMessages, streamingSite } from "../lib/libMethods";
+import { enrichNodes, getI18nProvider, getMessages, streamingSite, textNodes } from "../lib/libMethods";
 import { AbstractWorkerProxy, BackgroundWorkerProxy, setPlatformHelper } from "../lib/proxies";
 import { observerFunc } from "../lib/stats";
 import {
   ComponentClass,
   ComponentFunction,
+  DEBOUNCE_SELECTION_MS,
   DEFAULT_EXTENSION_READER_CONFIG_STATE,
   DOCS_DOMAIN,
   EXTENSION_READER_ID,
@@ -120,82 +123,103 @@ async function ensureAllLoaded(platformHelper: AbstractWorkerProxy, store: Admin
 
   await refreshDictionaries(store, platformHelper, fromLang());
 }
-proxy.sendMessagePromise<UserState>({ source: DATA_SOURCE, type: "getUser" }).then((userData) => {
-  if (!userData.username || !userData.password || !userData.baseUrl) {
-    store.dispatch(setLoading(undefined));
-    const polyglot = new Polyglot({ phrases: getMessages(getLanguageFromPreferred(navigator.languages)) });
-    alert(polyglot.t("screen.extension.missing_account", { docs_domain: DOCS_DOMAIN }));
-    throw new Error("Unable to find the current username");
-  }
-  // FIXME: it is DANGEROUS to use this here, as the async thunks do get and set dexie!!!
-  store.dispatch(setUser(userData));
 
-  proxy.asyncInit({ username: userData.username }).then(() => {
-    ensureAllLoaded(proxy, store).then(() => {
-      readerConfig = store.getState().extensionReader[id];
-      const i18nProvider = getI18nProvider(readerConfig.locale || userData.user.toLang);
-      if (!streamingSite(location.href)) {
-        enrichChildren(document.body, transcroberObserver, userData.user.fromLang);
+const userData = await proxy.sendMessagePromise<UserState>({ source: DATA_SOURCE, type: "getUser" });
+
+if (!userData.username || !userData.password || !userData.baseUrl) {
+  store.dispatch(setLoading(undefined));
+  const polyglot = new Polyglot({ phrases: getMessages(getLanguageFromPreferred(navigator.languages)) });
+  alert(polyglot.t("screen.extension.missing_account", { docs_domain: DOCS_DOMAIN }));
+  throw new Error("Unable to find the current username");
+}
+// FIXME: it is DANGEROUS to use this here, as the async thunks do get and set dexie!!!
+store.dispatch(setUser(userData));
+
+await proxy.asyncInit({ username: userData.username });
+await ensureAllLoaded(proxy, store);
+
+readerConfig = store.getState().extensionReader[id];
+
+const i18nProvider = getI18nProvider(readerConfig.locale || userData.user.toLang);
+
+if (!streamingSite(location.href)) {
+  const asel = rangy.getSelection();
+  if (asel?.type === "Range" && !asel.isCollapsed) {
+    function doSelection() {
+      const sel = rangy.getSelection();
+      if (sel?.type === "Range" && !sel.isCollapsed) {
+        store.dispatch(setLoading(true));
+        enrichNodes(sel.getRangeAt(0).getNodes([Node.TEXT_NODE]), transcroberObserver, userData.user.fromLang);
       }
-      document.addEventListener("click", () => {
-        store.dispatch(setTokenDetails(undefined));
-      });
-
-      jss.setup(preset());
-      classes = jss
-        .createStyleSheet(ETFStyles, { link: true })
-        .attach()
-        .update({ ...readerConfig, scriptioContinuo: isScriptioContinuo(userData.user.fromLang) }).classes;
-
-      const baseTheme = readerConfig.themeName === "dark" ? popupDarkTheme : popupLightTheme;
-      let themeConfig: any = baseTheme;
-      if (streamingSite(location.href)) {
-        themeConfig = {
-          ...baseTheme,
-          components: { ...baseTheme.components, ...streamOverrides.components },
-          typography: { ...baseTheme.typography, ...streamOverrides.typography },
-        };
-      }
-
-      createRoot(document.body.appendChild(document.createElement("div"))!).render(
-        <Provider store={store}>
-          <ThemeProvider theme={createTheme({ ...themeConfig })}>
-            <I18nContextProvider value={i18nProvider}>
-              <ScopedCssBaseline>
-                <TokenDetails readerConfig={readerConfig} />
-                <Mouseover readerConfig={readerConfig} />
-                {!!streamingSite(location.href) && (
-                  // FIXME: find out why the queryclientprovider is necessary...
-                  <QueryClientProvider client={queryClient}>
-                    <VideoPlayerScreen proxy={proxy} />
-                  </QueryClientProvider>
-                )}
-                {readerConfig.analysisPosition !== "none" && <ContentAnalysisBrocrobes />}
-                {userData.showResearchDetails && <ContentAnalysisAccuracyBrocrobes proxy={proxy} />}
-              </ScopedCssBaseline>
-            </I18nContextProvider>
-          </ThemeProvider>
-        </Provider>,
-      );
+    }
+    doSelection();
+    const debouncedSelection = _.debounce(doSelection, DEBOUNCE_SELECTION_MS);
+    document.addEventListener("selectionchange", () => {
+      debouncedSelection();
     });
-    submitActivity(proxy, "start", "extension", window.location.href, sessionId, window.getTimestamp);
-  });
-  // This ensures that when the transcrobed tab has focus, the background script will
-  // be active or reactivated if unloaded (which happens regularly)
-  setInterval(
-    () => {
-      if (document.visibilityState === "visible") {
-        proxy.sendMessagePromise({ source: DATA_SOURCE, type: "getWordFromDBs", value: "的" });
-        submitActivity(proxy, "continue", "extension", window.location.href, sessionId, window.getTimestamp);
-      }
-    },
-    KEEPALIVE_QUERY_FREQUENCY_MS,
-    NAME_PREFIX + "contentKeepAlive",
-  );
+  } else {
+    enrichNodes(textNodes(document.body), transcroberObserver, userData.user.fromLang);
+  }
+}
 
-  window.addEventListener("beforeunload", () => {
-    submitActivity(proxy, "end", "extension", window.location.href, sessionId, window.getTimestamp);
-  });
+document.addEventListener("click", () => {
+  store.dispatch(setTokenDetails(undefined));
+});
+
+jss.setup(preset());
+classes = jss
+  .createStyleSheet(ETFStyles, { link: true })
+  .attach()
+  .update({ ...readerConfig, scriptioContinuo: isScriptioContinuo(userData.user.fromLang) }).classes;
+
+const baseTheme = readerConfig.themeName === "dark" ? popupDarkTheme : popupLightTheme;
+let themeConfig: any = baseTheme;
+if (streamingSite(location.href)) {
+  themeConfig = {
+    ...baseTheme,
+    components: { ...baseTheme.components, ...streamOverrides.components },
+    typography: { ...baseTheme.typography, ...streamOverrides.typography },
+  };
+}
+
+createRoot(document.body.appendChild(document.createElement("div"))!).render(
+  <Provider store={store}>
+    <ThemeProvider theme={createTheme({ ...themeConfig })}>
+      <I18nContextProvider value={i18nProvider}>
+        <ScopedCssBaseline>
+          <TokenDetails readerConfig={readerConfig} />
+          <Mouseover readerConfig={readerConfig} />
+          {!!streamingSite(location.href) && (
+            // FIXME: find out why the queryclientprovider is necessary...
+            <QueryClientProvider client={queryClient}>
+              <VideoPlayerScreen proxy={proxy} />
+            </QueryClientProvider>
+          )}
+          {readerConfig.analysisPosition !== "none" && <ContentAnalysisBrocrobes />}
+          {userData.showResearchDetails && <ContentAnalysisAccuracyBrocrobes proxy={proxy} />}
+        </ScopedCssBaseline>
+      </I18nContextProvider>
+    </ThemeProvider>
+  </Provider>,
+);
+
+submitActivity(proxy, "start", "extension", window.location.href, sessionId, window.getTimestamp);
+
+// This ensures that when the transcrobed tab has focus, the background script will
+// be active or reactivated if unloaded (which happens regularly)
+setInterval(
+  () => {
+    if (document.visibilityState === "visible") {
+      proxy.sendMessagePromise({ source: DATA_SOURCE, type: "getWordFromDBs", value: "的" });
+      submitActivity(proxy, "continue", "extension", window.location.href, sessionId, window.getTimestamp);
+    }
+  },
+  KEEPALIVE_QUERY_FREQUENCY_MS,
+  NAME_PREFIX + "contentKeepAlive",
+);
+
+window.addEventListener("beforeunload", () => {
+  submitActivity(proxy, "end", "extension", window.location.href, sessionId, window.getTimestamp);
 });
 
 export function onEntryId(entries: IntersectionObserverEntry[]): void {
@@ -230,10 +254,10 @@ export function onEntryId(entries: IntersectionObserverEntry[]): void {
           );
         }
         if (uniqueIds.size > 0) {
-          // FIXME: how much does a setLoading cost?
-          if (loading) store.dispatch(setLoading(undefined));
           await ensureDefinitionsLoaded(proxy, [...uniqueIds], store);
         }
+        // FIXME: how much does a setLoading cost?
+        if (loading) store.dispatch(setLoading(undefined));
         const etf = document.createElement("span");
         etf.id = data.id.toString();
         item.replaceWith(etf);

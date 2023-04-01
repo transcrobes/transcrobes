@@ -483,6 +483,13 @@ const customChineseMessages: TranslationMessages = {
       form_server: "服务器",
       show_suggestions: "显示建议？",
       show_research_details: "显示研究详细信息？",
+      import: {
+        title: "将 EPUB 导入 Transcrobes",
+        // checking: "Checking %{linkUrl} for valid EPUB files...",
+        // sending: "Sending %{linkUrl} to Transcrobes server...",
+        // link_error: "Error: %{linkUrl} does not point to an EPUB file (%{destUrl})",
+        // started: "EPUB import has been successfully sent to the server, please check your imports page for progress.",
+      },
       initialisation: {
         title: "欢迎！ 现在是 Transcrobes 初始化时间！",
         intro_a: `Transcrobes 完全基于浏览器，但需要下载大量参考数据以节省带宽并显着提高性能，这需要一段时间（3-10 分钟，具体取决于您的手机/平板电脑/计算机的速度） 是）。`,
@@ -501,11 +508,17 @@ const customChineseMessages: TranslationMessages = {
         light_mode: "灯光模式",
         dark_mode: "黑暗模式",
       },
+      page: {
+        title: "Transcrobe 网页",
+      },
       page_analysis: {
         title: "页面分析",
         off: "关闭",
         top_right: "右上角",
         bottom_right: "右下角",
+      },
+      selection: {
+        title: "Transcrobe 选定的文本",
       },
       streamer: {
         looking_for_subs: "正在寻找字幕",
@@ -513,9 +526,8 @@ const customChineseMessages: TranslationMessages = {
         sub_content_error: "订阅内容错误",
         no_available_subs: "没有可用的字幕",
         bad_subs_lang: "字幕语言错误",
-      },
-      import: {
-        title: "将 EPUB 导入 Transcrobes",
+        no_id: "没有 ID",
+        no_data: "没有数据",
       },
     },
     help: {

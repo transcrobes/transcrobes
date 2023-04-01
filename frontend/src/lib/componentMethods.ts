@@ -13,6 +13,7 @@ import {
   DefinitionType,
   EventCoordinates,
   InputLanguage,
+  NetflixDetails,
   PopupPosition,
   ReaderState,
   RecentSentencesType,
@@ -35,26 +36,23 @@ export async function getNetflixData(proxy: AbstractWorkerProxy, fromLang: Input
   const urlMatch = url.match(STREAMER_DETAILS.netflix.ui);
   const streamerId = parseInt(urlMatch?.[2] || "");
   const canonicalUrl = "https://" + urlMatch?.[1]!;
-  if (!streamerId) return { error: "extension.streamer.noId" };
+  if (!streamerId) return { error: "screens.extension.streamer.no_id" };
 
   const dataUrl = `https://www.netflix.com/nq/website/memberapi/v88abde99/metadata?movieid=${streamerId}&_=${Date.now()}`;
   const dataResp = await fetch(dataUrl, { credentials: "include" }); // does need credentials
   if (!dataResp.ok) {
     console.warn("Bad dataResp", dataResp);
-    return { error: "extension.streamer.noData" };
+    return { error: "screens.extension.streamer.no_data" };
   }
 
   const netflix = await dataResp.json();
-  const nfData = await proxy.sendMessagePromise<{
-    language: string;
-    subs: Record<number, [{ url: string }, { url: string }]>;
-  }>({
+  const { data: nfData } = await proxy.sendMessagePromise<{ data: NetflixDetails }>({
     source: DATA_SOURCE,
     type: "getNetflixData",
   });
   if (!nfData.subs?.[streamerId]) {
-    console.warn("Bad subsUrl", nfData.subs);
-    return { error: "extension.streamer.noSubs" };
+    console.warn("Bad subsUrl", nfData);
+    return { error: "screens.extension.streamer.no_available_subs" };
   }
   const subtitles = await Promise.all(
     nfData.subs[streamerId].map((subsUrl) =>

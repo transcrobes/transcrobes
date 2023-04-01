@@ -1191,6 +1191,8 @@ def fill_import(dj_obj: models.Import, obj: ImportsInput, _user: models.AuthUser
     dj_obj.processing = obj.processing
     dj_obj.process_type = obj.process_type
     dj_obj.import_file = obj.import_file
+    dj_obj.source_url = obj.source_url
+    dj_obj.extra_data = obj.extra_data
     dj_obj.analysis = obj.analysis
     dj_obj.shared = obj.shared
 
@@ -1233,6 +1235,8 @@ def fill_content(dj_obj: models.Content, obj: ContentsInput, _user: models.AuthU
     dj_obj.cover = obj.cover
     dj_obj.language = obj.lang
     dj_obj.shared = obj.shared
+    dj_obj.source_url = obj.source_url
+    dj_obj.extra_data = obj.extra_data
 
 
 def fill_user_survey(dj_obj: models.UserSurvey, obj: UsersurveysInput, _user: models.AuthUser = None):
@@ -1461,7 +1465,7 @@ class Mutation:
         for row in importsPushRow:
             obj.append(row.newDocumentState)
 
-        logger.debug(f"The info is: {info=}, and the channel {Imports.__name__=} is: {obj=}")
+        logger.warn(f"The info is: {info=}, and the channel {Imports.__name__=} is: {obj=}")
         await set_objects(obj, models.Import, info, Imports.__name__, Imports, fill_import)
         return []
 

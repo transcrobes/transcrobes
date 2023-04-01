@@ -32,7 +32,7 @@ import {
   UUID,
 } from "./funclib";
 import { getFileStorage, IDBFileStorage } from "./IDBFileStorage";
-import { cleanAnalysis, fetchPlus, shortMeaning, simpOnly, sortByWcpm } from "./libMethods";
+import { cleanAnalysis, fetchPlus, fetchPlusResponse, shortMeaning, simpOnly, sortByWcpm } from "./libMethods";
 import { practice } from "./review";
 import {
   ActionEvent,
@@ -51,6 +51,7 @@ import {
   ExportDetails,
   FirstSuccess,
   GraderConfig,
+  Import,
   ImportAnalysis,
   ImportFirstSuccessStats,
   InputLanguage,
@@ -101,8 +102,7 @@ export async function createEpubImportFromURL(db: TranscrobesDatabase, url: stri
   const id = uuidv4();
   const title = url.split("/").pop() || "unknown.epub";
   const localFileName = `${id}_${title}`;
-
-  await db.imports.insert({
+  const imp: Import = {
     id,
     title,
     description,
@@ -111,11 +111,13 @@ export async function createEpubImportFromURL(db: TranscrobesDatabase, url: stri
     processing: PROCESSING.REQUESTED,
     processType: PROCESS_TYPE.VOCABULARY_ONLY,
     shared: false,
-  });
+  };
+  console.log("Wanting to insert import", imp);
+  await db.imports.insert(imp);
   return localFileName;
 }
 
-export async function pushFiles(url: URL, username: string): Promise<{ status: "success" }> {
+export async function pushFiles(url: URL, username: string): Promise<{ status?: "success" }> {
   const apiEndPoint = new URL("/api/v1/enrich/import_file", url.origin).href;
   const fileStore = await getNamedFileStorage({ url, username });
   const cacheFiles = await fileStore.list();
@@ -125,12 +127,13 @@ export async function pushFiles(url: URL, username: string): Promise<{ status: "
     fd.append("afile", upload);
     fd.append("filename", cacheFiles[f]);
     console.log("Sending file", cacheFiles[f]);
-    const result = await fetchPlus(apiEndPoint, fd);
-    if (result.status === "success") {
+    const result = await fetchPlusResponse(apiEndPoint, fd);
+    if (result.ok) {
       console.log("Sending file success", cacheFiles[f]);
       await fileStore.remove(cacheFiles[f]);
     } else {
       console.error(result);
+
       throw new Error("There was an error pushing an import file");
     }
   }

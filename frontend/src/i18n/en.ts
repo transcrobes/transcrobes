@@ -515,6 +515,13 @@ const customEnglishMessages: TranslationMessages = {
       form_server: "Server URL",
       show_suggestions: "Show Suggestions?",
       show_research_details: "Show Research Details?",
+      import: {
+        title: "Import EPUB to Transcrobes",
+        checking: "Checking %{linkUrl} for valid EPUB files...",
+        sending: "Sending %{linkUrl} to Transcrobes server...",
+        link_error: "Error: %{linkUrl} does not point to an EPUB file (%{destUrl})",
+        started: "EPUB import has been successfully sent to the server, please check your imports page for progress.",
+      },
       initialisation: {
         title: "Welcome! It's Transcrobes initialisation time!",
         intro_a: `Transcrobes is entirely browser-based but needs to download a lot of reference data in order to save on
@@ -542,11 +549,17 @@ const customEnglishMessages: TranslationMessages = {
         light_mode: "Light Mode",
         dark_mode: "Dark Mode",
       },
+      page: {
+        title: "Transcrobe page",
+      },
       page_analysis: {
         title: "Page Analysis",
         off: "Off",
         top_right: "Top Right",
         bottom_right: "Bottom Right",
+      },
+      selection: {
+        title: "Transcrobe selection",
       },
       streamer: {
         looking_for_subs: "Looking for subs...",
@@ -554,13 +567,8 @@ const customEnglishMessages: TranslationMessages = {
         sub_content_error: "Error processing subs",
         no_available_subs: "No available subs",
         bad_subs_lang: "Subs not in the correct language",
-      },
-      import: {
-        title: "Import EPUB to Transcrobes",
-        checking: "Checking %{linkUrl} for valid EPUB files...",
-        sending: "Sending %{linkUrl} to Transcrobes server...",
-        link_error: "Error: %{linkUrl} does not point to an EPUB file (%{destUrl})",
-        started: "EPUB import has been successfully sent to the server, please check your imports page for progress.",
+        no_id: "Unable to find video ID",
+        no_data: "Unable to find video data",
       },
     },
     help: {

@@ -10,17 +10,6 @@ import type { ExtensionImportMessage } from "../lib/types";
 
 const proxy = new BackgroundWorkerProxy();
 
-const style = {
-  position: "absolute" as "absolute",
-  top: "50%",
-  left: "50%",
-  transform: "translate(-50%, -50%)",
-  bgcolor: "background.paper",
-  border: "2px solid #000",
-  boxShadow: 24,
-  p: 4,
-};
-
 function ImportPopup() {
   const [open, setOpen] = useState(true);
   const [count, setCount] = useState(0);
@@ -30,19 +19,19 @@ function ImportPopup() {
   }
   useEffect(() => {
     (async () => {
-      if (!open) return;
-      const { data: mess } = await proxy.sendMessagePromise<{ data: ExtensionImportMessage }>({
+      const { data } = await proxy.sendMessagePromise<{ data: ExtensionImportMessage }>({
         source: "Extension",
         type: "getImportMessage",
       });
-      if (mess.status === "ongoing") {
-        setTimeout(() => {
-          setCount(count + 1);
-        }, 2000);
+      if (data.status === "ongoing") {
+        setOpen(true);
       }
-      setMessage(mess.message);
+      setMessage(data.message);
+      setTimeout(() => {
+        setCount(count + 1);
+      }, 1000);
     })();
-  }, [count, open]);
+  }, [count]);
   return (
     <div>
       <Modal
@@ -59,7 +48,18 @@ function ImportPopup() {
         }}
       >
         <Fade in={open}>
-          <Box sx={style}>
+          <Box
+            sx={{
+              position: "absolute" as "absolute",
+              top: "50%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
+              bgcolor: "background.paper",
+              border: "2px solid #000",
+              boxShadow: 24,
+              p: 4,
+            }}
+          >
             <Typography id="transition-modal-title" variant="h6" component="h2">
               {message}
             </Typography>

@@ -14,59 +14,10 @@ from app.enrich import enrich_plain_to_html
 from app.enrich.data import EnrichmentManager
 from app.models.data import Content, Import
 from app.ndutils import gather_with_concurrency, to_enrich
-from pysubs2.exceptions import ContentNotUsable
-from pysubs2.ssastyle import SSAStyle
-from pysubs2.substation import parse_tags
 from sqlalchemy.ext.asyncio.session import AsyncSession
 from webvtt import Caption, WebVTT
 
 logger = logging.getLogger(__name__)
-
-
-# FIXME: monkeypatch pysubs2 until https://github.com/tkarabela/pysubs2/pull/68 is merged
-@classmethod
-def to_file(cls, subs, fp, format_, apply_styles=True, keep_ssa_tags=False, **kwargs):
-    def prepare_text(text: str, style: SSAStyle):
-        text = text.replace(r"\h", " ")
-        text = text.replace(r"\n", "\n")
-        text = text.replace(r"\N", "\n")
-
-        body = []
-        if keep_ssa_tags:
-            body.append(text)
-        else:
-            for fragment, sty in parse_tags(text, style, subs.styles):
-                if apply_styles:
-                    if sty.italic:
-                        fragment = f"<i>{fragment}</i>"
-                    if sty.underline:
-                        fragment = f"<u>{fragment}</u>"
-                    if sty.strikeout:
-                        fragment = f"<s>{fragment}</s>"
-                if sty.drawing:
-                    raise ContentNotUsable
-                body.append(fragment)
-
-        return re.sub("\n+", "\n", "".join(body).strip())
-
-    visible_lines = sorted((line for line in subs if not line.is_comment), key=lambda line: line.start)
-
-    lineno = 1
-    for line in visible_lines:
-        start = cls.ms_to_timestamp(line.start)
-        end = cls.ms_to_timestamp(line.end)
-        try:
-            text = prepare_text(line.text, subs.styles.get(line.style, SSAStyle.DEFAULT_STYLE))
-        except ContentNotUsable:
-            continue
-
-        print(lineno, file=fp)
-        print(start, "-->", end, file=fp)
-        print(text, end="\n\n", file=fp)
-        lineno += 1
-
-
-pysubs2.subrip.SubripFormat.to_file = to_file
 
 
 async def process_subs(db: AsyncSession, the_import: Import, manager: EnrichmentManager):

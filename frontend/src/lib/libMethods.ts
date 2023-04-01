@@ -293,15 +293,15 @@ export function shortProviderTranslations(definition: DefinitionType, maxLength:
   return [...transes].join(", ").slice(0, maxLength);
 }
 
-export function enrichChildren(
-  root: HTMLElement,
-  transcroberObserver: IntersectionObserver,
-  fromLang: InputLanguage,
-): void {
-  textNodes(root).forEach((textNode) => {
+export function enrichNodes(nodes: Node[], transcroberObserver: IntersectionObserver, fromLang: InputLanguage): void {
+  nodes.forEach((textNode) => {
     if (textNode.nodeValue && textNode.parentElement) {
-      if (!toEnrich(textNode.nodeValue, fromLang)) {
-        console.log("Not enriching: " + textNode.nodeValue);
+      if (
+        // either it's been done, or is not to do
+        !!textNode.parentElement?.parentElement?.parentElement?.dataset?.tced ||
+        !toEnrich(textNode.nodeValue, fromLang)
+      ) {
+        console.debug("Not enriching: " + textNode.nodeValue);
         return;
       }
       transcroberObserver.observe(textNode.parentElement);

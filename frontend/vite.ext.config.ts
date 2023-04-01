@@ -17,6 +17,7 @@ const replaceOptions: RollupReplaceOptions = {
 export default defineConfig({
   envDir: resolve(__dirname),
   build: {
+    target: "esnext",
     outDir: resolve(__dirname, "extbuild"),
     sourcemap: process.env.SOURCE_MAP === "true",
     rollupOptions: {

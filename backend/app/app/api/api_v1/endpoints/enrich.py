@@ -441,19 +441,26 @@ async def import_file(
     db: AsyncSession = Depends(deps.get_db),
 ):
     import_id = os.path.basename(filename).split("_")[0]
-    logger.info(f"Importing file {filename} for user {current_user.id}")
+    logger.warn(f"Importing file {filename} for user {current_user.id}")
     stmt = select(Import.id).where(Import.id == import_id)
     result = await db.execute(stmt)
     is_ready = result.scalar_one_or_none()
     if not is_ready:
         # we need this because the sync needs to happen before this can
-        return {"status": "unknown_import"}
+        logger.warn(f"{import_id} for {filename} for user {current_user.id} is not ready yet")
+        raise HTTPException(
+            status_code=status.HTTP_412_PRECONDITION_FAILED,
+            detail="Import not ready for file",
+        )
 
     filepath = absolute_imports_path(current_user.id, filename)
     pathlib.Path(os.path.dirname(filepath)).mkdir(parents=True, exist_ok=True)
+
+    logger.warn(f"{import_id} for {filename} for user {current_user.id} is about to be saved")
     async with aiofiles.open(filepath, "wb") as out_file:
         await out_file.write(afile.file.read())
     file_event = ProcessData(type="import", id=import_id)
+    logger.warn(f"{import_id} should now be sent to kafka")
     await import_process_topic.send(value=file_event)
 
     return {"status": "success"}
