@@ -1,6 +1,7 @@
 version: "3.9"
 services:
   nginx:
+    platform: linux/amd64
     image: nginx:latest
     volumes:
       - ./frontend/nginx.conf:/etc/nginx/conf.d/default.conf:ro
@@ -9,6 +10,7 @@ services:
     depends_on:
       - backend
   db:
+    platform: linux/amd64
     image: postgres:15
     volumes:
       - app-db-data15:/var/lib/postgresql/data/pgdata
@@ -17,6 +19,7 @@ services:
     environment:
       - PGDATA=/var/lib/postgresql/data/pgdata
   statsdb:
+    platform: linux/amd64
     image: postgres:15
     volumes:
       - app-statsdb-data15:/var/lib/postgresql/data
@@ -30,16 +33,19 @@ services:
       - POSTGRES_PORT=${STATS_POSTGRES_PORT?Variable not set}
 
   corenlpzh:
+    platform: linux/amd64
     image: transcrobes/corenlp-chinese:4.5.1
     env_file:
       - .env
 
   corenlpen:
+    platform: linux/amd64
     image: transcrobes/corenlp-english:4.5.1
     env_file:
       - .env
 
   kafka:
+    platform: linux/amd64
     image: docker.io/bitnami/kafka:3.4
     volumes:
       - "app-kafka_data:/bitnami"
@@ -60,6 +66,7 @@ services:
       - KAFKA_CFG_MESSAGE_MAX_BYTES=5242880
 
   backend:
+    platform: linux/amd64
     image: "${DOCKER_IMAGE_BACKEND?Variable not set}:${TAG-latest}"
     depends_on:
       - db
@@ -87,6 +94,7 @@ services:
     command: /bin/bash /start-reload.sh
 
   sworker:
+    platform: linux/amd64
     image: "${DOCKER_IMAGE_SWORKER?Variable not set}:${TAG-latest}"
     depends_on:
       - backend
@@ -115,6 +123,7 @@ services:
         TRANSCROBES_DOCKER_REPO: ${TRANSCROBES_DOCKER_REPO-transcrobes}
 
   faustworker:
+    platform: linux/amd64
     image: "${DOCKER_IMAGE_FAUSTWORKER?Variable not set}:${TAG-latest}"
     volumes:
       - app-files-data:/media
