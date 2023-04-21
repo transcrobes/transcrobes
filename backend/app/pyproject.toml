@@ -6,6 +6,7 @@ requires-python = ">=3.11"
 authors = [{ name = "Anton Melser", email = "anton@transcrob.es" }]
 license = { file = "LICENSE" }
 dependencies = [
+  "user-agents",
   "pysubs2",
   "pyjson5",
   "requests",

@@ -8,7 +8,7 @@ import logging
 import mimetypes
 import os
 from email.utils import formatdate
-from typing import Any, List
+from typing import Annotated, Any, List
 
 import orjson
 from aiokafka import AIOKafkaProducer
@@ -17,11 +17,12 @@ from app.api import deps
 from app.core.config import settings
 from app.data.models import DATA_JS_SUFFIX, DATA_JSON_SUFFIX, ENRICH_JSON_SUFFIX, PARSE_JSON_SUFFIX
 from app.models.user import SHARED_USER_ID, absolute_resources_path
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Header
 from fastapi.exceptions import HTTPException
 from fastapi.responses import FileResponse, Response
 from starlette import status
 from starlette.responses import JSONResponse
+from user_agents import parse
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -103,7 +104,7 @@ async def available_languages():
     return JSONResponse(list(settings.LANG_PAIRS.keys()))
 
 
-async def get_content_response(destination, resource_path):
+async def get_content_response(destination, resource_path, user_agent: str):
     destination_no_data_suffix = destination.removesuffix(DATA_JS_SUFFIX).removesuffix(DATA_JSON_SUFFIX)
     is_data_file_request = destination.endswith(DATA_JS_SUFFIX) or destination.endswith(DATA_JSON_SUFFIX)
 
@@ -115,7 +116,14 @@ async def get_content_response(destination, resource_path):
         )
 
     if not is_data_file_request:
-        response = FileResponse(destination, media_type=mimetypes.guess_type(destination)[0])
+        media_type = mimetypes.guess_type(destination)[0]
+        if media_type == "application/xhtml+xml":
+            # https://caniuse.com/?search=script%3A%20type%3A%20module
+            # Safari is broken with "application/xhtml+xml"...
+            ua = parse(user_agent)
+            if ua and "safari" in ua.browser.family.lower():
+                media_type = "text/html"
+        response = FileResponse(destination, media_type=media_type)
         return response
 
     parse_path = f"{destination_no_data_suffix}{PARSE_JSON_SUFFIX}"
@@ -172,9 +180,10 @@ async def serve_shared_content(  # pylint: disable=R0914  # FIXME: consider redu
     resource_path: str,
     # current_user: models.AuthUser = Depends(deps.get_current_good_user),
     current_user: models.AuthUser = Depends(deps.get_current_good_tokenpayload),
+    user_agent: Annotated[str | None, Header()] = None,
 ):
     destination = absolute_resources_path(SHARED_USER_ID, resource_path)
-    return await get_content_response(destination, resource_path)
+    return await get_content_response(destination, resource_path, user_agent)
 
 
 @router.get("/content/{resource_path:path}", name="serve_content")
@@ -182,6 +191,7 @@ async def serve_content(  # pylint: disable=R0914  # FIXME: consider reducing
     resource_path: str,
     # current_user: models.AuthUser = Depends(deps.get_current_good_user),
     current_user: models.AuthUser = Depends(deps.get_current_good_tokenpayload),
+    user_agent: Annotated[str | None, Header()] = None,
 ):
     destination = absolute_resources_path(current_user.id, resource_path)
-    return await get_content_response(destination, resource_path)
+    return await get_content_response(destination, resource_path, user_agent)
