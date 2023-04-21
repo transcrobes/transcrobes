@@ -256,7 +256,6 @@ export function onEntryId(entries: IntersectionObserverEntry[]): void {
         if (uniqueIds.size > 0) {
           await ensureDefinitionsLoaded(proxy, [...uniqueIds], store);
         }
-        // FIXME: how much does a setLoading cost?
         if (loading) store.dispatch(setLoading(undefined));
         const etf = document.createElement("span");
         etf.id = data.id.toString();

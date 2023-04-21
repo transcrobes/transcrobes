@@ -11,9 +11,10 @@ export const WEBPUB_CACHE_NAME = "webpub-cache";
 export const PRECACHE_PUBLICATIONS = "PRECACHE_PUBLICATIONS";
 export const IS_DEV = import.meta.env.DEV;
 export const IS_EXT = import.meta.env.PLATFORM === "extension";
-export const DOCS_DOMAIN = import.meta.env.VITE_DOCS_DOMAIN || "localhost:1313";
-export const SITE_DOMAIN = import.meta.env.VITE_SITE_DOMAIN || "localhost";
-export const DEFAULT_SERVER_URL = `http${IS_DEV ? "" : "s"}://${SITE_DOMAIN}`;
+export const DOCS_DOMAIN = import.meta.env.VITE_DOCS_DOMAIN || "tc.tck:1313";
+export const SITE_DOMAIN = import.meta.env.VITE_SITE_DOMAIN || "tc.tck";
+// export const DEFAULT_SERVER_URL = `http${IS_DEV ? "" : "s"}://${SITE_DOMAIN}`;
+export const DEFAULT_SERVER_URL = `https://${SITE_DOMAIN}`;
 
 export const ADMIN_EMAILS = (import.meta.env.VITE_ADMIN_EMAILS || "admin@example.com")
   .split(",")
