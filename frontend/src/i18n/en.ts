@@ -96,6 +96,7 @@ const customEnglishMessages: TranslationMessages = {
     cache_exports_error:
       "There was an error downloading the data files. Please completely close your browser and try again in a few minutes and if you get this message again, contact Transcrobes support: ERROR!",
     datafile: "Retrieved data file: %{datafile}",
+    getting_cache_list: "Getting list of data files",
   },
   widgets: {
     beginners: {

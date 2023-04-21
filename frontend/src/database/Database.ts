@@ -41,6 +41,7 @@ import Polyglot from "node-polyglot";
 
 import { createClient } from "graphql-ws";
 import { GraphQLServerUrl } from "rxdb/dist/types/types";
+import asyncPool from "tiny-async-pool";
 
 type PullableCollectionKeys =
   | DBPullCollectionKeys
@@ -163,6 +164,14 @@ async function loadDatabase(
     .exec();
 }
 
+async function asyncPoolAll(poolLimit: number, array: string[], iteratorFn: (generator: string) => Promise<string>) {
+  const results: any[] = [];
+  for await (const result of asyncPool(poolLimit, array, iteratorFn)) {
+    results.push(result);
+  }
+  return results;
+}
+
 async function cacheExports(
   baseUrl: string,
   initialisationCache: IDBFileStorage,
@@ -174,6 +183,7 @@ async function cacheExports(
   const polyglot = new Polyglot({ phrases: getMessages(user.toLang) });
   const exportFilesListURL = new URL(EXPORTS_LIST_PATH, baseUrl);
   let data: string[];
+  progressCallback(polyglot.t("database.getting_cache_list"), false);
   try {
     data = await fetchPlus(exportFilesListURL);
     console.log("data", data, exportFilesListURL);
@@ -195,7 +205,8 @@ async function cacheExports(
       throw new Error(error);
     }
   }
-  const entryBlock = async (url: string, origin: string) => {
+  const entryBlock = async (url: string) => {
+    const origin = baseUrl;
     let response: any;
     try {
       response = await fetchPlus(new URL(url, origin));
@@ -208,7 +219,9 @@ async function cacheExports(
     progressCallback(polyglot.t("database.datafile", { datafile: url.split("/").slice(-1)[0] }), false);
     return await initialisationCache.put(url, new Blob([JSON.stringify(response)], { type: "application/json" }));
   };
-  await Promise.all(data.map((x: string) => entryBlock(x, baseUrl)));
+  const results = await asyncPoolAll(2, data, entryBlock);
+  console.log("Datafile results", results);
+
   return await initialisationCache.list();
 }
 

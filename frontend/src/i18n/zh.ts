@@ -95,6 +95,7 @@ const customChineseMessages: TranslationMessages = {
     cache_exports_error:
       "下载数据文件时出错。请完全关闭浏览器，并在几分钟后重试，如果您再次收到此消息，请联系 Transcrobes 支持：错误！",
     datafile: "检索到的数据文件： %{datafile}",
+    getting_cache_list: "正在检索缓存列表",
   },
   widgets: {
     beginners: {
