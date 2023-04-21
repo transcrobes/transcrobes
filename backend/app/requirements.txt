@@ -440,9 +440,9 @@ ecdsa==0.18.0 \
     --hash=sha256:190348041559e21b22a1d65cee485282ca11a6f81d503fddb84d5017e9ed1e49 \
     --hash=sha256:80600258e7ed2f16b9aa1d7c295bd70194109ad5a30fdee0eaeefef1d4c559dd
     # via python-jose
-email-validator==2.0.0.post1 \
-    --hash=sha256:26efa040ae50e65cc130667080fa0f372f0ac3d852923a76166a54cf6a0ee780 \
-    --hash=sha256:314114acd9421728ae6f74d0c0a5d6ec547d44ef4f20425af4093828af2266f3
+email-validator==2.0.0.post2 \
+    --hash=sha256:1ff6e86044200c56ae23595695c54e9614f4a9551e0e393614f764860b3d7900 \
+    --hash=sha256:2466ba57cda361fb7309fd3d5a225723c788ca4bbad32a0ebd5373b99730285c
     # via transcrobes (pyproject.toml)
 emails==0.6 \
     --hash=sha256:72c1e3198075709cc35f67e1b49e2da1a2bc087e9b444073db61a379adfb7f3c \
@@ -1105,9 +1105,9 @@ psycopg-binary==3.1.8 \
     --hash=sha256:fa8ca48a35be0f9880ed2093c213f07d318fa9389a2b9194196c239e41a77841 \
     --hash=sha256:fbfc9ae4edfb76c14d09bd70d6f399eb935008bbb3bc4cd6a4ab76645ba3443e
     # via psycopg
-pyasn1==0.4.8 \
-    --hash=sha256:39c7e2ec30515947ff4e87fb6f456dfc6e84857d34be479c9d4a4ba4bf46aa5d \
-    --hash=sha256:aef77c9fb94a3ac588e87841208bdec464471d9871bd5050a287cc9a475cd0ba
+pyasn1==0.5.0 \
+    --hash=sha256:87a2121042a1ac9358cabcaf1d07680ff97ee6404333bacca15f76aa8ad01a57 \
+    --hash=sha256:97b7290ca68e62a832558ec3976f15cbf911bf5d7c7039d8b861c2a0ece69fde
     # via python-jose, rsa
 pycparser==2.21 \
     --hash=sha256:8ee45429555515e1f6b185e78100aea234072576aa43ab53aefcae078162fca9 \
@@ -1826,7 +1826,7 @@ zhon==1.1.5 \
     # via transcrobes (pyproject.toml)
 
 # The following packages are considered to be unsafe in a requirements file:
-setuptools==67.6.1 \
-    --hash=sha256:257de92a9d50a60b8e22abfcbb771571fde0dbf3ec234463212027a4eeecbe9a \
-    --hash=sha256:e728ca814a823bf7bf60162daf9db95b93d532948c4c0bea762ce62f60189078
+setuptools==67.7.0 \
+    --hash=sha256:888be97fde8cc3afd60f7784e678fa29ee13c4e5362daa7104a93bba33646c50 \
+    --hash=sha256:b7e53a01c6c654d26d2999ee033d8c6125e5fa55f03b7b193f937ae7ac999f22
     # via gunicorn
