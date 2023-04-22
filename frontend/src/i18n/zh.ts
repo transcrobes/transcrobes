@@ -96,6 +96,10 @@ const customChineseMessages: TranslationMessages = {
       "下载数据文件时出错。请完全关闭浏览器，并在几分钟后重试，如果您再次收到此消息，请联系 Transcrobes 支持：错误！",
     datafile: "检索到的数据文件： %{datafile}",
     getting_cache_list: "正在检索缓存列表",
+    init_temp_storage: "初始化临时存储",
+    init_storage: "初始化存储",
+    reinstalling: "重新安装数据库",
+    init_structure: "初始化数据库结构",
   },
   widgets: {
     beginners: {

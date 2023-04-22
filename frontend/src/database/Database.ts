@@ -1,23 +1,26 @@
+import { createClient } from "graphql-ws";
 import _ from "lodash";
+import Polyglot from "node-polyglot";
 import { addRxPlugin, clone, createRxDatabase, removeRxDatabase } from "rxdb";
+import { GraphQLServerUrl } from "rxdb/dist/types/types";
 import { RxDBDevModePlugin } from "rxdb/plugins/dev-mode";
 import { RxDBMigrationPlugin } from "rxdb/plugins/migration";
 import { RxDBQueryBuilderPlugin } from "rxdb/plugins/query-builder";
 import {
+  RxGraphQLReplicationState,
   pullQueryBuilderFromRxSchema,
   pushQueryBuilderFromRxSchema,
   replicateGraphQL,
-  RxGraphQLReplicationState,
 } from "rxdb/plugins/replication-graphql";
 import { getRxStorageDexie } from "rxdb/plugins/storage-dexie";
 import { RxDBUpdatePlugin } from "rxdb/plugins/update";
+import asyncPool from "tiny-async-pool";
 import { store } from "../app/createStore";
 import { setUser, throttledRefreshToken } from "../features/user/userSlice";
-import { getFileStorage, IDBFileStorage } from "../lib/IDBFileStorage";
+import { IDBFileStorage, getFileStorage } from "../lib/IDBFileStorage";
 import { fetchPlus, getMessages } from "../lib/libMethods";
-import { API_PREFIX, IS_DEV, SystemLanguage, UserDetails } from "../lib/types";
+import { API_PREFIX, IS_DEV, UserDetails } from "../lib/types";
 import { DBParameters, RxDBDataProviderParams } from "../ra-data-rxdb";
-import { getUserDexie } from "./authdb";
 import {
   BATCH_SIZE_PULL,
   BATCH_SIZE_PUSH,
@@ -31,17 +34,12 @@ import {
   DBTwoWayCollectionKeys,
   DBTwoWayCollections,
   DefinitionDocument,
-  reloadRequired,
   TranscrobesCollections,
   TranscrobesDatabase,
   TranscrobesDocumentTypes,
+  reloadRequired,
 } from "./Schema";
-
-import Polyglot from "node-polyglot";
-
-import { createClient } from "graphql-ws";
-import { GraphQLServerUrl } from "rxdb/dist/types/types";
-import asyncPool from "tiny-async-pool";
+import { getUserDexie } from "./authdb";
 
 type PullableCollectionKeys =
   | DBPullCollectionKeys
@@ -104,12 +102,11 @@ async function loadDatabase(
   justCreated: boolean,
   initialisationCacheName: string,
   user: UserDetails,
-  messagesLang: SystemLanguage,
   progressCallback: (message: string, finished: boolean) => void,
+  polyglot: Polyglot,
 ) {
+  progressCallback(polyglot.t("database.init_temp_storage"), false);
   const initialisationCache = await getFileStorage(initialisationCacheName);
-
-  // FIXME: this is NASTY!!!
   const baseUrl = new URL(graphqlServerUrl.http || "").origin;
 
   if (reinitialise && (await initialisationCache.list()).length > 0) {
@@ -127,7 +124,6 @@ async function loadDatabase(
     cacheFiles = await cacheExports(baseUrl, initialisationCache, user, progressCallback);
     console.debug("Refreshed the initialisation cache with new values", cacheFiles);
   }
-  const polyglot = new Polyglot({ phrases: getMessages(messagesLang) });
   progressCallback(polyglot.t("database.files_downloaded"), false);
 
   const perFilePercent = 77 / cacheFiles.length;
@@ -178,9 +174,8 @@ async function cacheExports(
   user: UserDetails,
   progressCallback: (message: string, finished: boolean) => void,
 ) {
-  // Add the word definitions database urls
-
   const polyglot = new Polyglot({ phrases: getMessages(user.toLang) });
+  // Add the word definitions database urls
   const exportFilesListURL = new URL(EXPORTS_LIST_PATH, baseUrl);
   let data: string[];
   progressCallback(polyglot.t("database.getting_cache_list"), false);
@@ -511,6 +506,8 @@ async function loadFromExports(
   const activateSubscription = true;
 
   const polyglot = new Polyglot({ phrases: getMessages(user.toLang) });
+  progressCallback(polyglot.t("database.init_storage"), false);
+
   const dbName = getDatabaseName(config);
 
   // FIXME: externalise the string
@@ -523,6 +520,7 @@ async function loadFromExports(
   const initialisationCacheName = "transcrobes.initialisation"; // was `${config.cacheName}.initialisation`;
 
   if (reinitialise) {
+    progressCallback(polyglot.t("database.reinstalling"), false);
     await deleteDatabase(dbName);
   }
   const db = await createDatabase(dbName);
@@ -531,6 +529,7 @@ async function loadFromExports(
   let justCreated = false;
 
   try {
+    progressCallback(polyglot.t("database.init_structure"), false);
     justCreated = await createCollections(db);
   } catch (error) {
     console.error("Error trying to create the collections");
@@ -552,8 +551,8 @@ async function loadFromExports(
       justCreated,
       initialisationCacheName,
       user,
-      config.messagesLang,
       progressCallback,
+      polyglot,
     );
   }
   progressCallback(polyglot.t("database.files_loaded"), false);

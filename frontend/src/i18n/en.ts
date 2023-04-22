@@ -97,6 +97,10 @@ const customEnglishMessages: TranslationMessages = {
       "There was an error downloading the data files. Please completely close your browser and try again in a few minutes and if you get this message again, contact Transcrobes support: ERROR!",
     datafile: "Retrieved data file: %{datafile}",
     getting_cache_list: "Getting list of data files",
+    init_temp_storage: "Initialising temporary storage",
+    init_storage: "Initialising storage",
+    reinstalling: "Reinstalling database",
+    init_structure: "Initialising database structure",
   },
   widgets: {
     beginners: {
