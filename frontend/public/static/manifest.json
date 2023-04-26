@@ -1,6 +1,7 @@
 {
   "short_name": "Transcrobes",
   "name": "Transcrobes Language Learning Platform",
+  "description": "Use the Transcrobes platform to learn Chinese and English. Read books and watch videos. Practice important vocabulary. Read any text with personalised help.",
   "icons": [
     {
       "src": "/static/favicon.ico",
@@ -21,10 +22,37 @@
       "src": "/static/tc512.png",
       "type": "image/png",
       "sizes": "512x512"
+    },
+    {
+      "src": "/static/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
     }
   ],
+  "shortcuts": [
+    {
+      "name": "Repetrobes",
+      "url": "/#/repetrobes",
+      "description": "Practice important vocabulary"
+    },
+    {
+      "name": "Textcrobes",
+      "url": "/#/textcrobes",
+      "description": "Read any text with personalised help"
+    },
+    {
+      "name": "Content",
+      "url": "/#/contents",
+      "description": "Read books and watch videos"
+    }
+  ],
+  "categories": ["language learning", "Chinese", "English", "education"],
   "start_url": "/#/",
   "display": "standalone",
   "theme_color": "#000000",
-  "background_color": "#ffffff"
+  "background_color": "#ffffff",
+  "orientation": "portrait-primary",
+  "dir": "ltr",
+  "scope": "/"
 }

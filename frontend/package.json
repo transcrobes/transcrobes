@@ -40,8 +40,7 @@
     "buildext:nf": "cross-env BASE_URL=/ SOURCE_MAP=true vite build --config vite.nf.config.ts --mode=production",
     "buildext:devbuild": "tsc --noEmit && rimraf extbuild && cross-env DEBUG=vite-plugin-pwa:* BASE_URL=/ SOURCE_MAP=true SW=true NODE_OPTIONS='--max-old-space-size=8192' vite build --config vite.ext.config.ts --mode=development",
     "buildext:prod": "tsc --noEmit && npm run buildext:nf && rimraf extbuild && cross-env DEBUG=vite-plugin-pwa:* BASE_URL=/ SOURCE_MAP=true SW=true NODE_OPTIONS='--max-old-space-size=8192' vite build --config vite.ext.config.ts --mode=production",
-    "buildext:release": "rm -f ./extdist/brocrobes-$(git describe --tags).zip && npm run buildext:prod && cd extbuild && rm static/manifest.json && mkdir -p ../extdist && zip -r ../extdist/brocrobes-$(git describe --tags).zip *",
-    "postinstall": "patch-package"
+    "buildext:release": "rm -f ./extdist/brocrobes-$(git describe --tags).zip && npm run buildext:prod && cd extbuild && rm static/manifest.json && mkdir -p ../extdist && zip -r ../extdist/brocrobes-$(git describe --tags).zip *"
   },
   "dependencies": {
     "@hello-pangea/dnd": "^16.0.0",
@@ -147,7 +146,6 @@
     "cross-env": "^7.0.3",
     "eslint": "^8.24.0",
     "eslint-config-prettier": "^8.5.0",
-    "patch-package": "^6.5.1",
     "rimraf": "^5.0.0",
     "typescript": "^5.0.2",
     "vite": "^4.0.1",
