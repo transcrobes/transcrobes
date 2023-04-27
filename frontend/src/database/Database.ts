@@ -214,8 +214,14 @@ async function cacheExports(
     progressCallback(polyglot.t("database.datafile", { datafile: url.split("/").slice(-1)[0] }), false);
     return await initialisationCache.put(url, new Blob([JSON.stringify(response)], { type: "application/json" }));
   };
-  const results = await asyncPoolAll(2, data, entryBlock);
-  console.log("Datafile results", results);
+  try {
+    const results = await asyncPoolAll(2, data, entryBlock);
+    console.log("Datafile results", results);
+  } catch (err) {
+    await initialisationCache.clear();
+    console.error("Error downloading the datafiles");
+    throw err;
+  }
 
   return await initialisationCache.list();
 }
