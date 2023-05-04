@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Open in Browser / 在浏览器中打开</title>
+  <script>
+    import('/static/detect-browser.js').then(({ detect }) => {
+      const browser = detect();
+      if (!browser?.name?.endsWith("-webview")) {
+        location.href = '/';
+      }
+    });
+  </script>
+
+</head>
+
+<body>
+  <h1 style="text-align:center">Open in Browser / 在浏览器中打开</h1>
+  <p> 不受支持。请在普通浏览器窗口中打开应用程序，或使用 Play Store 版本。 </p>
+  <p> Unsupported. Please open Transcrobes in a normal browser window, or use the Play Store version. </p>
+</body>
+
+</html>

@@ -18,21 +18,66 @@ const pwaOptions: Partial<VitePWAOptions> = {
     maximumFileSizeToCacheInBytes: 20000000,
   },
   manifest: {
-    name: "Transcrobes",
     short_name: "Transcrobes",
-    theme_color: "#ffffff",
+    name: "Transcrobes Language Learning Platform",
+    description:
+      "Use the Transcrobes platform to learn Chinese and English. Read books and watch videos. Practice important vocabulary. Read any text with personalised help.",
     icons: [
       {
-        src: "static/tc16.png",
+        src: "/static/favicon.ico",
         sizes: "16x16",
-        type: "image/png",
+        type: "image/x-icon",
       },
       {
-        src: "static/tc128.png",
-        sizes: "128x128",
+        src: "/static/tc128.png",
         type: "image/png",
+        sizes: "128x128",
+      },
+      {
+        src: "/static/tc192.png",
+        type: "image/png",
+        sizes: "192x192",
+      },
+      {
+        src: "/static/tc512.png",
+        type: "image/png",
+        sizes: "512x512",
+      },
+      {
+        src: "/static/icon.svg",
+        sizes: "any",
+        type: "image/svg+xml",
+        purpose: "any",
       },
     ],
+    shortcuts: [
+      // @ts-ignore - this is a valid shortcut
+      {
+        name: "Repetrobes",
+        url: "/#/repetrobes",
+        description: "Practice important vocabulary",
+      },
+      // @ts-ignore
+      {
+        name: "Textcrobes",
+        url: "/#/textcrobes",
+        description: "Read any text with personalised help",
+      },
+      // @ts-ignore
+      {
+        name: "Content",
+        url: "/#/contents",
+        description: "Read books and watch videos",
+      },
+    ],
+    categories: ["language learning", "Chinese", "English", "education"],
+    start_url: "/#/",
+    display: "standalone",
+    theme_color: "#000000",
+    background_color: "#ffffff",
+    orientation: "portrait-primary",
+    dir: "ltr",
+    scope: "/",
   },
   devOptions: {
     enabled: process.env.SW_DEV === "true",
@@ -83,6 +128,7 @@ export default defineConfig({
       input: {
         main: resolve(__dirname, "index.html"),
         readium: resolve(__dirname, "src/contents/boocrobes/index.html"),
+        browsercheck: resolve(__dirname, "unsupported.html"),
       },
       output: {
         format: "es",

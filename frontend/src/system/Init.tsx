@@ -19,20 +19,6 @@ const useStyles = makeStyles()({
   button: { margin: "1em" },
 });
 
-function Intro() {
-  const translate = useTranslate();
-  return (
-    <>
-      <Typography sx={{ paddingBottom: "1em" }} variant="h4">
-        {translate("screens.extension.initialisation.title")}
-      </Typography>
-      <Typography sx={{ paddingBottom: "1em" }}>{translate("screens.initialisation.intro_a")}</Typography>
-      <Typography sx={{ paddingBottom: "1em" }}>{translate("screens.initialisation.intro_b")}</Typography>
-      <Typography sx={{ paddingBottom: "1em" }}>{translate("screens.initialisation.intro_c")}</Typography>
-    </>
-  );
-}
-
 interface RunningMessageProps {
   message: string;
 }
@@ -136,7 +122,9 @@ function Init({ proxy }: Props): ReactElement {
     >
       <Title title={translate("pos.system")} />
       <CardContent>
-        <Intro />
+        <Typography sx={{ paddingBottom: "1em" }} variant="h4">
+          {translate("screens.extension.initialisation.title")}
+        </Typography>
         {runStarted === null && (
           <Button
             variant="contained"
@@ -148,6 +136,7 @@ function Init({ proxy }: Props): ReactElement {
             {translate("screens.system.initialise")}
           </Button>
         )}
+        <Typography sx={{ paddingBottom: "1em" }}>{translate("screens.initialisation.intro")}</Typography>
         {runStarted && (
           <>
             <RunningMessage message={message} />

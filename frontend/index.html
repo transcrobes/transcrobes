@@ -8,30 +8,26 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#000000" />
   <meta name="description" content="Learn a language doing stuff you love" />
-  <link rel="manifest" href="/static/manifest.json" />
+  <link rel="manifest" href="/manifest.webmanifest" />
   <link rel="stylesheet" href="/static/chinese.css">
-  <title> Transcrobes </title>
   <script>
-    import('https://cdn.skypack.dev/detect-browser@5').then(({ detect }) => {
+    import('/static/detect-browser.js').then(({ detect }) => {
       const browser = detect();
-      let supported = false;
-      if (['yandexbrowser', 'edge-chromium', 'chrome', 'opera-mini', 'opera'].includes(browser.name)) {
-        supported = true;
-      } else if (browser.name === 'firefox') {
-        supported = true;
-      } else if (browser.os === 'iOS' || browser.name === 'safari') {
-        supported = true;
-      }
-      if (!supported) {
-        location.href = '/static/unsupported.html';
+      if (browser?.name?.includes("-webview")) {
+        location.href = '/static/openinbrowser.html';
       }
     });
   </script>
+  <title> Transcrobes </title>
 </head>
 
 <body>
   <noscript>You need to enable JavaScript to run this app.</noscript>
-  <div id="root">Loading the application for the first time, please be patient!</div>
+  <div id="root">
+    <p>Loading the application, please be patient!</p>
+    <p>加载应用，请耐心等待！ </p>
+  </div>
+  <div id="error_message"></div>
   <script type="module" src="/src/index.tsx"></script>
 </body>
 

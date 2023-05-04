@@ -51,6 +51,7 @@ import Signup from "./system/Signup";
 import System from "./system/System";
 import teacherregistrations from "./teacherregistrations";
 import userlists from "./userlists";
+import { supported } from "./unsupported";
 
 declare global {
   interface Window {
@@ -116,6 +117,9 @@ function App({ config }: Props): ReactElement {
   let unlisten: Function | undefined;
 
   useEffect(() => {
+    if (!supported) {
+      window.location.href = "/unsupported.html";
+    }
     (async () => {
       const dexieUser = await getUserDexie();
       dispatch(setUser(dexieUser));

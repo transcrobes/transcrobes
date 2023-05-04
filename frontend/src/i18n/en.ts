@@ -3,6 +3,22 @@ import englishMessages from "ra-language-english";
 
 const customEnglishMessages: TranslationMessages = {
   ...englishMessages,
+  unsupported: {
+    title: "Unsupported browser",
+    chrome_version:
+      "Chromium-compatible browsers are supported for version 111+. Please update to the latest version of your browser.",
+    opera_version:
+      "Opera Desktop is supported for version 98+ and Android for 74.3+ (and on iOS 16.4+). Please update Opera to the latest version.",
+    firefox_version: "Firefox is supported on version 111+. Please update Firefox to the latest version.",
+    safari_version: "Safari is supported on iOS 16.4+ and macOS 13.3+. Please update your OS or use another device.",
+    webview_version: "Unsupported. Please open Transcrobes in a normal browser window, or use the Play Store version.",
+    message:
+      "Transcrobes works best on one of the fully supported apps from the Apple App Store or Android Play Store or on either Google Chrome, Microsoft Edge, Opera or other Chromium-based browsers on either the desktop (Windows, Linux and Mac) or on Android. Firefox should also work on the desktop and Android, though may be slower than Chromium-based browsers. On Mac you can also use Apple's Safari browser.",
+    message_ios: "On iOS you can currently use Safari or Opera. We are working to support other browsers for iOS.",
+    message_rest:
+      "We are working hard on bringing compatibility to all platforms. In the meantime, please use one of the supported browsers. Thank you.",
+    button: "Download Edge",
+  },
   pos: {
     search: "Search",
     configuration: "Configuration",
@@ -536,21 +552,17 @@ const customEnglishMessages: TranslationMessages = {
       },
       initialisation: {
         title: "Welcome! It's Transcrobes initialisation time!",
-        intro_a: `Transcrobes is entirely browser-based but needs to download a lot of reference data in order to save on
-        bandwidth and dramatically improve performance, and that is going to take a while (3-10 minutes, depending on
-        how fast your phone/tablet/computer is).`,
-        intro_b: `The system needs to do quite a lot of work, so don't be alarmed if your devices heat up a bit and the fan
-        switches on. It's normal, and will only happen once, at initialisation time. It's better to not interrupt the
-        initialisation while it's happening, so make sure your device has plenty of battery, or is plugged in. It will
-        also download 25-50MB of data so if you are not on wifi, make sure that is not a problem for your data plan.`,
+        intro_a: `Transcrobes is entirely browser-based but needs to download a lot (25-50MB) of reference data in order to save on
+        bandwidth and dramatically improve performance, and that is going to take a while (3-10 minutes, depending on how fast your
+          phone/tablet/computer is).`,
+        intro_b: `It's better to not interrupt the initialisation while it's happening, so make sure your device has plenty
+        of battery, or is plugged in.`,
         update: "Update settings",
-        update_message: `Saving updated settings should only take a few seconds, unless you are changing your username. You may need to
-        reinstall the extension (delete and add again) if you change your username and encounter issues.`,
+        update_message: `Saving updated settings should only take a few seconds, unless you are changing your username. You may need
+        to reinstall the extension (delete and add again) if you change your username and encounter issues.`,
         started: "Initialisation started",
         started_message: `Please be patient while the initialisation finishes. The initialisation will give some
-          updates but you should not be worried unless you see no update for over 5 minutes.
-          No harm should come if you stop the initialisation by navigating away or closing the browser.
-          The initialisation will pick up where it left off when you return.`,
+          updates but you should not be worried unless you see no update for over 5 minutes.`,
       },
       missing_account: `You need an account on a Transcrobes server to Transcrobe a page. \n\n
         If you have an account please fill in the options page (right-click on the Transcrobe Me! icon -> Extension Options)
@@ -600,14 +612,13 @@ const customEnglishMessages: TranslationMessages = {
     },
     initialisation: {
       title: "Welcome! It's Transcrobes initialisation time!",
-      intro_a: `Transcrobes has been tested and works best on either Google Chrome, Microsoft Edge or Yandex Browser (Chromium-based browsers) on either the desktop (Windows, Linux, Mac) or on Android. Unfortunately, other browsers (including everything on iOS) don't properly support all the latest web standards, so some things might not work properly. We are working hard on bringing compatibility to all platforms.`,
-      intro_b: `Even though Transcrobes is entirely browser-based, a lot of Transcrobes' functionality is available offline (it's a "Progressive Web App"), which means you can keep reading your favourite books, watching your favourite movies or doing active learning exercises wherever you are, whenever you want. On a mountain or behind a Great Big Firewall, nothing should get in the way of your learning! This does mean that the system needs to download and prepare some things, and that is going to take a while (3-10 minutes depending on how fast your phone/tablet/computer is).`,
-      intro_c: `The system needs to do quite a lot of work (mainly building indexeddb indexes), so don't be alarmed if your devices heat up a bit (should be less than a gaming session though!) and the fan switches on. It's normal, and will only happen once, at initialisation time. It's better to not interrupt the initialisation while it's happening (like any initialisation!), so make sure your device has plenty of battery (or is plugged in). It will also download 25-50MB of data so if you are not on wifi, make sure that is not a problem for your data plan.`,
+      intro: `Even though Transcrobes is entirely browser-based, a lot of Transcrobes' functionality is available offline
+      (it's a "Progressive Web App"), which means you can keep reading your favourite books, watching your favourite movies or
+      doing active learning exercises wherever you are, whenever you want. This does mean that the system needs to download and
+      prepare some things, and that is going to take a while (3-10 minutes depending on how fast your phone/tablet/computer is).`,
       started: "Initialisation started",
       started_message: `Please be patient while the initialisation finishes. The initialisation will give some
-          updates but you should not be worried unless you see no update for over 5 minutes.
-          No harm should come if you stop the initialisation by navigating away or closing the browser.
-          The initialisation will pick up where it left off when you return.`,
+          updates but you should not be worried unless you see no update for over 5 minutes.`,
     },
     listrobes: {
       name: "Listrobes",
@@ -790,7 +801,7 @@ const customEnglishMessages: TranslationMessages = {
     },
     system: {
       name: "Global Settings",
-      initialise: "Initialise",
+      initialise: "Get Started!",
       refresh_caches: "Refresh caches (Instant)",
       reload_db: "Reload DB (Almost Instant)",
       refresh_db_from_server: "Refresh DB from server (Up to 10 mins)",

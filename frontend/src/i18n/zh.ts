@@ -3,6 +3,19 @@ import chineseMessages from "./zhBase";
 
 const customChineseMessages: TranslationMessages = {
   ...chineseMessages,
+  unsupported: {
+    title: "不支持的浏览器",
+    chrome_version: "版本 111+ 支持与 Chromium 兼容的浏览器。请更新至最新版本的浏览器。",
+    opera_version: "Opera Desktop 支持 98+ 版本和 Android 74.3+（以及 iOS 16.4+）。请将 Opera 更新到最新版本。",
+    firefox_version: "支持 Firefox 版本 112+。 请将 Firefox 更新至最新版本。",
+    safari_version: "支持 iOS 16.4+ 和 macOS 13.3+ 上的 Safari。请更新您的操作系统或使用其他设备。",
+    webview_version: "不受支持。请在普通浏览器窗口中打开应用程序，或使用 Play Store 版本。",
+    message:
+      "Transcrobes 在 Apple App Store 或 Android Play Store 中完全支持的应用程序之一或 Google Chrome、Microsoft Edge、Opera 或桌面（Windows、Linux 和 Mac）或 Android 上的其他基于 Chromium 的浏览器上运行效果最佳。Firefox 应该也可以在桌面和 Android 上运行，但可能比基于 Chromium 的浏览器慢。 在 Mac 上，您还可以使用 Apple 的 Safari 浏览器。",
+    message_ios: "在 iOS 上，您目前可以使用 Safari 或 Opera。我们正在努力为 iOS 支持其他浏览器。",
+    message_rest: "我们正在努力为所有平台带来兼容性。同时，请使用其中一种受支持的浏览器。谢谢。",
+    button: "下载微软 Edge",
+  },
   pos: {
     search: "搜索",
     configuration: "配置",
@@ -508,10 +521,10 @@ const customChineseMessages: TranslationMessages = {
       show_research_details: "显示研究详细信息？",
       import: {
         title: "将 EPUB 导入 Transcrobes",
-        // checking: "Checking %{linkUrl} for valid EPUB files...",
-        // sending: "Sending %{linkUrl} to Transcrobes server...",
-        // link_error: "Error: %{linkUrl} does not point to an EPUB file (%{destUrl})",
-        // started: "EPUB import has been successfully sent to the server, please check your imports page for progress.",
+        checking: "正在检查 %{linkUrl} 是否有有效的 EPUB 文件...",
+        sending: "正在将 %{linkUrl} 发送到 Transcrobes 服务器...",
+        link_error: "错误：%{linkUrl} 没有指向 EPUB 文件 (%{destUrl})",
+        started: "EPUB 导入已成功发送到服务器，请检查您的导入页面以了解进度。",
       },
       initialisation: {
         title: "欢迎！ 现在是 Transcrobes 初始化时间！",
@@ -568,12 +581,9 @@ const customChineseMessages: TranslationMessages = {
     },
     initialisation: {
       title: "欢迎！现在是Transcrobes初始化时间！",
-      intro_a: `Transcrobes已经过测试，在桌面（Windows，Linux，Mac）或Android上的Google Chrome，Microsoft Edge或Yandex浏览器（基于Chromium的浏览器）上运行最佳。不幸的是，其他浏览器（包括iOS上的所有浏览器）不能正确支持所有最新的Web标准，因此某些内容可能无法正常工作。我们正在努力为所有平台带来兼容性。`,
-      intro_b: `尽管Transcrobes完全基于浏览器，但Transcrobes的许多功能都可以离线使用（它是一个“渐进式Web应用程序”），这意味着您可以随时随地继续阅读自己喜欢的书籍，观看自己喜欢的电影或进行主动学习练习。在山上或大防火墙后面，没有什么可以妨碍你的学习！这确实意味着系统需要下载和准备一些东西，这将需要一段时间（3-10分钟，具体取决于您的手机/平板电脑/计算机的速度）。`,
-      intro_c: `系统需要做很多工作（主要是构建indexeddb索引），所以如果你的设备有点发热（虽然应该少于游戏会话！）并且风扇打开，请不要惊慌。这是正常的，只会在初始化时发生一次。最好不要在初始化发生时中断初始化（就像任何初始化一样！），因此请确保您的设备有足够的电池（或已插入）。它还将下载25-50MB的数据，因此，如果您不使用wifi，请确保这对您的数据计划没有问题。`,
+      intro: `尽管 Transcrobes 完全基于浏览器，但 Transcrobes 的许多功能都可以离线使用（它是一个“渐进式 Web 应用程序”），这意味着无论您身在何处，您都可以继续阅读您喜爱的书籍、观看您喜爱的电影或进行主动学习练习 ， 无论你什么时候想要。 这确实意味着系统需要下载和准备一些东西，这将需要一段时间（3-10 分钟，具体取决于您的手机/平板电脑/计算机的速度）。`,
       started: "初始化",
-      started_message: `初始化完成时请耐心等待。 初始化将提供一些更新，但您不必担心，除非您在 5 分钟内没有看到任何更新。
-          如果您通过导航离开或关闭浏览器来停止初始化，则不会造成任何伤害。 初始化将在您返回时从中断处继续。`,
+      started_message: `请耐心等待初始化完成。 初始化会提供一些更新，但您不必担心，除非超过 5 分钟没有看到更新。`,
     },
     listrobes: {
       name: "Listrobes",

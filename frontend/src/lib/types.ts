@@ -13,7 +13,6 @@ export const IS_DEV = import.meta.env.DEV;
 export const IS_EXT = import.meta.env.PLATFORM === "extension";
 export const DOCS_DOMAIN = import.meta.env.VITE_DOCS_DOMAIN || "tc.tck:1313";
 export const SITE_DOMAIN = import.meta.env.VITE_SITE_DOMAIN || "tc.tck";
-// export const DEFAULT_SERVER_URL = `http${IS_DEV ? "" : "s"}://${SITE_DOMAIN}`;
 export const DEFAULT_SERVER_URL = `https://${SITE_DOMAIN}`;
 
 export const ADMIN_EMAILS = (import.meta.env.VITE_ADMIN_EMAILS || "admin@example.com")
@@ -160,7 +159,7 @@ const SIMPLE_POS_VALUES_OBJ = SIMPLE_POS_VALUES.reduce(
   (acc, next) => ({ ...acc, [next]: null }),
   {} as Record<string, null>,
 );
-export type SimplePosType = typeof SIMPLE_POS_VALUES[number];
+export type SimplePosType = (typeof SIMPLE_POS_VALUES)[number];
 
 export function isSimplePOS(value: string): value is SimplePosType {
   return value in SIMPLE_POS_VALUES_OBJ;
@@ -256,8 +255,8 @@ const ZH_TREEBANK_POS_VALUES_OBJ = ZH_TREEBANK_POS_VALUES.reduce(
   (acc, next) => ({ ...acc, [next]: null }),
   {} as Record<string, null>,
 );
-export type EnTreebankPosType = typeof EN_TREEBANK_POS_VALUES[number];
-export type ZhTreebankPosType = typeof ZH_TREEBANK_POS_VALUES[number];
+export type EnTreebankPosType = (typeof EN_TREEBANK_POS_VALUES)[number];
+export type ZhTreebankPosType = (typeof ZH_TREEBANK_POS_VALUES)[number];
 
 export type AnyPosType = EnTreebankPosType | ZhTreebankPosType | SimplePosType;
 export type AnyTreebankPosType = EnTreebankPosType | ZhTreebankPosType;
@@ -398,7 +397,7 @@ export const SEGMENTED_BASE_PADDING = 6;
 
 export type USER_STATS_MODE_KEY = keyof typeof USER_STATS_MODE;
 
-export type USER_STATS_MODE_KEY_VALUES = typeof USER_STATS_MODE[USER_STATS_MODE_KEY];
+export type USER_STATS_MODE_KEY_VALUES = (typeof USER_STATS_MODE)[USER_STATS_MODE_KEY];
 
 export const SIMPLE_POS_ENGLISH_NAMES: { [key in SimplePosType]: string } = {
   NOUN: "Noun",
@@ -1005,7 +1004,7 @@ export function reverseEnum(enume: any, value: any): string {
 export type ThemeName = "light" | "dark";
 
 export const APPLICATION_NAMES = ["repetrobes", "listrobes", "notrobes", "brocrobes"] as const;
-export type TCApplication = typeof APPLICATION_NAMES[number];
+export type TCApplication = (typeof APPLICATION_NAMES)[number];
 
 export interface ActionEventData {
   target_word: string;
