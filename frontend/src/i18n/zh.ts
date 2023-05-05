@@ -383,6 +383,17 @@ const customChineseMessages: TranslationMessages = {
       teachers: "老师",
       students: "学生",
     },
+    studentregistrations: {
+      name: "课程",
+      fields: {
+        title: "标题",
+        description: "描述",
+        createdAt: "创建时间",
+        updatedAt: "更新时间",
+        status: "活跃",
+      },
+      empty_list: "教师会邀请您加入他们的课程，注册信息会显示在此处。",
+    },
     surveys: {
       name: "调查",
       fields: {
