@@ -124,24 +124,27 @@ async function runMain(tab: chrome.tabs.Tab) {
               localStorage.setItem("TCLang", lang);
               location.reload(); // reload so the content_script has a value from the beginning
             }
+            // @ts-ignore
+            const subs = window.nftts;
+            // @ts-ignore
+            const language = window.netflix?.reactContext?.models?.geo?.data?.locale?.id?.split("-")[0];
             return {
-              // @ts-ignore
-              subs: window.nftts,
-              // @ts-ignore
-              language: window.netflix?.reactContext?.models?.geo?.data?.locale?.id?.split("-")[0],
+              subs,
+              language,
             };
           },
           args: [userData.user.fromLang],
           world: "MAIN",
         });
-        messages.getNetflixData = urls[0].result;
+        // safari doesn't return InjectionResults, it returns the values directly
+        messages.getNetflixData = urls[0]?.result || urls[0];
       } else if (tab.url?.match(STREAMER_DETAILS.youku.ui)) {
         const raw = await chrome.scripting.executeScript({
           target: { tabId: tab.id },
           func: getRawYoukuData,
           world: "MAIN",
         });
-        ({ data: messages.getYoukuData } = getYoukuData(raw[0].result));
+        ({ data: messages.getYoukuData } = getYoukuData(raw[0]?.result || raw[0]));
       }
       chrome.scripting.executeScript({
         target: { tabId: tab.id, allFrames: false },
@@ -290,7 +293,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           world: "MAIN",
         })
         .then((success) => {
-          sendResponse({ source: message.source, type: message.type, value: success[0].result });
+          sendResponse({ source: message.source, type: message.type, value: success[0]?.result || success[0] });
         });
     } else {
       sendResponse({ source: message.source, type: message.type, value: false });
