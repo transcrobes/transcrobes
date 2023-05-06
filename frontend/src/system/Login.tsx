@@ -62,22 +62,21 @@ interface FormValues {
 
 const { Form } = withTypes<FormValues>();
 
-const messages = {
-  "001": "Email validated successfully",
-  "002": `Email validation error, please contact ${ADMIN_EMAILS.join(" or ")}`,
-  "003": `Email validation expired, please contact ${ADMIN_EMAILS.join(" or ")}`,
-};
-
 function Login(): ReactElement {
   const [loading, setLoading] = useState(false);
   const translate = useTranslate();
   const { classes } = useStyles();
   const notify = useNotify();
   const login = useLogin();
-  // const location = useLocation<{ nextPathname: string } | null>();
   const location = useLocation();
 
   const incomingMessageId = new URLSearchParams(location.search).get("msg");
+
+  const messages = {
+    "001": translate("user.login.messages.001"),
+    "002": translate("user.login.messages.002", { admin_emails: ADMIN_EMAILS.join(" or ") }),
+    "003": translate("user.login.messages.003", { admin_emails: ADMIN_EMAILS.join(" or ") }),
+  };
 
   useEffect(() => {
     if (incomingMessageId) {

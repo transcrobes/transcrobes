@@ -14,12 +14,13 @@ logger = logging.getLogger(__name__)
 @router.post("/test-email/", response_model=schemas.Msg, status_code=201)
 def test_email(
     email_to: EmailStr,
+    to_lang: str = "en",
     _current_user: models.AuthUser = Depends(deps.get_current_active_superuser),
 ) -> Any:
     """
     Test emails.
     """
-    send_test_email(email_to=email_to)
+    send_test_email(email_to=email_to, to_lang=to_lang)
     return {"msg": "Test email sent"}
 
 

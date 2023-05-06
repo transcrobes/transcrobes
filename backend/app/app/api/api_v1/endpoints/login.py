@@ -155,7 +155,9 @@ async def recover_password(email: str, request: Request, db: AsyncSession = Depe
     assert user.email is not None
     # assert email is not None
     # assert password_reset_token is not None
-    send_reset_password_email(email_to=user.email, email=email, token=password_reset_token, request=request)
+    send_reset_password_email(
+        email_to=user.email, email=email, token=password_reset_token, request=request, to_lang=user.to_lang
+    )
     return {"msg": "Password recovery email sent"}
 
 

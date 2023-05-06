@@ -40,6 +40,13 @@ const customChineseMessages: TranslationMessages = {
     help: {
       site: "网站信息",
     },
+    login: {
+      messages: {
+        "001": "电子邮件验证成功",
+        "002": "电子邮件验证错误，请联系 %{admin_emails}",
+        "003": "电子邮件验证已过期，请联系 %{admin_emails}",
+      },
+    },
     signup: {
       label: "创建一个账户",
       error: "创建账户时出错，请稍后再试",

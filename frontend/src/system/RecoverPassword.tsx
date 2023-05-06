@@ -1,18 +1,17 @@
-import { ReactElement, useState } from "react";
-import { Notification, useTranslate, useNotify } from "react-admin";
-import { Field, withTypes } from "react-final-form";
 import ReplayIcon from "@mui/icons-material/Replay";
-import { makeStyles } from "tss-react/mui";
-import Card from "@mui/material/Card";
-import Avatar from "@mui/material/Avatar";
-import CardActions from "@mui/material/CardActions";
-import Button from "@mui/material/Button";
-import Typography from "@mui/material/Typography";
-import { Link } from "react-router-dom";
-import CircularProgress from "@mui/material/CircularProgress";
 import { TextField } from "@mui/material";
+import Avatar from "@mui/material/Avatar";
+import Button from "@mui/material/Button";
+import Card from "@mui/material/Card";
+import CardActions from "@mui/material/CardActions";
+import CircularProgress from "@mui/material/CircularProgress";
+import Typography from "@mui/material/Typography";
+import { ReactElement, useState } from "react";
+import { Notification, useNotify, useTranslate } from "react-admin";
+import { Field, withTypes } from "react-final-form";
+import { Link } from "react-router-dom";
+import { makeStyles } from "tss-react/mui";
 import { DOCS_DOMAIN } from "../lib/types";
-import { AppBar } from "../components/AppBar";
 
 const useStyles = makeStyles()((theme) => ({
   main: {
@@ -75,7 +74,6 @@ export default function RecoverPassword(): ReactElement {
 
   function handleSubmit(auth: FormValues) {
     setLoading(true);
-    // FIXME: hardcoded url
     fetch(`${location.origin}/api/v1/password-recovery/${auth.email}`, { method: "POST" })
       .then(() => {
         notify("user.reset_password.email_success", { type: "success" });
@@ -104,15 +102,6 @@ export default function RecoverPassword(): ReactElement {
     }
     return errors;
   }
-  // import {
-  //     AppBar as MuiAppBar,
-  //     AppBarProps as MuiAppBarProps,
-  //     Toolbar,
-  //     Typography,
-  //     useMediaQuery,
-  //     Theme,
-  // } from '@mui/material';
-
   const helpUrl = `//${DOCS_DOMAIN}`;
   return (
     <div>

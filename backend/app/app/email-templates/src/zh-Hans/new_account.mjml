@@ -1,0 +1,32 @@
+<mjml>
+  <mj-body background-color="#fff">
+    <mj-section>
+      <mj-column>
+        <mj-divider border-color="#555" />
+        <mj-text font-size="20px" color="#555" font-family="helvetica">
+          {{ project_name }} - 新账户
+        </mj-text>
+        <mj-text font-size="16px" color="#555">
+          我们收到了一个帐户创建请求，电子邮件为 {{ email }}
+        </mj-text>
+        <mj-text font-size="16px" color="#555">
+          请点击下面的按钮验证您的帐户：
+        </mj-text>
+        <mj-button padding="50px 0px" href="{{ link }}">验证电子邮件</mj-button>
+        <mj-text font-size="16px" color="#555">或打开以下链接：</mj-text>
+        <mj-text font-size="16px" color="#555">
+          <a href="{{ link }}">{{ link }}</a>
+        </mj-text>
+        <mj-divider border-color="#555" border-width="2px" />
+        <mj-text font-size="14px" color="#555">
+          验证链接/按钮将在 {{ valid_hours }} 后过期 小时。
+        </mj-text>
+        <mj-text font-size="14px" color="#555">
+          如果您没有申请帐户，您可以忽略这封电子邮件。
+          可能有人错误/输入错误地输入了您的电子邮件。 感到抱歉 不便之处！
+        </mj-text>
+        <mj-divider border-color="#555" border-width="2px" />
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>

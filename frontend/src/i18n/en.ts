@@ -40,6 +40,13 @@ const customEnglishMessages: TranslationMessages = {
     help: {
       site: "Website information",
     },
+    login: {
+      messages: {
+        "001": "Email validated successfully",
+        "002": "Email validation error, please contact %{admin_emails}",
+        "003": "Email validation expired, please contact %{admin_emails}",
+      },
+    },
     signup: {
       label: "Create an account",
       error: "Error creating account, please try again later",

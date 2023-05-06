@@ -1,0 +1,1 @@
+{project_name} - 用户 {username} 的新帐户

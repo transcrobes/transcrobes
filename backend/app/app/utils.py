@@ -36,10 +36,10 @@ def send_email(  # pylint: disable=W0102
     logging.info(f"send email result: {response}")
 
 
-def send_test_email(email_to: str) -> None:
+def send_test_email(email_to: str, to_lang: str = "en") -> None:
     project_name = settings.PROJECT_NAME
     subject = f"{project_name} - Test email"
-    with open(Path(settings.EMAIL_TEMPLATES_DIR) / "test_email.html", encoding="utf8") as f:
+    with open(Path(settings.EMAIL_TEMPLATES_DIR) / to_lang / "test_email.html", encoding="utf8") as f:
         template_str = f.read()
     send_email(
         email_to=email_to,
@@ -49,12 +49,15 @@ def send_test_email(email_to: str) -> None:
     )
 
 
-def send_reset_password_email(email_to: str, email: str, token: str, request: Request) -> None:
+def send_reset_password_email(email_to: str, email: str, token: str, request: Request, to_lang: str = "en") -> None:
     project_name = settings.PROJECT_NAME
-    subject = f"{project_name} - Password recovery for user {email}"
-    with open(Path(settings.EMAIL_TEMPLATES_DIR) / "reset_password.html", encoding="utf8") as f:
+    with open(Path(settings.EMAIL_TEMPLATES_DIR) / to_lang / "reset_password.html", encoding="utf8") as f:
         template_str = f.read()
-    host = f"{request.url.scheme}://{request.url.hostname}"
+    with open(Path(settings.EMAIL_TEMPLATES_DIR) / to_lang / "reset_password_subject.txt", encoding="utf8") as f:
+        subject_str = f.read()
+    subject = subject_str.format(project_name=project_name, email=email)
+
+    host = f"https://{request.url.hostname}"
     link = f"{host}/#/reset-password?token={token}"
     send_email(
         email_to=email_to,
@@ -70,12 +73,15 @@ def send_reset_password_email(email_to: str, email: str, token: str, request: Re
     )
 
 
-def send_new_account_email(email_to: str, username: str, request: Request) -> None:
+def send_new_account_email(email_to: str, username: str, request: Request, to_lang: str = "en") -> None:
     project_name = settings.PROJECT_NAME
-    subject = f"{project_name} - New account for user {username}"
-    with open(Path(settings.EMAIL_TEMPLATES_DIR) / "new_account.html", encoding="utf8") as f:
+    with open(Path(settings.EMAIL_TEMPLATES_DIR) / to_lang / "new_account.html", encoding="utf8") as f:
         template_str = f.read()
-    host = f"{request.url.scheme}://{request.url.hostname}"
+    with open(Path(settings.EMAIL_TEMPLATES_DIR) / to_lang / "new_account_subject.txt", encoding="utf8") as f:
+        subject_str = f.read()
+    subject = subject_str.format(project_name=project_name, username=email_to)
+
+    host = f"https://{request.url.hostname}"
     link = f"{host}{settings.API_V1_STR}/validate-email/{generate_validation_token(email_to)}"
     send_email(
         email_to=email_to,

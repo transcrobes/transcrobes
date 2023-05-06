@@ -27,7 +27,7 @@ import { darkTheme, lightTheme } from "./layout/themes";
 import { ComponentsConfig } from "./lib/complexTypes";
 import { submitActivity } from "./lib/componentMethods";
 import { refreshDictionaries } from "./lib/dictionary";
-import { UUID } from "./lib/funclib";
+import { UUID, getLanguageFromPreferred } from "./lib/funclib";
 import { NAME_PREFIX } from "./lib/interval/interval-decorator";
 import { getDefaultLanguageDictionaries, getI18nProvider } from "./lib/libMethods";
 import {
@@ -241,7 +241,7 @@ function App({ config }: Props): ReactElement {
           theme={theme}
           authProvider={authProvider}
           dataProvider={dataProvider}
-          i18nProvider={getI18nProvider()}
+          i18nProvider={getI18nProvider(getLanguageFromPreferred(navigator.languages))}
           dashboard={() => Dashboard({ config, inited })}
           title="Transcrobes"
           layout={Layout}
