@@ -10,6 +10,7 @@ logger = logging.getLogger(__name__)
 async def search_db_for_streamdetails(db, stream_details: StreamDetails, media_lang: str):
     stmt = (
         select(StreamDetails)
+        .join(Content, StreamDetails.contents)
         .where(
             and_(
                 StreamDetails.streamer == stream_details.streamer,

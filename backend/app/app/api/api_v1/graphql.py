@@ -352,7 +352,7 @@ async def filter_student_word_model_stats(
     ]
     if limit > 0:
         updates = updates[:limit]
-    logger.debug(f"filter_word_model_stats finished: {user_id=}, {limit=}, {id=}, {updated_at=}")
+    logger.debug(f"filter_student_word_model_stats finished: {user_id=}, {limit=}, {id=}, {updated_at=}")
     return [StudentWordModelStats.from_list(user_word) for user_word in updates]
 
 
