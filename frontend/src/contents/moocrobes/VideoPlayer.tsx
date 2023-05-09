@@ -399,7 +399,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, Props>(
                   left: 0,
                   right: 0,
                   bottom: 0,
-                  background: "rgba(0,0,0,0.4)",
+                  background: controlsVisibility === "visible" ? "rgba(0,0,0,0.4)" : undefined,
                   display: "flex",
                   flexDirection: "column",
                   justifyContent: "space-between",
