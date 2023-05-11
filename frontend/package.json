@@ -1,6 +1,6 @@
 {
   "name": "transcrobes",
-  "version": "0.26.0",
+  "version": "0.27.1",
   "private": true,
   "type": "module",
   "prettier": {
@@ -38,9 +38,9 @@
     "serve": "serve -p 5000 dist",
     "buildext:dev": "tsc --noEmit && npm run buildext:nf && cross-env DEBUG=vite-plugin-pwa:* BASE_URL=/ SOURCE_MAP=true SW=true NODE_OPTIONS='--max-old-space-size=8192' vite --force --config vite.ext.config.ts --mode=development",
     "buildext:nf": "cross-env BASE_URL=/ SOURCE_MAP=true vite build --config vite.nf.config.ts --mode=production",
-    "buildext:devbuild": "tsc --noEmit && rimraf extbuild && cross-env DEBUG=vite-plugin-pwa:* BASE_URL=/ SOURCE_MAP=true SW=true NODE_OPTIONS='--max-old-space-size=8192' vite build --config vite.ext.config.ts --mode=development",
+    "buildext:devbuild": "tsc --noEmit && rimraf extbuild && npm run buildext:nf && cross-env DEBUG=vite-plugin-pwa:* BASE_URL=/ SOURCE_MAP=true SW=true NODE_OPTIONS='--max-old-space-size=8192' vite build --config vite.ext.config.ts --mode=development",
     "buildext:prod": "tsc --noEmit && npm run buildext:nf && rimraf extbuild && cross-env DEBUG=vite-plugin-pwa:* BASE_URL=/ SOURCE_MAP=true SW=true NODE_OPTIONS='--max-old-space-size=8192' vite build --config vite.ext.config.ts --mode=production",
-    "buildext:release": "rm -f ./extdist/brocrobes-$(git describe --tags).zip && npm run buildext:prod && cd extbuild && rm static/manifest.json && mkdir -p ../extdist && zip -r ../extdist/brocrobes-$(git describe --tags).zip *"
+    "buildext:release": "rm -f ./extdist/brocrobes-$(git describe --tags).zip && npm run buildext:prod && cd extbuild && mkdir -p ../extdist && zip -r ../extdist/brocrobes-$(git describe --tags).zip *"
   },
   "dependencies": {
     "@hello-pangea/dnd": "^16.0.0",
