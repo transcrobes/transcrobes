@@ -32,9 +32,7 @@ if (language) {
       }
       let best = primary.length > 0 ? primary : backup;
       if (best.length > 0) {
-        best.sort((a, b) => {
-          return b.ttDownloadables["webvtt-lssdh-ios8"].size - a.ttDownloadables["webvtt-lssdh-ios8"].size;
-        });
+        best.sort((a, b) => b.ttDownloadables["webvtt-lssdh-ios8"].size - a.ttDownloadables["webvtt-lssdh-ios8"].size);
         const urls = best[0].ttDownloadables?.["webvtt-lssdh-ios8"]?.urls;
         // @ts-ignore
         window.nftts[parsed.result.movieId] = [{ url: urls.at(0)?.url }, { url: urls.at(-1)?.url }];
@@ -51,6 +49,7 @@ if (language) {
 
     // @ts-ignore
     const data = JSONparse(JSONstringify.apply(this, arguments));
+
     if (data?.params) {
       data.params.preferredTextLocale = language;
       data.params.showAllSubDubTracks = true;

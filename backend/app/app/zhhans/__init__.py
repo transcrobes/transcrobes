@@ -454,6 +454,9 @@ class CoreNLP_ZHHANS_Enricher(Enricher):
         t = t.replace("\N{SOFT HYPHEN}", "")
         t = t.replace("\xc2\xa0", " ")
         t = t.replace("\xa0", " ")
+        # remove the left-to-right mark - in theory we should support this but it's too hard for little benefit at this stage
+        t = t.replace("&#8206;", " ")
+        t = t.replace("&lrm;", " ")
         # ??? t = unicodedata.normalize("NFKD", t)
 
         if remove_whitespace:

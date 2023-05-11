@@ -132,7 +132,7 @@ export default function VideoPlayerScreen({ proxy }: ContentProps): ReactElement
   useEffect(() => {
     (async () => {
       const { data, error } = await getStreamDetails(window.location.href, proxy, user.fromLang);
-      console.log("got back from streamdetails", data, error);
+      console.log("Got back from streamdetails", data, error);
       if (data) {
         setLoadingMessage("screens.extension.streamer.processing_subs");
         const contents = await proxy.sendMessagePromise<{ data: { content_ids?: string[] } }>({
