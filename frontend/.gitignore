@@ -33,3 +33,5 @@ tmp
 
 # this is a bit of a hack...
 nf.iife.js
+
+/public/domain-specific/
