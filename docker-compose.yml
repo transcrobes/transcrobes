@@ -84,7 +84,6 @@ services:
     env_file:
       - .env
     environment:
-      # - SERVER_NAME=${DOMAIN?Variable not set}
       - HA_HOST=${DOMAIN?Variable not set}
       - NODE_HOSTS=${NODE_HOSTS?Variable not set}
       # Allow explicit env var override for tests
@@ -112,8 +111,6 @@ services:
       - SMTP_HOST=${SMTP_HOST}
       - HA_HOST=${DOMAIN?Variable not set}
       - NODE_HOSTS=${NODE_HOSTS?Variable not set}
-      # - SERVER_HOST=http://${DOMAIN?Variable not set}
-      # - SERVER_NAME=${DOMAIN?Variable not set}
       - TRANSCROBES_LOG_LEVEL=INFO
       - TRANSCROBES_DATA_LOG_LEVEL=INFO
       - TRANSCROBES_ENRICH_LOG_LEVEL=INFO
@@ -153,13 +150,6 @@ services:
       args:
         INSTALL_DEV: ${INSTALL_DEV-true}
         TRANSCROBES_DOCKER_REPO: ${TRANSCROBES_DOCKER_REPO-transcrobes}
-
-  # frontend:
-  #   image: "${DOCKER_IMAGE_FRONTEND?Variable not set}:${TAG-latest}"
-  #   build:
-  #     context: ./frontend
-  #     args:
-  #       FRONTEND_ENV: ${FRONTEND_ENV-production}
 
 volumes:
   app-files-data:
