@@ -63,6 +63,10 @@ class Settings(BaseSettings):
     HA_HOST: str
     NODE_HOSTS: List[str]
 
+    PER_DOMAIN: List[str] = None
+    PER_DOMAIN_INTERNAL_PREFIX: str = "domain-specific"
+    STATIC_ROOT: str = "../fapp"
+
     # BACKEND_CORS_ORIGINS is a JSON-formatted list of origins
     # e.g: '["http://localhost", "http://localhost:4200", "http://localhost:3000", \
     # "http://localhost:8080", "http://local.dockertoolbox.tiangolo.com"]'
@@ -426,7 +430,7 @@ class Settings(BaseSettings):
 
         @classmethod
         def parse_env_var(cls, field_name: str, raw_val: str) -> Any:
-            if field_name == "NODE_HOSTS":
+            if field_name == "NODE_HOSTS" or field_name == "PER_DOMAIN":
                 return [x.strip() for x in raw_val.split(",")]
             return cls.json_loads(raw_val)
 

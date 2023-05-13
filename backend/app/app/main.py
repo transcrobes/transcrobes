@@ -9,10 +9,11 @@ from app.api.api_v1.graphql import schema
 from app.core.config import settings
 from app.data.asgi import TranscrobesGraphQL
 from app.enrich import data
-from fastapi import FastAPI, Request, status
+from app.perdomain import get_content_response
+from fastapi import APIRouter, FastAPI, Request, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.cors import CORSMiddleware
 
@@ -52,6 +53,14 @@ app.add_middleware(
 
 # Backend
 app.include_router(api_router, prefix=settings.API_V1_STR)
+
+# per-domain static content, served from the root and stored in frontend/public/domain-specific/the_domain/*
+for prefix in settings.PER_DOMAIN or []:
+    per_domain_router = APIRouter()
+    per_domain_router.add_api_route(
+        "/{resource_path:path}", get_content_response, methods=["GET"], response_class=FileResponse
+    )
+    app.include_router(per_domain_router, prefix=f"/{prefix}", tags=[prefix])
 
 # RxDB GraphQL endpoints
 graphql = TranscrobesGraphQL(schema)
