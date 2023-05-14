@@ -490,12 +490,17 @@ const customChineseMessages: TranslationMessages = {
     },
     brocrobes: {
       name: "Brocrobes",
-      text_a: `Brocrobes 是一个浏览器扩展，与 Google Chrome、Microsoft Edge 和其他 Chromium 衍生浏览器兼容，用于阅读网页。`,
-      text_b: "您可以在 Chrome 网上应用店下载 Brocrobes",
+      text_a: `Brocrobes 是一个浏览器扩展，兼容 Google Chrome、Microsoft Edge 和其他 Chromium 衍生的浏览器，用于在 Netflix
+        和优酷上阅读网页和观看视频的个性化帮助！`,
+      text_b: "从以下位置下载 Brocrobes：",
+      text_b_chrome: "Chrome 网上应用店（目前在中国大陆不可用）",
+      text_b_edge: "Microsoft Edge Store（目前中国大陆可用）",
+      text_b_direct: "直接下载插件（中国大陆安卓版Kiwi浏览器使用）",
       text_c: `Brocrobes 将 Transcrobes 的强大功能带到了网络上的每个页面，让您在任何地方都可以在此应用程序中获得同样的舒适感。`,
-      text_d: `主要的浏览器供应商不支持移动设备上的扩展（还没有？），但你*可以*在 Android 上使用（尽管它可能会比在桌面上慢一点）。
-        我们正在与 Yandex 支持部门合作，以便在未来支持 Yandex Mobile。`,
-      text_e: "下载猕猴桃浏览器",
+      text_d: `主要的 Android 浏览器供应商不支持移动设备上的扩展，但您*可以*使用 Kiwi 浏览器。`,
+      text_e: "下载 Kiwi 浏览器：",
+      text_e_play: "Google Play 上的 Kiwi 浏览器",
+      text_e_direct: "直接下载（APK文件）",
     },
     exports: {
       name: "导出",

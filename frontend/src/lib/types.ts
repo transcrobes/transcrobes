@@ -15,6 +15,10 @@ export const DOCS_DOMAIN = import.meta.env.VITE_DOCS_DOMAIN || "tc.tck:1313";
 export const SITE_DOMAIN = import.meta.env.VITE_SITE_DOMAIN || "tc.tck";
 export const DEFAULT_SERVER_URL = `https://${SITE_DOMAIN}`;
 
+export const DOWNLOAD_DOMAIN = import.meta.env.VITE_DOWNLOAD_DOMAIN || "dl.tc.tck";
+export const KIWI_LOCAL_URL = `https://${DOWNLOAD_DOMAIN}/kiwi-browser-latest.apk`;
+export const KIWI_PLAY_URL = "https://play.google.com/store/apps/details?id=com.kiwibrowser.browser&hl=en&gl=GB";
+
 export const ADMIN_EMAILS = (import.meta.env.VITE_ADMIN_EMAILS || "admin@example.com")
   .split(",")
   .map((x: string) => x.trim());
@@ -125,8 +129,11 @@ export const TEXTCROBES_YT_VIDEO = "https://youtu.be/TUskK-mtz_c";
 export const MOOCROBES_YT_VIDEO = "https://youtu.be/eHGY8JtRGH4";
 export const BOOCROBES_YT_VIDEO = "https://youtu.be/-TDHhtdP-Xk";
 
-export const BROCROBES_WEB_STORE_URL =
+export const BROCROBES_CHROME_WEB_STORE_URL =
   "https://chrome.google.com/webstore/detail/brocrobes/akeangohpdjllngpjiodmebgfhejbbpo?hl=en-GB";
+export const BROCROBES_EDGE_WEB_STORE_URL =
+  "https://microsoftedge.microsoft.com/addons/detail/brocrobes/nlnfancjmjhldabjcpjgpenknkifbgho";
+export const BROCROBES_ZIP_URL = `https://${DOWNLOAD_DOMAIN}/brocrobes-latest.zip`;
 
 // Boocrobes, required in many places
 export const BOOCROBES_HEADER_HEIGHT = 48;

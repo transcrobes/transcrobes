@@ -509,15 +509,18 @@ const customEnglishMessages: TranslationMessages = {
     },
     brocrobes: {
       name: "Brocrobes",
-      text_a: `Brocrobes is a browser extension, compatible with Google Chrome, Microsoft Edge,
-        and other Chromium-derived browsers for reading webpages.`,
-      text_b: "You can download Brocrobes on the Chrome Web Store or the Microsoft Edge Store",
+      text_a: `Brocrobes is a browser extension, compatible with Google Chrome, Microsoft Edge, and other Chromium-derived
+        browsers for personalised help reading webpages and watching videos on Netflix and Youku!`,
+      text_b: "Download Brocrobes from:",
+      text_b_chrome: "Chrome Web Store (currently NOT available in Mainland China)",
+      text_b_edge: "Microsoft Edge Store (currently available in Mainland China)",
+      text_b_direct: "Download the extension directly (use with Kiwi Browser on Android in Mainland China)",
       text_c: `Brocrobes brings the power of Transcrobes to every page on the web,
         giving you the same comfort you get inside this application everywhere.`,
-      text_d: `The main browser vendors don't support extentions on mobile (yet?) but you *can* use the
-            on Android (though it will likely be a little slower than on the desktop). We are working with Yandex
-            support to allow for support of Yandex Mobile at a future date.`,
-      text_e: "Download the Kiwi Browser",
+      text_d: `The main Android browser vendors don't support extensions on mobile but you *can* use the Kiwi Browser.`,
+      text_e: "Download the Kiwi Browser:",
+      text_e_play: "Kiwi Browser on Google Play",
+      text_e_direct: "Direct download (APK file)",
     },
     exports: {
       name: "Exports",

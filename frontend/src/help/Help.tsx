@@ -69,7 +69,6 @@ export default function Help(): ReactElement {
           <a target="_blank" href={`//${DOCS_DOMAIN}/page/meaningful-io/intro/`}>
             {translate("screens.help.text_g")}
           </a>
-          .
         </Typography>
       </CardContent>
     </Card>

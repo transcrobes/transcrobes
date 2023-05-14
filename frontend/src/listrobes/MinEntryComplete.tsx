@@ -1,4 +1,3 @@
-import { Link } from "@mui/material";
 import Button from "@mui/material/Button";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
@@ -8,7 +7,6 @@ import DialogTitle from "@mui/material/DialogTitle";
 import * as React from "react";
 import { useTranslate } from "react-admin";
 import { useNavigate } from "react-router-dom";
-import { BROCROBES_WEB_STORE_URL } from "../lib/types";
 
 export default function MinEntryComplete() {
   const [open, setOpen] = React.useState(true);
@@ -20,7 +18,7 @@ export default function MinEntryComplete() {
   }
 
   function handleBrocrobes() {
-    window.open(BROCROBES_WEB_STORE_URL, "_blank");
+    navigate("/brocrobes");
     setOpen(false);
   }
 
