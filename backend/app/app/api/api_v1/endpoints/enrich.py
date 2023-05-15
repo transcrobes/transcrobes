@@ -551,6 +551,7 @@ async def streaming_title_search(
             impo.import_file = f"{impo.id}_{sub_filename}"
             impo.source_url = stream_details.canonical_url
             sub_file = os.path.join(output_dir, impo.import_file)
+            pathlib.Path(output_dir).mkdir(parents=True, exist_ok=True)
             with open(sub_file, "w") as f:
                 f.write(sub.content)
             db.add(impo)
