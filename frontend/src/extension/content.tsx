@@ -57,10 +57,12 @@ const transcroberObserver: IntersectionObserver = new IntersectionObserver(onEnt
   threshold: [0.9],
 });
 
+const polyglot = new Polyglot({ phrases: getMessages(getLanguageFromPreferred(navigator.languages)) });
+
 if (!streamingSite(location.href)) {
   createRoot(document.body.appendChild(document.createElement("div"))!).render(
     <Provider store={store}>
-      <Loading position="fixed" />
+      <Loading position="fixed" message={polyglot.t("screens.extension.waiting_for_load")} />
     </Provider>,
   );
 }
@@ -128,8 +130,7 @@ const userData = await proxy.sendMessagePromise<UserState>({ source: DATA_SOURCE
 
 if (!userData.username || !userData.password || !userData.baseUrl) {
   store.dispatch(setLoading(undefined));
-  const polyglot = new Polyglot({ phrases: getMessages(getLanguageFromPreferred(navigator.languages)) });
-  alert(polyglot.t("screen.extension.missing_account", { docs_domain: DOCS_DOMAIN }));
+  alert(polyglot.t("screens.extension.missing_account", { docs_domain: DOCS_DOMAIN }));
   throw new Error("Unable to find the current username");
 }
 // FIXME: it is DANGEROUS to use this here, as the async thunks do get and set dexie!!!
@@ -141,26 +142,6 @@ await ensureAllLoaded(proxy, store);
 readerConfig = store.getState().extensionReader[id];
 
 const i18nProvider = getI18nProvider(readerConfig.locale || userData.user.toLang);
-
-if (!streamingSite(location.href)) {
-  const asel = rangy.getSelection();
-  if (asel?.type === "Range" && !asel.isCollapsed) {
-    function doSelection() {
-      const sel = rangy.getSelection();
-      if (sel?.type === "Range" && !sel.isCollapsed) {
-        store.dispatch(setLoading(true));
-        enrichNodes(sel.getRangeAt(0).getNodes([Node.TEXT_NODE]), transcroberObserver, userData.user.fromLang);
-      }
-    }
-    doSelection();
-    const debouncedSelection = _.debounce(doSelection, DEBOUNCE_SELECTION_MS);
-    document.addEventListener("selectionchange", () => {
-      debouncedSelection();
-    });
-  } else {
-    enrichNodes(textNodes(document.body), transcroberObserver, userData.user.fromLang);
-  }
-}
 
 document.addEventListener("click", () => {
   store.dispatch(setTokenDetails(undefined));
@@ -174,6 +155,7 @@ classes = jss
 
 const baseTheme = readerConfig.themeName === "dark" ? popupDarkTheme : popupLightTheme;
 let themeConfig: any = baseTheme;
+
 if (streamingSite(location.href)) {
   themeConfig = {
     ...baseTheme,
@@ -290,4 +272,44 @@ export function onEntryId(entries: IntersectionObserverEntry[]): void {
       }
     });
   });
+}
+
+function runEnrich() {
+  if (typeof rangy?.getSelection !== "function") {
+    console.error("Rangy has not loaded properly, just transcrobing the whole page", JSON.stringify(rangy));
+    enrichNodes(textNodes(document.body), transcroberObserver, userData.user.fromLang);
+  } else {
+    const asel = rangy.getSelection();
+    if (asel?.type === "Range" && !asel.isCollapsed) {
+      function doSelection() {
+        const sel = rangy.getSelection();
+        if (sel?.type === "Range" && !sel.isCollapsed) {
+          store.dispatch(setLoading(true));
+          enrichNodes(sel.getRangeAt(0).getNodes([Node.TEXT_NODE]), transcroberObserver, userData.user.fromLang);
+        }
+      }
+      doSelection();
+      const debouncedSelection = _.debounce(doSelection, DEBOUNCE_SELECTION_MS);
+      document.addEventListener("selectionchange", () => {
+        debouncedSelection();
+      });
+    } else {
+      enrichNodes(textNodes(document.body), transcroberObserver, userData.user.fromLang);
+    }
+  }
+}
+
+if (!streamingSite(location.href)) {
+  // FIXME: this is a failed attempt to get rangy to work properly ;-(
+  // it appears to have missing methods before the load event happens, and for some pages that never fires
+  // (when a resource never times out or loads...)
+  if (document.readyState === "complete" || typeof rangy?.getSelection === "function") {
+    runEnrich();
+  } else {
+    document.addEventListener("readystatechange", () => {
+      if (document.readyState === "complete") {
+        runEnrich();
+      }
+    });
+  }
 }

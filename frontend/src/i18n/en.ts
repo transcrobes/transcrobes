@@ -571,6 +571,7 @@ const customEnglishMessages: TranslationMessages = {
         If you have an account please fill in the options page (right-click on the Transcrobe Me! icon -> Extension Options)
         with your login information (username, password, server URL).\n\n
         See the Transcrobes site http://%{docs_domain} for more information`,
+      waiting_for_load: "Waiting for page to load...",
       popup_theme_mode: {
         title: "Popup Theme Mode",
         light_mode: "Light Mode",
