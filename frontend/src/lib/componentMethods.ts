@@ -376,10 +376,13 @@ export function positionPopup(
   eventX: number,
   eventY: number,
   popupParent: HTMLElement,
+  isFullscreenVideo?: boolean,
 ): PopupPosition {
   const position: PopupPosition = {
+    overflow: "auto",
     left: "",
     top: "",
+    maxHeight: "",
   };
 
   const maxWidth = Math.max(
@@ -401,6 +404,11 @@ export function positionPopup(
   if (window.frameElement) {
     translateDown += BOOCROBES_HEADER_HEIGHT;
   }
-  position.top = `${eventY + translateDown}px`;
+  const pTop = eventY + translateDown;
+  position.top = `${pTop}px`;
+  if (isFullscreenVideo) {
+    const maxHeight = popupParent.ownerDocument.documentElement.clientHeight - pTop;
+    position.maxHeight = `${maxHeight}px`;
+  }
   return position;
 }

@@ -56,7 +56,6 @@ async function getLocalCardWords(message: EventData) {
 
 async function getUserDictionary(ldb: TranscrobesDatabase, dictionaryId: string) {
   if (!dictionaries[dictionaryId]) {
-    console.log("Trying to get", dictionaryId, dictionaries);
     dictionaries[dictionaryId] = await data.getDictionaryEntries(ldb, { dictionaryId });
   }
   return dictionaries[dictionaryId];

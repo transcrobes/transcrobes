@@ -1,23 +1,24 @@
 import { Box, Container, Grid } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import useEventListener from "@use-it/event-listener";
-import { forwardRef, ReactElement, useEffect, useImperativeHandle, useRef, useState } from "react";
+import { ReactElement, forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import ReactPlayer from "react-player";
+import { Cue } from "webvtt-parser";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import Mouseover from "../../components/content/td/Mouseover";
 import TokenDetails from "../../components/content/td/TokenDetails";
+import TranscrobesLayerPlayer from "../../extension/TranscrobesLayerPlayer";
 import { videoReaderActions } from "../../features/content/videoReaderSlice";
-import useFullscreen from "../../hooks/useFullscreen";
 import useWindowDimensions from "../../hooks/WindowDimensions";
+import useFullscreen from "../../hooks/useFullscreen";
 import { overrideTextTrackListeners } from "../../lib/eventlisteners";
 import { DEFAULT_VIDEO_READER_CONFIG_STATE, KeyedModels } from "../../lib/types";
 import PrettoSlider, { ValueLabelComponent } from "./PrettoSlider";
 import SubtitleControl from "./SubtitleControl";
-import TranscrobesLayerPlayer from "../../extension/TranscrobesLayerPlayer";
 import VideoBottomControls from "./VideoBottomControls";
 import VideoCentralControls from "./VideoCentralControls";
 import VideoHeaderControls from "./VideoHeaderControls";
-import { Cue } from "webvtt-parser";
+import useStateRef from "react-usestateref";
 
 ReactPlayer.addCustomPlayer(TranscrobesLayerPlayer as any); // FIXME: the upstream typing is wrong here
 overrideTextTrackListeners();
@@ -27,6 +28,7 @@ let timeoutId = 0;
 
 // FIXME: don't hardcode here
 const TIMER_CLEAR_PREVIOUS_MS = 5000;
+const TIMER_HIDE_CONTROLS_TICKS = 8;
 const SEEK_SECONDS = 5;
 
 function format(seconds: number) {
@@ -70,7 +72,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, Props>(
   ({ cues, models, subsUrl, videoUrl, contentLabel, srcLang, id, topToolbar }, ref) => {
     const playerRef = useRef<ReactPlayer>(null);
     const playerContainerRef = useRef<HTMLDivElement>(null);
-    const [playing, setPlaying] = useState(true);
+    const [playing, setPlaying, playingRef] = useStateRef(true);
     const [seeking, setSeeking] = useState(false);
     const [currentCue, setCurrentCue] = useState("");
     const [track, setTrack] = useState<TextTrack | null>(null);
@@ -119,6 +121,13 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, Props>(
       }
     }, [readerConfig.playbackRate, readerConfig.subPlaybackRate]);
 
+    useEffect(() => {
+      if (playing && !timeoutId && currentCue) {
+        setCurrentCue("");
+        setCurrentPlaybackRate(readerConfig.playbackRate);
+      }
+    }, [playing]);
+
     function shiftSubs(delay: number): void {
       if (track && track.cues) {
         Array.from(track.cues).forEach((cue) => {
@@ -142,43 +151,57 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, Props>(
       e.stopPropagation();
       return false;
     }
-    useEventListener("keydown", (e: KeyboardEvent) => {
-      let matched = true;
-      if (e.key == "f") {
-        toggleFullscreen(playerContainerRef?.current);
-      } else if (e.key == " ") {
-        // space bar, toggle pause
-        setPlaying(!playing);
-        // FIXME: is this necessary?
-        // } else if (e.ctrlKey && e.shiftKey && e.key == "ArrowLeft") {
-        //   setSubPlaybackRate(playbackRate - 0.05);
-        // } else if (e.ctrlKey && e.shiftKey && e.key == "ArrowRight") {
-        //   setSubPlaybackRate(playbackRate + 0.05);
-      } else if (e.ctrlKey && e.shiftKey && e.key == "ArrowLeft") {
-        dispatch(videoReaderActions.setPlaybackRate({ id, value: readerConfig.playbackRate - 0.05 }));
-      } else if (e.ctrlKey && e.shiftKey && e.key == "ArrowRight") {
-        dispatch(videoReaderActions.setPlaybackRate({ id, value: readerConfig.playbackRate + 0.05 }));
-      } else if (e.shiftKey && e.key == "ArrowLeft") {
-        shiftSubs(-0.5);
-      } else if (e.shiftKey && e.key == "ArrowRight") {
-        shiftSubs(0.5);
-      } else if (e.ctrlKey && e.key == "ArrowLeft") {
-        skipBack();
-      } else if (e.ctrlKey && e.key == "ArrowRight") {
-        skipForward();
-      } else if (e.key == "ArrowLeft") {
-        previousCue();
-      } else if (e.key == "ArrowRight") {
-        nextCue();
-      } else {
-        matched = false;
+    useEventListener(
+      "keydown",
+      (e: KeyboardEvent) => {
+        let matched = true;
+        if (e.key == "f") {
+          toggleFullscreen(playerContainerRef?.current);
+        } else if (e.key == " ") {
+          // space bar, toggle pause
+          setPlaying((p) => !p);
+          // FIXME: is this necessary?
+          // } else if (e.ctrlKey && e.shiftKey && e.key == "ArrowLeft") {
+          //   setSubPlaybackRate(playbackRate - 0.05);
+          // } else if (e.ctrlKey && e.shiftKey && e.key == "ArrowRight") {
+          //   setSubPlaybackRate(playbackRate + 0.05);
+        } else if (e.ctrlKey && e.shiftKey && e.key == "ArrowLeft") {
+          dispatch(videoReaderActions.setPlaybackRate({ id, value: readerConfig.playbackRate - 0.05 }));
+        } else if (e.ctrlKey && e.shiftKey && e.key == "ArrowRight") {
+          dispatch(videoReaderActions.setPlaybackRate({ id, value: readerConfig.playbackRate + 0.05 }));
+        } else if (e.shiftKey && e.key == "ArrowLeft") {
+          shiftSubs(-0.5);
+        } else if (e.shiftKey && e.key == "ArrowRight") {
+          shiftSubs(0.5);
+        } else if (e.ctrlKey && e.key == "ArrowLeft") {
+          skipBack();
+        } else if (e.ctrlKey && e.key == "ArrowRight") {
+          skipForward();
+        } else if (e.key == "ArrowLeft") {
+          previousCue();
+        } else if (e.key == "ArrowRight") {
+          nextCue();
+        } else {
+          matched = false;
+        }
+        if (matched) {
+          return stopPropagation(e);
+        } else {
+          return true;
+        }
+      },
+      document,
+      { capture: true },
+    );
+
+    function clearCue() {
+      timeoutId = 0;
+      // keep the subs until they get replaced or TIMER_CLEAR_PREVIOUS_MS after they would have been removed
+      if (playingRef.current) {
+        setCurrentCue("");
+        setCurrentPlaybackRate(readerConfig.playbackRate);
       }
-      if (matched) {
-        return stopPropagation(e);
-      } else {
-        return true;
-      }
-    });
+    }
 
     function doCueChange(e: Event): void {
       const cues = (e?.currentTarget as TextTrack).activeCues;
@@ -187,13 +210,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, Props>(
         setCurrentCue((cues[0] as VTTCue).text);
         setCurrentPlaybackRate(readerConfig.subPlaybackRate);
       } else {
-        // keep the subs until they get replaced or TIMER_CLEAR_PREVIOUS_MS after they would have been removed
-        timeoutId = window.setTimeout(() => {
-          if ((() => playing)()) {
-            setCurrentCue("");
-            setCurrentPlaybackRate(readerConfig.playbackRate);
-          }
-        }, TIMER_CLEAR_PREVIOUS_MS);
+        timeoutId = window.setTimeout(clearCue, TIMER_CLEAR_PREVIOUS_MS);
       }
       return;
     }
@@ -204,7 +221,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, Props>(
       loaded: number;
       loadedSeconds: number;
     }): void {
-      if (count > 10) {
+      if (count > TIMER_HIDE_CONTROLS_TICKS) {
         setControlsVisibility("hidden");
         count = 0;
       }

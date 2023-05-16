@@ -4,7 +4,7 @@ export default function useFullscreen(): [boolean, (container?: HTMLElement | nu
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
 
   const updateFullScreenStatus = useCallback(() => {
-    setIsFullscreen(!!isOnFullscreen());
+    setIsFullscreen(isOnFullscreen());
   }, []);
 
   document.addEventListener("fullscreenchange", updateFullScreenStatus);
@@ -17,7 +17,7 @@ export default function useFullscreen(): [boolean, (container?: HTMLElement | nu
 
 // Methods for Firefox / Safari / Edge
 // We have to cast these types so typescript doesn't complain
-interface FullSpecDocument extends Document {
+export interface FullSpecDocument extends Document {
   mozFullScreenElement: Element | null;
   webkitFullscreenElement: Element | null;
   msFullscreenElement: Element | null;
@@ -41,10 +41,7 @@ const docElm = document.documentElement as FullSpecElement;
 // For Safari IOS: Only available on iPad, not on iPhone.
 // https://developer.mozilla.org/en-US/docs/Web/API/Document/fullscreenEnabled#browser_compatibility
 export const fullScreenEnabled =
-  doc.fullscreenEnabled ||
-  doc.webkitFullscreenEnabled ||
-  doc.mozFullScreenEnabled ||
-  doc.msFullscreenEnabled;
+  doc.fullscreenEnabled || doc.webkitFullscreenEnabled || doc.mozFullScreenEnabled || doc.msFullscreenEnabled;
 
 const enterFullscreen = (container?: HTMLElement | null) => {
   const elem = container || docElm;
@@ -60,23 +57,24 @@ const enterFullscreen = (container?: HTMLElement | null) => {
 };
 
 const exitFullscreen = () => {
-  const exitFunc =
-    doc.exitFullscreen ||
-    doc.mozCancelFullScreen ||
-    doc.webkitExitFullscreen ||
-    doc.msExitFullscreen;
+  const exitFunc = doc.exitFullscreen || doc.mozCancelFullScreen || doc.webkitExitFullscreen || doc.msExitFullscreen;
   if (typeof exitFunc === "function") {
     exitFunc.call(doc);
   }
 };
 
+export function isFullscreened(inDoc?: FullSpecDocument) {
+  const adoc = inDoc || doc;
+  return !!(
+    adoc.fullscreenElement ||
+    adoc.mozFullScreenElement ||
+    adoc.webkitFullscreenElement ||
+    adoc.msFullscreenElement
+  );
+}
+
 export const isOnFullscreen = (() => {
-  const doc = document as FullSpecDocument;
-  return () =>
-    doc.fullscreenElement ||
-    doc.mozFullScreenElement ||
-    doc.webkitFullscreenElement ||
-    doc.msFullscreenElement;
+  return isFullscreened;
 })();
 
 /**

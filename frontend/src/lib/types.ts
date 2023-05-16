@@ -623,9 +623,10 @@ export const GLOSS_NUMBER_NOUNS = false;
 export type GlossPosition = "row" | "column-reverse" | "column" | "row-reverse";
 
 export type PopupPosition = {
+  overflow: "auto";
   left: string;
   top: string;
-  height?: string;
+  maxHeight?: string;
   visibility?: "visible" | "hidden";
 };
 export type EventCoordinates = {

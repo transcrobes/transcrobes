@@ -38,8 +38,10 @@ export type Props = {
 export default function Mouseover({ readerConfig }: Props): ReactElement {
   const [text, setText] = useState("");
   const invisible = {
+    overflow: "auto",
     left: "",
     top: "",
+    maxHeight: "",
     padding: "0px",
     borderWidth: "0px",
     visibility: "hidden",

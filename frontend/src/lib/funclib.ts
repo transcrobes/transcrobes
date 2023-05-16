@@ -164,7 +164,17 @@ export function getManifestURL(contentId: string): string {
 }
 export function recentSentencesFromLZ(wordId: string, lzContent: string): RecentSentencesType | null {
   const uncompress = LZString.decompressFromUTF16(lzContent);
-  return uncompress ? { id: wordId, posSentences: JSON.parse(uncompress) as PosSentences } : null;
+  let posSentences: PosSentences | null = null;
+  if (uncompress) {
+    try {
+      posSentences = JSON.parse(uncompress) as PosSentences;
+    } catch (e) {
+      console.error(e);
+      console.log(uncompress);
+      throw e;
+    }
+  }
+  return posSentences ? { id: wordId, posSentences } : null;
 }
 
 export function validInt(value: any, minValue?: number, maxValue?: number): boolean {

@@ -6,17 +6,16 @@ import { Cue, WebVTTParser } from "webvtt-parser";
 import { store } from "../app/createStore";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
 import HelpButton from "../components/HelpButton";
-import Loading from "../components/Loading";
 import WatchDemo from "../components/WatchDemo";
 import VideoPlayer, { VideoPlayerHandle } from "../contents/moocrobes/VideoPlayer";
 import VideoReaderConfigLauncher from "../contents/moocrobes/VideoReaderConfigLauncher";
 import { getRefreshedState } from "../features/content/contentSlice";
 import { videoReaderActions } from "../features/content/videoReaderSlice";
-import { setLoading } from "../features/ui/uiSlice";
+import { setLoading, setLoadingMessage } from "../features/ui/uiSlice";
 import useWindowDimensions from "../hooks/WindowDimensions";
 import { getNetflixData } from "../lib/componentMethods";
 import { ensureDefinitionsLoaded } from "../lib/dictionary";
-import { getSubsURL, missingWordIdsFromModels, wordIdsFromModels } from "../lib/funclib";
+import { getSubsURL, missingWordIdsFromModels } from "../lib/funclib";
 import { streamingSite } from "../lib/libMethods";
 import { AbstractWorkerProxy } from "../lib/proxies";
 import {
@@ -77,8 +76,6 @@ export async function getStreamDetails(url: string, proxy: AbstractWorkerProxy, 
 export default function VideoPlayerScreen({ proxy }: ContentProps): ReactElement {
   const [models, setModels] = useState<KeyedModels>({});
   const [id, setId] = useState<string>("");
-  // const [contentIds, setContentIds] = useState<string[]>();
-  const [loadingMessage, setLoadingMessage] = useState<string>("screens.extension.streamer.looking_for_subs");
   const dispatch = useAppDispatch();
   const definitions = useAppSelector((state) => state.definitions);
   const [confLoaded, setConfLoaded] = useState(false);
@@ -132,23 +129,23 @@ export default function VideoPlayerScreen({ proxy }: ContentProps): ReactElement
   useEffect(() => {
     (async () => {
       const { data, error } = await getStreamDetails(window.location.href, proxy, user.fromLang);
-      console.log("Got back from streamdetails", data, error);
+      console.debug("Got back from streamdetails", data, error);
       if (data) {
-        setLoadingMessage("screens.extension.streamer.processing_subs");
+        store.dispatch(setLoadingMessage(translate("screens.extension.streamer.processing_subs")));
         const contents = await proxy.sendMessagePromise<{ data: { content_ids?: string[] } }>({
           source: "Extension",
           type: "streamingTitleSearch",
           value: data,
         });
-        console.log("got back from streamingTitleSearch", contents);
+        console.debug("Got back from streamingTitleSearch", contents);
         if (contents?.data?.content_ids && contents.data.content_ids.length > 0) {
           // setContentIds(contents.data.content_ids);
           setId(contents.data.content_ids[0]);
         } else {
-          setLoadingMessage("screens.extension.streamer.sub_content_error");
+          store.dispatch(setLoadingMessage(translate("screens.extension.streamer.sub_content_error")));
         }
       } else if (error) {
-        setLoadingMessage(translate(error));
+        store.dispatch(setLoadingMessage(translate(error)));
         setTimeout(() => location.reload(), 3000);
       }
     })();
@@ -163,6 +160,7 @@ export default function VideoPlayerScreen({ proxy }: ContentProps): ReactElement
         fontSize: dims.width < 1000 ? 1.5 : dims.width < 1500 ? 2 : 2.6,
         subBackgroundBlur: streamer === "youku",
         subRaise: streamer !== "youku" ? 0 : dims.width < 1000 ? 100 : dims.width < 1500 ? 120 : 150,
+        subBoxWidth: 1,
       };
 
       const conf = await getRefreshedState<VideoReaderState>(proxy, defConfig, id);
@@ -224,6 +222,6 @@ export default function VideoPlayerScreen({ proxy }: ContentProps): ReactElement
       />
     </Box>
   ) : (
-    <Loading position="fixed" message={translate(loadingMessage)} show />
+    <></>
   );
 }

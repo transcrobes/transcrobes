@@ -10,9 +10,9 @@ import Grid from "@mui/material/Grid";
 import IconButton from "@mui/material/IconButton";
 import Slider from "@mui/material/Slider";
 import Typography from "@mui/material/Typography";
+import { Theme } from "@mui/material/styles";
 import React, { ReactElement } from "react";
 import { Button as RAButton, useTranslate } from "react-admin";
-import { makeStyles } from "tss-react/mui";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import { videoReaderActions } from "../../features/content/videoReaderSlice";
 import { DEFAULT_VIDEO_READER_CONFIG_STATE } from "../../lib/types";
@@ -35,50 +35,23 @@ interface Props extends VideoReaderConfigProps {
   onFastForward: () => void;
   onToggleFullscreen: () => void;
 }
-const useStyles = makeStyles()((theme) => {
+function bottomIcons(theme: Theme) {
   return {
-    controlsWrapper: {
-      [theme.breakpoints.down("md")]: {
-        padding: 0,
-      },
-      [theme.breakpoints.up("md")]: {
-        padding: theme.spacing(2),
+    "&:hover": {
+      color: theme.palette.getContrastText(theme.palette.background.default),
+    },
+    [theme.breakpoints.down("md")]: {
+      "& svg": {
+        fontSize: 15,
       },
     },
-    timer: {
-      // FIXME: should this colour be changeable?
-      color: "#fff",
-      [theme.breakpoints.down("md")]: {
-        fontSize: "0.5em",
-        marginLeft: theme.spacing(1),
-      },
-      [theme.breakpoints.up("md")]: {
-        fontSize: "1em",
-        marginLeft: theme.spacing(2),
+    [theme.breakpoints.up("md")]: {
+      "& svg": {
+        fontSize: 30,
       },
     },
-    bottomIcons: {
-      color: "#999",
-      "&:hover": {
-        color: theme.palette.getContrastText(theme.palette.background.default),
-      },
-      [theme.breakpoints.down("md")]: {
-        "& svg": {
-          fontSize: 15,
-        },
-      },
-      [theme.breakpoints.up("md")]: {
-        "& svg": {
-          fontSize: 30,
-        },
-      },
-    },
-    volumeSlider: {
-      width: 100,
-    },
-    volumeButton: {},
   };
-});
+}
 
 function VideoBottomControls({
   id,
@@ -93,7 +66,7 @@ function VideoBottomControls({
   onToggleFullscreen,
   ...props
 }: Props): ReactElement {
-  const { classes: localClasses } = useStyles();
+  // const { classes: localClasses } = useStyles();
   const { muted, volume, timeDisplayFormat } = useAppSelector(
     (state) => state.videoReader[id] || DEFAULT_VIDEO_READER_CONFIG_STATE,
   );
@@ -107,17 +80,25 @@ function VideoBottomControls({
       direction="row"
       justifyContent="space-between"
       alignItems="center"
-      className={localClasses.controlsWrapper}
+      // className={localClasses.controlsWrapper}
+      sx={(theme) => ({
+        [theme.breakpoints.down("md")]: {
+          padding: 0,
+        },
+        [theme.breakpoints.up("md")]: {
+          padding: theme.spacing(2),
+        },
+      })}
     >
       <Grid item>
         <Grid container alignItems="center">
-          <IconButton onClick={onPlayPause} className={localClasses.bottomIcons} size="large">
+          <IconButton onClick={onPlayPause} sx={bottomIcons} size="large">
             {playing ? <PauseIcon /> : <PlayArrowIcon />}
           </IconButton>
 
           <IconButton
             onClick={() => dispatch(actions.setMuted({ id: id, value: !muted }))}
-            className={`${localClasses.bottomIcons} ${localClasses.volumeButton}`}
+            sx={bottomIcons}
             size="large"
           >
             {muted ? <VolumeMute /> : volume > 0.5 ? <VolumeUp /> : <VolumeDown />}
@@ -129,7 +110,9 @@ function VideoBottomControls({
             value={muted ? 0 : volume * 100}
             onChange={onVolumeChange}
             aria-labelledby="input-slider"
-            className={localClasses.volumeSlider}
+            sx={{
+              width: 100,
+            }}
             onMouseDown={onSeekMouseDown}
             onChangeCommitted={onVolumeSeekDown}
           />
@@ -144,7 +127,21 @@ function VideoBottomControls({
               )
             }
           >
-            <Typography variant="body1" className={localClasses.timer}>
+            <Typography
+              variant="body1"
+              sx={(theme) => {
+                return {
+                  [theme.breakpoints.down("md")]: {
+                    fontSize: "0.5em",
+                    marginLeft: theme.spacing(1),
+                  },
+                  [theme.breakpoints.up("md")]: {
+                    fontSize: "1em",
+                    marginLeft: theme.spacing(2),
+                  },
+                };
+              }}
+            >
               {elapsedTime}/{totalDuration}
             </Typography>
           </Button>
@@ -154,7 +151,7 @@ function VideoBottomControls({
       </Grid>
       <Grid item>
         <RAButton
-          className={localClasses.bottomIcons}
+          sx={bottomIcons}
           children={isFullscreen ? <FullscreenExit /> : <Fullscreen />}
           label={translate("screens.moocrobes.fullscreen")}
           onClick={onToggleFullscreen}

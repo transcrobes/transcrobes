@@ -12,6 +12,7 @@ import ReaderConfigProvider from "../../ReaderConfigProvider";
 import Container from "./Container";
 import Extras from "./Extras";
 import Header from "./Header";
+import { FullSpecDocument, isFullscreened } from "../../../hooks/useFullscreen";
 
 export type Props = {
   readerConfig: ReaderState;
@@ -77,8 +78,10 @@ const useStyles = makeStyles<StyleProps>()((theme, params) => {
 
 export default function TokenDetails({ readerConfig }: Props): ReactElement {
   const invisible = {
+    overflow: "auto",
     left: "",
     top: "",
+    maxHeight: "",
     padding: "0px",
     visibility: "hidden",
   } as PopupPosition;
@@ -103,6 +106,7 @@ export default function TokenDetails({ readerConfig }: Props): ReactElement {
           tokenDetails.coordinates.eventX,
           tokenDetails.coordinates.eventY,
           window.parent.document.documentElement,
+          readerConfig.readerType === "videoReader" && !!isFullscreened(window.parent.document as FullSpecDocument),
         );
         setStyles({ ...positioning });
         setBoxWidth(width);
@@ -135,6 +139,7 @@ export default function TokenDetails({ readerConfig }: Props): ReactElement {
           tokenDetails.coordinates.eventX,
           tokenDetails.coordinates.eventY,
           window.parent.document.documentElement,
+          readerConfig.readerType === "videoReader" && !!isFullscreened(window.parent.document as FullSpecDocument),
         ),
       );
       platformHelper.sendMessage({

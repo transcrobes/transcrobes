@@ -58,14 +58,26 @@ const transcroberObserver: IntersectionObserver = new IntersectionObserver(onEnt
 });
 
 const polyglot = new Polyglot({ phrases: getMessages(getLanguageFromPreferred(navigator.languages)) });
+const streamingSiteName = streamingSite(location.href);
 
-if (!streamingSite(location.href)) {
-  createRoot(document.body.appendChild(document.createElement("div"))!).render(
-    <Provider store={store}>
-      <Loading position="fixed" message={polyglot.t("screens.extension.waiting_for_load")} />
-    </Provider>,
-  );
-}
+createRoot(document.body.appendChild(document.createElement("div"))!).render(
+  <Provider store={store}>
+    <Loading
+      position="fixed"
+      messageSx={
+        streamingSiteName
+          ? {
+              textShadow: `-1px -1px 0 #ffffff, 1px -1px 0 #ffffff, -1px 1px 0 #ffffff, 1px 1px 0 #ffffff,
+                -2px 0 0 #ffffff, 2px 0 0 #ffffff, 0 2px 0 #ffffff, 0 -2px 0 #ffffff;`,
+            }
+          : undefined
+      }
+      message={polyglot.t(
+        streamingSiteName ? "screens.extension.streamer.looking_for_subs" : "screens.extension.waiting_for_load",
+      )}
+    />
+  </Provider>,
+);
 store.dispatch(setLoading(true));
 
 const models: KeyedModels = {};
@@ -156,7 +168,7 @@ classes = jss
 const baseTheme = readerConfig.themeName === "dark" ? popupDarkTheme : popupLightTheme;
 let themeConfig: any = baseTheme;
 
-if (streamingSite(location.href)) {
+if (streamingSiteName) {
   themeConfig = {
     ...baseTheme,
     components: { ...baseTheme.components, ...streamOverrides.components },
@@ -171,7 +183,7 @@ createRoot(document.body.appendChild(document.createElement("div"))!).render(
         <ScopedCssBaseline>
           <TokenDetails readerConfig={readerConfig} />
           <Mouseover readerConfig={readerConfig} />
-          {!!streamingSite(location.href) && (
+          {!!streamingSiteName && (
             // FIXME: find out why the queryclientprovider is necessary...
             <QueryClientProvider client={queryClient}>
               <VideoPlayerScreen proxy={proxy} />
@@ -299,7 +311,7 @@ function runEnrich() {
   }
 }
 
-if (!streamingSite(location.href)) {
+if (!streamingSiteName) {
   // FIXME: this is a failed attempt to get rangy to work properly ;-(
   // it appears to have missing methods before the load event happens, and for some pages that never fires
   // (when a resource never times out or loads...)

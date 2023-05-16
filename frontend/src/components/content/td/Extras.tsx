@@ -1,27 +1,18 @@
-import { makeStyles } from "tss-react/mui";
+import { ClassNameMap } from "@mui/material";
 import { ReactElement, useEffect, useState } from "react";
+import { useTranslate } from "react-admin";
 import { getTranslation } from "../../../lib/componentMethods";
 import { DefinitionType, SentenceType, TokenType } from "../../../lib/types";
 import { Loading } from "../../Loading";
 import RecentSentences from "./RecentSentences";
-import { ClassNameMap } from "@mui/material";
-import { useTranslate } from "react-admin";
 
 type SentenceTranslationProps = {
   sentence: SentenceType;
 };
 
-const useStyles = makeStyles()({
-  message: {
-    fontSize: "1em",
-  },
-  loading: {},
-});
-
 function SentenceTranslation({ sentence }: SentenceTranslationProps): ReactElement {
   const [translation, setTranslation] = useState("");
   const translate = useTranslate();
-  const { classes } = useStyles();
   useEffect(() => {
     (async () => {
       setTranslation(await getTranslation(sentence));
@@ -32,7 +23,7 @@ function SentenceTranslation({ sentence }: SentenceTranslationProps): ReactEleme
     <div>
       {translation || (
         <Loading
-          classes={classes}
+          messageSx={{ fontSize: "0.4em" }}
           position="relative"
           size={50}
           top="0px"

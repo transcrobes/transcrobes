@@ -1,6 +1,6 @@
 {
   "name": "transcrobes",
-  "version": "0.27.4",
+  "version": "0.28.0",
   "private": true,
   "type": "module",
   "prettier": {
@@ -97,6 +97,7 @@
     "react-router-config": "^5.1.1",
     "react-router-dom": "^6.3.0",
     "react-select": "^5.4.0",
+    "react-usestateref": "^1.0.8",
     "recharts": "^2.1.14",
     "redux": "^4.2.0",
     "redux-watch": "^1.2.0",

@@ -149,7 +149,6 @@ export default class TranscrobesLayerPlayer extends Component<TranscrobesLayerPl
 
   setPlaybackRate(rate: number) {
     try {
-      console.log("trying to set playback rate", this.player, this.player.playbackRate);
       this.player.playbackRate = rate;
     } catch (error) {
       this.props.onError?.(error);

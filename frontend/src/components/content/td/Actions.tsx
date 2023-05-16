@@ -1,14 +1,12 @@
 import FlashOffIcon from "@mui/icons-material/FlashOff";
 import FlashOnIcon from "@mui/icons-material/FlashOn";
-import { IconButton, useTheme } from "@mui/material";
-import * as CSS from "csstype";
+import { Box, IconButton, useTheme } from "@mui/material";
 import { ReactElement, useEffect, useState } from "react";
 import { useTranslate } from "react-admin";
-import { makeStyles } from "tss-react/mui";
 import { useAppDispatch } from "../../../app/hooks";
 import { addKnownCards } from "../../../features/card/knownCardsSlice";
 import { updateDefinition } from "../../../features/definition/definitionsSlice";
-import { setTokenDetails, TokenDetailsState } from "../../../features/ui/uiSlice";
+import { TokenDetailsState, setTokenDetails } from "../../../features/ui/uiSlice";
 import { originalSentenceFromTokens } from "../../../lib/funclib";
 import { platformHelper } from "../../../lib/proxies";
 import { CardType, DefinitionState, USER_STATS_MODE } from "../../../lib/types";
@@ -22,30 +20,6 @@ type Props = {
 };
 
 const DATA_SOURCE = "Actions.jsx";
-
-interface IconProps {
-  iconColour?: CSS.Property.Color;
-}
-
-const useStyles = makeStyles<IconProps>()((theme, params) => {
-  return {
-    message: {
-      fontSize: "1em",
-    },
-    loading: { textAlign: "center" },
-    iconStyle: {
-      "& svg": {
-        fontSize: 32,
-        color: params.iconColour || theme.palette.text.primary,
-      },
-      padding: "2px",
-    },
-    toggle: {
-      padding: "0.5em",
-      width: "20%",
-    },
-  };
-});
 
 export default function Actions({ className, tokenDetails, definition }: Props): ReactElement {
   const [message, setMessage] = useState("");
@@ -90,12 +64,11 @@ export default function Actions({ className, tokenDetails, definition }: Props):
     setMessage("");
   }, [tokenDetails.token.l]);
 
-  const { classes } = useStyles({});
   const theme = useTheme();
   return tokenDetails.token.id ? (
     <>
       <Loading
-        classes={classes}
+        messageSx={{ fontSize: "0.4em" }}
         position="relative"
         size={50}
         top="0px"
@@ -103,11 +76,22 @@ export default function Actions({ className, tokenDetails, definition }: Props):
         show={saving}
       />
       {message && <div>{message}</div>}
-      <div className={className}>
-        <div className={classes.toggle}>
+      <Box className={className}>
+        <Box
+          sx={{
+            padding: "0.5em",
+            width: "20%",
+          }}
+        >
           {!tokenDetails.gloss ? (
             <IconButton
-              className={classes.iconStyle}
+              sx={{
+                "& svg": {
+                  fontSize: 32,
+                  color: theme.palette.text.primary,
+                },
+                padding: "2px",
+              }}
               title={translate("widgets.popup.gloss_now")}
               onClick={toggleGloss}
               size="large"
@@ -116,7 +100,13 @@ export default function Actions({ className, tokenDetails, definition }: Props):
             </IconButton>
           ) : (
             <IconButton
-              className={classes.iconStyle}
+              sx={{
+                "& svg": {
+                  fontSize: 32,
+                  color: theme.palette.text.primary,
+                },
+                padding: "2px",
+              }}
               title={translate("widgets.popup.dont_gloss_now")}
               onClick={toggleGloss}
               size="large"
@@ -124,7 +114,7 @@ export default function Actions({ className, tokenDetails, definition }: Props):
               <FlashOffIcon />
             </IconButton>
           )}
-        </div>
+        </Box>
         <PracticerInput
           onPractice={addOrUpdateCards}
           wordId={tokenDetails.token.id}
@@ -134,7 +124,7 @@ export default function Actions({ className, tokenDetails, definition }: Props):
           iconPadding="2px"
           width={"80%"}
         />
-      </div>
+      </Box>
     </>
   ) : (
     <div>{translate("widgets.popup.synchronising")}</div>
