@@ -2,7 +2,7 @@ import { Typography } from "@mui/material";
 import { makeStyles } from "tss-react/mui";
 import { Fragment, ReactElement } from "react";
 import { useAppSelector } from "../app/hooks";
-import { filterFakeL1Definitions, orderTranslations } from "../lib/libMethods";
+import { filterFakeL1Definitions, filterUnhelpfulL1Definitions, orderTranslations } from "../lib/libMethods";
 import { DefinitionType, PosTranslationsType, ProviderTranslationType } from "../lib/types";
 import { InfoBox, ThinHR } from "./Common";
 import PosItem from "./PosItem";
@@ -24,7 +24,6 @@ export default function DefinitionTranslations({
 }: Props): ReactElement {
   const { classes } = useStyles();
   const dictionaries = useAppSelector((state) => state.dictionary);
-  const phones = definition.sound;
   let providerTranslations: ProviderTranslationType[] = [];
   const orderedTranslations =
     orderTranslations(definition.providerTranslations, translationProviderOrder) || definition.providerTranslations;
@@ -35,10 +34,10 @@ export default function DefinitionTranslations({
       const posTranslations: PosTranslationsType[] = [];
       for (const posTrans of providerTranslation.posTranslations) {
         // Remove "meanings" that are just pinyin without tone markings as well as meanings that
-        // have the initial word in them
+        // have the initial word in them, and meanings that aren't proper words (eg. -ize, -footed)
         const values = filterFakeL1Definitions(
-          posTrans.values.filter((v) => !v.match(definition.graph)),
-          phones,
+          filterUnhelpfulL1Definitions(posTrans.values.filter((v) => !v.match(definition.graph))),
+          definition.sound,
         );
         if (values.length > 0) {
           posTranslations.push({ posTag: posTrans.posTag, values });

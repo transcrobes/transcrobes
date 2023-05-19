@@ -67,6 +67,7 @@ createRoot(document.body.appendChild(document.createElement("div"))!).render(
       messageSx={
         streamingSiteName
           ? {
+              color: "black",
               textShadow: `-1px -1px 0 #ffffff, 1px -1px 0 #ffffff, -1px 1px 0 #ffffff, 1px 1px 0 #ffffff,
                 -2px 0 0 #ffffff, 2px 0 0 #ffffff, 0 2px 0 #ffffff, 0 -2px 0 #ffffff;`,
             }

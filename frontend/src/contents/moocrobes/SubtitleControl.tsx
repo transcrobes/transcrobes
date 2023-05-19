@@ -1,5 +1,5 @@
 import { Box } from "@mui/system";
-import { ReactElement, useRef } from "react";
+import { ReactElement, useEffect, useRef } from "react";
 import { store } from "../../app/createStore";
 import { useAppSelector, useJssStyles } from "../../app/hooks";
 import { enrichETFElements } from "../../components/content/etf/EnrichedTextFragment";
@@ -25,10 +25,11 @@ function SubtitleControl({ currentCue, models, id }: Props): ReactElement {
     maxWidth: dims.width > 1500 ? "10em" : "5em",
     backdropFilter: "blur(6px)",
   };
-
-  if (ref.current && models) {
-    enrichETFElements(ref.current, currentCue, readerConfig, models, store, etfClasses);
-  }
+  useEffect(() => {
+    if (ref.current && models) {
+      enrichETFElements(ref.current, currentCue, readerConfig, models, store, etfClasses);
+    }
+  }, [currentCue]);
   return (
     <Box
       sx={{

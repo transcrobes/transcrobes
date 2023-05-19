@@ -15,9 +15,9 @@ import {
   PythonCounter,
   RecentSentencesType,
   RepetrobesActivityConfigType,
+  SYSTEM_LANG_TO_LOCALE,
   SentenceType,
   SystemLanguage,
-  SYSTEM_LANG_TO_LOCALE,
   TokenType,
 } from "./types";
 

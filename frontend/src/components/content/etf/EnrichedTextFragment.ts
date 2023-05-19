@@ -1,10 +1,9 @@
 import { createComponentVNode, render, VNode } from "inferno";
 import { Provider } from "inferno-redux";
 import { AdminStore } from "../../../app/createStore";
-
+import { observerFunc } from "../../../lib/stats";
 import { ComponentClass, ComponentFunction, KeyedModels, ModelType, ReaderState } from "../../../lib/types";
 import { ETFStylesProps } from "../../Common";
-import { observerFunc } from "../../../lib/stats";
 import Entry from "./Entry";
 
 type Props = {
@@ -75,7 +74,6 @@ export function enrichETFElements(
     etf.style.cssText = "padding-left: 0.25em;";
     elements[i].replaceWith(etf);
     readObserver.observe(etf);
-
     render(
       createComponentVNode(ComponentClass, Provider, {
         store: store,

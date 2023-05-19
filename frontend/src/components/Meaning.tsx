@@ -2,7 +2,12 @@ import Popover from "@mui/material/Popover";
 import { makeStyles } from "tss-react/mui";
 import { ReactElement, useState } from "react";
 import { useAppSelector } from "../app/hooks";
-import { filterFakeL1Definitions, orderTranslations, toPosLabels } from "../lib/libMethods";
+import {
+  filterFakeL1Definitions,
+  filterUnhelpfulL1Definitions,
+  orderTranslations,
+  toPosLabels,
+} from "../lib/libMethods";
 import { CardType, DefinitionType } from "../lib/types";
 import DefinitionTranslations from "./DefinitionTranslations";
 import EditableDefinitionTranslations from "./EditableDefinitionTranslations";
@@ -74,7 +79,7 @@ export default function Meaning({
         let hasValidDefinitions = false;
         for (const posTranslation of provider.posTranslations) {
           const finalList = filterFakeL1Definitions(
-            posTranslation.values.filter((v) => !v.match(definition.graph)),
+            filterUnhelpfulL1Definitions(posTranslation.values.filter((v) => !v.match(definition.graph))),
             definition.sound,
           );
           if (finalList.length > 0) {

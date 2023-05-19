@@ -113,14 +113,14 @@ export function filterKnown(
 }
 
 function getFilteredBestGuess(others: string[], definition: DefinitionType, allDefs: PosTranslationsType[]) {
-  let filteredDefs = filterFakeL1Definitions(others, definition.sound);
+  let filteredDefs = filterFakeL1Definitions(filterUnhelpfulL1Definitions(others), definition.sound);
   if (filteredDefs.length) {
     return filteredDefs.sort(
       (a, b) => Math.abs(IDEAL_GLOSS_STRING_LENGTH - a.length) - Math.abs(IDEAL_GLOSS_STRING_LENGTH - b.length),
     )[0];
   }
   filteredDefs = filterFakeL1Definitions(
-    allDefs.flatMap((p) => p.values),
+    filterUnhelpfulL1Definitions(allDefs.flatMap((p) => p.values)),
     definition.sound,
   );
   if (filteredDefs.length) {
@@ -189,7 +189,7 @@ export function bestGuessEnToZhHans(
       if (token.pos && toSimplePos(token.pos, fromLang) === toSimplePos(posEntry.posTag, fromLang)) {
         // sorted_defs = sorted(defs, key=lambda i: i["cf"], reverse=True)  # original python
         // const sortedDefs = defs.sort((a: any, b: any) => a.cf - b.cf);  // possible js, if we had cf
-        const filteredDefs = filterFakeL1Definitions(posEntry.values, definition.sound);
+        const filteredDefs = filterFakeL1Definitions(filterUnhelpfulL1Definitions(posEntry.values), definition.sound);
         if (filteredDefs) {
           // prefer one that is closer to our ideal length, particularly useful when there very long entries
           // but also shorter Ok ones
@@ -240,7 +240,7 @@ export function bestGuessZhHansToEn(
       if (token.pos && toSimplePos(token.pos, fromLang) === toSimplePos(posEntry.posTag, fromLang)) {
         // sorted_defs = sorted(defs, key=lambda i: i["cf"], reverse=True)  # original python
         // const sortedDefs = defs.sort((a: any, b: any) => a.cf - b.cf);  // possible js, if we had cf
-        const filteredDefs = filterFakeL1Definitions(posEntry.values, definition.sound);
+        const filteredDefs = filterFakeL1Definitions(filterUnhelpfulL1Definitions(posEntry.values), definition.sound);
         if (filteredDefs) {
           // prefer one that is closer to our ideal length, particularly useful when there very long entries
           // but also shorter Ok ones
@@ -267,6 +267,16 @@ export function bestGuessZhHansToEn(
   return getFilteredBestGuess(others, definition, allDefs);
 }
 
+export function filterUnhelpfulL1Definitions(entries: string[]): string[] {
+  const filtered: string[] = [];
+  for (const entry of entries) {
+    if (!/[^\p{L}\p{N}\p{Z}]$/u.test(entry) && !/[^\p{L}\p{N}\p{Z}]/u.test(entry)) {
+      filtered.push(entry);
+    }
+  }
+  return filtered;
+}
+
 export function filterFakeL1Definitions(entries: string[], phone: string[]): string[] {
   const filtered: string[] = [];
   for (const entry of entries) {
@@ -284,6 +294,7 @@ export function shortProviderTranslations(definition: DefinitionType, maxLength:
   let transes: Set<string> = new Set();
   for (const provider of definition.providerTranslations) {
     for (const posTranslation of provider.posTranslations) {
+      // TODO: probably don't need filterUnhelpfulL1Definitions here?
       const cleanDefs = filterFakeL1Definitions(posTranslation.values, definition.sound);
       for (const def of cleanDefs.slice(0, 3)) {
         transes.add(def.toLocaleLowerCase());

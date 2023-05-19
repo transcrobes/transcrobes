@@ -10,6 +10,7 @@ import {
   BOOCROBES_HEADER_HEIGHT,
   DEFINITION_LOADING,
   DefinitionsState,
+  DefinitionState,
   DefinitionType,
   EventCoordinates,
   InputLanguage,
@@ -287,8 +288,8 @@ async function getL2Simplified(
   return gloss;
 }
 
-export function isNumberToken(token: TokenType): boolean {
-  return !!token.pos && NUMBER_POS.has(token.pos);
+export function isNumberToken(pos?: AnyTreebankPosType): boolean {
+  return !!pos && NUMBER_POS.has(pos);
 }
 export async function getPopoverText(
   token: TokenType,
@@ -411,4 +412,57 @@ export function positionPopup(
     position.maxHeight = `${maxHeight}px`;
   }
   return position;
+}
+
+export function isUnsure(definition?: DefinitionType) {
+  return (
+    definition &&
+    definition.providerTranslations.length > 0 &&
+    definition.providerTranslations.flatMap((pt) => (pt.provider !== "fbk" ? pt.posTranslations : [])).length === 0
+  );
+}
+
+export async function guessBetter(defin: DefinitionState, lang: SystemLanguage): Promise<DefinitionType> {
+  switch (lang) {
+    case "en":
+      return defin;
+    case "zh-Hans":
+      let newDefinition: DefinitionType;
+      let cleanGraph = defin.graph.replace(/[^\p{L}\p{N}\p{Z}]$/u, "").replace(/[^\p{L}\p{N}\p{Z}]/u, "");
+      if (cleanGraph !== defin.graph) {
+        newDefinition = await getWord(cleanGraph);
+        if (newDefinition && !isUnsure(newDefinition)) {
+          return newDefinition;
+        }
+      }
+      if (!isUnsure(defin)) {
+        // we only want to continue from here if we are unsure about the original definition
+        return defin;
+      }
+      if (cleanGraph.length === 4) {
+        if (new Set(cleanGraph.slice(0, 2)).size === 1 && new Set(cleanGraph.slice(2, 4)).size === 1) {
+          newDefinition = await getWord(cleanGraph[0] + cleanGraph[2]);
+          if (newDefinition && !isUnsure(newDefinition)) {
+            return newDefinition;
+          }
+        }
+      } else if (cleanGraph.length === 2 && new Set(cleanGraph).size === 1) {
+        // double character that isn't in the dictionary - it's basically just the same word twice, not a new word...
+        return (await getWord(cleanGraph[0])) || defin;
+      }
+      // this is maybe a bit dangerous... but we are unsure anyway, so why not!
+      // see https://resources.allsetlearning.com/chinese/grammar/Complement#Summary_of_complement_types
+      if (
+        cleanGraph.length > 1 &&
+        ["们", "上", "下", "过", "到", "完", "成", "者", "在", "里", "给", "错", "著", "地"].includes(
+          cleanGraph.slice(-1),
+        )
+      ) {
+        newDefinition = await getWord(cleanGraph.slice(0, -1));
+        if (newDefinition && !isUnsure(newDefinition)) {
+          return newDefinition;
+        }
+      }
+      return defin;
+  }
 }

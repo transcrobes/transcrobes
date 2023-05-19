@@ -4,7 +4,14 @@ import _ from "lodash";
 import type { RootState } from "../../../app/createStore";
 import { addDefinitions } from "../../../features/definition/definitionsSlice";
 import { DOMRectangle, setMouseover, setTokenDetails } from "../../../features/ui/uiSlice";
-import { eventCoordinates, getNormalGloss, getWord, isNumberToken } from "../../../lib/componentMethods";
+import {
+  eventCoordinates,
+  getNormalGloss,
+  getWord,
+  guessBetter,
+  isNumberToken,
+  isUnsure,
+} from "../../../lib/componentMethods";
 import {
   BOOK_READER_TYPE,
   DefinitionType,
@@ -22,6 +29,8 @@ import {
   UNSURE_ATTRIBUTE,
   USER_STATS_MODE,
   VIDEO_READER_TYPE,
+  SerialisableDayCardWords,
+  AnyTreebankPosType,
 } from "../../../lib/types";
 import { ETFStylesProps } from "../../Common";
 
@@ -37,6 +46,7 @@ type EntryProps = {
 type LocalEntryState = {
   gloss: string;
   nbRetries: number;
+  unsure: boolean;
 };
 
 type StatedEntryProps = EntryProps & {
@@ -61,12 +71,33 @@ function sameCoordinates(element: Element, current: DOMRectangle) {
   return width === current.width && height === current.height && x === current.x && y === current.y;
 }
 
+function doesNeedGloss(
+  lexeme: string,
+  knownCards: Partial<SerialisableDayCardWords>,
+  readerConfig: ReaderState,
+  pos?: AnyTreebankPosType,
+  word?: string,
+) {
+  // FIXME: this should be configurable!
+  if (!pos || readerConfig.glossing <= USER_STATS_MODE.NO_GLOSS) return false;
+
+  const nonOptimisticKnows =
+    lexeme in (knownCards.knownCardWordGraphs || {}) || (word || "") in (knownCards.knownCardWordGraphs || {});
+  const optimisticKnows =
+    lexeme.toLowerCase() in (knownCards.knownCardWordGraphs || {}) ||
+    (word || "").toLowerCase() in (knownCards.knownCardWordGraphs || {}) ||
+    nonOptimisticKnows;
+
+  return !optimisticKnows && (GLOSS_NUMBER_NOUNS || !isNumberToken(pos));
+}
+
 class Entry extends Component<StatedEntryProps, LocalEntryState> {
   constructor(props: EntryProps, context: any) {
     super(props, context);
     this.state = {
       gloss: "",
       nbRetries: 0,
+      unsure: false,
     };
 
     this.createPopover = this.createPopover.bind(this);
@@ -124,29 +155,47 @@ class Entry extends Component<StatedEntryProps, LocalEntryState> {
     const { fromLang, toLang } = rootState.userData.user;
     const token = this.props.token;
 
-    // FIXME: this should be configurable!
-    const nonOptimisticKnows =
-      token.l in (knownCards.knownCardWordGraphs || {}) || (token.w || "") in (knownCards.knownCardWordGraphs || {});
-    const optimisticKnows =
-      token.l.toLowerCase() in (knownCards.knownCardWordGraphs || {}) ||
-      (token.w || "").toLowerCase() in (knownCards.knownCardWordGraphs || {}) ||
-      nonOptimisticKnows;
-
-    const needsGloss =
-      readerConfig.glossing > USER_STATS_MODE.NO_GLOSS &&
-      !!token.pos &&
-      !optimisticKnows &&
-      (!isNumberToken(token) || GLOSS_NUMBER_NOUNS);
-
-    const def = token.id ? definitions[token.id] : { ...(await getWord(token.l)), glossToggled: false };
-
+    let def = token.id ? definitions[token.id] : { ...(await getWord(token.l)), glossToggled: false };
+    let betterGuess: DefinitionType = def;
+    let cleanGraph = def.graph.replace(/[^\p{L}\p{N}\p{Z}]$/u, "").replace(/[^\p{L}\p{N}\p{Z}]/u, "");
     let localGloss = "";
-    if ((needsGloss && (!def || !def.glossToggled)) || (!needsGloss && def && def.glossToggled)) {
-      localGloss = await getNormalGloss(token, readerConfig, knownCards, definitions, fromLang, toLang);
-    } else {
-      localGloss = "";
+    let needsGloss = false;
+    let unsure = false;
+    if (cleanGraph !== def.graph) {
+      betterGuess = await guessBetter(def, fromLang);
     }
+    if (betterGuess.graph === def.graph) {
+      needsGloss = doesNeedGloss(token.l, knownCards, readerConfig, token.pos, token.w);
+      if ((needsGloss && (!def || !def.glossToggled)) || (!needsGloss && def && def.glossToggled)) {
+        localGloss = await getNormalGloss(token, readerConfig, knownCards, definitions, fromLang, toLang);
+      } else {
+        localGloss = "";
+      }
+      if (localGloss && this.props.token.id) {
+        if (isUnsure(def)) {
+          unsure = true;
+          betterGuess = await guessBetter(def, fromLang);
+        }
+      }
+    }
+
+    if (betterGuess.graph !== def.graph) {
+      unsure = !!isUnsure(betterGuess);
+      if (!(betterGuess.id in definitions)) {
+        this.context.store.dispatch(addDefinitions([{ ...betterGuess, glossToggled: false }]));
+      }
+      // fake POS - we don't know what the real one might be...
+      needsGloss = doesNeedGloss(betterGuess.graph, knownCards, readerConfig, "NN");
+      if (needsGloss) {
+        const betterToken: TokenType = { l: betterGuess.graph, pos: "NN", w: betterGuess.graph, id: betterGuess.id };
+        localGloss = await getNormalGloss(betterToken, readerConfig, knownCards, definitions, fromLang, toLang);
+      } else {
+        localGloss = "";
+      }
+    }
+    if (unsure) this.setState({ unsure });
     this.setState({ gloss: localGloss });
+
     if (tokenDetails) {
       this.context.store.dispatch(setTokenDetails({ ...tokenDetails, gloss: !!localGloss }));
     }
@@ -256,19 +305,6 @@ class Entry extends Component<StatedEntryProps, LocalEntryState> {
     }
 
     if (this.props.token.pos || this.props.token.bg) {
-      let isUnsure = false;
-      if (this.props.readerConfig.glossUnsureBackgroundColour) {
-        if (this.state?.gloss && this.props.token.id) {
-          const def = this.context.store.getState().definitions[this.props.token.id] as DefinitionType;
-          if (
-            def &&
-            def.providerTranslations.length > 0 &&
-            def.providerTranslations.flatMap((pt) => (pt.provider !== "fbk" ? pt.posTranslations : [])).length === 0
-          ) {
-            isUnsure = true;
-          }
-        }
-      }
       return createVNode(
         HtmlElement,
         "span",
@@ -291,7 +327,9 @@ class Entry extends Component<StatedEntryProps, LocalEntryState> {
               `${this.props.classes.gloss} tcrobe-gloss`,
               `(${this.state?.gloss})`,
               HasTextChildren,
-              isUnsure ? { [UNSURE_ATTRIBUTE]: "" } : null,
+              this.props.readerConfig.glossUnsureBackgroundColour && this.state.unsure
+                ? { [UNSURE_ATTRIBUTE]: "" }
+                : null,
               null,
               null,
             ),
