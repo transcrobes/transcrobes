@@ -2,12 +2,15 @@ ARG TRANSCROBES_DOCKER_REPO
 ARG TRANSCROBES_BACKEND_IMAGE_TAG
 # Stage 0, "build-stage", based on Node.js, to build and compile the frontend
 FROM node:18 as build-stage
+ARG GIT_VERSION
+ARG ENVIRONMENT=prod
 
 LABEL maintainer="Anton Melser <anton@transcrob.es>"
 
 ENV npm_config_registry=$NPM_OVERRIDE
 ENV http_proxy=$http_proxy
 ENV https_proxy=$https_proxy
+ENV VITE_GIT_VERSION=$GIT_VERSION
 
 WORKDIR /app
 COPY ./frontend/package*.json /app/
@@ -17,8 +20,6 @@ RUN npm config set https-proxy $https_proxy
 RUN npm install --loglevel silly
 
 COPY ./frontend/ /app/
-
-ARG ENVIRONMENT=prod
 
 RUN npm run build:${ENVIRONMENT}
 

@@ -32,7 +32,7 @@
   "scripts": {
     "lint": "eslint './src/**/*.{js,ts,tsx}' --quiet",
     "validate": "tsc --noEmit",
-    "run:dev": "tsc --noEmit && rimraf dev-dist && cross-env DEBUG=vite-plugin-pwa:* SW_DEV=true SW=true vite --force --config vite.config.ts --mode=development",
+    "run:dev": "tsc --noEmit && rimraf dev-dist && cross-env DEBUG=vite-plugin-pwa:* VITE_GIT_VERSION=$(git describe --tags) SW_DEV=true SW=true vite --force --config vite.config.ts --mode=development",
     "build:prod": "tsc --noEmit && rm -rf dist/* && cross-env DEBUG=vite-plugin-pwa:* BASE_URL=/ SOURCE_MAP=true SW=true NODE_OPTIONS='--max-old-space-size=8192' vite build --config vite.config.ts --mode=production",
     "run:prod": "npm run build:prod && npm run serve",
     "serve": "serve -p 5000 dist",
@@ -152,7 +152,7 @@
     "rimraf": "^5.0.0",
     "typescript": "^5.0.2",
     "vite": "^4.0.1",
-    "vite-plugin-pwa": "^0.14.6",
+    "vite-plugin-pwa": "^0.15.0",
     "workbox-core": "^6.5.4",
     "workbox-precaching": "^6.5.4",
     "workbox-routing": "^6.5.4",

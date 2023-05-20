@@ -13,6 +13,7 @@ export const IS_DEV = import.meta.env.DEV;
 export const IS_EXT = import.meta.env.PLATFORM === "extension";
 export const DOCS_DOMAIN = import.meta.env.VITE_DOCS_DOMAIN || "tc.tck:1313";
 export const SITE_DOMAIN = import.meta.env.VITE_SITE_DOMAIN || "tc.tck";
+export const GIT_VERSION = import.meta.env.VITE_GIT_VERSION || import.meta.env.GIT_VERSION;
 export const DEFAULT_SERVER_URL = `https://${SITE_DOMAIN}`;
 
 export const DOWNLOAD_DOMAIN = import.meta.env.VITE_DOWNLOAD_DOMAIN || "dl.tc.tck";

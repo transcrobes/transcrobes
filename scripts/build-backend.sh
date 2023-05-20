@@ -1,7 +1,8 @@
 #!/bin/bash
 set -e
 
-TAG=${TRANSCROBES_BUILD_TAG:-$(git describe --tags)}
+VITE_GIT_VERSION=$(git describe --tags)
+TAG=${TRANSCROBES_BUILD_TAG:-${VITE_GIT_VERSION}}
 TRANSCROBES_BASE_IMAGE_TAG=${TRANSCROBES_BUILD_TAG:-$(git describe --tags)}
 MAIN_IMAGE=${TRANSCROBES_DOCKER_REPO}/transcrobes-backend:$TAG
 LATEST_IMAGE=${TRANSCROBES_DOCKER_REPO}/transcrobes-backend:latest

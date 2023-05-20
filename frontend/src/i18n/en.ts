@@ -816,6 +816,7 @@ const customEnglishMessages: TranslationMessages = {
       server_available: "Server contacted successfully at ",
       server_unavailable: "Server not available at ",
       waiting_for_server: "Waiting to contact server",
+      system_info: "System Information",
     },
     textcrobes: {
       name: "Textcrobes",

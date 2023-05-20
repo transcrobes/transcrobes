@@ -774,6 +774,7 @@ const customChineseMessages: TranslationMessages = {
       server_available: "服务器联系成功",
       server_unavailable: "服务器不可用",
       waiting_for_server: "等待联系服务器",
+      system_info: "系统信息",
     },
     textcrobes: {
       name: "Textcrobes",

@@ -14,7 +14,7 @@ import { changeTheme } from "../features/themes/themeReducer";
 import { setAndSaveUser } from "../features/user/userSlice";
 import { darkTheme, lightTheme } from "../layout/themes";
 import { AbstractWorkerProxy } from "../lib/proxies";
-import { DOCS_DOMAIN, ThemeName } from "../lib/types";
+import { DOCS_DOMAIN, GIT_VERSION, ThemeName } from "../lib/types";
 import { fetcher } from "../lib/fetcher";
 import { NAME_PREFIX } from "../lib/interval/interval-decorator";
 
@@ -268,7 +268,11 @@ function System({ proxy }: Props): ReactElement {
             中文
           </Button>
         </CardContent>
+      </Card>
+      <CardHeader title={translate("screens.system.system_info")} />
+      <Card>
         <CardContent>
+          <Box>V: {GIT_VERSION}</Box>
           <Box>{serverAvailableMessage}</Box>
         </CardContent>
       </Card>
