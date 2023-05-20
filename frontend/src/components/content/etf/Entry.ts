@@ -33,6 +33,7 @@ import {
   AnyTreebankPosType,
 } from "../../../lib/types";
 import { ETFStylesProps } from "../../Common";
+import { affixCleaned } from "../../../lib/libMethods";
 
 type EntryProps = {
   token: TokenType;
@@ -157,7 +158,7 @@ class Entry extends Component<StatedEntryProps, LocalEntryState> {
 
     let def = token.id ? definitions[token.id] : { ...(await getWord(token.l)), glossToggled: false };
     let betterGuess: DefinitionType = def;
-    let cleanGraph = def.graph.replace(/[^\p{L}\p{N}\p{Z}]$/u, "").replace(/[^\p{L}\p{N}\p{Z}]/u, "");
+    let cleanGraph = affixCleaned(def.graph);
     let localGloss = "";
     let needsGloss = false;
     let unsure = false;

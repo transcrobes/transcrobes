@@ -1,6 +1,6 @@
 import _ from "lodash";
 import { soundWithSeparators, UUID } from "./funclib";
-import { bestGuess, complexPosToSimplePosLabels, filterKnown, toSimplePos } from "./libMethods";
+import { affixCleaned, bestGuess, complexPosToSimplePosLabels, filterKnown, isFakeL1, toSimplePos } from "./libMethods";
 import { AbstractWorkerProxy, platformHelper } from "./proxies";
 import {
   ACTIVITY_DEBOUNCE,
@@ -168,7 +168,14 @@ export async function getL1(
   readerConfig: ReaderState,
   defaultL1: string,
 ): Promise<string> {
-  if (defaultL1 && !readerConfig.strictProviderOrdering) {
+  // FIXME: just doing affixCleaned here is a bit of a hack. It would probably be better to not put rubbish in the
+  // first place... so do this in the Python...
+  if (
+    defaultL1 &&
+    !readerConfig.strictProviderOrdering &&
+    affixCleaned(defaultL1) === defaultL1 &&
+    !(token.id && token.id in definitions && isFakeL1(definitions[token.id].sound, defaultL1))
+  ) {
     return defaultL1;
   }
   let gloss = defaultL1;
@@ -427,8 +434,8 @@ export async function guessBetter(defin: DefinitionState, lang: SystemLanguage):
     case "en":
       return defin;
     case "zh-Hans":
-      let newDefinition: DefinitionType;
-      let cleanGraph = defin.graph.replace(/[^\p{L}\p{N}\p{Z}]$/u, "").replace(/[^\p{L}\p{N}\p{Z}]/u, "");
+      let newDefinition: DefinitionType | undefined;
+      let cleanGraph = affixCleaned(defin.graph);
       if (cleanGraph !== defin.graph) {
         newDefinition = await getWord(cleanGraph);
         if (newDefinition && !isUnsure(newDefinition)) {
@@ -440,16 +447,31 @@ export async function guessBetter(defin: DefinitionState, lang: SystemLanguage):
         return defin;
       }
       if (cleanGraph.length === 4) {
-        if (new Set(cleanGraph.slice(0, 2)).size === 1 && new Set(cleanGraph.slice(2, 4)).size === 1) {
+        if (cleanGraph[0] === cleanGraph[1] && cleanGraph[2] === cleanGraph[3]) {
+          // 干干净净 -> 干净
           newDefinition = await getWord(cleanGraph[0] + cleanGraph[2]);
-          if (newDefinition && !isUnsure(newDefinition)) {
-            return newDefinition;
-          }
+        } else if (cleanGraph[0] === cleanGraph[2] && cleanGraph[1] === cleanGraph[3]) {
+          // 讨论讨论 -> 讨论
+          newDefinition = await getWord(cleanGraph[0] + cleanGraph[1]);
         }
-      } else if (cleanGraph.length === 2 && new Set(cleanGraph).size === 1) {
+        if (newDefinition && !isUnsure(newDefinition)) {
+          return newDefinition;
+        }
+      } else if (cleanGraph.length === 2 && cleanGraph[0] === cleanGraph[1]) {
+        // 看看 -> 看
         // double character that isn't in the dictionary - it's basically just the same word twice, not a new word...
         return (await getWord(cleanGraph[0])) || defin;
+      } else if (cleanGraph.length === 3 && cleanGraph[1] === "一" && cleanGraph[0] === cleanGraph[2]) {
+        // 看一看 -> 看
+        return (await getWord(cleanGraph[0])) || defin;
+      } else if (cleanGraph.length === 3 && cleanGraph[0] === cleanGraph[1]) {
+        // 见见面 -> 见面
+        newDefinition = await getWord(cleanGraph[1] + cleanGraph[2]);
+        if (newDefinition && !isUnsure(newDefinition)) {
+          return newDefinition;
+        }
       }
+
       // this is maybe a bit dangerous... but we are unsure anyway, so why not!
       // see https://resources.allsetlearning.com/chinese/grammar/Complement#Summary_of_complement_types
       if (

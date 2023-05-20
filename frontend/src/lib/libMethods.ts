@@ -270,7 +270,7 @@ export function bestGuessZhHansToEn(
 export function filterUnhelpfulL1Definitions(entries: string[]): string[] {
   const filtered: string[] = [];
   for (const entry of entries) {
-    if (!/[^\p{L}\p{N}\p{Z}]$/u.test(entry) && !/[^\p{L}\p{N}\p{Z}]/u.test(entry)) {
+    if (entry === affixCleaned(entry)) {
       filtered.push(entry);
     }
   }
@@ -280,10 +280,7 @@ export function filterUnhelpfulL1Definitions(entries: string[]): string[] {
 export function filterFakeL1Definitions(entries: string[], phone: string[]): string[] {
   const filtered: string[] = [];
   for (const entry of entries) {
-    const local_phone = unidecode(phone.join("").split(/(\s+)/).join("")).toLowerCase();
-    // we DON'T do a entry.toLowerCase() because we DO want proper names, but proper names should always
-    // be capitalised, so Xi Jingping, Huawei, etc. should be Ok.
-    if (local_phone != entry.split(/(\s+)/).join("")) {
+    if (!isFakeL1(phone, entry)) {
       filtered.push(entry);
     }
   }
@@ -475,4 +472,15 @@ export function orderTranslations(translations: ProviderTranslationType[], order
         ? 0
         : orders[a.provider] - orders[b.provider],
     );
+}
+
+export function isFakeL1(phone: string[], entry: string) {
+  const local_phone = unidecode(phone.join("").split(/(\s+)/).join("")).toLowerCase();
+  // we DON'T do a entry.toLowerCase() because we DO want proper names, but proper names should always
+  // be capitalised, so Xi Jingping, Huawei, etc. should be Ok.
+  return local_phone === entry.split(/(\s+)/).join("");
+}
+
+export function affixCleaned(graph: string) {
+  return graph.replace(/[^\p{L}\p{N}\p{Z}]+$/u, "").replace(/^[^\p{L}\p{N}\p{Z}]+/u, "");
 }
