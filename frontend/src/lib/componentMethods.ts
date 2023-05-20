@@ -476,7 +476,7 @@ export async function guessBetter(defin: DefinitionState, lang: SystemLanguage):
       // see https://resources.allsetlearning.com/chinese/grammar/Complement#Summary_of_complement_types
       if (
         cleanGraph.length > 1 &&
-        ["们", "上", "下", "过", "到", "完", "成", "者", "在", "里", "给", "错", "著", "地"].includes(
+        ["们", "儿", "上", "下", "过", "到", "完", "成", "者", "在", "里", "给", "错", "著", "地"].includes(
           cleanGraph.slice(-1),
         )
       ) {

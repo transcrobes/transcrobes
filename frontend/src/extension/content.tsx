@@ -182,13 +182,16 @@ createRoot(document.body.appendChild(document.createElement("div"))!).render(
     <ThemeProvider theme={createTheme({ ...themeConfig })}>
       <I18nContextProvider value={i18nProvider}>
         <ScopedCssBaseline>
-          <TokenDetails readerConfig={readerConfig} />
-          <Mouseover readerConfig={readerConfig} />
-          {!!streamingSiteName && (
+          {!!streamingSiteName ? (
             // FIXME: find out why the queryclientprovider is necessary...
             <QueryClientProvider client={queryClient}>
               <VideoPlayerScreen proxy={proxy} />
             </QueryClientProvider>
+          ) : (
+            <>
+              <TokenDetails readerConfig={readerConfig} />
+              <Mouseover readerConfig={readerConfig} />
+            </>
           )}
           {readerConfig.analysisPosition !== "none" && <ContentAnalysisBrocrobes />}
           {userData.showResearchDetails && <ContentAnalysisAccuracyBrocrobes proxy={proxy} />}

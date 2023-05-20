@@ -106,7 +106,8 @@ export default function TokenDetails({ readerConfig }: Props): ReactElement {
           tokenDetails.coordinates.eventX,
           tokenDetails.coordinates.eventY,
           window.parent.document.documentElement,
-          readerConfig.readerType === "videoReader" && !!isFullscreened(window.parent.document as FullSpecDocument),
+          // readerConfig.readerType === "videoReader" && !!isFullscreened(window.parent.document as FullSpecDocument),
+          readerConfig.readerType === "videoReader", // actually, looks like we also need in non-fullscreen
         );
         setStyles({ ...positioning });
         setBoxWidth(width);
