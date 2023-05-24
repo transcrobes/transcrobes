@@ -18,6 +18,9 @@ import {
   PopupPosition,
   ReaderState,
   RecentSentencesType,
+  REMOVABLE_ADVERB_SUFFIXES,
+  REMOVABLE_NOUN_SUFFIXES,
+  REMOVABLE_VERB_COMPLEMENTS,
   SentenceType,
   SerialisableDayCardWords,
   StreamDetails,
@@ -476,7 +479,7 @@ export async function guessBetter(defin: DefinitionState, lang: SystemLanguage):
       // see https://resources.allsetlearning.com/chinese/grammar/Complement#Summary_of_complement_types
       if (
         cleanGraph.length > 1 &&
-        ["们", "儿", "上", "下", "过", "到", "完", "成", "者", "在", "里", "给", "错", "著", "地"].includes(
+        [...REMOVABLE_NOUN_SUFFIXES, ...REMOVABLE_ADVERB_SUFFIXES, ...REMOVABLE_VERB_COMPLEMENTS].includes(
           cleanGraph.slice(-1),
         )
       ) {

@@ -20,6 +20,11 @@ export const DOWNLOAD_DOMAIN = import.meta.env.VITE_DOWNLOAD_DOMAIN || "dl.tc.tc
 export const KIWI_LOCAL_URL = `https://${DOWNLOAD_DOMAIN}/kiwi-browser-latest.apk`;
 export const KIWI_PLAY_URL = "https://play.google.com/store/apps/details?id=com.kiwibrowser.browser&hl=en&gl=GB";
 
+export const REMOVABLE_NOUN_SUFFIXES = ["们", "儿", "者"];
+// export const REMOVABLE_ADJECTIVE_SUFFIXES = []
+export const REMOVABLE_ADVERB_SUFFIXES = ["地", "里", "著", "在"]; // are these adverbials?
+export const REMOVABLE_VERB_COMPLEMENTS = ["上", "下", "过", "到", "完", "成", "给", "错", "得", "够", "出"];
+
 export const ADMIN_EMAILS = (import.meta.env.VITE_ADMIN_EMAILS || "admin@example.com")
   .split(",")
   .map((x: string) => x.trim());
