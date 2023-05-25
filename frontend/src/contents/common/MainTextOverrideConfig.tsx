@@ -1,6 +1,6 @@
-import { ClassNameMap, FormControl, FormControlLabel, Switch, ToggleButton } from "@mui/material";
+import { ClassNameMap, FormControl, FormControlLabel, Switch, ToggleButton, ToggleButtonGroup } from "@mui/material";
 import _ from "lodash";
-import { ReactElement, useCallback } from "react";
+import { ReactElement, useCallback, useEffect, useState } from "react";
 import { useTranslate } from "react-admin";
 import { HslColor } from "react-colorful";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
@@ -8,9 +8,12 @@ import { Conftainer as BasicConftainer, DEFAULT_FONT_COLOUR } from "../../compon
 import Conftainer from "../../components/Conftainer";
 import FivePercentFineControl from "../../components/FivePercentFineControl";
 import FontColour from "../../components/FontColour";
-import { needsLatinFont } from "../../lib/funclib";
+import { hasTones, needsLatinFont } from "../../lib/funclib";
 import FontSelector from "./FontSelector";
 import { ContentConfigProps } from "./ContentConfig";
+import { FontColourType } from "../../lib/types";
+
+type ColourScheme = "none" | "tones" | "coloured";
 
 function latinFontButtons(buttonClassName: string) {
   return [
@@ -45,6 +48,16 @@ function chineseFontButtons(buttonClassName: string) {
   ];
 }
 
+function fontColourSchemeFromFontColour(fontColour: FontColourType): ColourScheme {
+  if (!fontColour) {
+    return "none";
+  } else if (fontColour === "tones") {
+    return "tones";
+  } else {
+    return "coloured";
+  }
+}
+
 export default function MainTextOverrideConfig({
   classes,
   readerConfig,
@@ -53,6 +66,9 @@ export default function MainTextOverrideConfig({
 }: ContentConfigProps & { localClasses: ClassNameMap<string> }): ReactElement {
   const dispatch = useAppDispatch();
   const translate = useTranslate();
+  const [fontColourScheme, setFontColourScheme] = useState<ColourScheme>(
+    fontColourSchemeFromFontColour(readerConfig.fontColour),
+  );
   const id = readerConfig.id;
   const changeFontColour = useCallback(
     _.debounce((value: HslColor) => {
@@ -60,16 +76,7 @@ export default function MainTextOverrideConfig({
     }, 250),
     [],
   );
-
   const { fromLang, toLang } = useAppSelector((state) => state.userData.user);
-  // // FIXME: this is copy/pasted from ReaderConfig.tsx
-  // function fontColourSelectedChange(
-  //   checked: boolean,
-  //   stateSetter: (value: ContentConfigPayload<HslColor | null>) => void,
-  // ) {
-  //   // dispatch(stateSetter({ id, value: checked ? DEFAULT_FONT_COLOUR : null }));
-  // }
-
   return (
     <>
       <Conftainer label={translate("widgets.main_text_override.font_family")} id="ff">
@@ -126,29 +133,69 @@ export default function MainTextOverrideConfig({
         />
       </Conftainer>
       <Conftainer label={translate("widgets.main_text_override.text_colour")} id="otc">
-        <FormControl component="fieldset" className={classes.fontColour || localClasses.fontColour}>
-          <FormControlLabel
-            control={
-              <Switch
-                checked={!!readerConfig.fontColour}
-                onChange={(event: React.ChangeEvent<HTMLInputElement>, checked: boolean) =>
-                  dispatch(actions.setFontColour({ id, value: checked ? DEFAULT_FONT_COLOUR : null }))
+        {hasTones(fromLang) ? (
+          <>
+            <ToggleButtonGroup
+              className={classes.buttonGroup || localClasses.buttonGroup}
+              value={fontColourSchemeFromFontColour(readerConfig.fontColour)}
+              exclusive
+              onChange={(event: React.MouseEvent<HTMLElement>, value: ColourScheme) => {
+                let val: FontColourType = null;
+                if (value === "coloured") {
+                  val = DEFAULT_FONT_COLOUR;
+                } else if (value === "tones") {
+                  val = "tones";
                 }
-              />
-            }
-            label={translate("widgets.main_text_override.override_text_colour")}
-          />
-          {!!readerConfig.fontColour && (
-            <BasicConftainer>
-              <FontColour
-                value={readerConfig.fontColour}
-                label=""
-                className={localClasses.fineControlIcons}
-                onValueChange={changeFontColour}
-              />
-            </BasicConftainer>
-          )}
-        </FormControl>
+                dispatch(actions.setFontColour({ id, value: val }));
+                setFontColourScheme(value);
+              }}
+            >
+              <ToggleButton className={classes.button || localClasses.button} value={"none"}>
+                {translate("widgets.main_text_override.override_type.none")}
+              </ToggleButton>
+              <ToggleButton className={classes.button || localClasses.button} value={"tones"}>
+                {translate("widgets.main_text_override.override_type.tones")}
+              </ToggleButton>
+              <ToggleButton className={classes.button || localClasses.button} value={"coloured"}>
+                {translate("widgets.main_text_override.override_type.coloured")}
+              </ToggleButton>
+            </ToggleButtonGroup>
+            {fontColourScheme === "coloured" && !!readerConfig.fontColour && readerConfig.fontColour !== "tones" && (
+              <BasicConftainer>
+                <FontColour
+                  value={readerConfig.fontColour}
+                  label=""
+                  className={localClasses.fineControlIcons}
+                  onValueChange={changeFontColour}
+                />
+              </BasicConftainer>
+            )}
+          </>
+        ) : (
+          <FormControl component="fieldset" className={classes.fontColour || localClasses.fontColour}>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={!!readerConfig.fontColour}
+                  onChange={(event: React.ChangeEvent<HTMLInputElement>, checked: boolean) =>
+                    dispatch(actions.setFontColour({ id, value: checked ? DEFAULT_FONT_COLOUR : null }))
+                  }
+                />
+              }
+              label={translate("widgets.main_text_override.override_text_colour")}
+            />
+            {!!readerConfig.fontColour && readerConfig.fontColour !== "tones" && (
+              <BasicConftainer>
+                <FontColour
+                  value={readerConfig.fontColour}
+                  label=""
+                  className={localClasses.fineControlIcons}
+                  onValueChange={changeFontColour}
+                />
+              </BasicConftainer>
+            )}
+          </FormControl>
+        )}
       </Conftainer>
     </>
   );

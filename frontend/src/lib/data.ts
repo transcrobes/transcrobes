@@ -32,7 +32,15 @@ import {
   UUID,
 } from "./funclib";
 import { getFileStorage, IDBFileStorage } from "./IDBFileStorage";
-import { cleanAnalysis, fetchPlus, fetchPlusResponse, shortMeaning, simpOnly, sortByWcpm } from "./libMethods";
+import {
+  cleanAnalysis,
+  cleanedSound,
+  fetchPlus,
+  fetchPlusResponse,
+  shortMeaning,
+  simpOnly,
+  sortByWcpm,
+} from "./libMethods";
 import { practice } from "./review";
 import {
   ActionEvent,
@@ -1349,6 +1357,7 @@ async function orderVocabReviews(
 export async function getVocabReviews(
   db: TranscrobesDatabase,
   graderConfig: GraderConfig,
+  fromLang: InputLanguage,
 ): Promise<VocabReview[] | null> {
   const selectedLists = graderConfig.wordLists.filter((x) => x.selected).map((x) => x.value);
   if (selectedLists.length === 0) {
@@ -1366,7 +1375,7 @@ export async function getVocabReviews(
       return {
         id: x.id,
         graph: x.graph,
-        sound: x.sound,
+        sound: cleanedSound(x, fromLang),
         meaning: x.providerTranslations ? shortMeaning(x.providerTranslations, graderConfig.toLang) : "",
         clicks: 0,
         lookedUp: false,
@@ -1638,13 +1647,16 @@ export async function getAllShortChars(db: TranscrobesDatabase): Promise<Record<
   return chars;
 }
 
-export async function getAllShortWords(db: TranscrobesDatabase): Promise<Record<string, ShortWord>> {
+export async function getAllShortWords(
+  db: TranscrobesDatabase,
+  fromLang: InputLanguage,
+): Promise<Record<string, ShortWord>> {
   const entries = await db.definitions.find().exec();
   const words: Record<string, ShortWord> = {};
   for (const word of entries) {
     words[word.graph] = {
       id: word.graph,
-      sounds: word.sound,
+      sounds: cleanedSound(word, fromLang),
       // FIXME: ugly hack!
       isDict: word.providerTranslations.filter((x) => x.provider !== "fbk" && x.posTranslations.length > 0).length > 0,
     };

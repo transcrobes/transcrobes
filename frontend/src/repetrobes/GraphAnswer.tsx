@@ -4,6 +4,7 @@ import Meaning from "../components/Meaning";
 import RecentSentencesElement from "../components/RecentSentencesElement";
 import SayIt from "../components/SayIt";
 import { CentredFlex, CommonAnswerProps, MeaningWrapper, StyledAnswer } from "./Common";
+import { cleanedSound } from "../lib/libMethods";
 
 export default function GraphAnswer({
   card,
@@ -22,7 +23,7 @@ export default function GraphAnswer({
       ) : (
         <>
           <CentredFlex>
-            <StyledAnswer> {definition.sound} </StyledAnswer>
+            <StyledAnswer> {cleanedSound(definition, fromLang)} </StyledAnswer>
             <SayIt graph={definition.graph} lang={fromLang} />
           </CentredFlex>
           <MeaningWrapper>

@@ -32,8 +32,8 @@ export async function getPopoverTextNode(
   const l1 = await getL1(token, definitions, fromLang, systemLang, readerConfig, gloss);
   if (l1 === DEFINITION_LOADING) return <span>{DEFINITION_LOADING}</span>;
   const l2 = await getL2Simplified(token, l1, uCardWords, definitions, fromLang, systemLang, readerConfig);
-  const sound = (await getSound(token, definitions)).map((sound, i) => soundWithSeparators(sound, i, fromLang));
-
+  const s = await getSound(token, definitions, fromLang);
+  const sound = s.map((sound, i) => soundWithSeparators(sound, i, fromLang));
   return (
     <Box component="span">
       <span>

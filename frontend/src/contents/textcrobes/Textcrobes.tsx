@@ -164,7 +164,12 @@ export default function Textcrobes({ proxy }: Props): ReactElement {
   return (
     <div>
       <TopToolbar className={classes.toolbar}>
-        <ContentConfigLauncherDrawer classes={classes} readerConfig={readerConfig} actions={simpleReaderActions} />
+        <ContentConfigLauncherDrawer
+          classes={classes}
+          readerConfig={readerConfig}
+          actions={simpleReaderActions}
+          allowMainTextOverride
+        />
         <WatchDemo url={TEXTCROBES_YT_VIDEO} />
         <HelpButton url={helpUrl} />
       </TopToolbar>

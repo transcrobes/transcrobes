@@ -18,12 +18,13 @@ import SayIt from "../components/SayIt";
 import SoundBox from "../components/SoundBox";
 import { CARD_TYPES, getCardId, getCardType } from "../database/Schema";
 import useDecomposition from "../hooks/useDecomposition";
-import { shortProviderTranslations } from "../lib/libMethods";
+import { cleanedSound, shortProviderTranslations } from "../lib/libMethods";
 import {
   CardType,
   CharacterType,
   DefinitionType,
   EMPTY_CARD,
+  InputLanguage,
   PosSentences,
   SortableListElementType,
   WordModelStatsType,
@@ -88,7 +89,7 @@ function WordInfo({ definition, characters, meaningCard, onCardFrontUpdate }: Wo
         </div>
         <div className={classes.soundBoxOuter}>
           <div className={classes.soundBoxInner}>
-            <Sound definition={definition} />
+            <Sound definition={definition} fromLang={fromLang} />
             <SayIt graph={definition.graph} lang={fromLang} />
           </div>
         </div>
@@ -197,6 +198,10 @@ function WordLists({ lists }: { lists: SortableListElementType[] }): ReactElemen
   );
 }
 
+function cSound(def: DefinitionType | undefined, fromLang: InputLanguage): string[] | undefined {
+  return def ? cleanedSound(def, fromLang) : undefined;
+}
+
 function CharacterDetails({
   characters,
   classes,
@@ -205,6 +210,7 @@ function CharacterDetails({
   classes: any;
 }): ReactElement {
   const translate = useTranslate();
+  const fromLang = useAppSelector((state) => state.userData.user.fromLang);
   const [decomp, subs] = useDecomposition(
     characters
       .map((x) => x?.id)
@@ -226,9 +232,9 @@ function CharacterDetails({
                   <React.Fragment key={ind}>
                     <div>
                       <span className={classes.characterDetails}>
-                        <DW graph={char?.id} sound={def?.sound} /> :{" "}
-                        <SoundBox index={0} sound={def?.sound.join("") || ""} /> : <DW graph={char?.radical} /> :{" "}
-                        {char?.decomposition}
+                        <DW graph={char?.id} sound={cSound(def, fromLang)} /> :{" "}
+                        <SoundBox index={0} sound={cSound(def, fromLang)?.join("") || ""} /> :{" "}
+                        <DW graph={char?.radical} /> : {char?.decomposition}
                       </span>
                       <span>
                         {char?.etymology?.type
@@ -239,7 +245,7 @@ function CharacterDetails({
                             }`
                           : ""}
                       </span>
-                      {def && <Box sx={{ marginLeft: "0.5em" }}>-&gt; {shortProviderTranslations(def)}</Box>}
+                      {def && <Box sx={{ marginLeft: "0.5em" }}>-&gt; {shortProviderTranslations(def, fromLang)}</Box>}
                       <Divider />
                     </div>
                   </React.Fragment>
@@ -253,11 +259,11 @@ function CharacterDetails({
             <Box sx={{ marginLeft: "0.5em" }}>
               {[...subs?.values()].map((d, i) => (
                 <div key={d.graph + i}>
-                  <DiscoverableWord newTab graph={d.graph} sound={d.sound} />:{" "}
-                  {d.sound.map((s, index) => (
+                  <DiscoverableWord newTab graph={d.graph} sound={cleanedSound(d, fromLang)} />:{" "}
+                  {cleanedSound(d, fromLang).map((s, index) => (
                     <SoundBox key={`${s}${index}`} sound={s} index={index} />
                   ))}
-                  : {shortProviderTranslations(d)}
+                  : {shortProviderTranslations(d, fromLang)}
                 </div>
               ))}
             </Box>
@@ -363,14 +369,16 @@ function ProviderTranslations({
 // FIXME: what about properly typing the leftMargin...
 function Sound({
   definition,
+  fromLang,
   marginLeft = "0.2em",
 }: {
   definition: DefinitionType;
+  fromLang: InputLanguage;
   marginLeft?: string;
 }): ReactElement {
   return (
     <Box>
-      {definition.sound.map((s, index) => (
+      {cleanedSound(definition, fromLang).map((s, index) => (
         <SoundBox key={`${s}${index}`} sound={s} index={index} marginLeft={marginLeft} />
       ))}
     </Box>

@@ -193,6 +193,11 @@ const customChineseMessages: TranslationMessages = {
       font_size: "字体大小",
       text_colour: "文本颜色",
       override_text_colour: "覆盖文本颜色",
+      override_type: {
+        none: "无",
+        coloured: "颜色",
+        tones: "音调",
+      },
     },
     reader_config: {
       gloss_colour_title: "释义颜色",

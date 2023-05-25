@@ -7,6 +7,7 @@ import {
   BOOK_READER_TYPE,
   ContentConfigType,
   EXTENSION_READER_TYPE,
+  FontColourType,
   FontFamily,
   FontFamilyChinese,
   GenericState,
@@ -95,7 +96,7 @@ export const createGenericSlice = <T extends ReaderState, Reducers extends Slice
         state[action.payload.id] = state[action.payload.id] || defaultValue;
         state[action.payload.id].fontSize = action.payload.value;
       },
-      setFontColour(state: GenericState<T>, action: PayloadAction<ContentConfigPayload<HslColor | null>>) {
+      setFontColour(state: GenericState<T>, action: PayloadAction<ContentConfigPayload<FontColourType>>) {
         state[action.payload.id] = state[action.payload.id] || defaultValue;
         state[action.payload.id].fontColour = action.payload.value;
       },

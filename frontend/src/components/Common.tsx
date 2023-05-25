@@ -41,7 +41,12 @@ export const ETFStyles = {
       props.scriptioContinuo && props.segmentation ? (SEGMENTED_BASE_PADDING * props.fontSize * 100) / 100 + "px" : "",
   },
   word: {
-    color: (props: ReaderState) => (props.fontColour ? [hslToHex(props.fontColour), "!important"] : "inherit"),
+    color: (props: ReaderState) =>
+      props.fontColour && props.fontColour !== "tones" ? [hslToHex(props.fontColour), "!important"] : "inherit",
+    fontFamily: (props: ReaderState) => props.fontFamilyMain || "inherit",
+    fontSize: (props: ReaderState) => `${props.fontSize * 100}%`,
+  },
+  wordPinyinColours: {
     fontFamily: (props: ReaderState) => props.fontFamilyMain || "inherit",
     fontSize: (props: ReaderState) => `${props.fontSize * 100}%`,
   },

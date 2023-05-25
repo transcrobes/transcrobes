@@ -31,9 +31,11 @@ import {
   VIDEO_READER_TYPE,
   SerialisableDayCardWords,
   AnyTreebankPosType,
+  FontColourType,
 } from "../../../lib/types";
 import { ETFStylesProps } from "../../Common";
-import { affixCleaned } from "../../../lib/libMethods";
+import { affixCleaned, cleanedSound } from "../../../lib/libMethods";
+import { hasTones, toneColour } from "../../../lib/funclib";
 
 type EntryProps = {
   token: TokenType;
@@ -46,6 +48,7 @@ type EntryProps = {
 
 type LocalEntryState = {
   gloss: string;
+  charColours?: string[];
   nbRetries: number;
   unsure: boolean;
 };
@@ -57,6 +60,7 @@ type StatedEntryProps = EntryProps & {
   mouseover?: boolean;
   translationProviderOrder?: Record<string, number>;
   strictProviderOrdering?: boolean;
+  fontColour?: FontColourType;
 };
 
 const RETRY_DEFINITION_MS = 5000;
@@ -162,8 +166,15 @@ class Entry extends Component<StatedEntryProps, LocalEntryState> {
     let localGloss = "";
     let needsGloss = false;
     let unsure = false;
+
+    if (hasTones(fromLang) && readerConfig.fontColour === "tones") {
+      this.setState({ charColours: cleanedSound(def, fromLang).map((s) => toneColour(s)) });
+    } else {
+      this.setState({ charColours: undefined });
+    }
+
     if (cleanGraph !== def.graph) {
-      betterGuess = await guessBetter(def, fromLang);
+      betterGuess = await guessBetter(def, fromLang, knownCards?.knownCardWordGraphs || {});
     }
     if (betterGuess.graph === def.graph) {
       needsGloss = doesNeedGloss(token.l, knownCards, readerConfig, token.pos, token.w);
@@ -175,7 +186,7 @@ class Entry extends Component<StatedEntryProps, LocalEntryState> {
       if (localGloss && this.props.token.id) {
         if (isUnsure(def)) {
           unsure = true;
-          betterGuess = await guessBetter(def, fromLang);
+          betterGuess = await guessBetter(def, fromLang, knownCards?.knownCardWordGraphs || {});
         }
       }
     }
@@ -263,16 +274,21 @@ class Entry extends Component<StatedEntryProps, LocalEntryState> {
         nextProps.glossToggled !== this.props.glossToggled ||
         nextProps.isKnown !== this.props.isKnown ||
         nextProps.strictProviderOrdering !== this.props.strictProviderOrdering ||
+        nextProps.fontColour !== this.props.fontColour ||
         Object.keys(nextProps.translationProviderOrder || {}).join("") !==
           Object.keys(this.props.translationProviderOrder || {}).join("") ||
         nextProps.glossing !== this.props.glossing
       ) {
         await this.updates({
           ...this.props.readerConfig,
-          glossing: nextProps.glossing || this.props.readerConfig.glossing,
+          glossing: nextProps.glossing !== undefined ? nextProps.glossing : this.props.readerConfig.glossing,
           translationProviderOrder:
             nextProps.translationProviderOrder || this.props.readerConfig.translationProviderOrder,
-          strictProviderOrdering: nextProps.strictProviderOrdering || this.props.readerConfig.strictProviderOrdering,
+          strictProviderOrdering:
+            nextProps.strictProviderOrdering !== undefined
+              ? nextProps.strictProviderOrdering
+              : this.props.readerConfig.strictProviderOrdering,
+          fontColour: nextProps.fontColour !== undefined ? nextProps.fontColour : this.props.readerConfig.fontColour,
         });
       }
     }
@@ -304,37 +320,70 @@ class Entry extends Component<StatedEntryProps, LocalEntryState> {
     if (this.props.token.b) {
       wordStyle["padding-left"] = `${this.props.token.b.length * 0.25}em`;
     }
-
     if (this.props.token.pos || this.props.token.bg) {
-      return createVNode(
-        HtmlElement,
-        "span",
-        this.props.classes.entry,
-        [
+      const vnodes: VNode[] = [];
+      const graph = this.props.token.w || this.props.token.l;
+      if (this.state?.charColours && this.state?.charColours.length > 0) {
+        const charNodes: VNode[] = [];
+        for (let i = 0; i < graph.length; i++) {
+          charNodes.push(
+            createVNode(
+              HtmlElement,
+              "span",
+              `${this.props.classes.wordPinyinColours} tcrobe-word`,
+              graph[i],
+              HasTextChildren,
+              { style: { ...wordStyle, color: this.state.charColours[i] } },
+              null,
+              null,
+            ),
+          );
+        }
+        vnodes.push(
+          createVNode(
+            HtmlElement,
+            "span",
+            "tcrobe-word",
+            charNodes.filter((x) => x),
+            MultipleChildren & HasVNodeChildren,
+          ),
+        );
+      } else {
+        vnodes.push(
           createVNode(
             HtmlElement,
             "span",
             `${this.props.classes.word} tcrobe-word`,
-            this.props.token.w || this.props.token.l,
+            graph,
             HasTextChildren,
             _.isEmpty(wordStyle) ? undefined : { style: wordStyle },
             null,
             null,
           ),
-          this.state?.gloss &&
-            createVNode(
-              HtmlElement,
-              "span",
-              `${this.props.classes.gloss} tcrobe-gloss`,
-              `(${this.state?.gloss})`,
-              HasTextChildren,
-              this.props.readerConfig.glossUnsureBackgroundColour && this.state.unsure
-                ? { [UNSURE_ATTRIBUTE]: "" }
-                : null,
-              null,
-              null,
-            ),
-        ].filter((x) => x),
+        );
+      }
+      if (this.state?.gloss) {
+        vnodes.push(
+          createVNode(
+            HtmlElement,
+            "span",
+            `${this.props.classes.gloss} tcrobe-gloss`,
+            `(${this.state?.gloss})`,
+            HasTextChildren,
+            this.props.readerConfig.glossUnsureBackgroundColour && this.state.unsure
+              ? { [UNSURE_ATTRIBUTE]: "" }
+              : null,
+            null,
+            null,
+          ),
+        );
+      }
+
+      return createVNode(
+        HtmlElement,
+        "span",
+        this.props.classes.entry,
+        vnodes.filter((x) => x),
         MultipleChildren & HasVNodeChildren,
         {
           onclick: this.createTokenDetails,
@@ -386,6 +435,7 @@ function mapStateToProps(state: RootState, props: EntryProps) {
     mouseover: readerConfig.mouseover,
     translationProviderOrder: readerConfig.translationProviderOrder,
     strictProviderOrdering: readerConfig.strictProviderOrdering,
+    fontColour: readerConfig.fontColour,
   };
 }
 

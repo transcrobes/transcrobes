@@ -26,7 +26,7 @@ export default function Header({ classes, token, bestGuess, extrasOpen, onToggle
 
   useEffect(() => {
     (async () => {
-      setSound((token.p && token.p) || (await getSound(token, definitions)));
+      setSound((token.p && token.p) || (await getSound(token, definitions, fromLang)));
     })();
   }, [token]);
 

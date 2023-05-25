@@ -2,7 +2,12 @@ import { Typography } from "@mui/material";
 import { makeStyles } from "tss-react/mui";
 import { Fragment, ReactElement } from "react";
 import { useAppSelector } from "../app/hooks";
-import { filterFakeL1Definitions, filterUnhelpfulL1Definitions, orderTranslations } from "../lib/libMethods";
+import {
+  cleanedSound,
+  filterFakeL1Definitions,
+  filterUnhelpfulL1Definitions,
+  orderTranslations,
+} from "../lib/libMethods";
 import { DefinitionType, PosTranslationsType, ProviderTranslationType } from "../lib/types";
 import { InfoBox, ThinHR } from "./Common";
 import PosItem from "./PosItem";
@@ -24,6 +29,7 @@ export default function DefinitionTranslations({
 }: Props): ReactElement {
   const { classes } = useStyles();
   const dictionaries = useAppSelector((state) => state.dictionary);
+  const { fromLang } = useAppSelector((state) => state.userData.user);
   let providerTranslations: ProviderTranslationType[] = [];
   const orderedTranslations =
     orderTranslations(definition.providerTranslations, translationProviderOrder) || definition.providerTranslations;
@@ -37,7 +43,7 @@ export default function DefinitionTranslations({
         // have the initial word in them, and meanings that aren't proper words (eg. -ize, -footed)
         const values = filterFakeL1Definitions(
           filterUnhelpfulL1Definitions(posTrans.values.filter((v) => !v.match(definition.graph))),
-          definition.sound,
+          cleanedSound(definition, fromLang),
         );
         if (values.length > 0) {
           posTranslations.push({ posTag: posTrans.posTag, values });

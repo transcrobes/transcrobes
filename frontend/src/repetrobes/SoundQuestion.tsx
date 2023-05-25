@@ -3,6 +3,7 @@ import { useAppSelector } from "../app/hooks";
 import SayIt from "../components/SayIt";
 import { CardType, CharacterType, DefinitionType } from "../lib/types";
 import QuestionDefinitionGraph, { CentredFlex, GraphSoundQuestionStyle } from "./Common";
+import { cleanedSound } from "../lib/libMethods";
 
 interface SoundQuestionProps {
   card: CardType;
@@ -22,7 +23,7 @@ export default function SoundQuestion({
   const fromLang = useAppSelector((state) => state.userData.user.fromLang);
   return (
     <GraphSoundQuestionStyle>
-      <CentredFlex>{card && card.front ? card.front : definition.sound}</CentredFlex>
+      <CentredFlex>{card && card.front ? card.front : cleanedSound(definition, fromLang)}</CentredFlex>
       <CentredFlex>
         <SayIt graph={definition.graph} lang={fromLang} />
       </CentredFlex>

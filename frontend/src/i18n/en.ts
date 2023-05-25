@@ -202,6 +202,11 @@ const customEnglishMessages: TranslationMessages = {
       font_size: "Font size",
       text_colour: "Text colour",
       override_text_colour: "Override text colour",
+      override_type: {
+        none: "None",
+        coloured: "Colour",
+        tones: "Tones",
+      },
     },
     meaning_editor: {
       type_something_here: "Type something here",

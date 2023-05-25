@@ -1,6 +1,6 @@
 import _ from "lodash";
 import { soundWithSeparators, UUID } from "./funclib";
-import { affixCleaned, bestGuess, filterKnown, isFakeL1, toSimplePos } from "./libMethods";
+import { affixCleaned, bestGuess, cleanedSound, filterKnown, isFakeL1, toSimplePos } from "./libMethods";
 import { AbstractWorkerProxy, platformHelper } from "./proxies";
 import {
   ACTIVITY_DEBOUNCE,
@@ -23,6 +23,7 @@ import {
   REMOVABLE_VERB_COMPLEMENTS,
   SentenceType,
   SerialisableDayCardWords,
+  SerialisableStringSet,
   StreamDetails,
   STREAMER_DETAILS,
   Subtitle,
@@ -177,7 +178,7 @@ export async function getL1(
     defaultL1 &&
     !readerConfig.strictProviderOrdering &&
     affixCleaned(defaultL1) === defaultL1 &&
-    !(token.id && token.id in definitions && isFakeL1(definitions[token.id].sound, defaultL1))
+    !(token.id && token.id in definitions && isFakeL1(cleanedSound(definitions[token.id], fromLang), defaultL1))
   ) {
     return defaultL1;
   }
@@ -192,8 +193,17 @@ export async function getL1(
   return gloss || defaultL1;
 }
 
-export async function getSound(token: TokenType, definitions: DefinitionsState): Promise<string[]> {
-  return token.p || ((token.id && definitions[token.id]) || (await getWord(token.l)))?.sound || [DEFINITION_LOADING];
+export async function getSound(
+  token: TokenType,
+  definitions: DefinitionsState,
+  fromLang: InputLanguage,
+): Promise<string[]> {
+  if (token.p) return token.p;
+  if (token.id && definitions[token.id]) {
+    return cleanedSound(definitions[token.id], fromLang);
+  } else {
+    return cleanedSound(await getWord(token.l), fromLang);
+  }
 }
 
 export async function getNormalGloss(
@@ -212,9 +222,11 @@ export async function getNormalGloss(
   } else if (glossing == USER_STATS_MODE.L2_SIMPLIFIED) {
     gloss = await getL2Simplified(token, gloss, uCardWords, definitions, fromLang, toLang, readerConfig);
   } else if (glossing == USER_STATS_MODE.TRANSLITERATION) {
-    gloss = (await getSound(token, definitions)).map((sound, i) => soundWithSeparators(sound, i, fromLang)).join("");
+    gloss = (await getSound(token, definitions, fromLang))
+      .map((sound, i) => soundWithSeparators(sound, i, fromLang))
+      .join("");
   } else if (glossing == USER_STATS_MODE.TRANSLITERATION_L1) {
-    gloss = `${(await getSound(token, definitions))
+    gloss = `${(await getSound(token, definitions, fromLang))
       .map((sound, i) => soundWithSeparators(sound, i, fromLang))
       .join("")}: ${await getL1(token, definitions, fromLang, toLang, readerConfig, gloss)}`;
   }
@@ -412,7 +424,11 @@ export function isUnsure(definition?: DefinitionType) {
   );
 }
 
-export async function guessBetter(defin: DefinitionState, lang: SystemLanguage): Promise<DefinitionType> {
+export async function guessBetter(
+  defin: DefinitionState,
+  lang: SystemLanguage,
+  knownCardWordGraphs: SerialisableStringSet,
+): Promise<DefinitionType> {
   switch (lang) {
     case "en":
       return defin;
@@ -421,7 +437,7 @@ export async function guessBetter(defin: DefinitionState, lang: SystemLanguage):
       let cleanGraph = affixCleaned(defin.graph);
       if (cleanGraph !== defin.graph) {
         newDefinition = await getWord(cleanGraph);
-        if (newDefinition && !isUnsure(newDefinition)) {
+        if (newDefinition && (cleanGraph in knownCardWordGraphs || !isUnsure(newDefinition))) {
           return newDefinition;
         }
       }

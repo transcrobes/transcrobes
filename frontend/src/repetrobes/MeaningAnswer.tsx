@@ -4,6 +4,7 @@ import RecentSentencesElement from "../components/RecentSentencesElement";
 import SayIt from "../components/SayIt";
 import { CardType, DefinitionType, PosSentences } from "../lib/types";
 import { CentredFlex, StyledAnswer } from "./Common";
+import { cleanedSound } from "../lib/libMethods";
 
 interface MeaningAnswerProps {
   card: CardType;
@@ -26,7 +27,7 @@ export default function MeaningAnswer({
       ) : (
         <>
           <CentredFlex>
-            <StyledAnswer> {definition.sound} </StyledAnswer>
+            <StyledAnswer> {cleanedSound(definition, fromLang)} </StyledAnswer>
             <SayIt graph={definition.graph} lang={fromLang} />
           </CentredFlex>
           <CentredFlex>{showRecents && <RecentSentencesElement recentPosSentences={recentSentences} />}</CentredFlex>

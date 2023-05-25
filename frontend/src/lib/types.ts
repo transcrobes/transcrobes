@@ -740,10 +740,12 @@ export const WEB_READER_ID = "webReader";
 export const RECENTS_READER_ID = "recentsReader";
 export const EXTENSION_READER_ID = "extensionReader";
 
+export type FontColourType = HslColor | null | "tones";
+
 export interface ReaderState {
   id: string;
   readerType: ReaderType;
-  fontColour: HslColor | null;
+  fontColour: FontColourType;
   fontFamilyGloss: FontFamily | FontFamilyChinese;
   fontFamilyMain: FontFamily | FontFamilyChinese;
   fontSize: number;
@@ -766,7 +768,7 @@ export interface LanguagedReaderState extends ReaderState {
 }
 
 export interface BookReaderState extends ReaderState {
-  fontColour: HslColor | null;
+  // fontColour: FontColourType;
   pageMargins: number;
   isScrolling: boolean;
   currentTocUrl: string | null;

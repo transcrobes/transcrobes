@@ -3,6 +3,7 @@ import { makeStyles } from "tss-react/mui";
 import { ReactElement, useState } from "react";
 import { useAppSelector } from "../app/hooks";
 import {
+  cleanedSound,
   filterFakeL1Definitions,
   filterUnhelpfulL1Definitions,
   orderTranslations,
@@ -48,8 +49,7 @@ export default function Meaning({
   const { classes } = useStyles();
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const [anchorElClick, setAnchorElClick] = useState<HTMLElement | null>(null);
-  const toLang = useAppSelector((state) => state.userData.user.toLang);
-
+  const { fromLang, toLang } = useAppSelector((state) => state.userData.user);
   function handleClickOpen(event: React.MouseEvent<HTMLElement, MouseEvent>) {
     setAnchorEl(null);
     if (editable) {
@@ -80,7 +80,7 @@ export default function Meaning({
         for (const posTranslation of provider.posTranslations) {
           const finalList = filterFakeL1Definitions(
             filterUnhelpfulL1Definitions(posTranslation.values.filter((v) => !v.match(definition.graph))),
-            definition.sound,
+            cleanedSound(definition, fromLang),
           );
           if (finalList.length > 0) {
             hasValidDefinitions = true;
