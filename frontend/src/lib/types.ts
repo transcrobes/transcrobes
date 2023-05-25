@@ -23,7 +23,21 @@ export const KIWI_PLAY_URL = "https://play.google.com/store/apps/details?id=com.
 export const REMOVABLE_NOUN_SUFFIXES = ["们", "儿", "者"];
 // export const REMOVABLE_ADJECTIVE_SUFFIXES = []
 export const REMOVABLE_ADVERB_SUFFIXES = ["地", "里", "著", "在"]; // are these adverbials?
-export const REMOVABLE_VERB_COMPLEMENTS = ["上", "下", "过", "到", "完", "成", "给", "错", "得", "够", "出"];
+export const REMOVABLE_VERB_COMPLEMENTS = [
+  "上",
+  "下",
+  "过",
+  "到",
+  "完",
+  "成",
+  "给",
+  "错",
+  "得",
+  "够",
+  "出",
+  "掉",
+  "起",
+];
 
 export const ADMIN_EMAILS = (import.meta.env.VITE_ADMIN_EMAILS || "admin@example.com")
   .split(",")
@@ -442,9 +456,7 @@ export const BASE_DICT_PROVIDERS = {
   mst: "Bing",
   fbk: "Bing fallback",
 };
-export const EN_ZHHANS_DICT_PROVIDERS = {
-  ...BASE_DICT_PROVIDERS,
-};
+export const EN_ZHHANS_DICT_PROVIDERS = BASE_DICT_PROVIDERS;
 export const ZHHANS_EN_DICT_PROVIDERS = {
   ...BASE_DICT_PROVIDERS,
   ccc: "CC Cedict",
@@ -765,6 +777,10 @@ export interface BookReaderState extends ReaderState {
   readerType: typeof BOOK_READER_TYPE;
 }
 
+export function translationProviderOrder(providers: Record<string, string>) {
+  return Object.keys(providers).reduce((acc, next, ind) => ({ ...acc, [next]: ind }), {} as Record<string, number>);
+}
+
 export const DEFAULT_READER_CONFIG_STATE: ReaderState = {
   id: "simpleReader",
   readerType: "simpleReader",
@@ -782,10 +798,7 @@ export const DEFAULT_READER_CONFIG_STATE: ReaderState = {
   mouseover: true,
   sayOnMouseover: false,
   clickable: true,
-  translationProviderOrder: Object.keys(BASE_DICT_PROVIDERS).reduce(
-    (acc, next, ind) => ({ ...acc, [next]: ind }),
-    {} as Record<string, number>,
-  ),
+  translationProviderOrder: translationProviderOrder(BASE_DICT_PROVIDERS),
   strictProviderOrdering: false,
 };
 

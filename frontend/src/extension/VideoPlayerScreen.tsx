@@ -16,7 +16,7 @@ import useWindowDimensions from "../hooks/WindowDimensions";
 import { getNetflixData } from "../lib/componentMethods";
 import { ensureDefinitionsLoaded } from "../lib/dictionary";
 import { getSubsURL, missingWordIdsFromModels } from "../lib/funclib";
-import { streamingSite } from "../lib/libMethods";
+import { getDefaultLanguageDictionaries, streamingSite } from "../lib/libMethods";
 import { AbstractWorkerProxy } from "../lib/proxies";
 import {
   ContentProps,
@@ -28,6 +28,7 @@ import {
   SUBS_DATA_SUFFIX,
   StreamDetails,
   VideoReaderState,
+  translationProviderOrder,
 } from "../lib/types";
 
 export async function getStreamDetails(url: string, proxy: AbstractWorkerProxy, fromLang: InputLanguage) {
@@ -161,6 +162,7 @@ export default function VideoPlayerScreen({ proxy }: ContentProps): ReactElement
         subBackgroundBlur: streamer === "youku",
         subRaise: streamer !== "youku" ? 0 : dims.width < 1000 ? 100 : dims.width < 1500 ? 120 : 150,
         subBoxWidth: 1,
+        translationProviderOrder: translationProviderOrder(getDefaultLanguageDictionaries(user.fromLang)),
       };
 
       const conf = await getRefreshedState<VideoReaderState>(proxy, defConfig, id);

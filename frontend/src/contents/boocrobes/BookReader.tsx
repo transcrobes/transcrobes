@@ -20,6 +20,7 @@ import {
   ContentParams,
   ContentProps,
   DEFAULT_BOOK_READER_CONFIG_STATE,
+  translationProviderOrder,
 } from "../../lib/types";
 import { WebpubManifest } from "../../lib/WebpubManifestTypes/WebpubManifest";
 import {
@@ -32,6 +33,7 @@ import {
 import Header from "./Header";
 import injectables from "./injectables";
 import { intervalCollection, NAME_PREFIX } from "../../lib/interval/interval-decorator";
+import { getDefaultLanguageDictionaries } from "../../lib/libMethods";
 
 declare global {
   interface Window {
@@ -96,7 +98,7 @@ export default function BookReader({ proxy }: ContentProps): ReactElement {
   const containerRef = useRef<HTMLDivElement>(null);
   const dispatch = useAppDispatch();
   const readerConfig = useAppSelector((state) => state.bookReader[id] || DEFAULT_BOOK_READER_CONFIG_STATE);
-  const userData = useAppSelector((state) => state.userData);
+  const user = useAppSelector((state) => state.userData.user);
   const themeName = useAppSelector((state) => state.theme);
   const [loaded, setLoaded] = useState(false);
   const theme = createTheme({
@@ -114,7 +116,7 @@ export default function BookReader({ proxy }: ContentProps): ReactElement {
     },
   });
   useEffect(() => {
-    if (userData.user.accessToken) {
+    if (user.accessToken) {
       fetcher
         .fetchPlus<WebpubManifest>(url.href)
         .then((manif) => {
@@ -125,7 +127,7 @@ export default function BookReader({ proxy }: ContentProps): ReactElement {
           setError(error);
         });
     }
-  }, [id, userData]);
+  }, [id, user]);
   useEffect(() => {
     return () => {
       if (reader) {
@@ -141,7 +143,14 @@ export default function BookReader({ proxy }: ContentProps): ReactElement {
       return;
     }
     (async () => {
-      const conf = await getRefreshedState<BookReaderState>(proxy, DEFAULT_BOOK_READER_CONFIG_STATE, id);
+      const conf = await getRefreshedState<BookReaderState>(
+        proxy,
+        {
+          ...DEFAULT_BOOK_READER_CONFIG_STATE,
+          translationProviderOrder: translationProviderOrder(getDefaultLanguageDictionaries(user.fromLang)),
+        },
+        id,
+      );
       dispatch(bookReaderActions.setState({ id, value: conf }));
 
       const userSettings = {

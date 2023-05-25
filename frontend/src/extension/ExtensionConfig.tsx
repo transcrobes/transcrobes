@@ -4,21 +4,31 @@ import { useTranslate } from "react-admin";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
 import Conftainer from "../components/Conftainer";
 import ReaderConfig from "../contents/common/ContentConfig";
-import { extensionReaderActions } from "../features/content/extensionReaderSlice";
+import { extensionReaderActions as actions } from "../features/content/extensionReaderSlice";
 import { changeTheme } from "../features/themes/themeReducer";
 import { setAndSaveUser } from "../features/user/userSlice";
-import { CornerPosition, DEFAULT_EXTENSION_READER_CONFIG_STATE, EXTENSION_READER_ID, ThemeName } from "../lib/types";
+import {
+  CornerPosition,
+  DEFAULT_EXTENSION_READER_CONFIG_STATE,
+  EXTENSION_READER_ID,
+  ThemeName,
+  translationProviderOrder,
+} from "../lib/types";
+import { getDefaultLanguageDictionaries } from "../lib/libMethods";
 
 export default function ExtensionConfig(): ReactElement {
   const id = EXTENSION_READER_ID;
 
-  const readerConfig = useAppSelector(
-    (state) => state.extensionReader[id] || { ...DEFAULT_EXTENSION_READER_CONFIG_STATE },
-  );
   const user = useAppSelector((state) => state.userData);
+  const readerConfig = useAppSelector(
+    (state) =>
+      state.extensionReader[id] || {
+        ...DEFAULT_EXTENSION_READER_CONFIG_STATE,
+        translationProviderOrder: translationProviderOrder(getDefaultLanguageDictionaries(user.user.fromLang)),
+      },
+  );
   const dispatch = useAppDispatch();
   const translate = useTranslate();
-  const actions = extensionReaderActions;
   return (
     <div>
       <Conftainer label={translate("screens.extension.popup_theme_mode.title")} id="themeMode">

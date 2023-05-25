@@ -27,7 +27,14 @@ import { sessionActivityUpdate, submitActivity } from "../lib/componentMethods";
 import { ensureDefinitionsLoaded, refreshDictionaries } from "../lib/dictionary";
 import { getLanguageFromPreferred, isScriptioContinuo, missingWordIdsFromModels, toEnrich, UUID } from "../lib/funclib";
 import { NAME_PREFIX } from "../lib/interval/interval-decorator";
-import { enrichNodes, getI18nProvider, getMessages, streamingSite, textNodes } from "../lib/libMethods";
+import {
+  enrichNodes,
+  getDefaultLanguageDictionaries,
+  getI18nProvider,
+  getMessages,
+  streamingSite,
+  textNodes,
+} from "../lib/libMethods";
 import { AbstractWorkerProxy, BackgroundWorkerProxy, setPlatformHelper } from "../lib/proxies";
 import { observerFunc } from "../lib/stats";
 import {
@@ -42,6 +49,7 @@ import {
   ModelType,
   SerialisableDayCardWords,
   SerialisableStringSet,
+  translationProviderOrder,
   UserState,
 } from "../lib/types";
 import ContentAnalysisAccuracyBrocrobes from "./ContentAnalysisAccuracyBrocrobes";
@@ -114,7 +122,14 @@ let classes: ETFStylesProps["classes"] | null = null;
 const id = EXTENSION_READER_ID;
 
 async function ensureAllLoaded(platformHelper: AbstractWorkerProxy, store: AdminStore) {
-  const conf = await getRefreshedState<ExtensionReaderState>(proxy, DEFAULT_EXTENSION_READER_CONFIG_STATE, id);
+  const conf = await getRefreshedState<ExtensionReaderState>(
+    proxy,
+    {
+      ...DEFAULT_EXTENSION_READER_CONFIG_STATE,
+      translationProviderOrder: translationProviderOrder(getDefaultLanguageDictionaries(fromLang())),
+    },
+    id,
+  );
   store.dispatch(extensionReaderActions.setState({ id, value: conf }));
 
   const value = await platformHelper.sendMessagePromise<SerialisableDayCardWords>({

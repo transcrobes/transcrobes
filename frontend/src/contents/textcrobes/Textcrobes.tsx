@@ -32,8 +32,10 @@ import {
   SimpleReaderState,
   TEXTCROBES_YT_VIDEO,
   TEXT_READER_ID,
+  translationProviderOrder,
 } from "../../lib/types";
 import ContentConfigLauncherDrawer from "./TextReaderConfigLauncher";
+import { getDefaultLanguageDictionaries } from "../../lib/libMethods";
 
 type Props = {
   proxy: ServiceWorkerProxy;
@@ -93,7 +95,14 @@ export default function Textcrobes({ proxy }: Props): ReactElement {
   useEffect(() => {
     (async () => {
       if (proxy.loaded) {
-        const conf = await getRefreshedState<SimpleReaderState>(proxy, DEFAULT_TEXT_READER_CONFIG_STATE, id);
+        const conf = await getRefreshedState<SimpleReaderState>(
+          proxy,
+          {
+            ...DEFAULT_TEXT_READER_CONFIG_STATE,
+            translationProviderOrder: translationProviderOrder(getDefaultLanguageDictionaries(fromLang)),
+          },
+          id,
+        );
         dispatch(simpleReaderActions.setState({ id, value: conf }));
       }
     })();

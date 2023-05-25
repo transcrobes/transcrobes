@@ -12,7 +12,7 @@ import { videoReaderActions } from "../../features/content/videoReaderSlice";
 import useWindowDimensions from "../../hooks/WindowDimensions";
 import { ensureDefinitionsLoaded } from "../../lib/dictionary";
 import { getSubsURL, missingWordIdsFromModels } from "../../lib/funclib";
-import { fetchPlus } from "../../lib/libMethods";
+import { fetchPlus, getDefaultLanguageDictionaries } from "../../lib/libMethods";
 import {
   Content,
   ContentParams,
@@ -23,6 +23,7 @@ import {
   MOOCROBES_YT_VIDEO,
   SUBS_DATA_SUFFIX,
   VideoReaderState,
+  translationProviderOrder,
 } from "../../lib/types";
 import VideoPlayer, { VideoPlayerHandle } from "./VideoPlayer";
 import VideoReaderConfigLauncher from "./VideoReaderConfigLauncher";
@@ -34,6 +35,7 @@ export default function VideoPlayerScreen({ proxy }: ContentProps): ReactElement
   const { data: content } = useGetOne<Content>("contents", { id });
   const dispatch = useAppDispatch();
   const definitions = useAppSelector((state) => state.definitions);
+  const user = useAppSelector((state) => state.userData.user);
   const translate = useTranslate();
 
   const dims = useWindowDimensions();
@@ -53,6 +55,7 @@ export default function VideoPlayerScreen({ proxy }: ContentProps): ReactElement
       const defConfig = {
         ...DEFAULT_VIDEO_READER_CONFIG_STATE,
         fontSize: dims.width < 1000 ? 1.5 : dims.width < 1500 ? 2 : 2.6,
+        translationProviderOrder: translationProviderOrder(getDefaultLanguageDictionaries(user.fromLang)),
       };
       const conf = await getRefreshedState<VideoReaderState>(proxy, defConfig, id);
       dispatch(videoReaderActions.setState({ id, value: conf }));

@@ -35,16 +35,16 @@ import {
   DEFAULT_EXTENSION_READER_CONFIG_STATE,
   DEFAULT_SERVER_URL,
   DOCS_DOMAIN,
-  ExtensionReaderState,
   EXTENSION_READER_ID,
-  IS_DEV,
-  SITE_DOMAIN,
+  ExtensionReaderState,
   SystemLanguage,
+  translationProviderOrder,
 } from "../lib/types";
 import { RxDBDataProviderParams } from "../ra-data-rxdb";
 import Initialisation from "./components/Initialisation";
 import Intro from "./components/Intro";
-import ExtensionConfig from "./ExtensionReaderConfig";
+import ExtensionConfig from "./ExtensionConfig";
+import { getDefaultLanguageDictionaries } from "../lib/libMethods";
 
 type FormProps = {
   username: string;
@@ -134,11 +134,15 @@ export default function Options(): ReactElement {
       setBaseUrl(userData.baseUrl || DEFAULT_SERVER_URL);
       const linit = await isInitialisedAsync(userData.username);
       setInited(linit);
-      let conf: ExtensionReaderState = { ...DEFAULT_EXTENSION_READER_CONFIG_STATE, id };
+      let conf: ExtensionReaderState = {
+        ...DEFAULT_EXTENSION_READER_CONFIG_STATE,
+        translationProviderOrder: translationProviderOrder(getDefaultLanguageDictionaries(userData.user.fromLang)),
+      };
+
       if (userData.username && linit) {
         await proxy.asyncInit({ username: userData.username });
         await refreshDictionaries(store, proxy, userData.user.fromLang);
-        conf = await getRefreshedState<ExtensionReaderState>(proxy, DEFAULT_EXTENSION_READER_CONFIG_STATE, id);
+        conf = await getRefreshedState<ExtensionReaderState>(proxy, conf, id);
       }
       setLocale(conf.locale);
       dispatch(changeTheme(conf.themeName));
