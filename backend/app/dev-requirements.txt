@@ -556,23 +556,23 @@ fastapi==0.95.2 \
     --hash=sha256:4d9d3e8c71c73f11874bcf5e33626258d143252e329a01002f767306c64fb982 \
     --hash=sha256:d374dbc4ef2ad9b803899bd3360d34c534adc574546e25314ab72c0c4411749f
     # via transcrobes (pyproject.toml)
-faust-streaming==0.10.12 \
-    --hash=sha256:008351fc8969f03b3b2c7c4b1b3e68d38e0e5923087ddc65866e0f573aa7ddfb \
-    --hash=sha256:2fc6c760da98692f918e33183074fe8b77f65ad5bca1125d75baee2a98d485e4 \
-    --hash=sha256:33f17fa05d3af83d753662ec9b8032bc7bc087bf2d434620ba2b96e17e012bde \
-    --hash=sha256:530e57dfde1084fe679c2a6430215e2a9fb5c627a944dcc67c1dde8b4409aac5 \
-    --hash=sha256:580d4c2587d1fd8d26aea0ab1c6e5132fb639f1aed4bf50eb38bc205ea0adb6f \
-    --hash=sha256:5acf83dd5f8d880ff05362dc35f392ba4fa7cc082a1668d413c2948df4c1af12 \
-    --hash=sha256:6491af9118b2340aa7ac9df9e327f4cc8cedc628920e52c06b3c9f3bef3417d9 \
-    --hash=sha256:78124ae374b83aad595b0aad2569af465d4f419858fadf046641567ca35b601e \
-    --hash=sha256:91c6622e755ffe3a70864b0d3c4bf78e11c2ce56147bc94f77368f751d4066b2 \
-    --hash=sha256:ae87b0e1a52e724c81f40c3762f6ba18659a9a8c36e939965521c37228fd0817 \
-    --hash=sha256:c557da00f4c5a974b5b1901a334792ca6f77d8557c4fc4058d7d05e413945e2e \
-    --hash=sha256:cb540749b46b305c02a3b46bdfe3c937e6285a6225844dbd40a048e7724aae2f \
-    --hash=sha256:cb84f9ff2a80ebcd46dc7677ab6a4e6102e22fe729c3fd1b5ef87d8dafa3d2d0 \
-    --hash=sha256:ce8efed4a0f554f2876c5722f4566db05aa4fe7699583f2ed1c93c8433cab311 \
-    --hash=sha256:d4698d5fd791eefd10b0cd0daa00f4bf70141e5ba1ea7cb4b1966bac03d730b4 \
-    --hash=sha256:ea8e81b66b282a85eec43b0484cc7aaf382703606206da625219658ce496a9c6
+faust-streaming==0.10.13 \
+    --hash=sha256:135ed1a40cb90e8600970cd59a4c4c0544277602721bef327c94c53fbc1a4c58 \
+    --hash=sha256:32fbe4bce38facaa036b1eee979424410e2d9ff3c78aa0cfa3a92b6dcdb4b1cb \
+    --hash=sha256:436c22a707f48fc6cd02e67b03d86b5ca3684ff418f6c7e1c20440270d83ab26 \
+    --hash=sha256:5d586c6fdb3fb4a42290b89027131e0db0c975a30b8845b867befc501fab37a0 \
+    --hash=sha256:73e9ae26533bbd39ac51be9b0e06c4c10ba40d0b6786633a3708d917e3caa91b \
+    --hash=sha256:78a591d31b8107fd37edaa30e6b5b36c04d66d909fffb26abf822839bc5c4bc6 \
+    --hash=sha256:7e2a3e9082e8771d72a35f78c94dcd59d632bbd6320ce573c8e44f0f5eadd9db \
+    --hash=sha256:8f11e2489c33662d7aeff245c0c84aa1c080de2cf1a31d2e9bfcb4725c87e029 \
+    --hash=sha256:9058fdd2eb84dd98a38174e1f37e2a77b7ff496a1d44f10c39bc919e9b365cd5 \
+    --hash=sha256:942fdd8756bcc89aca3c68345bcfbedb9a6f211c1127301b1369132dc8c1cee8 \
+    --hash=sha256:a2df35ffe84ae70b0081be6e6051fa2edbfbd210c1460f0f793861190e7fc9a4 \
+    --hash=sha256:cb36a823377598e25bc91615c1af6c18bbd0744f35e6007d584b90daee1c6afd \
+    --hash=sha256:cfda185974ed7f04731e23008b2f6d7ffc8674d7d04c446bb5bd6e9f4ef8673a \
+    --hash=sha256:e65f7cc7028aa0d69952428d7dcbbda9bdf6b5a31a185510883b5eb417f119f2 \
+    --hash=sha256:f982e0d69940584ae2db15f36602b2c1add4afae2ceeef5803fa4555a0840366 \
+    --hash=sha256:ffbb340b6643d12080984de1ceef867fd90307df5c69fa1e0c0d5daeecc3052c
     # via transcrobes (pyproject.toml)
 filelock==3.12.0 \
     --hash=sha256:ad98852315c2ab702aeb628412cbf7e95b7ce8c3bf9565670b4eaecf1db370a9 \
@@ -1539,9 +1539,9 @@ pytest-asyncio==0.21.0 \
     --hash=sha256:2b38a496aef56f56b0e87557ec313e11e1ab9276fc3863f6a7be0f1d0e415e1b \
     --hash=sha256:f2b3366b7cd501a4056858bd39349d5af19742aed2d81660b7998b6341c7eb9c
     # via transcrobes (pyproject.toml)
-pytest-cov==4.0.0 \
-    --hash=sha256:2feb1b751d66a8bd934e5edfa2e961d11309dc37b73b0eabe73b5945fee20f6b \
-    --hash=sha256:996b79efde6433cdbd0088872dbc5fb3ed7fe1578b68cdbba634f14bb8dd0470
+pytest-cov==4.1.0 \
+    --hash=sha256:3904b13dfbfec47f003b8e77fd5b589cd11904a21ddf1ab38a64f204d6a10ef6 \
+    --hash=sha256:6ba70b9e97e69fcc3fb45bfeab2d0a138fb65c4d0d6a41ef33983ad114be8c3a
     # via transcrobes (pyproject.toml)
 python-dateutil==2.8.2 \
     --hash=sha256:0123cacc1627ae19ddf3c27a5de5bd67ee4586fbdd6440d9748f8abb483d3e86 \
@@ -1794,9 +1794,9 @@ tomlkit==0.11.8 \
     --hash=sha256:8c726c4c202bdb148667835f68d68780b9a003a9ec34167b6c673b38eff2a171 \
     --hash=sha256:9330fc7faa1db67b541b28e62018c17d20be733177d290a13b24c62d1614e0c3
     # via pylint
-typing-extensions==4.6.0 \
-    --hash=sha256:6ad00b63f849b7dcc313b70b6b304ed67b2b2963b3098a33efe18056b1a9a223 \
-    --hash=sha256:ff6b238610c747e44c268aa4bb23c8c735d665a63726df3f9431ce707f2aa768
+typing-extensions==4.6.1 \
+    --hash=sha256:558bc0c4145f01e6405f4a5fdbd82050bd221b119f4bf72a961a1cfd471349d6 \
+    --hash=sha256:6bac751f4789b135c43228e72de18637e9a6c29d12777023a703fd1a6858469f
     # via alembic, mypy, psycopg, pydantic, sqlalchemy, strawberry-graphql
 ua-parser==0.16.1 \
     --hash=sha256:ed3efc695f475ffe56248c9789b3016247e9c20e3556cfa4d5aadc78ab4b26c6 \

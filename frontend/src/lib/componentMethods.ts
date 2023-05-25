@@ -1,6 +1,6 @@
 import _ from "lodash";
 import { soundWithSeparators, UUID } from "./funclib";
-import { affixCleaned, bestGuess, complexPosToSimplePosLabels, filterKnown, isFakeL1, toSimplePos } from "./libMethods";
+import { affixCleaned, bestGuess, filterKnown, isFakeL1, toSimplePos } from "./libMethods";
 import { AbstractWorkerProxy, platformHelper } from "./proxies";
 import {
   ACTIVITY_DEBOUNCE,
@@ -262,7 +262,7 @@ function originalSentenceFromTokens(tokens: TokenType[]): string {
   return tokens.map((x) => x.l).join("");
 }
 
-async function getL2Simplified(
+export async function getL2Simplified(
   token: TokenType,
   previousGloss: string,
   uCardWords: Partial<SerialisableDayCardWords>,
@@ -301,25 +301,6 @@ async function getL2Simplified(
 export function isNumberToken(pos?: AnyTreebankPosType): boolean {
   return !!pos && NUMBER_POS.has(pos);
 }
-export async function getPopoverText(
-  token: TokenType,
-  uCardWords: Partial<SerialisableDayCardWords>,
-  definitions: DefinitionsState,
-  fromLang: InputLanguage,
-  systemLang: SystemLanguage,
-  readerConfig: ReaderState,
-): Promise<string> {
-  const gloss = token.bg ? token.bg.split(",")[0].split(";")[0] : "";
-  const l1 = await getL1(token, definitions, fromLang, systemLang, readerConfig, gloss);
-  if (l1 === DEFINITION_LOADING) return DEFINITION_LOADING;
-  const l2 = await getL2Simplified(token, l1, uCardWords, definitions, fromLang, systemLang, readerConfig);
-  const sound = (await getSound(token, definitions))
-    .map((sound, i) => soundWithSeparators(sound, i, fromLang))
-    .join("");
-  return `${complexPosToSimplePosLabels(token.pos!, fromLang, systemLang)}: ${l1} ${
-    l2 != l1 ? `: ${l2}` : ""
-  }: ${sound}`;
-}
 
 export function eventCoordinates(event: React.MouseEvent<HTMLElement>): EventCoordinates {
   return {
@@ -331,7 +312,6 @@ export function eventCoordinates(event: React.MouseEvent<HTMLElement>): EventCoo
 function getActivityUrl(url: string): string {
   if (url.includes("/api/v1/data/content/")) {
     // We are in the iframe, and need to convert the url to the parent url
-
     const urlObj = new URL(url);
     return `${urlObj.origin}/#/contents/${url.split("/api/v1/data/content/")[1].split("/")[0]}/read`;
   } else {
