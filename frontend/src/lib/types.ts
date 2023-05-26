@@ -20,7 +20,13 @@ export const DOWNLOAD_DOMAIN = import.meta.env.VITE_DOWNLOAD_DOMAIN || "dl.tc.tc
 export const KIWI_LOCAL_URL = `https://${DOWNLOAD_DOMAIN}/kiwi-browser-latest.apk`;
 export const KIWI_PLAY_URL = "https://play.google.com/store/apps/details?id=com.kiwibrowser.browser&hl=en&gl=GB";
 
-export const REMOVABLE_NOUN_SUFFIXES = ["们", "儿", "者"];
+export const REMOVABLE_NOUN_SUFFIXES = [
+  "们",
+  "儿",
+  "者",
+  // "族",
+  // "色",
+];
 // export const REMOVABLE_ADJECTIVE_SUFFIXES = []
 export const REMOVABLE_ADVERB_SUFFIXES = ["地", "里", "著", "在"]; // are these adverbials?
 export const REMOVABLE_VERB_COMPLEMENTS = [
@@ -37,6 +43,8 @@ export const REMOVABLE_VERB_COMPLEMENTS = [
   "出",
   "掉",
   "起",
+  "好",
+  // "去"
 ];
 
 export const ADMIN_EMAILS = (import.meta.env.VITE_ADMIN_EMAILS || "admin@example.com")
@@ -458,8 +466,9 @@ export const BASE_DICT_PROVIDERS = {
 };
 export const EN_ZHHANS_DICT_PROVIDERS = BASE_DICT_PROVIDERS;
 export const ZHHANS_EN_DICT_PROVIDERS = {
-  ...BASE_DICT_PROVIDERS,
+  mst: "Bing",
   ccc: "CC Cedict",
+  fbk: "Bing fallback",
 };
 // unused
 // export type ZHHansEnDictProvider = keyof typeof ZHHANS_EN_DICT_PROVIDERS;
