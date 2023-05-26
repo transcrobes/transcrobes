@@ -575,6 +575,7 @@ const customChineseMessages: TranslationMessages = {
         bad_subs_lang: "字幕语言错误",
         no_id: "没有 ID",
         no_data: "没有数据",
+        buffering: "缓冲...",
       },
     },
     help: {

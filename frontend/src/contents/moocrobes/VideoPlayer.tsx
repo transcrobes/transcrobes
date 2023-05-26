@@ -19,6 +19,8 @@ import VideoBottomControls from "./VideoBottomControls";
 import VideoCentralControls from "./VideoCentralControls";
 import VideoHeaderControls from "./VideoHeaderControls";
 import useStateRef from "react-usestateref";
+import Loading from "../../components/Loading";
+import { useTranslate } from "react-admin";
 
 ReactPlayer.addCustomPlayer(TranscrobesLayerPlayer as any); // FIXME: the upstream typing is wrong here
 overrideTextTrackListeners();
@@ -79,7 +81,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, Props>(
     const [controlsVisibility, setControlsVisibility] = useState<"hidden" | "visible">("visible");
     const [currentPlaybackRate, setCurrentPlaybackRate] = useState(1.0);
     const dispatch = useAppDispatch();
-
+    const translate = useTranslate();
     const readerConfig = useAppSelector((state) => state.videoReader[id] || DEFAULT_VIDEO_READER_CONFIG_STATE);
 
     useImperativeHandle(ref, () => ({
@@ -529,6 +531,18 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, Props>(
             )}
             <TokenDetails readerConfig={readerConfig} />
             <Mouseover readerConfig={readerConfig} />
+
+            {isFullscreen && (
+              <Loading
+                position="fixed"
+                messageSx={{
+                  color: "black",
+                  textShadow: `-1px -1px 0 #ffffff, 1px -1px 0 #ffffff, -1px 1px 0 #ffffff, 1px 1px 0 #ffffff,
+                -2px 0 0 #ffffff, 2px 0 0 #ffffff, 0 2px 0 #ffffff, 0 -2px 0 #ffffff;`,
+                }}
+                message=""
+              />
+            )}
           </Box>
         </Container>
       </>

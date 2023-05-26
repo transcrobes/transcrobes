@@ -4,7 +4,6 @@ import { Provider as InfernoProvider } from "inferno-redux";
 import jss from "jss";
 import preset from "jss-preset-default";
 import _ from "lodash";
-import Polyglot from "node-polyglot";
 import rangy from "rangy";
 import { I18nContextProvider } from "react-admin";
 import { createRoot } from "react-dom/client";
@@ -31,7 +30,6 @@ import {
   enrichNodes,
   getDefaultLanguageDictionaries,
   getI18nProvider,
-  getMessages,
   streamingSite,
   textNodes,
 } from "../lib/libMethods";
@@ -59,14 +57,34 @@ import VideoPlayerScreen from "./VideoPlayerScreen";
 
 const DATA_SOURCE = "content.ts";
 const KEEPALIVE_QUERY_FREQUENCY_MS = 5000;
-
+const id = EXTENSION_READER_ID;
+const knownWords: SerialisableStringSet = {};
+const knownChars: SerialisableStringSet = {};
+const proxy = new BackgroundWorkerProxy();
+const models: KeyedModels = {};
 const queryClient = new QueryClient();
+const streamingSiteName = streamingSite(location.href);
+const sessionId = UUID().toString();
+
+let classes: ETFStylesProps["classes"] | null = null;
+
 const transcroberObserver: IntersectionObserver = new IntersectionObserver(onEntryId, {
   threshold: [0.9],
 });
 
-const polyglot = new Polyglot({ phrases: getMessages(getLanguageFromPreferred(navigator.languages)) });
-const streamingSiteName = streamingSite(location.href);
+const getReaderConfig = () => readerConfig;
+const getKnownCards = () => store.getState().knownCards;
+const fromLang = () => store.getState().userData.user.fromLang;
+
+setPlatformHelper(proxy);
+const userData = await proxy.sendMessagePromise<UserState>({ source: DATA_SOURCE, type: "getUser" });
+await proxy.asyncInit({ username: userData.username });
+await ensureConfLoaded(store);
+
+const readerConfig = store.getState().extensionReader[id];
+
+const locale = !!userData.username ? readerConfig.locale : getLanguageFromPreferred(navigator.languages);
+const i18nProvider = getI18nProvider(locale);
 
 createRoot(document.body.appendChild(document.createElement("div"))!).render(
   <Provider store={store}>
@@ -81,22 +99,14 @@ createRoot(document.body.appendChild(document.createElement("div"))!).render(
             }
           : undefined
       }
-      message={polyglot.t(
+      message={i18nProvider.translate(
         streamingSiteName ? "screens.extension.streamer.looking_for_subs" : "screens.extension.waiting_for_load",
       )}
     />
   </Provider>,
 );
 store.dispatch(setLoading(true));
-
-const models: KeyedModels = {};
-
-let readerConfig: ExtensionReaderState;
-const getReaderConfig = () => readerConfig;
-const getKnownCards = () => store.getState().knownCards;
-const fromLang = () => store.getState().userData.user.fromLang;
-const knownWords: SerialisableStringSet = {};
-const knownChars: SerialisableStringSet = {};
+await ensureRestLoaded(proxy, store);
 
 const readObserver = new IntersectionObserver(observerFunc(getReaderConfig, models, getKnownCards), {
   threshold: [1.0],
@@ -112,16 +122,9 @@ window.getTimestamp = () => {
   return window.lastTimestamp;
 };
 
-const proxy = new BackgroundWorkerProxy();
-setPlatformHelper(proxy);
-const sessionId = UUID().toString();
-
 sessionActivityUpdate(proxy, sessionId);
 
-let classes: ETFStylesProps["classes"] | null = null;
-const id = EXTENSION_READER_ID;
-
-async function ensureAllLoaded(platformHelper: AbstractWorkerProxy, store: AdminStore) {
+async function ensureConfLoaded(store: AdminStore) {
   const conf = await getRefreshedState<ExtensionReaderState>(
     proxy,
     {
@@ -131,7 +134,9 @@ async function ensureAllLoaded(platformHelper: AbstractWorkerProxy, store: Admin
     id,
   );
   store.dispatch(extensionReaderActions.setState({ id, value: conf }));
+}
 
+async function ensureRestLoaded(platformHelper: AbstractWorkerProxy, store: AdminStore) {
   const value = await platformHelper.sendMessagePromise<SerialisableDayCardWords>({
     source: DATA_SOURCE,
     type: "getSerialisableCardWords",
@@ -154,22 +159,14 @@ async function ensureAllLoaded(platformHelper: AbstractWorkerProxy, store: Admin
   await refreshDictionaries(store, platformHelper, fromLang());
 }
 
-const userData = await proxy.sendMessagePromise<UserState>({ source: DATA_SOURCE, type: "getUser" });
-
 if (!userData.username || !userData.password || !userData.baseUrl) {
+  // This should never be possible now, as the click on the extension action checks and redirects to the conf page
   store.dispatch(setLoading(undefined));
-  alert(polyglot.t("screens.extension.missing_account", { docs_domain: DOCS_DOMAIN }));
+  alert(i18nProvider.translate("screens.extension.missing_account", { docs_domain: DOCS_DOMAIN }));
   throw new Error("Unable to find the current username");
 }
 // FIXME: it is DANGEROUS to use this here, as the async thunks do get and set dexie!!!
 store.dispatch(setUser(userData));
-
-await proxy.asyncInit({ username: userData.username });
-await ensureAllLoaded(proxy, store);
-
-readerConfig = store.getState().extensionReader[id];
-
-const i18nProvider = getI18nProvider(readerConfig.locale || userData.user.toLang);
 
 document.addEventListener("click", () => {
   store.dispatch(setTokenDetails(undefined));

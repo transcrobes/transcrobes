@@ -602,6 +602,7 @@ const customEnglishMessages: TranslationMessages = {
         bad_subs_lang: "Subs not in the correct language",
         no_id: "Unable to find video ID",
         no_data: "Unable to find video data",
+        buffering: "Buffering...",
       },
     },
     help: {

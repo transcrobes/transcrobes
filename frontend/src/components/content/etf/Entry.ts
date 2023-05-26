@@ -159,51 +159,54 @@ class Entry extends Component<StatedEntryProps, LocalEntryState> {
     const tokenDetails = rootState.ui.tokenDetails;
     const { fromLang, toLang } = rootState.userData.user;
     const token = this.props.token;
-
-    let def = token.id ? definitions[token.id] : { ...(await getWord(token.l)), glossToggled: false };
-    let betterGuess: DefinitionType = def;
-    let cleanGraph = affixCleaned(def.graph);
     let localGloss = "";
     let needsGloss = false;
     let unsure = false;
 
-    if (hasTones(fromLang) && readerConfig.fontColour === "tones") {
-      this.setState({ charColours: cleanedSound(def, fromLang).map((s) => toneColour(s)) });
-    } else {
-      this.setState({ charColours: undefined });
-    }
-
-    if (cleanGraph !== def.graph) {
-      betterGuess = await guessBetter(def, fromLang, knownCards?.knownCardWordGraphs || {});
-    }
-    if (betterGuess.graph === def.graph) {
-      needsGloss = doesNeedGloss(token.l, knownCards, readerConfig, token.pos, token.w);
-      if ((needsGloss && (!def || !def.glossToggled)) || (!needsGloss && def && def.glossToggled)) {
-        localGloss = await getNormalGloss(token, readerConfig, knownCards, definitions, fromLang, toLang);
+    let def = token.id ? definitions[token.id] : { ...(await getWord(token.l)), glossToggled: false };
+    if (def) {
+      let betterGuess: DefinitionType = def;
+      let cleanGraph = affixCleaned(def.graph);
+      if (hasTones(fromLang) && readerConfig.fontColour === "tones") {
+        this.setState({ charColours: cleanedSound(def, fromLang).map((s) => toneColour(s)) });
       } else {
-        localGloss = "";
+        this.setState({ charColours: undefined });
       }
-      if (localGloss && this.props.token.id) {
-        if (isUnsure(def)) {
-          unsure = true;
-          betterGuess = await guessBetter(def, fromLang, knownCards?.knownCardWordGraphs || {});
+
+      if (cleanGraph !== def.graph) {
+        betterGuess = await guessBetter(def, fromLang, knownCards?.knownCardWordGraphs || {});
+      }
+      if (betterGuess.graph === def.graph) {
+        needsGloss = doesNeedGloss(token.l, knownCards, readerConfig, token.pos, token.w);
+        if ((needsGloss && (!def || !def.glossToggled)) || (!needsGloss && def && def.glossToggled)) {
+          localGloss = await getNormalGloss(token, readerConfig, knownCards, definitions, fromLang, toLang);
+        } else {
+          localGloss = "";
+        }
+        if (localGloss && this.props.token.id) {
+          if (isUnsure(def)) {
+            unsure = true;
+            betterGuess = await guessBetter(def, fromLang, knownCards?.knownCardWordGraphs || {});
+          }
         }
       }
-    }
 
-    if (betterGuess.graph !== def.graph) {
-      unsure = !!isUnsure(betterGuess);
-      if (!(betterGuess.id in definitions)) {
-        this.context.store.dispatch(addDefinitions([{ ...betterGuess, glossToggled: false }]));
+      if (betterGuess.graph !== def.graph) {
+        unsure = !!isUnsure(betterGuess);
+        if (!(betterGuess.id in definitions)) {
+          this.context.store.dispatch(addDefinitions([{ ...betterGuess, glossToggled: false }]));
+        }
+        // fake POS - we don't know what the real one might be...
+        needsGloss = doesNeedGloss(betterGuess.graph, knownCards, readerConfig, "NN");
+        if (needsGloss) {
+          const betterToken: TokenType = { l: betterGuess.graph, pos: "NN", w: betterGuess.graph, id: betterGuess.id };
+          localGloss = await getNormalGloss(betterToken, readerConfig, knownCards, definitions, fromLang, toLang);
+        } else {
+          localGloss = "";
+        }
       }
-      // fake POS - we don't know what the real one might be...
-      needsGloss = doesNeedGloss(betterGuess.graph, knownCards, readerConfig, "NN");
-      if (needsGloss) {
-        const betterToken: TokenType = { l: betterGuess.graph, pos: "NN", w: betterGuess.graph, id: betterGuess.id };
-        localGloss = await getNormalGloss(betterToken, readerConfig, knownCards, definitions, fromLang, toLang);
-      } else {
-        localGloss = "";
-      }
+    } else {
+      localGloss = DEFINITION_LOADING;
     }
     if (unsure) this.setState({ unsure });
     this.setState({ gloss: localGloss });

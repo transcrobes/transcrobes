@@ -4,6 +4,7 @@ import { I18nContextProvider } from "react-admin";
 import { createRoot } from "react-dom/client";
 import { Provider } from "react-redux";
 import { store } from "../app/createStore";
+import { getLanguageFromPreferred } from "../lib/funclib";
 import { getI18nProvider } from "../lib/libMethods";
 import Options from "./Options";
 
@@ -11,7 +12,7 @@ const container = document.getElementById("root");
 createRoot(container!).render(
   <StrictMode>
     <Provider store={store}>
-      <I18nContextProvider value={getI18nProvider()}>
+      <I18nContextProvider value={getI18nProvider(getLanguageFromPreferred(navigator.languages))}>
         <StyledEngineProvider injectFirst>
           <Options />
         </StyledEngineProvider>

@@ -144,8 +144,11 @@ export default function Options(): ReactElement {
         await refreshDictionaries(store, proxy, userData.user.fromLang);
         conf = await getRefreshedState<ExtensionReaderState>(proxy, conf, id);
       }
-      setLocale(conf.locale);
-      dispatch(changeTheme(conf.themeName));
+      if (userData.username) {
+        console.log("I am resetting the locale", conf.locale);
+        setLocale(conf.locale);
+        dispatch(changeTheme(conf.themeName));
+      }
       dispatch(extensionReaderActions.setState({ id, value: conf }));
       setLoaded(true);
       dispatch(setLoading(false));

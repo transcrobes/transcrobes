@@ -2,13 +2,16 @@ import { Box } from "@mui/material";
 import React, { Component } from "react";
 import { BaseReactPlayerProps } from "react-player/base";
 import { Cue } from "webvtt-parser";
+import { store } from "../app/createStore";
+import { setLoading, setLoadingMessage } from "../features/ui/uiSlice";
 import { getStreamerVideoElement } from "../lib/componentMethods";
 import { streamingSite } from "../lib/libMethods";
 import { platformHelper } from "../lib/proxies";
+import { I18nContext } from "react-admin";
 
 /*
   Things to do:
-  - make it so that the popup stays inside the screen when fullscreen on yk and nf
+  -
 */
 
 interface TranscrobesLayerPlayerConfig {
@@ -24,11 +27,15 @@ interface TranscrobesLayerPlayerProps extends BaseReactPlayerProps {
 export default class TranscrobesLayerPlayer extends Component<TranscrobesLayerPlayerProps> {
   static displayName = "TranscrobesLayer";
   static canPlay = (url: string) => !!streamingSite(url);
-
+  declare context: React.ContextType<typeof I18nContext>;
   private divRef: React.RefObject<HTMLDivElement>;
-  constructor(props: BaseReactPlayerProps | Readonly<BaseReactPlayerProps>) {
+  private currentTime: number = 0;
+  constructor(props: TranscrobesLayerPlayerProps | Readonly<TranscrobesLayerPlayerProps>) {
     super(props);
     this.divRef = React.createRef<HTMLDivElement>();
+    this.state = {
+      currentTime: 0,
+    };
   }
   player: HTMLVideoElement;
 
@@ -178,6 +185,18 @@ export default class TranscrobesLayerPlayer extends Component<TranscrobesLayerPl
     }
     const end = buffered.end(buffered.length - 1);
     const duration = this.getDuration();
+
+    if (this.props.playing && this.player.currentTime === this.currentTime && !store.getState().ui.loading) {
+      store.dispatch(setLoading(true));
+      store.dispatch(setLoadingMessage(this.context.translate("screens.extension.streamer.buffering")));
+    } else if (this.player.currentTime !== this.currentTime) {
+      if (store.getState().ui.loading) {
+        store.dispatch(setLoading(undefined));
+        store.dispatch(setLoadingMessage(undefined));
+      }
+      this.currentTime = this.player.currentTime;
+    }
+
     if (duration && end > duration) {
       return duration;
     }
@@ -201,3 +220,5 @@ export default class TranscrobesLayerPlayer extends Component<TranscrobesLayerPl
     );
   }
 }
+
+TranscrobesLayerPlayer.contextType = I18nContext;
