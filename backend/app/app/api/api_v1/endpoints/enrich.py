@@ -527,6 +527,11 @@ async def streaming_title_search(
         )
         # we need to download the subtitles and then process them
         for i, sub in enumerate(valid_subs, start=1):
+            if i > 1:
+                # TODO: Actually, we don't really need more than one, provided the subs are ok.
+                # To date, with the supported streamers, all the subs are pretty much ok, or none of them are.
+                # So having more than one just clogs up the users interface.
+                continue
             ext = "ass" if stream_details.streamer == "youku" else "vtt"  # FIXME: nasty
             sub_filename = f"{i}-{sub.lang}-{stream_details.streamer_id}.{ext}"
             titles = ", ".join(
