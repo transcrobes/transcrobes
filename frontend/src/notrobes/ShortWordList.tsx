@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import {
   Datagrid,
-  RaRecord,
   FunctionField,
+  Identifier,
   ListContextProvider,
   TextField as RATextField,
+  RaRecord,
   useList,
-  Identifier,
   useTranslate,
 } from "react-admin";
 import { ShortWord } from "../lib/types";
@@ -50,7 +50,7 @@ export default function ShortWordList(props: Props) {
           <RATextField source="id" label={translate("screens.notrobes.short_word_list.id")} />
           <FunctionField
             label={translate("screens.notrobes.short_word_list.sounds")}
-            render={(record?: RaRecord) => record && record.sounds?.join(" ")}
+            render={(record) => record?.sounds?.join(" ")}
           />
         </Datagrid>
       </ListContextProvider>

@@ -17,7 +17,7 @@ import {
 } from "react-admin";
 import { useAppSelector } from "../app/hooks";
 import { HelpShowActions } from "../components/HelpShowActions";
-import { DOCS_DOMAIN, LanguageClassType, StudentRegistrationType, TeacherRegistrationType } from "../lib/types";
+import { DOCS_DOMAIN, StudentRegistrationType, TeacherRegistrationType } from "../lib/types";
 import RegistrationRequest from "./RegistrationRequest";
 
 type ParticipantListProps = {
@@ -98,7 +98,7 @@ export default function LanguageClassShow() {
         <hr />
         <Typography variant="h4">{translate("resources.languageclasses.classParticipants")}</Typography>
         <FunctionField
-          render={(record: LanguageClassType) =>
+          render={(record) =>
             record.createdBy === user.id || canEdit ? (
               <>
                 <Box sx={{ display: "flex", gap: "1em" }}>
@@ -113,7 +113,7 @@ export default function LanguageClassShow() {
           }
         />
         <FunctionField
-          render={(record: LanguageClassType) =>
+          render={(record) =>
             teachers ? (
               <ParticipantList participants={teachers} tipe="teachers" canEdit={record.createdBy === user.id} />
             ) : (
@@ -122,7 +122,7 @@ export default function LanguageClassShow() {
           }
         />
         <FunctionField
-          render={(record: LanguageClassType) =>
+          render={(record) =>
             students && (record.createdBy === user.id || canEdit) ? (
               <ParticipantList participants={students} tipe="students" canEdit={canEdit} />
             ) : (

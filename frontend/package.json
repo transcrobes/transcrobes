@@ -123,7 +123,7 @@
     "@esbuild-plugins/node-globals-polyfill": "^0.2.3",
     "@esbuild-plugins/node-modules-polyfill": "^0.2.2",
     "@rollup/plugin-replace": "^5.0.0",
-    "@types/chrome": "^0.0.236",
+    "@types/chrome": "^0.0.237",
     "@types/d3-array": "^3.0.3",
     "@types/debounce": "^1.2.1",
     "@types/draft-js": "^0.11.9",

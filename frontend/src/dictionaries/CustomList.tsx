@@ -4,7 +4,6 @@ import {
   FunctionField,
   ListContextProvider,
   Pagination,
-  RaRecord,
   TextField as RATextField,
   useList,
   useTranslate,
@@ -50,10 +49,7 @@ export default function CustomList(props: Props) {
         }}
       >
         <RATextField source="id" />
-        <FunctionField
-          label={translate("resources.userdictionaries.sounds")}
-          render={(record?: RaRecord) => record && record.sounds}
-        />
+        <FunctionField label={translate("resources.userdictionaries.sounds")} render={(record) => record?.sounds} />
         <TranslationsField source="translations" itemSeparator={props.itemSeparator} />
       </Datagrid>
     </ListContextProvider>

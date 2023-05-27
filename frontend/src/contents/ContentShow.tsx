@@ -16,7 +16,7 @@ import { DocumentProgress } from "../components/DocumentProgress";
 import { HelpShowActions } from "../components/HelpShowActions";
 import { ProcessingField } from "../components/ProcessingField";
 import UnixFieldAsDate from "../components/UnixFieldAsDate";
-import { Content, CONTENT_TYPE, DOCS_DOMAIN, ImportFirstSuccessStats, reverseEnum } from "../lib/types";
+import { CONTENT_TYPE, Content, DOCS_DOMAIN, ImportFirstSuccessStats, reverseEnum } from "../lib/types";
 import ActionButton from "./ActionButton";
 import CacheSwitch from "./CacheSwitch";
 import { ContentGoalSelector } from "./ContentGoalSelector";
@@ -58,10 +58,7 @@ export default function ContentShow() {
             <TextField source="title" />
           </ReferenceField>
           <ProcessingField label={translate("resources.contents.processingStatus")} />
-          <FunctionField
-            source="contentType"
-            render={(record: Content) => reverseEnum(CONTENT_TYPE, record.contentType)}
-          />
+          <FunctionField source="contentType" render={(record) => reverseEnum(CONTENT_TYPE, record?.contentType)} />
           <TextField source="author" />
           <TextField source="cover" />
           <TextField source="lang" />
