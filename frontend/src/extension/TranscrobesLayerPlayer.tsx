@@ -27,21 +27,22 @@ interface TranscrobesLayerPlayerProps extends BaseReactPlayerProps {
 export default class TranscrobesLayerPlayer extends Component<TranscrobesLayerPlayerProps> {
   static displayName = "TranscrobesLayer";
   static canPlay = (url: string) => !!streamingSite(url);
+  private streamer = streamingSite(location.href);
   declare context: React.ContextType<typeof I18nContext>;
   private divRef: React.RefObject<HTMLDivElement>;
   private currentTime: number = 0;
+  private lastHref: string = location.href;
   constructor(props: TranscrobesLayerPlayerProps | Readonly<TranscrobesLayerPlayerProps>) {
     super(props);
     this.divRef = React.createRef<HTMLDivElement>();
-    this.state = {
-      currentTime: 0,
-    };
   }
   player: HTMLVideoElement;
 
   componentDidMount() {
     // We should never actually attempt to mount if we aren't supported...
-    this.player = getStreamerVideoElement(document, streamingSite(location.href)!)!;
+    if (this.streamer) {
+      this.player = getStreamerVideoElement(document, this.streamer)!;
+    }
     this.addListeners(this.player);
     this.props.onMount && this.props.onMount(this);
   }
@@ -131,7 +132,7 @@ export default class TranscrobesLayerPlayer extends Component<TranscrobesLayerPl
   }
 
   seekTo(seconds: number) {
-    if (streamingSite(location.href) === "netflix") {
+    if (this.streamer === "netflix") {
       platformHelper.sendMessagePromise({
         source: "tlp",
         type: "seekNetflix",
@@ -186,6 +187,10 @@ export default class TranscrobesLayerPlayer extends Component<TranscrobesLayerPl
     const end = buffered.end(buffered.length - 1);
     const duration = this.getDuration();
 
+    if (location.href !== this.lastHref) {
+      console.debug("Changed url, reloading", location.href, this.lastHref);
+      location.reload();
+    }
     if (this.props.playing && this.player.currentTime === this.currentTime && !store.getState().ui.loading) {
       store.dispatch(setLoading(true));
       store.dispatch(setLoadingMessage(this.context.translate("screens.extension.streamer.buffering")));
