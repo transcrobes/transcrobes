@@ -1677,6 +1677,7 @@ export type GraderConfig = {
   itemsPerPage: number;
   wordLists: SelectableListElementType[];
   toLang: SystemLanguage;
+  fromLang: InputLanguage;
 };
 
 export type VocabReview = {

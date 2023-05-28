@@ -511,5 +511,7 @@ export function cleanedSound(definition: DefinitionType, fromLang: InputLanguage
       }
     case "en":
       return definition.sound;
+    default:
+      throw new Error(`Unknown from language "${fromLang}", can't find sound`);
   }
 }

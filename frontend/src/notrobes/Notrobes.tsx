@@ -162,6 +162,7 @@ function Notrobes({ proxy, url }: Props): ReactElement {
           const words = await proxy.sendMessagePromise<Record<string, ShortWord>>({
             source: DATA_SOURCE,
             type: "getAllShortWords",
+            value: fromLang,
           });
           const chars = await proxy.sendMessagePromise<Record<string, ShortChar>>({
             source: DATA_SOURCE,

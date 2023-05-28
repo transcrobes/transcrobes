@@ -1357,7 +1357,6 @@ async function orderVocabReviews(
 export async function getVocabReviews(
   db: TranscrobesDatabase,
   graderConfig: GraderConfig,
-  fromLang: InputLanguage,
 ): Promise<VocabReview[] | null> {
   const selectedLists = graderConfig.wordLists.filter((x) => x.selected).map((x) => x.value);
   if (selectedLists.length === 0) {
@@ -1366,7 +1365,6 @@ export async function getVocabReviews(
   }
   const wordListObjects = (await db.wordlists.findByIds(selectedLists).exec()).values();
   const potentialWordIds = [...new Set<string>([...wordListObjects].flatMap((x) => x.wordIds))];
-
   const potentialWords = await orderVocabReviews(db, graderConfig.itemOrdering, potentialWordIds);
   return potentialWords
     .slice(0, graderConfig.itemsPerPage)
@@ -1375,7 +1373,7 @@ export async function getVocabReviews(
       return {
         id: x.id,
         graph: x.graph,
-        sound: cleanedSound(x, fromLang),
+        sound: cleanedSound(x, graderConfig.fromLang),
         meaning: x.providerTranslations ? shortMeaning(x.providerTranslations, graderConfig.toLang) : "",
         clicks: 0,
         lookedUp: false,

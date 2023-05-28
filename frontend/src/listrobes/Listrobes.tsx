@@ -63,7 +63,7 @@ export function Listrobes({ proxy }: Props): ReactElement {
   const dispatch = useAppDispatch();
   const wordsCount = useAppSelector((state) => Object.keys(state.knownCards.allCardWordGraphs || {}).length);
   const [lastWordsCount, setLastWordsCount] = useState(wordsCount);
-  const toLang = useAppSelector((state) => state.userData.user.toLang);
+  const { fromLang, toLang } = useAppSelector((state) => state.userData.user);
   const isAdvanced = wordsCount > MIN_KNOWN_BEFORE_ADVANCED;
   const translate = useTranslate();
 
@@ -75,6 +75,7 @@ export function Listrobes({ proxy }: Props): ReactElement {
   const [graderConfig, setGraderConfig] = useState<GraderConfig>({
     isAdvanced,
     toLang,
+    fromLang,
     gradeOrder: GRADES,
     itemOrdering: DEFAULT_ITEM_ORDERING,
     itemsPerPage: DEFAULT_ITEMS_PER_PAGE,
@@ -113,9 +114,11 @@ export function Listrobes({ proxy }: Props): ReactElement {
         value: {
           ...gConfig,
           gradeOrder: gradesWithoutIcons(gConfig.gradeOrder), // send only the IDs, this is a hack...
+          fromLang,
         },
       });
       setVocab(vocabbie);
+      console.log("i got me da vocabbie", vocabbie);
       dispatch(setLoading(undefined));
     })();
   }, []);
