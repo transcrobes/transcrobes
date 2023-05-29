@@ -1,25 +1,9 @@
-import { makeStyles } from "tss-react/mui";
-import Typography from "@mui/material/Typography";
-import { AppBar, UserMenu } from "react-admin";
+import { Box, Typography } from "@mui/material";
 import { useEffect, useRef } from "react";
+import { AppBar, AppBarProps, UserMenu } from "react-admin";
+import CustomToolbar from "./CustomToolbar";
 
-const useStyles = makeStyles()({
-  title: {
-    flex: 1,
-    textOverflow: "ellipsis",
-    whiteSpace: "nowrap",
-    overflow: "hidden",
-  },
-  spacer: {
-    flex: 1,
-  },
-});
-
-const CustomUserMenu = (props: any) => <UserMenu {...props} />;
-
-const CustomAppBar = (props: any) => {
-  const { classes } = useStyles();
-
+export default function CustomAppBar(props: AppBarProps) {
   // DO NOT REMOVE THIS! It's needed to focus the title on navigation, which enables events
   // for the activity tracker to work.
   const inputReference = useRef(null);
@@ -28,12 +12,26 @@ const CustomAppBar = (props: any) => {
     inputReference?.current?.focus();
   }, []);
   return (
-    <AppBar {...props} elevation={1} userMenu={<CustomUserMenu />}>
-      <Typography ref={inputReference} variant="h6" color="inherit" className={classes.title} id="react-admin-title" />
+    <AppBar {...props} toolbar={<CustomToolbar />} elevation={1} userMenu={<UserMenu />}>
+      <Typography
+        sx={{
+          flex: 1,
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap",
+          overflow: "hidden",
+        }}
+        ref={inputReference}
+        variant="h6"
+        color="inherit"
+        id="react-admin-title"
+      />
       Transcrobes
-      <span className={classes.spacer} />
+      <Box
+        component="span"
+        sx={{
+          flex: 1,
+        }}
+      />
     </AppBar>
   );
-};
-
-export default CustomAppBar;
+}

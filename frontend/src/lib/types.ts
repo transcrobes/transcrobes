@@ -1,4 +1,4 @@
-import { Identifier, RaRecord, UserIdentity } from "react-admin";
+import { Identifier, RaRecord, ThemeType, UserIdentity } from "react-admin";
 import { HslColor } from "react-colorful";
 
 import { CardDocument, CharacterDocument, DefinitionDocument, WordModelStatsDocument } from "../database/Schema";
@@ -829,7 +829,7 @@ export interface ExtensionReaderState extends ReaderState {
   locale: SystemLanguage;
   showSuggestions: boolean;
   analysisPosition: CornerPosition;
-  themeName: ThemeName;
+  themeName: ThemeType;
   readerType: typeof EXTENSION_READER_TYPE;
 }
 
@@ -1040,7 +1040,7 @@ export function reverseEnum(enume: any, value: any): string {
   return reversed.map((s: string) => capitalise(s)).join(" ");
 }
 
-export type ThemeName = "light" | "dark";
+// export type ThemeName = "light" | "dark";
 
 export const APPLICATION_NAMES = ["repetrobes", "listrobes", "notrobes", "brocrobes"] as const;
 export type TCApplication = (typeof APPLICATION_NAMES)[number];

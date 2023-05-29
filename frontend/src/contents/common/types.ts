@@ -1,9 +1,9 @@
+import type { ThemeType } from "react-admin";
 import {
   FontFamily,
   FontFamilyChinese,
   GlossPosition,
   BOOCROBES_HEADER_HEIGHT,
-  ThemeName,
   PublicationConfig,
 } from "../../lib/types";
 
@@ -30,7 +30,7 @@ export const DEFAULT_FONT_FAMILY: FontFamily = "Original";
 export const DEFAULT_FONT_FAMILY_CHINESE: FontFamilyChinese = "notasanslight";
 export const DEFAULT_GLOSS_POSITION: GlossPosition = "row";
 
-export type ColorMode = ThemeName | "sepia";
+export type ColorMode = ThemeType | "sepia";
 export type D2ColorMode = "readium-default-on" | "readium-night-on" | "readium-sepia-on";
 
 export type PrecachePublicationsMessage = {

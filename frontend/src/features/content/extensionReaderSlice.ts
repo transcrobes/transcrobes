@@ -6,16 +6,16 @@ import {
   EXTENSION_READER_TYPE,
   GenericState,
   SystemLanguage,
-  ThemeName,
 } from "../../lib/types";
 import { ContentConfigPayload, createGenericSlice } from "./contentSlice";
+import { ThemeType } from "react-admin";
 
 const extensionReaderSlice = createGenericSlice({
   name: EXTENSION_READER_TYPE,
   initialState: {} as GenericState<ExtensionReaderState>,
   defaultValue: DEFAULT_EXTENSION_READER_CONFIG_STATE,
   reducers: {
-    setThemeName(state: GenericState<ExtensionReaderState>, action: PayloadAction<ContentConfigPayload<ThemeName>>) {
+    setThemeName(state: GenericState<ExtensionReaderState>, action: PayloadAction<ContentConfigPayload<ThemeType>>) {
       state[action.payload.id] ??= DEFAULT_EXTENSION_READER_CONFIG_STATE;
       state[action.payload.id].themeName = action.payload.value;
     },

@@ -4,7 +4,7 @@ import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
 import { Box, createTheme, StyledEngineProvider, ThemeProvider } from "@mui/material";
 import debounce from "debounce";
 import { ReactElement, useCallback, useEffect, useRef, useState } from "react";
-import { Button, useAuthenticated, useTranslate } from "react-admin";
+import { Button, ThemeType, useAuthenticated, useTheme, useThemesContext, useTranslate } from "react-admin";
 import { useParams } from "react-router-dom";
 import { AdminStore, AppDispatch, store } from "../../app/createStore";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
@@ -99,11 +99,16 @@ export default function BookReader({ proxy }: ContentProps): ReactElement {
   const dispatch = useAppDispatch();
   const readerConfig = useAppSelector((state) => state.bookReader[id] || DEFAULT_BOOK_READER_CONFIG_STATE);
   const user = useAppSelector((state) => state.userData.user);
-  const themeName = useAppSelector((state) => state.theme);
+  // const themeName = useAppSelector((state) => state.theme);
+  // const { lightTheme, darkTheme, defaultTheme } = useThemesContext();
+  // defaultTheme?.palette?.mode;
+  //   darkTheme?.palette?.mode;
   const [loaded, setLoaded] = useState(false);
+  const [themeName] = useTheme();
+  // const theme = themeName === "light" || (!themeName && defaultTheme === "light") ? lightTheme : darkTheme;
   const theme = createTheme({
     palette: {
-      mode: themeName || "light", // Switching the dark mode on is a single property value change.
+      mode: (themeName as ThemeType) || "light", // Switching the dark mode on is a single property value change.
     },
     breakpoints: {
       values: {
@@ -155,7 +160,7 @@ export default function BookReader({ proxy }: ContentProps): ReactElement {
 
       const userSettings = {
         verticalScroll: !!conf.isScrolling,
-        appearance: getColorMode(themeName),
+        appearance: getColorMode(themeName as ColorMode),
         fontFamily: `${conf.fontFamilyGloss},${conf.fontFamilyMain}`,
         currentTocUrl: conf.currentTocUrl,
         location: conf.location,
@@ -294,7 +299,6 @@ export default function BookReader({ proxy }: ContentProps): ReactElement {
       <ThemeProvider theme={theme}>
         <Box>
           {manifest && <Header manifest={manifest} />}
-
           <Box
             flex={"1"}
             alignItems={"stretch"}
@@ -341,8 +345,10 @@ export default function BookReader({ proxy }: ContentProps): ReactElement {
               justifyContent: "space-between",
               position: "sticky",
               height: `${FOOTER_HEIGHT}px`,
-              color: theme.palette.getContrastText(theme.palette.background.default),
-              bgcolor: theme.palette.background.default,
+              color:
+                theme?.palette?.getContrastText?.(theme?.palette?.background?.default || "background.default") ||
+                "default",
+              bgcolor: "background.default",
             }}
           >
             <Button

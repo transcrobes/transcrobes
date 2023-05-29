@@ -3,18 +3,18 @@ import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import { ReactElement, useEffect, useState } from "react";
-import { Title, TopToolbar, useLocaleState, useTheme, useTranslate } from "react-admin";
+import { Title, TopToolbar, useTranslate } from "react-admin";
 import { makeStyles } from "tss-react/mui";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
 import HelpButton from "../components/HelpButton";
 import { Loading } from "../components/Loading";
 import { clearAuthDatabase } from "../database/authdb";
 import { getDatabaseName } from "../database/Database";
-import { changeTheme } from "../features/themes/themeReducer";
+// import { changeTheme } from "../features/themes/themeReducer";
 import { setAndSaveUser } from "../features/user/userSlice";
-import { darkTheme, lightTheme } from "../layout/themes";
+// import { darkTheme, lightTheme } from "../layout/themes";
 import { AbstractWorkerProxy } from "../lib/proxies";
-import { DOCS_DOMAIN, GIT_VERSION, ThemeName } from "../lib/types";
+import { DOCS_DOMAIN, GIT_VERSION } from "../lib/types";
 import { fetcher } from "../lib/fetcher";
 import { NAME_PREFIX } from "../lib/interval/interval-decorator";
 
@@ -130,11 +130,11 @@ function System({ proxy }: Props): ReactElement {
 
   const helpUrl = `//${DOCS_DOMAIN}/page/software/configure/system/`;
 
-  const [locale, setLocale] = useLocaleState();
-  const themeName = useAppSelector((state) => state.theme);
+  // const [locale, setLocale] = useLocaleState();
+  // const themeName = useAppSelector((state) => state.theme);
   const user = useAppSelector((state) => state.userData);
 
-  const [, setTheme] = useTheme();
+  // const [, setTheme] = useTheme();
   const dispatch = useAppDispatch();
 
   function setTimedServerAvailableMessage(message: string): string {
@@ -143,11 +143,11 @@ function System({ proxy }: Props): ReactElement {
     return mes;
   }
 
-  function handleUpdate(mode: ThemeName) {
-    localStorage.setItem("mode", mode); // a bit hacky, probably better somewhere else
-    setTheme(mode === "dark" ? darkTheme : lightTheme);
-    return dispatch(changeTheme(mode));
-  }
+  // function handleUpdate(mode: ThemeName) {
+  //   localStorage.setItem("mode", mode); // a bit hacky, probably better somewhere else
+  //   setTheme(mode === "dark" ? darkTheme : lightTheme);
+  //   return dispatch(changeTheme(mode));
+  // }
   function handleShowResearchUpdate(show: boolean) {
     return dispatch(setAndSaveUser({ ...user, showResearchDetails: show }));
   }
@@ -218,57 +218,27 @@ function System({ proxy }: Props): ReactElement {
         </CardContent>
       </Card>
 
-      <CardHeader title={translate("screens.system.user_preferences")} />
-      <Card>
-        <Title title={translate("pos.configuration")} />
-        <CardContent>
-          <FormControlLabel
-            control={
-              <Switch
-                defaultChecked={themeName === "dark"}
-                onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
-                  handleUpdate(event.target.checked ? "dark" : "light")
+      {user.user.isAdmin && (
+        <>
+          <CardHeader title={translate("screens.system.user_preferences")} />
+          <Card>
+            <Title title={translate("pos.configuration")} />
+            <CardContent>
+              <FormControlLabel
+                control={
+                  <Switch
+                    defaultChecked={user.showResearchDetails}
+                    onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+                      handleShowResearchUpdate(event.target.checked)
+                    }
+                  />
                 }
+                label="Show research details"
               />
-            }
-            label={translate("screens.system.dark_mode")}
-          />
-        </CardContent>
-        {user.user.isAdmin && (
-          <CardContent>
-            <FormControlLabel
-              control={
-                <Switch
-                  defaultChecked={user.showResearchDetails}
-                  onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
-                    handleShowResearchUpdate(event.target.checked)
-                  }
-                />
-              }
-              label="Show research details"
-            />
-          </CardContent>
-        )}
-        <CardContent>
-          <div className={classes.label}>{translate("pos.language")}</div>
-          <Button
-            variant="contained"
-            className={classes.button}
-            color={locale === "en" ? "info" : "primary"}
-            onClick={() => setLocale("en")}
-          >
-            English
-          </Button>
-          <Button
-            variant="contained"
-            className={classes.button}
-            color={locale === "zh-Hans" ? "info" : "primary"}
-            onClick={() => setLocale("zh-Hans")}
-          >
-            中文
-          </Button>
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
+        </>
+      )}
       <CardHeader title={translate("screens.system.system_info")} />
       <Card>
         <CardContent>

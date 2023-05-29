@@ -12,44 +12,10 @@ import { ComponentPropType, useLocales } from "ra-core";
 import * as React from "react";
 import { Children, FC, memo } from "react";
 
-import { HideOnScroll, LocalesMenuButton, UserMenu } from "react-admin";
+import { HideOnScroll, LocalesMenuButton, ToggleThemeButton, UserMenu, useThemesContext } from "react-admin";
+import { useAppSelector } from "../app/hooks";
 
-/**
- * The AppBar component renders a custom MuiAppBar.
- *
- * @param {Object} props
- * @param {ReactNode} props.children React node/s to be rendered as children of the AppBar
- * @param {string} props.className CSS class applied to the MuiAppBar component
- * @param {string} props.color The color of the AppBar
- * @param {boolean} props.open State of the <Admin/> Sidebar
- * @param {Element | boolean} props.userMenu A custom user menu component for the AppBar. <UserMenu/> component by default. Pass false to disable.
- *
- * @example
- *
- * const MyAppBar = props => {
-
- *   return (
- *       <AppBar {...props}>
- *           <Typography
- *               variant="h6"
- *               color="inherit"
- *               className={classes.title}
- *               id="react-admin-title"
- *           />
- *       </AppBar>
- *   );
- *};
- *
- * @example Without a user menu
- *
- * const MyAppBar = props => {
-
- *   return (
- *       <AppBar {...props} userMenu={false} />
- *   );
- *};
- */
-export const AppBar: FC<AppBarProps> = memo((props) => {
+export const CustomAppBar: FC<AppBarProps> = memo((props) => {
   const {
     children,
     className,
@@ -63,6 +29,8 @@ export const AppBar: FC<AppBarProps> = memo((props) => {
 
   const locales = useLocales();
   const isXSmall = useMediaQuery<Theme>((theme) => theme.breakpoints.down("sm"));
+  const { darkTheme } = useThemesContext();
+  const { loading } = useAppSelector((state) => state.ui);
 
   return (
     <Container className={className}>
@@ -75,7 +43,8 @@ export const AppBar: FC<AppBarProps> = memo((props) => {
           ) : (
             children
           )}
-          {locales && locales.length > 1 ? <LocalesMenuButton /> : null}
+          {!loading && locales && locales.length > 1 ? <LocalesMenuButton /> : null}
+          {!loading && darkTheme && <ToggleThemeButton />}
           {typeof userMenu === "boolean" ? userMenu === true ? <UserMenu /> : null : userMenu}
         </Toolbar>
       </StyledAppBar>
@@ -83,7 +52,7 @@ export const AppBar: FC<AppBarProps> = memo((props) => {
   );
 });
 
-AppBar.propTypes = {
+CustomAppBar.propTypes = {
   children: PropTypes.node,
   className: PropTypes.string,
   color: PropTypes.oneOf(["default", "inherit", "primary", "secondary", "transparent"]),

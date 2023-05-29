@@ -1,6 +1,6 @@
 import CustomUserMenu from "../layout/CustomUserMenu";
 import { AbstractWorkerProxy } from "../lib/proxies";
-import { AppBar } from "../components/AppBar";
+import { CustomAppBar } from "./CustomAppBar";
 import { Box } from "@mui/material";
 
 type Props = {
@@ -13,10 +13,10 @@ type Props = {
 
 export default function NolayoutWrapper({ children, userMenu, proxy, menuChildren, title }: Props) {
   return (
-    <Box>
-      <AppBar title={title} userMenu={userMenu ? <CustomUserMenu proxy={proxy} /> : false}>
+    <Box sx={{ minHeight: "100vh" }}>
+      <CustomAppBar title={title} userMenu={userMenu ? <CustomUserMenu proxy={proxy} /> : false}>
         {menuChildren}
-      </AppBar>
+      </CustomAppBar>
       {children}
     </Box>
   );

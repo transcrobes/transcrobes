@@ -675,6 +675,9 @@ const customChineseMessages: TranslationMessages = {
         },
       },
     },
+    main: {
+      finishing: "正在完成初始索引加载...",
+    },
     notrobes: {
       name: "Notrobes",
       title: "Notrobes： 词汇搜索，发现单词",

@@ -10,7 +10,7 @@ import {
 } from "@mui/material";
 import Button from "@mui/material/Button";
 import { ReactElement, useEffect, useState } from "react";
-import { useLocaleState, useTranslate } from "react-admin";
+import { useLocaleState, useTheme, useTranslate } from "react-admin";
 import { FormContainer, TextFieldElement } from "react-hook-form-mui";
 import { makeStyles } from "tss-react/mui";
 import { store } from "../app/createStore";
@@ -24,7 +24,7 @@ import { getDb } from "../database/Database";
 import { TranscrobesDatabase } from "../database/Schema";
 import { getRefreshedState } from "../features/content/contentSlice";
 import { extensionReaderActions } from "../features/content/extensionReaderSlice";
-import { changeTheme } from "../features/themes/themeReducer";
+// import { changeTheme } from "../features/themes/themeReducer";
 import { setLoading } from "../features/ui/uiSlice";
 import { setUser, throttledLogin, updateBaseUrl, updatePassword, updateUsername } from "../features/user/userSlice";
 import { darkTheme, lightTheme } from "../layout/themes";
@@ -115,7 +115,10 @@ export default function Options(): ReactElement {
   const [password, setPassword] = useState("");
   const [baseUrl, setBaseUrl] = useState(DEFAULT_SERVER_URL);
   const [loaded, setLoaded] = useState(false);
-  const theme = useAppSelector((state) => createTheme(state.theme === "dark" ? darkTheme : lightTheme));
+  const [themeName] = useTheme();
+  const theme = createTheme(themeName === "dark" ? darkTheme : lightTheme);
+  // const theme = useAppSelector((state) => createTheme(state.theme === "dark" ? darkTheme : lightTheme));
+
   const [locale, setLocale] = useLocaleState() as [SystemLanguage, (locale: SystemLanguage) => void];
   const translate = useTranslate();
 
@@ -124,6 +127,8 @@ export default function Options(): ReactElement {
   const dispatch = useAppDispatch();
   const userData = useAppSelector((state) => state.userData);
   const { classes } = useStyles();
+
+  const [, setTheme] = useTheme();
   dispatch(setLoading(true));
   useEffect(() => {
     (async () => {
@@ -147,7 +152,8 @@ export default function Options(): ReactElement {
       if (userData.username) {
         console.log("I am resetting the locale", conf.locale);
         setLocale(conf.locale);
-        dispatch(changeTheme(conf.themeName));
+        // dispatch(changeTheme(conf.themeName));
+        setTheme(conf.themeName);
       }
       dispatch(extensionReaderActions.setState({ id, value: conf }));
       setLoaded(true);

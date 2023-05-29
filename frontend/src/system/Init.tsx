@@ -1,11 +1,11 @@
 import { Typography } from "@mui/material";
+import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import NoSleep from "nosleep.js";
-import { ReactElement, useState } from "react";
+import { ReactElement, useEffect, useState } from "react";
 import { Title, useAuthenticated, useTranslate } from "react-admin";
-import { makeStyles } from "tss-react/mui";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
 import Loading from "../components/Loading";
 import { isInitialisedAsync, setInitialisedAsync } from "../database/authdb";
@@ -13,11 +13,6 @@ import { setLoading } from "../features/ui/uiSlice";
 import { AbstractWorkerProxy, ProgressCallbackMessage } from "../lib/proxies";
 
 const noSleep = new NoSleep();
-
-const useStyles = makeStyles()({
-  label: { width: "10em", display: "inline-block" },
-  button: { margin: "1em" },
-});
 
 interface RunningMessageProps {
   message: string;
@@ -30,9 +25,9 @@ function RunningMessage({ message }: RunningMessageProps): ReactElement {
       <Typography variant="h4">{translate("screens.initialisation.started")}</Typography>
       <Typography>{translate("screens.initialisation.started_message")}</Typography>
       <Loading position="relative" top="0px" />
-      <div className="text-center" style={{ fontSize: "2em", color: "black" }} id="initialisationMessages">
+      <Box sx={{ textAlign: "center", fontSize: "2em" }} id="initialisationMessages">
         {message}
-      </div>
+      </Box>
     </div>
   );
 }
@@ -42,12 +37,13 @@ let progress = 0;
 interface Props {
   proxy: AbstractWorkerProxy;
 }
+
 function Init({ proxy }: Props): ReactElement {
   useAuthenticated(); // redirects to login if not authenticated, required because shown as RouteWithoutLayout
   const translate = useTranslate();
-  const { classes } = useStyles();
   const [runStarted, setRunStarted] = useState<boolean | null>(null);
   const [message, setMessage] = useState<string>("");
+  const [isInited, setIsInited] = useState(false);
 
   if (progress === 0) progress = window.setTimeout(progressUpdate, 5000);
 
@@ -98,7 +94,7 @@ function Init({ proxy }: Props): ReactElement {
           navigator.serviceWorker.getRegistration().then((reg) => {
             reg?.unregister().then((res) => {
               console.log("Unregistering SW after install", res);
-              window.location.href = "/";
+              window.location.reload();
             });
           });
         });
@@ -107,13 +103,33 @@ function Init({ proxy }: Props): ReactElement {
       }
       return "";
     }
-
     if (!username) {
       throw new Error("Unable to find username");
     }
     proxy.init({ username }, finishedCallback, progressCallback, true);
   }
-
+  useEffect(() => {
+    if (username) {
+      isInitialisedAsync(username).then((inited) => {
+        setIsInited(inited);
+      });
+    }
+  }, [username]);
+  useEffect(() => {
+    if (isInited) {
+      if (location.href.endsWith("/#/init")) {
+        dispatch(setLoading(true));
+        proxy
+          .sendMessagePromise({
+            source: "App",
+            type: "forceDefinitionsInitialSync",
+          })
+          .then(() => {
+            window.location.href = "/";
+          });
+      }
+    }
+  }, [isInited]);
   return (
     <Card
       sx={{
@@ -125,10 +141,10 @@ function Init({ proxy }: Props): ReactElement {
         <Typography sx={{ paddingBottom: "1em" }} variant="h4">
           {translate("screens.extension.initialisation.title")}
         </Typography>
-        {runStarted === null && (
+        {runStarted === null && !isInited && (
           <Button
             variant="contained"
-            className={classes.button}
+            sx={{ margin: "1em" }}
             color={"primary"}
             size={"large"}
             onClick={() => initialise()}
@@ -137,12 +153,9 @@ function Init({ proxy }: Props): ReactElement {
           </Button>
         )}
         <Typography sx={{ paddingBottom: "1em" }}>{translate("screens.initialisation.intro")}</Typography>
-        {runStarted && (
-          <>
-            <RunningMessage message={message} />
-          </>
-        )}
+        {runStarted && <RunningMessage message={message} />}
       </CardContent>
+      {isInited && <Loading position="relative" top="0px" message={translate("screens.main.finishing")} />}
     </Card>
   );
 }

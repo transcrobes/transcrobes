@@ -1,7 +1,7 @@
 import { configureStore } from "@reduxjs/toolkit";
 import { createHashHistory, History } from "history";
 import { fetchUtils } from "ra-core";
-import { AuthProvider, DataProvider } from "react-admin";
+import { AuthProvider, DataProvider, ThemeType } from "react-admin";
 import { combineReducers } from "redux";
 import { Workbox } from "workbox-window";
 import { getUserDexie, isInitialisedAsync } from "../database/authdb";
@@ -13,12 +13,12 @@ import videoReaderReducer from "../features/content/videoReaderSlice";
 import definitionsReducer from "../features/definition/definitionsSlice";
 import dictionaryReducer from "../features/dictionary/dictionarySlice";
 import statsReducer from "../features/stats/statsSlice";
-import themeReducer from "../features/themes/themeReducer";
+// import themeReducer from "../features/themes/themeReducer";
 import uiReducer from "../features/ui/uiSlice";
 import userSliceReducer, { doLogin, setAndSaveUser, throttledLogout } from "../features/user/userSlice";
 import { ComponentsConfig } from "../lib/complexTypes";
 import { ServiceWorkerProxy, setPlatformHelper } from "../lib/proxies";
-import { ThemeName } from "../lib/types";
+// import { ThemeName } from "../lib/types";
 import SWDataProvider from "../ra-data-sw";
 // import trackerRedux from "@openreplay/tracker-redux";
 
@@ -53,7 +53,7 @@ export let authProvider: AuthProvider | undefined;
 export let dataProvider: DataProvider | undefined;
 export let history: History | undefined;
 
-let theme: ThemeName = "light";
+let theme: ThemeType = "light";
 
 if (typeof window !== "undefined") {
   if (!(window.chrome && chrome.runtime && chrome.runtime.id)) {
@@ -67,7 +67,7 @@ if (typeof window !== "undefined") {
     history = createHashHistory();
     authProvider = jwtTokenAuthProvider();
     dataProvider = SWDataProvider({ wb: wb });
-    theme = (localStorage.getItem("mode") as ThemeName) || "light";
+    // theme = (localStorage.getItem("mode") as ThemeName) || "light";
     window.componentsConfig = {
       dataProvider: dataProvider,
       proxy: new ServiceWorkerProxy(wb),
@@ -77,13 +77,14 @@ if (typeof window !== "undefined") {
   }
 }
 
-const preloadedState = { theme };
+// const preloadedState = { theme };
+const preloadedState = {};
 const reducer = combineReducers({
   videoReader: videoReaderReducer,
   bookReader: bookReaderReducer,
   extensionReader: extensionReaderReducer,
   simpleReader: simpleReaderReducer,
-  theme: themeReducer,
+  // theme: themeReducer,
   knownCards: knownCardsReducer,
   definitions: definitionsReducer,
   ui: uiReducer,
@@ -203,7 +204,7 @@ export const store = configureStore({
     getDefaultMiddleware({
       serializableCheck: false,
     }),
-  preloadedState,
+  // preloadedState,
   devTools: process.env.NODE_ENV !== "production",
 });
 

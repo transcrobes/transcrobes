@@ -6,7 +6,7 @@ import { clone, isRxDocument } from "rxdb";
 import { MangoQuery, RxStorageWriteError } from "rxdb/dist/types/types";
 import { $enum } from "ts-enum-util";
 import { v4 as uuidv4 } from "uuid";
-import { getDatabaseName } from "../database/Database";
+import { getDatabaseName, replStates } from "../database/Database";
 import {
   ActivityQueueDocument,
   CardDocument,
@@ -1749,4 +1749,11 @@ export async function getLanguageClassParticipants(
     }
   }
   return participants;
+}
+
+export async function forceDefinitionsInitialSync(): Promise<void> {
+  console.log("here I'm doing the initial sync");
+  const rs = replStates.get("definitions");
+  await rs?.awaitInitialReplication();
+  console.log("here I'm done the initial sync");
 }

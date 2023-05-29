@@ -1,17 +1,16 @@
 import { FormControl, FormControlLabel, Switch, ToggleButton, ToggleButtonGroup } from "@mui/material";
 import React, { ReactElement } from "react";
-import { useTranslate } from "react-admin";
+import { ThemeType, useTheme, useTranslate } from "react-admin";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
 import Conftainer from "../components/Conftainer";
 import ReaderConfig from "../contents/common/ContentConfig";
 import { extensionReaderActions as actions } from "../features/content/extensionReaderSlice";
-import { changeTheme } from "../features/themes/themeReducer";
+// import { changeTheme } from "../features/themes/themeReducer";
 import { setAndSaveUser } from "../features/user/userSlice";
 import {
   CornerPosition,
   DEFAULT_EXTENSION_READER_CONFIG_STATE,
   EXTENSION_READER_ID,
-  ThemeName,
   translationProviderOrder,
 } from "../lib/types";
 import { getDefaultLanguageDictionaries } from "../lib/libMethods";
@@ -29,6 +28,7 @@ export default function ExtensionConfig(): ReactElement {
   );
   const dispatch = useAppDispatch();
   const translate = useTranslate();
+  const [, setTheme] = useTheme();
   return (
     <div>
       <Conftainer label={translate("screens.extension.popup_theme_mode.title")} id="themeMode">
@@ -36,8 +36,9 @@ export default function ExtensionConfig(): ReactElement {
           sx={{ width: "100%" }}
           exclusive
           value={readerConfig.themeName}
-          onChange={(_e: React.MouseEvent<HTMLElement>, value: ThemeName) => {
-            dispatch(changeTheme(value));
+          onChange={(_e: React.MouseEvent<HTMLElement>, value: ThemeType) => {
+            // dispatch(changeTheme(value));
+            setTheme(value);
             dispatch(actions.setThemeName({ id, value }));
           }}
         >

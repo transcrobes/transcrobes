@@ -4,7 +4,7 @@ import { stateToHTML } from "draft-js-export-html";
 import "draft-js/dist/Draft.css";
 import MUIRichTextEditor from "../../components/mui-rte/MUIRichTextEditor";
 import { ReactElement, useEffect, useRef, useState } from "react";
-import { TopToolbar, useTranslate } from "react-admin";
+import { ThemeType, TopToolbar, useTheme, useTranslate } from "react-admin";
 import { makeStyles } from "tss-react/mui";
 import { store } from "../../app/createStore";
 import { useAppDispatch, useAppSelector, useJssStyles } from "../../app/hooks";
@@ -67,7 +67,8 @@ export default function Textcrobes({ proxy }: Props): ReactElement {
 
   const dispatch = useAppDispatch();
   const readerConfig = useAppSelector((state) => state.simpleReader[id] || DEFAULT_TEXT_READER_CONFIG_STATE);
-  const themeName = useAppSelector((state) => state.theme);
+  // const themeName = useAppSelector((state) => state.theme);
+  const [themeName] = useTheme();
   const fromLang = useAppSelector((state) => state.userData.user.fromLang);
 
   const { classes } = useStyles();
@@ -75,7 +76,7 @@ export default function Textcrobes({ proxy }: Props): ReactElement {
 
   const theme = createTheme({
     palette: {
-      mode: themeName || "light", // Switching the dark mode on is a single property value change.
+      mode: (themeName as ThemeType) || "light", // Switching the dark mode on is a single property value change.
     },
   });
 

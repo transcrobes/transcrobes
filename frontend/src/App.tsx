@@ -1,16 +1,16 @@
 import { ReactElement, useEffect, useState } from "react";
-import { Admin, CustomRoutes, Resource } from "react-admin";
+import { Admin, CustomRoutes, Resource, useTheme } from "react-admin";
 import { useIdleTimer } from "react-idle-timer";
 import { Route } from "react-router-dom";
+import Brocrobes from "./Brocrobes";
+import Dashboard from "./Dashboard";
 import { authProvider, dataProvider, history as history2, history as localHistory, store } from "./app/createStore";
 import { useAppDispatch, useAppSelector } from "./app/hooks";
-import Brocrobes from "./Brocrobes";
 import NolayoutWrapper from "./components/NolayoutWrapper";
 import contents from "./contents";
 import Reader from "./contents/boocrobes/BookReader";
 import VideoPlayerScreen from "./contents/moocrobes/VideoPlayerScreen";
 import Textcrobes from "./contents/textcrobes/Textcrobes";
-import Dashboard from "./Dashboard";
 import { getUserDexie, isInitialisedAsync } from "./database/authdb";
 import dictionaries from "./dictionaries";
 import Exports from "./exports/Exports";
@@ -50,14 +50,30 @@ import RecoverPassword from "./system/RecoverPassword";
 import Signup from "./system/Signup";
 import System from "./system/System";
 import teacherregistrations from "./teacherregistrations";
-import userlists from "./userlists";
 import { supported } from "./unsupported";
+import userlists from "./userlists";
 
 declare global {
   interface Window {
     asessionId: string;
     getTimestamp: () => number;
     lastTimestamp: number;
+  }
+}
+
+function shouldRedirectUninited(url: string): boolean {
+  const m = url.split("/#/")[1];
+  if (
+    m &&
+    (m.startsWith("login") ||
+      m.startsWith("init") ||
+      m.startsWith("signup") ||
+      m.startsWith("reset-password") ||
+      m.startsWith("recover-password"))
+  ) {
+    return false;
+  } else {
+    return true;
   }
 }
 
@@ -83,7 +99,8 @@ const sessionId = (window.asessionId = UUID().toString());
 function App({ config }: Props): ReactElement {
   const [inited, setInited] = useState(false);
   const dispatch = useAppDispatch();
-  const theme = useAppSelector((state) => (state.theme === "dark" ? darkTheme : lightTheme));
+  // const theme = useAppSelector((state) => (state.theme === "dark" ? darkTheme : lightTheme));
+  // const [themeName] = useTheme();
   useIdleTimer({
     onAction: () => {
       if (inited) {
@@ -170,7 +187,7 @@ function App({ config }: Props): ReactElement {
 
         if (await isInitialisedAsync(username)) {
           await config.proxy.asyncInit({ username: username });
-          await config.proxy.sendMessagePromise<boolean>({
+          await config.proxy.sendMessagePromise({
             source: DATA_SOURCE,
             type: "refreshSession",
             value: {
@@ -223,33 +240,20 @@ function App({ config }: Props): ReactElement {
     })();
   }, [username, trackingEndpoint, trackingKey]);
 
-  function shouldRedirectUninited(url: string): boolean {
-    const m = url.split("/#/")[1];
-    if (
-      m &&
-      (m.startsWith("login") ||
-        m.startsWith("init") ||
-        m.startsWith("signup") ||
-        m.startsWith("reset-password") ||
-        m.startsWith("recover-password"))
-    ) {
-      return false;
-    } else {
-      return true;
-    }
-  }
   return (
     (dataProvider && (
       <>
         <Admin
-          theme={theme}
+          theme={lightTheme}
+          darkTheme={darkTheme}
           authProvider={authProvider}
           dataProvider={dataProvider}
           i18nProvider={getI18nProvider(getLanguageFromPreferred(navigator.languages))}
           dashboard={() => Dashboard({ config, inited })}
           title="Transcrobes"
           layout={Layout}
-          loginPage={(props) => <Login {...props} config={config} />}
+          // loginPage={(props) => <Login {...props} config={config} />}
+          loginPage={(props) => <Login {...props} />}
           history={localHistory}
         >
           {/* disableTelemetry be nice for now */}

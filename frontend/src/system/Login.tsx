@@ -1,16 +1,14 @@
 import LockIcon from "@mui/icons-material/Lock";
 import { Avatar, Button, Card, CardActions, CircularProgress, TextField, Typography } from "@mui/material";
-import { createTheme, StyledEngineProvider, ThemeProvider } from "@mui/material/styles";
 import PropTypes from "prop-types";
 import { ReactElement, useEffect, useState } from "react";
 import { Notification, useLogin, useNotify, useTranslate } from "react-admin";
 import { Field, withTypes } from "react-final-form";
 import { Link, useLocation } from "react-router-dom";
 import { makeStyles } from "tss-react/mui";
-import { isInitialisedAsync } from "../database/authdb";
-import { lightTheme } from "../layout/themes";
-import { ADMIN_EMAILS, DOCS_DOMAIN } from "../lib/types";
 import NolayoutWrapper from "../components/NolayoutWrapper";
+import { isInitialisedAsync } from "../database/authdb";
+import { ADMIN_EMAILS, DOCS_DOMAIN } from "../lib/types";
 
 const useStyles = makeStyles()((theme) => ({
   main: {
@@ -231,18 +229,11 @@ Login.propTypes = {
   previousRoute: PropTypes.string,
 };
 
-// We need to put the ThemeProvider decoration in another component
-// Because otherwise the useStyles() hook used in Login won't get
-// the right theme
 function LoginWithTheme(props: any): ReactElement {
   return (
-    <StyledEngineProvider injectFirst>
-      <ThemeProvider theme={createTheme(lightTheme)}>
-        <NolayoutWrapper {...props}>
-          <Login {...props} />
-        </NolayoutWrapper>
-      </ThemeProvider>
-    </StyledEngineProvider>
+    <NolayoutWrapper {...props}>
+      <Login {...props} />
+    </NolayoutWrapper>
   );
 }
 

@@ -709,6 +709,9 @@ const customEnglishMessages: TranslationMessages = {
         },
       },
     },
+    main: {
+      finishing: "Finishing initial index loading...",
+    },
     notrobes: {
       name: "Notrobes",
       title: "Notrobes: Vocabulary search, discover words",

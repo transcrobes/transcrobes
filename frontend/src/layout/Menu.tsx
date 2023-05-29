@@ -59,7 +59,7 @@ function Menu({ dense = false }: MenuProps): ReactElement {
     menuTeaching: true,
   });
   const translate = useTranslate();
-  useAppSelector((state) => state.theme); // force rerender on theme change
+  // useAppSelector((state) => state.theme); // force rerender on theme change
   const { classes } = useStyles();
   const handleToggle = (menu: MenuName) => {
     setState((state) => ({ ...state, [menu]: !state[menu] }));
