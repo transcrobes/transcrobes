@@ -1,86 +1,39 @@
 import ReplayIcon from "@mui/icons-material/Replay";
-import { TextField } from "@mui/material";
-import Avatar from "@mui/material/Avatar";
-import Button from "@mui/material/Button";
-import Card from "@mui/material/Card";
-import CardActions from "@mui/material/CardActions";
-import CircularProgress from "@mui/material/CircularProgress";
-import Typography from "@mui/material/Typography";
-import { ReactElement, useState } from "react";
+import { Avatar, Box, Button, Card, CardActions, CircularProgress, Typography } from "@mui/material";
+import { ReactElement } from "react";
 import { Notification, useNotify, useTranslate } from "react-admin";
-import { Field, withTypes } from "react-final-form";
+import { FormContainer, TextFieldElement } from "react-hook-form-mui";
 import { Link } from "react-router-dom";
-import { makeStyles } from "tss-react/mui";
+import { useAppDispatch, useAppSelector } from "../app/hooks";
 import { DOCS_DOMAIN } from "../lib/types";
+import { setLoading } from "../features/ui/uiSlice";
 
-const useStyles = makeStyles()((theme) => ({
-  main: {
-    display: "flex",
-    flexDirection: "column",
-    minHeight: "100vh",
-    alignItems: "center",
-    justifyContent: "flex-start",
-    background: "url(https://source.unsplash.com/random/1600x900/?china)",
-    backgroundRepeat: "no-repeat",
-    backgroundSize: "cover",
-  },
-  card: {
-    minWidth: 300,
-    maxWidth: 600,
-    marginTop: "6em",
-  },
-  avatar: {
-    margin: "1em",
-    display: "flex",
-    justifyContent: "center",
-  },
-  icon: {
-    backgroundColor: theme.palette.secondary.main,
-  },
-  form: {
-    padding: "0 1em 1em 1em",
-  },
-  input: {
-    marginTop: "1em",
-  },
-  actions: {
-    padding: "0 1em 1em 1em",
-  },
-  userManagement: {
-    padding: "0 1em 1em 1em",
-  },
-}));
+const stdPadding = {
+  padding: "0 1em 1em 1em",
+};
+const stdMargin = {
+  marginTop: "1em",
+};
 
 interface FormValues {
   email?: string;
 }
 
-// FIXME: copy/pasted from Login.tsx
-function renderInput({
-  meta: { touched, error } = { touched: false, error: undefined },
-  input: { ...inputProps },
-  ...props
-}): ReactElement {
-  return <TextField error={!!(touched && error)} helperText={touched && error} {...inputProps} {...props} fullWidth />;
-}
-
-const { Form } = withTypes<FormValues>();
-
 export default function RecoverPassword(): ReactElement {
-  const [loading, setLoading] = useState(false);
+  const loading = useAppSelector((state) => state.ui.loading);
+  const dispatch = useAppDispatch();
   const translate = useTranslate();
-  const { classes } = useStyles();
   const notify = useNotify();
 
   function handleSubmit(auth: FormValues) {
-    setLoading(true);
+    dispatch(setLoading(true));
     fetch(`${location.origin}/api/v1/password-recovery/${auth.email}`, { method: "POST" })
       .then(() => {
         notify("user.reset_password.email_success", { type: "success" });
-        setLoading(false);
+        dispatch(setLoading(false));
       })
       .catch((error: Error) => {
-        setLoading(false);
+        dispatch(setLoading(false));
         notify(
           typeof error === "string"
             ? error
@@ -94,72 +47,66 @@ export default function RecoverPassword(): ReactElement {
         );
       });
   }
-
-  function validate(values: FormValues) {
-    const errors: FormValues = {};
-    if (!values.email) {
-      errors.email = translate("ra.validation.required");
-    }
-    return errors;
-  }
   const helpUrl = `//${DOCS_DOMAIN}`;
+
   return (
-    <div>
-      <Form
-        onSubmit={handleSubmit}
-        validate={validate}
-        render={({ handleSubmit }) => (
-          <form onSubmit={handleSubmit} noValidate>
-            <div className={classes.main}>
-              <Card className={classes.card}>
-                <div className={classes.avatar}>
-                  <Avatar className={classes.icon}>
-                    <ReplayIcon />
-                  </Avatar>
-                </div>
-                <div className={classes.form}>
-                  <div className={classes.input}>
-                    <Field
-                      autoFocus
-                      name="email"
-                      // @ts-ignore
-                      component={renderInput}
-                      label={translate("user.email")}
-                      disabled={loading}
-                    />
-                  </div>
-                </div>
-                <CardActions className={classes.actions}>
-                  <Button variant="contained" type="submit" color="primary" disabled={loading} fullWidth>
-                    {loading && <CircularProgress size={25} thickness={2} />}
-                    {translate("user.reset_password.recover")}
-                  </Button>
-                </CardActions>
-                <div>
-                  <div className={classes.userManagement}>
-                    <Typography>
-                      <Link to="/login">{translate("ra.auth.sign_in")}</Link>
-                    </Typography>
-                  </div>
-                  <div className={classes.userManagement}>
-                    <Typography>
-                      <Link to="/signup">{translate("user.signup.label")}</Link>
-                    </Typography>
-                  </div>
-                  <div className={classes.userManagement}>
-                    <Typography>
-                      <a target={"_blank"} href={helpUrl}>
-                        {translate("user.help.site")}
-                      </a>
-                    </Typography>
-                  </div>
-                </div>
-              </Card>
-              <Notification />
-            </div>
-          </form>
-        )}
-      />
-    </div>
+    <FormContainer defaultValues={{ email: "" }} onSuccess={handleSubmit}>
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          minHeight: "100vh",
+          alignItems: "center",
+          justifyContent: "flex-start",
+          background: "url(https://source.unsplash.com/random/1600x900/?china)",
+          backgroundRepeat: "no-repeat",
+          backgroundSize: "cover",
+        }}
+      >
+        <Card sx={{ minWidth: 300, marginTop: "6em" }}>
+          <Box sx={{ margin: "1em", display: "flex", justifyContent: "center" }}>
+            <Avatar sx={{ backgroundColor: "secondary.main" }}>
+              <ReplayIcon />
+            </Avatar>
+          </Box>
+          <Box sx={{ ...stdPadding, ...stdMargin }}>
+            <TextFieldElement
+              fullWidth
+              disabled={loading}
+              name="email"
+              label={translate("user.email")}
+              type="email"
+              required
+            />
+          </Box>
+          <CardActions sx={stdPadding}>
+            <Button variant="contained" type="submit" color="primary" disabled={loading} fullWidth>
+              {loading && <CircularProgress size={25} thickness={2} />}
+              {translate("user.reset_password.recover")}
+            </Button>
+          </CardActions>
+          <div>
+            <Box sx={stdPadding}>
+              <Typography>
+                <Link to="/login">{translate("ra.auth.sign_in")}</Link>
+              </Typography>
+            </Box>
+            <Box sx={stdPadding}>
+              <Typography>
+                <Link to="/signup">{translate("user.signup.label")}</Link>
+              </Typography>
+            </Box>
+            <Box sx={stdPadding}>
+              <Typography>
+                <a target={"_blank"} href={helpUrl}>
+                  {translate("user.help.site")}
+                </a>
+              </Typography>
+            </Box>
+          </div>
+        </Card>
+        <Notification />
+      </Box>
+    </FormContainer>
   );
 }

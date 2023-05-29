@@ -1,69 +1,29 @@
 import LockIcon from "@mui/icons-material/Lock";
-import { Avatar, Button, Card, CardActions, CircularProgress, TextField, Typography } from "@mui/material";
+import { Avatar, Box, Button, Card, CardActions, CircularProgress, Typography } from "@mui/material";
 import PropTypes from "prop-types";
 import { ReactElement, useEffect, useState } from "react";
 import { Notification, useLogin, useNotify, useTranslate } from "react-admin";
-import { Field, withTypes } from "react-final-form";
+import { FormContainer, TextFieldElement } from "react-hook-form-mui";
 import { Link, useLocation } from "react-router-dom";
-import { makeStyles } from "tss-react/mui";
 import NolayoutWrapper from "../components/NolayoutWrapper";
 import { isInitialisedAsync } from "../database/authdb";
 import { ADMIN_EMAILS, DOCS_DOMAIN } from "../lib/types";
 
-const useStyles = makeStyles()((theme) => ({
-  main: {
-    display: "flex",
-    flexDirection: "column",
-    minHeight: "100vh",
-    alignItems: "center",
-    justifyContent: "flex-start",
-    background: "url(https://source.unsplash.com/random/1600x900/?china)",
-    backgroundRepeat: "no-repeat",
-    backgroundSize: "cover",
-  },
-  card: {
-    minWidth: 300,
-    marginTop: "6em",
-  },
-  avatar: {
-    margin: "1em",
-    display: "flex",
-    justifyContent: "center",
-  },
-  icon: {
-    backgroundColor: theme.palette.secondary.main,
-  },
-  hint: {
-    marginTop: "1em",
-    display: "flex",
-    justifyContent: "center",
-    color: theme.palette.grey[500],
-  },
-  form: {
-    padding: "0 1em 1em 1em",
-  },
-  input: {
-    marginTop: "1em",
-  },
-  actions: {
-    padding: "0 1em 1em 1em",
-  },
-  userManagement: {
-    padding: "0 1em 1em 1em",
-  },
-}));
+const stdPadding = {
+  padding: "0 1em 1em 1em",
+};
+const stdMargin = {
+  marginTop: "1em",
+};
 
 interface FormValues {
-  username?: string;
+  email?: string;
   password?: string;
 }
-
-const { Form } = withTypes<FormValues>();
 
 function Login(): ReactElement {
   const [loading, setLoading] = useState(false);
   const translate = useTranslate();
-  const { classes } = useStyles();
   const notify = useNotify();
   const login = useLogin();
   const location = useLocation();
@@ -84,16 +44,16 @@ function Login(): ReactElement {
     }
   }, []);
 
-  async function handleSubmit(auth: FormValues) {
+  async function onSuccess(auth: FormValues) {
     setLoading(true);
-    const username = auth.username;
+    const username = auth.email;
     if (!username) throw new Error("A username is required here"); // should be impossible
     const nextPath = (await isInitialisedAsync(username))
       ? location.state
         ? (location.state as any).nextPathname
         : "/"
       : "/init";
-    login(auth, nextPath).catch((error: Error) => {
+    login({ username, password: auth.password }, nextPath).catch((error: Error) => {
       setLoading(false);
       notify(
         typeof error === "string"
@@ -109,118 +69,76 @@ function Login(): ReactElement {
     });
   }
 
-  function validate(values: FormValues) {
-    const errors: FormValues = {};
-    if (!values.username) {
-      errors.username = translate("ra.validation.required");
-    }
-    if (!values.password) {
-      errors.password = translate("ra.validation.required");
-    }
-    return errors;
-  }
-
   const helpUrl = `//${DOCS_DOMAIN}`;
   return (
-    <Form
-      onSubmit={handleSubmit}
-      validate={validate}
-      render={({ handleSubmit }) => (
-        <form onSubmit={handleSubmit} noValidate>
-          <div className={classes.main}>
-            <Card className={classes.card}>
-              <div className={classes.avatar}>
-                <Avatar className={classes.icon}>
-                  <LockIcon />
-                </Avatar>
-              </div>
-              <div className={classes.form}>
-                <div className={classes.input}>
-                  <Field
-                    autoFocus
-                    name="username"
-                    // @ts-ignore
-                    label={translate("ra.auth.username")}
-                    disabled={loading}
-                  >
-                    {({
-                      meta: { touched, error } = { touched: false, error: undefined },
-                      input: { ...inputProps },
-                      ...props
-                    }) => {
-                      return (
-                        <TextField
-                          id="username"
-                          autoComplete="username"
-                          error={!!(touched && error)}
-                          helperText={touched && error}
-                          {...inputProps}
-                          {...props}
-                          fullWidth
-                        />
-                      );
-                    }}
-                  </Field>
-                </div>
-                <div className={classes.input}>
-                  <Field
-                    name="password"
-                    // @ts-ignore
-                    label={translate("ra.auth.password")}
-                    type="password"
-                    disabled={loading}
-                  >
-                    {({
-                      meta: { touched, error } = { touched: false, error: undefined },
-                      input: { ...inputProps },
-                      ...props
-                    }) => {
-                      return (
-                        <TextField
-                          id="current-password"
-                          autoComplete="current-password"
-                          error={!!(touched && error)}
-                          helperText={touched && error}
-                          {...inputProps}
-                          {...props}
-                          fullWidth
-                        />
-                      );
-                    }}
-                  </Field>
-                </div>
-              </div>
-              <CardActions className={classes.actions}>
-                <Button variant="contained" type="submit" color="primary" disabled={loading} fullWidth>
-                  {loading && <CircularProgress size={25} thickness={2} />}
-                  {translate("ra.auth.sign_in")}
-                </Button>
-              </CardActions>
-              <div>
-                <div className={classes.userManagement}>
-                  <Typography>
-                    <Link to="/recover-password">{translate("user.reset_password.label")}</Link>
-                  </Typography>
-                </div>
-                <div className={classes.userManagement}>
-                  <Typography>
-                    <Link to="/signup">{translate("user.signup.label")}</Link>
-                  </Typography>
-                </div>
-                <div className={classes.userManagement}>
-                  <Typography>
-                    <a target={"_blank"} href={helpUrl}>
-                      {translate("user.help.site")}
-                    </a>
-                  </Typography>
-                </div>
-              </div>
-            </Card>
-            <Notification />
+    <FormContainer defaultValues={{ email: "", password: "" }} onSuccess={onSuccess}>
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          minHeight: "100vh",
+          alignItems: "center",
+          justifyContent: "flex-start",
+          background: "url(https://source.unsplash.com/random/1600x900/?china)",
+          backgroundRepeat: "no-repeat",
+          backgroundSize: "cover",
+        }}
+      >
+        <Card sx={{ minWidth: 300, marginTop: "6em" }}>
+          <Box sx={{ margin: "1em", display: "flex", justifyContent: "center" }}>
+            <Avatar sx={{ backgroundColor: "secondary.main" }}>
+              <LockIcon />
+            </Avatar>
+          </Box>
+          <Box sx={{ ...stdPadding, ...stdMargin }}>
+            <TextFieldElement
+              fullWidth
+              disabled={loading}
+              name="email"
+              label={translate("user.email")}
+              type="email"
+              required
+            />
+          </Box>
+          <Box sx={{ ...stdPadding, ...stdMargin }}>
+            <TextFieldElement
+              fullWidth
+              disabled={loading}
+              name="password"
+              label={translate("ra.auth.password")}
+              type="password"
+              required
+            />
+          </Box>
+          <CardActions sx={stdPadding}>
+            <Button variant="contained" type="submit" color="primary" disabled={loading} fullWidth>
+              {loading && <CircularProgress size={25} thickness={2} />}
+              {translate("ra.auth.sign_in")}
+            </Button>
+          </CardActions>
+          <div>
+            <Box sx={stdPadding}>
+              <Typography>
+                <Link to="/recover-password">{translate("user.reset_password.label")}</Link>
+              </Typography>
+            </Box>
+            <Box sx={stdPadding}>
+              <Typography>
+                <Link to="/signup">{translate("user.signup.label")}</Link>
+              </Typography>
+            </Box>
+            <Box sx={stdPadding}>
+              <Typography>
+                <a target={"_blank"} href={helpUrl}>
+                  {translate("user.help.site")}
+                </a>
+              </Typography>
+            </Box>
           </div>
-        </form>
-      )}
-    />
+        </Card>
+        <Notification />
+      </Box>
+    </FormContainer>
   );
 }
 
