@@ -14,6 +14,7 @@ import {
   EventData,
   ExtensionImportMessage,
   NetflixDetails,
+  PolyglotMessage,
   STREAMER_DETAILS,
   SerialisableDayCardWords,
   StreamDetails,
@@ -76,7 +77,7 @@ async function loadDb(callback: any, message: EventData) {
     console.error("No user found in db, cannot load");
     throw new Error("No user found in db, cannot load");
   }
-  const progressCallback = (progressMessage: string, isFinished: boolean) => {
+  const progressCallback = (progressMessage: PolyglotMessage, isFinished: boolean) => {
     const progress = { message: progressMessage, isFinished };
     console.debug("Got the progress message in background.js", progress);
     // WARNING: MUST NOT SEND A RESPONSE HERE!!!!!
@@ -84,7 +85,7 @@ async function loadDb(callback: any, message: EventData) {
   };
   store.dispatch(throttledRefreshToken() as any);
   const userData = store.getState().userData;
-  const dbConfig = { url: new URL(userData.baseUrl), username: userData.username, messagesLang: userData.user.toLang };
+  const dbConfig = { url: new URL(userData.baseUrl), username: userData.username };
   const dbHandle = await getDb(dbConfig, progressCallback);
   db = dbHandle;
   self.tcb = db;

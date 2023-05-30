@@ -141,7 +141,7 @@ export default function ContentAnalysis(props: Props) {
         <DialogContent onClick={(event) => event.stopPropagation()}>
           <TableContainer component={Paper}>
             <CardHeader title={translate("widgets.content_analysis.types")} />
-            <Table aria-label="simple table">
+            <Table>
               <TableBody>
                 <TableRow>
                   <TableCell>{translate("widgets.content_analysis.header_items")}</TableCell>
@@ -173,14 +173,9 @@ export default function ContentAnalysis(props: Props) {
               </TableBody>
             </Table>
           </TableContainer>
-          <TableContainer
-            sx={{
-              marginTop: "8px",
-            }}
-            component={Paper}
-          >
+          <TableContainer sx={{ marginTop: "8px" }} component={Paper}>
             <CardHeader title={translate("widgets.content_analysis.tokens")} />
-            <Table aria-label="simple table">
+            <Table>
               <TableBody>
                 <TableRow>
                   <TableCell>{translate("widgets.content_analysis.header_items")}</TableCell>
@@ -212,11 +207,7 @@ export default function ContentAnalysis(props: Props) {
               </TableBody>
             </Table>
           </TableContainer>
-          <Card
-            sx={{
-              marginTop: "8px",
-            }}
-          >
+          <Card sx={{ marginTop: "8px" }}>
             <CardContent>
               <Box sx={{ display: "flex", justifyContent: "space-between" }}>
                 <Box>

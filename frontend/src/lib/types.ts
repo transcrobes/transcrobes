@@ -3,6 +3,7 @@ import { HslColor } from "react-colorful";
 
 import { CardDocument, CharacterDocument, DefinitionDocument, WordModelStatsDocument } from "../database/Schema";
 import type { AbstractWorkerProxy, ProgressCallbackMessage } from "./proxies";
+import type Polyglot from "node-polyglot";
 
 export const SUBS_DATA_SUFFIX = ".data.json";
 
@@ -473,7 +474,6 @@ export interface GenericState<T extends ReaderState> {
 
 export type ExtensionImportMessage = {
   status: "error" | "ongoing" | "finished";
-  // message: { key: string; params?: Record<string, string> };
   message: string;
 };
 
@@ -579,7 +579,6 @@ export interface LanguagedReaderState extends ReaderState {
 }
 
 export interface BookReaderState extends ReaderState {
-  // fontColour: FontColourType;
   pageMargins: number;
   isScrolling: boolean;
   currentTocUrl: string | null;
@@ -841,8 +840,6 @@ export function reverseEnum(enume: any, value: any): string {
     .split(" ");
   return reversed.map((s: string) => capitalise(s)).join(" ");
 }
-
-// export type ThemeName = "light" | "dark";
 
 export const APPLICATION_NAMES = ["repetrobes", "listrobes", "notrobes", "brocrobes"] as const;
 export type TCApplication = (typeof APPLICATION_NAMES)[number];
@@ -1245,6 +1242,10 @@ export type EventData = {
   source: string;
   type: string;
   value?: any;
+};
+export type PolyglotMessage = {
+  phrase: string;
+  options?: Polyglot.InterpolationOptions;
 };
 
 export type ExtendedEventData = EventData & {

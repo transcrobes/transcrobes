@@ -1,15 +1,15 @@
 import { Workbox } from "workbox-window";
 import { isInitialisedAsync, setInitialisedAsync } from "../database/authdb";
-import type { EventData, ExtendedEventData } from "./types";
+import type { EventData, ExtendedEventData, PolyglotMessage } from "./types";
 
 type ConfigType = {
   resourceRoot?: string;
-  username?: string;
+  username: string;
 };
 
 type ProgressCallbackMessage = {
   isFinished: boolean;
-  message: string;
+  message: PolyglotMessage;
 };
 
 abstract class AbstractWorkerProxy {
@@ -49,7 +49,7 @@ class ServiceWorkerProxy extends AbstractWorkerProxy {
 
   #callbacks = new Map<string, (x: any) => string>();
   #messageQueue: MessageWithCallbacks[] = [];
-  #config: ConfigType = {};
+  #config: ConfigType;
 
   #loaded = false;
 
@@ -204,7 +204,7 @@ class ServiceWorkerProxy extends AbstractWorkerProxy {
           return callback(response);
         },
         (progress) => {
-          if (progress.message === "RESTART_BROWSER") {
+          if (progress.message.phrase === "RESTART_BROWSER") {
             throw new Error("Browser restart required");
           }
 
@@ -227,7 +227,7 @@ class BackgroundWorkerProxy extends AbstractWorkerProxy {
   getURL = chrome.runtime.getURL;
   #callbacks = new Map<string, (x: any) => string>();
   #messageQueue: MessageWithCallbacks[] = [];
-  #config: ConfigType = {};
+  #config: ConfigType;
 
   #loaded = false;
   get loaded() {
@@ -254,7 +254,11 @@ class BackgroundWorkerProxy extends AbstractWorkerProxy {
         return mwc.callback(returnMessage.value);
       } else if (mwc.callback && !returnMessage) {
         // FIXME: should probably throw an error here...
-        console.warn("No return message found for callback, is the method implemented in the background worker?", mwc);
+        console.warn(
+          "No return message found for callback, is the method implemented in the background worker?",
+          mwc.message,
+          mwc.callback,
+        );
       }
       return "";
     });

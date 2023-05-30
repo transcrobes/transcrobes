@@ -5,12 +5,13 @@ import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import NoSleep from "nosleep.js";
 import { ReactElement, useEffect, useState } from "react";
-import { Title, useAuthenticated, useTranslate } from "react-admin";
+import { Title, useAuthenticated, useLocaleState, useTranslate } from "react-admin";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
 import Loading from "../components/Loading";
 import { isInitialisedAsync, setInitialisedAsync } from "../database/authdb";
 import { setLoading } from "../features/ui/uiSlice";
 import { AbstractWorkerProxy, ProgressCallbackMessage } from "../lib/proxies";
+import { SystemLanguage } from "../lib/types";
 
 const noSleep = new NoSleep();
 
@@ -44,6 +45,7 @@ function Init({ proxy }: Props): ReactElement {
   const [runStarted, setRunStarted] = useState<boolean | null>(null);
   const [message, setMessage] = useState<string>("");
   const [isInited, setIsInited] = useState(false);
+  const [locale] = useLocaleState() as [SystemLanguage, (locale: SystemLanguage) => void];
 
   if (progress === 0) progress = window.setTimeout(progressUpdate, 5000);
 
@@ -75,10 +77,10 @@ function Init({ proxy }: Props): ReactElement {
 
     function progressCallback(progress: ProgressCallbackMessage): string {
       console.log("progressCallback", progress);
-      if (progress.message === "RESTART_BROWSER") {
+      if (progress.message.phrase === "RESTART_BROWSER") {
         setMessage("You must completely close all browser instances and then restart the initialisation!");
         throw new Error("Browser restart required");
-      } else setMessage(progress.message);
+      } else setMessage(translate(progress.message.phrase, progress.message.options));
       return "";
     }
     function finishedCallback(message: string): string {

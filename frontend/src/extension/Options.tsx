@@ -24,11 +24,11 @@ import { getDb } from "../database/Database";
 import { TranscrobesDatabase } from "../database/Schema";
 import { getRefreshedState } from "../features/content/contentSlice";
 import { extensionReaderActions } from "../features/content/extensionReaderSlice";
-// import { changeTheme } from "../features/themes/themeReducer";
 import { setLoading } from "../features/ui/uiSlice";
 import { setUser, throttledLogin, updateBaseUrl, updatePassword, updateUsername } from "../features/user/userSlice";
 import { darkTheme, lightTheme } from "../layout/themes";
 import { refreshDictionaries } from "../lib/dictionary";
+import { getDefaultLanguageDictionaries } from "../lib/libMethods";
 import { BackgroundWorkerProxy, setPlatformHelper } from "../lib/proxies";
 import {
   BROCROBES_YT_VIDEO,
@@ -37,6 +37,7 @@ import {
   DOCS_DOMAIN,
   EXTENSION_READER_ID,
   ExtensionReaderState,
+  PolyglotMessage,
   SystemLanguage,
   translationProviderOrder,
 } from "../lib/types";
@@ -44,7 +45,6 @@ import { RxDBDataProviderParams } from "../ra-data-rxdb";
 import Initialisation from "./components/Initialisation";
 import Intro from "./components/Intro";
 import ExtensionConfig from "./ExtensionConfig";
-import { getDefaultLanguageDictionaries } from "../lib/libMethods";
 
 type FormProps = {
   username: string;
@@ -115,10 +115,8 @@ export default function Options(): ReactElement {
   const [password, setPassword] = useState("");
   const [baseUrl, setBaseUrl] = useState(DEFAULT_SERVER_URL);
   const [loaded, setLoaded] = useState(false);
-  const [themeName] = useTheme();
+  const [themeName, setTheme] = useTheme();
   const theme = createTheme(themeName === "dark" ? darkTheme : lightTheme);
-  // const theme = useAppSelector((state) => createTheme(state.theme === "dark" ? darkTheme : lightTheme));
-
   const [locale, setLocale] = useLocaleState() as [SystemLanguage, (locale: SystemLanguage) => void];
   const translate = useTranslate();
 
@@ -128,9 +126,8 @@ export default function Options(): ReactElement {
   const userData = useAppSelector((state) => state.userData);
   const { classes } = useStyles();
 
-  const [, setTheme] = useTheme();
-  dispatch(setLoading(true));
   useEffect(() => {
+    dispatch(setLoading(true));
     (async () => {
       dispatch(setUser(await getUserDexie()));
       const userData = store.getState().userData;
@@ -150,9 +147,7 @@ export default function Options(): ReactElement {
         conf = await getRefreshedState<ExtensionReaderState>(proxy, conf, id);
       }
       if (userData.username) {
-        console.log("I am resetting the locale", conf.locale);
         setLocale(conf.locale);
-        // dispatch(changeTheme(conf.themeName));
         setTheme(conf.themeName);
       }
       dispatch(extensionReaderActions.setState({ id, value: conf }));
@@ -176,6 +171,7 @@ export default function Options(): ReactElement {
       (async () => {
         const userData = store.getState().userData;
         setRunning(true);
+        dispatch(setLoading(true));
         if (!userData.user.accessToken) {
           setMessage(translate("screens.extension.sync_error"));
           console.error("Something bad happened, couldnt get an accessToken to start a syncDB()");
@@ -184,18 +180,18 @@ export default function Options(): ReactElement {
           const dbConfig: RxDBDataProviderParams = {
             url: new URL(userData.baseUrl),
             username: userData.username,
-            messagesLang: locale,
           };
-
-          const progressCallback = (message: string) => {
-            setMessage(message);
-          };
-          const db = await getDb(dbConfig, progressCallback, undefined);
+          const db = await getDb(
+            dbConfig,
+            (message: PolyglotMessage) => setMessage(translate(message.phrase, message.options)),
+            undefined,
+          );
           try {
             window.tcb = db;
             const action = !inited ? "init" : "update";
             setMessage(translate(`screens.extension.${action}_complete`));
             setRunning(false);
+            dispatch(setLoading(false));
             await setInitialisedAsync(userData.username);
             console.debug("Synchronisation finished!");
             // Prior to this point the db might not have been inited, meaning that the state persistence
@@ -213,6 +209,7 @@ export default function Options(): ReactElement {
             setInited(true);
           } catch (err: any) {
             setRunning(false);
+            dispatch(setLoading(false));
             setMessage(translate("screens.extension.error", { docs_domain: DOCS_DOMAIN }));
             console.log("getDb() threw an error in options.ts");
             console.dir(err);

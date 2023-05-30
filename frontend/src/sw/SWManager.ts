@@ -22,6 +22,7 @@ import {
   REQUEST_QUEUE_PROCESS_FREQ,
   UserDefinitionType,
   WEBPUB_CACHE_NAME,
+  PolyglotMessage,
 } from "../lib/types";
 import { ReadiumLink } from "../lib/WebpubManifestTypes/ReadiumLink";
 import { WebpubManifest } from "../lib/WebpubManifestTypes/WebpubManifest";
@@ -65,7 +66,7 @@ async function loadDb(
   store.dispatch(setUser(user));
   intervalCollection.removeAll();
 
-  const progressCallback = (progressMessage: string, isFinished: boolean) => {
+  const progressCallback = (progressMessage: PolyglotMessage, isFinished: boolean) => {
     const progress = { message: progressMessage, isFinished };
     if (event) {
       postIt(event, {
@@ -75,7 +76,7 @@ async function loadDb(
       });
     }
   };
-  return getDb({ url, username: user.username, messagesLang: user.user.toLang }, progressCallback, sw).then((dbObj) => {
+  return getDb({ url, username: user.username }, progressCallback, sw).then((dbObj) => {
     db = dbObj;
     sw.tcb = Promise.resolve(dbObj);
     // FIXME: !!! these should NOT be intervals but rather timeouts that relaunch

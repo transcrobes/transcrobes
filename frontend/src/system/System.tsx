@@ -3,38 +3,25 @@ import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import { ReactElement, useEffect, useState } from "react";
-import { Title, TopToolbar, useTranslate } from "react-admin";
-import { makeStyles } from "tss-react/mui";
+import { Title, TopToolbar, useLocaleState, useTranslate } from "react-admin";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
 import HelpButton from "../components/HelpButton";
 import { Loading } from "../components/Loading";
 import { clearAuthDatabase } from "../database/authdb";
 import { getDatabaseName } from "../database/Database";
-// import { changeTheme } from "../features/themes/themeReducer";
 import { setAndSaveUser } from "../features/user/userSlice";
-// import { darkTheme, lightTheme } from "../layout/themes";
 import { AbstractWorkerProxy } from "../lib/proxies";
-import { DOCS_DOMAIN, GIT_VERSION } from "../lib/types";
+import { DOCS_DOMAIN, GIT_VERSION, SystemLanguage } from "../lib/types";
 import { fetcher } from "../lib/fetcher";
 import { NAME_PREFIX } from "../lib/interval/interval-decorator";
 
 const CONNECTION_CHECK_FREQUENCY_MS = 10000;
-
-const useStyles = makeStyles()({
-  label: { width: "10em", display: "inline-block" },
-  button: { margin: "1em" },
-  toolbar: {
-    justifyContent: "flex-end",
-    alignItems: "center",
-  },
-});
 
 interface RefreshCacheButtonProps {
   onCacheEmptied: (message: string) => void;
 }
 
 function RefreshCacheButton({ onCacheEmptied }: RefreshCacheButtonProps): ReactElement {
-  const { classes } = useStyles();
   const translate = useTranslate();
 
   function handleClick() {
@@ -51,7 +38,7 @@ function RefreshCacheButton({ onCacheEmptied }: RefreshCacheButtonProps): ReactE
     });
   }
   return (
-    <Button variant="contained" className={classes.button} color={"primary"} onClick={handleClick}>
+    <Button variant="contained" sx={{ margin: "1em" }} color={"primary"} onClick={handleClick}>
       {translate("screens.system.refresh_caches")}
     </Button>
   );
@@ -61,20 +48,20 @@ interface ReloadDBButtonProps {
   proxy: AbstractWorkerProxy;
 }
 function ReloadDBButton({ proxy }: ReloadDBButtonProps): ReactElement {
-  const { classes } = useStyles();
   const translate = useTranslate();
   const username = useAppSelector((state) => state.userData.username);
+  const [locale] = useLocaleState() as [SystemLanguage, (locale: SystemLanguage) => void];
 
   async function handleClick() {
     if (username) {
       await proxy.sendMessagePromise<string>({ source: "System", type: "resetDBConnections", value: "" });
-      await proxy.asyncInit({ username: username });
+      await proxy.asyncInit({ username });
     } else {
       console.error("No username found");
     }
   }
   return (
-    <Button variant="contained" className={classes.button} color={"primary"} onClick={handleClick}>
+    <Button variant="contained" sx={{ margin: "1em" }} color={"primary"} onClick={handleClick}>
       {translate("screens.system.reload_db")}
     </Button>
   );
@@ -86,7 +73,6 @@ interface ReinstallDBButtonProps {
 }
 
 function ReinstallDBButton({ beforeReinstall, onDBDeleted }: ReinstallDBButtonProps): ReactElement {
-  const { classes } = useStyles();
   const translate = useTranslate();
   const username = useAppSelector((state) => state.userData.username);
 
@@ -111,7 +97,7 @@ function ReinstallDBButton({ beforeReinstall, onDBDeleted }: ReinstallDBButtonPr
     }
   }
   return (
-    <Button variant="contained" className={classes.button} color={"primary"} onClick={handleClick}>
+    <Button variant="contained" sx={{ margin: "1em" }} color={"primary"} onClick={handleClick}>
       {translate("screens.system.refresh_db_from_server")}
     </Button>
   );
@@ -126,15 +112,8 @@ function System({ proxy }: Props): ReactElement {
   const [message, setMessage] = useState("");
   const [serverAvailableMessage, setServerAvailableMessage] = useState(translate("screens.system.waiting_for_server"));
   const [loading, setLoading] = useState(false);
-  const { classes } = useStyles();
-
   const helpUrl = `//${DOCS_DOMAIN}/page/software/configure/system/`;
-
-  // const [locale, setLocale] = useLocaleState();
-  // const themeName = useAppSelector((state) => state.theme);
   const user = useAppSelector((state) => state.userData);
-
-  // const [, setTheme] = useTheme();
   const dispatch = useAppDispatch();
 
   function setTimedServerAvailableMessage(message: string): string {
@@ -143,11 +122,6 @@ function System({ proxy }: Props): ReactElement {
     return mes;
   }
 
-  // function handleUpdate(mode: ThemeName) {
-  //   localStorage.setItem("mode", mode); // a bit hacky, probably better somewhere else
-  //   setTheme(mode === "dark" ? darkTheme : lightTheme);
-  //   return dispatch(changeTheme(mode));
-  // }
   function handleShowResearchUpdate(show: boolean) {
     return dispatch(setAndSaveUser({ ...user, showResearchDetails: show }));
   }
@@ -192,7 +166,7 @@ function System({ proxy }: Props): ReactElement {
   }, []);
   return (
     <div>
-      <TopToolbar className={classes.toolbar}>
+      <TopToolbar sx={{ justifyContent: "flex-end", alignItems: "center" }}>
         <HelpButton url={helpUrl} />
       </TopToolbar>
       <CardHeader title={translate("screens.system.quickfix_actions")} />

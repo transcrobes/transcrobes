@@ -1,6 +1,5 @@
 import { createClient } from "graphql-ws";
 import _ from "lodash";
-import Polyglot from "node-polyglot";
 import { addRxPlugin, clone, createRxDatabase, removeRxDatabase } from "rxdb";
 import { GraphQLServerUrl } from "rxdb/dist/types/types";
 import { RxDBDevModePlugin } from "rxdb/plugins/dev-mode";
@@ -19,7 +18,7 @@ import { store } from "../app/createStore";
 import { setUser, throttledRefreshToken } from "../features/user/userSlice";
 import { IDBFileStorage, getFileStorage } from "../lib/IDBFileStorage";
 import { fetchPlus, getMessages } from "../lib/libMethods";
-import { API_PREFIX, IS_DEV, UserDetails } from "../lib/types";
+import { API_PREFIX, IS_DEV, PolyglotMessage, UserDetails } from "../lib/types";
 import { DBParameters, RxDBDataProviderParams } from "../ra-data-rxdb";
 import {
   BATCH_SIZE_PULL,
@@ -102,10 +101,9 @@ async function loadDatabase(
   justCreated: boolean,
   initialisationCacheName: string,
   user: UserDetails,
-  progressCallback: (message: string, finished: boolean) => void,
-  polyglot: Polyglot,
+  progressCallback: (message: PolyglotMessage, finished: boolean) => void,
 ) {
-  progressCallback(polyglot.t("database.init_temp_storage"), false);
+  progressCallback({ phrase: "database.init_temp_storage" }, false);
   const initialisationCache = await getFileStorage(initialisationCacheName);
   const baseUrl = new URL(graphqlServerUrl.http || "").origin;
 
@@ -124,7 +122,7 @@ async function loadDatabase(
     cacheFiles = await cacheExports(baseUrl, initialisationCache, user, progressCallback);
     console.debug("Refreshed the initialisation cache with new values", cacheFiles);
   }
-  progressCallback(polyglot.t("database.files_downloaded"), false);
+  progressCallback({ phrase: "database.files_downloaded" }, false);
 
   const perFilePercent = 77 / cacheFiles.length;
   for (const i in cacheFiles) {
@@ -145,9 +143,9 @@ async function loadDatabase(
       throw new Error("deleteResult is false, that is unfortunate");
     }
     const percent = (perFilePercent * parseInt(i) + 13).toFixed(2);
-    progressCallback(polyglot.t("database.importing", { i, percent }), false);
+    progressCallback({ phrase: "database.importing", options: { i, percent } }, false);
   }
-  progressCallback(polyglot.t("database.updating_indexes"), false);
+  progressCallback({ phrase: "database.updating_indexes" }, false);
   await db.definitions
     .find({
       selector: { graph: { $eq: LOADED_DEF_QUERY_ENTRY } },
@@ -172,18 +170,17 @@ async function cacheExports(
   baseUrl: string,
   initialisationCache: IDBFileStorage,
   user: UserDetails,
-  progressCallback: (message: string, finished: boolean) => void,
+  progressCallback: (message: PolyglotMessage, finished: boolean) => void,
 ) {
-  const polyglot = new Polyglot({ phrases: getMessages(user.toLang) });
   // Add the word definitions database urls
   const exportFilesListURL = new URL(EXPORTS_LIST_PATH, baseUrl);
   let data: string[];
-  progressCallback(polyglot.t("database.getting_cache_list"), false);
+  progressCallback({ phrase: "database.getting_cache_list" }, false);
   try {
     data = await fetchPlus(exportFilesListURL);
     console.log("data", data, exportFilesListURL);
   } catch (error: any) {
-    progressCallback(polyglot.t("database.cache_exports_error"), false);
+    progressCallback({ phrase: "database.cache_exports_error" }, false);
     console.error(error);
     throw new Error(error);
   }
@@ -195,7 +192,7 @@ async function cacheExports(
       const hanziList = await fetchPlus(hanziExportFilesListURL);
       data.push(...hanziList);
     } catch (error: any) {
-      progressCallback(polyglot.t("database.cache_exports_error"), false);
+      progressCallback({ phrase: "database.cache_exports_error" }, false);
       console.error(error);
       throw new Error(error);
     }
@@ -206,12 +203,12 @@ async function cacheExports(
     try {
       response = await fetchPlus(new URL(url, origin));
     } catch (error) {
-      const message = polyglot.t("database.cache_exports_error");
+      const message = "database.cache_exports_error";
       console.error(message, error);
-      progressCallback(message, false);
+      progressCallback({ phrase: message }, false);
       throw new Error(message);
     }
-    progressCallback(polyglot.t("database.datafile", { datafile: url.split("/").slice(-1)[0] }), false);
+    progressCallback({ phrase: "database.datafile", options: { datafile: url.split("/").slice(-1)[0] } }, false);
     return await initialisationCache.put(url, new Blob([JSON.stringify(response)], { type: "application/json" }));
   };
   try {
@@ -505,14 +502,13 @@ async function testQueries(db: TranscrobesDatabase): Promise<DefinitionDocument[
 async function loadFromExports(
   config: RxDBDataProviderParams,
   reinitialise = false,
-  progressCallback: (message: string, finished: boolean) => void,
+  progressCallback: (message: PolyglotMessage, finished: boolean) => void,
   user: UserDetails,
   sw?: ServiceWorkerGlobalScope,
 ): Promise<TranscrobesDatabase> {
   const activateSubscription = true;
 
-  const polyglot = new Polyglot({ phrases: getMessages(user.toLang) });
-  progressCallback(polyglot.t("database.init_storage"), false);
+  progressCallback({ phrase: "database.init_storage" }, false);
 
   const dbName = getDatabaseName(config);
 
@@ -526,7 +522,7 @@ async function loadFromExports(
   const initialisationCacheName = "transcrobes.initialisation"; // was `${config.cacheName}.initialisation`;
 
   if (reinitialise) {
-    progressCallback(polyglot.t("database.reinstalling"), false);
+    progressCallback({ phrase: "database.reinstalling" }, false);
     await deleteDatabase(dbName);
   }
   const db = await createDatabase(dbName);
@@ -535,12 +531,12 @@ async function loadFromExports(
   let justCreated = false;
 
   try {
-    progressCallback(polyglot.t("database.init_structure"), false);
+    progressCallback({ phrase: "database.init_structure" }, false);
     justCreated = await createCollections(db);
   } catch (error) {
     console.error("Error trying to create the collections");
     console.error(error);
-    progressCallback("RESTART_BROWSER", true);
+    progressCallback({ phrase: "RESTART_BROWSER" }, true);
     throw new Error("The browser must be restarted");
     // FIXME: NOOOOOOOOOOOOO!!!!!!!!!!!!!!!!!!
     //await removeRxDatabase(dbName, getRxStoragePouch("idb"));
@@ -548,7 +544,7 @@ async function loadFromExports(
     //justCreated = await createCollections(db);
   }
   if (justCreated || reinitialise) {
-    progressCallback(polyglot.t("database.retrieving_files"), false);
+    progressCallback({ phrase: "database.retrieving_files" }, false);
     console.log(syncURL, reinitialise, justCreated, initialisationCacheName, user);
     await loadDatabase(
       db,
@@ -558,10 +554,9 @@ async function loadFromExports(
       initialisationCacheName,
       user,
       progressCallback,
-      polyglot,
     );
   }
-  progressCallback(polyglot.t("database.files_loaded"), false);
+  progressCallback({ phrase: "database.files_loaded" }, false);
   for (const col in DBTwoWayCollections) {
     replStates.set(
       col as DBTwoWayCollectionKeys,
@@ -598,10 +593,13 @@ async function loadFromExports(
     const perPercent = 5 / colNames.length;
     for (const i in rStates) {
       progressCallback(
-        polyglot.t("database.synchronising", {
-          filename: colNames[i],
-          percent: (perPercent * parseInt(i) + 93).toFixed(2),
-        }),
+        {
+          phrase: "database.synchronising",
+          options: {
+            filename: colNames[i],
+            percent: (perPercent * parseInt(i) + 93).toFixed(2),
+          },
+        },
         false,
       );
       // the initial repl takes MULTIPLE GIGABYTES of memory with lots of defs...
@@ -611,20 +609,20 @@ async function loadFromExports(
       }
     }
   }
-  progressCallback(polyglot.t("database.synchronised"), false);
+  progressCallback({ phrase: "database.synchronised" }, false);
   if (activateSubscription) {
     setupGraphQLSubscription(wsEndpointUrl, collectionChangedQuery(), sw);
     setupGraphQLSubscription(wsEndpointUrl, changedQuery("definitions"), sw);
   }
   return testQueries(db).then(() => {
-    progressCallback(polyglot.t("database.init_finished"), true);
+    progressCallback({ phrase: "database.init_finished" }, true);
     return db;
   });
 }
 
 async function getDb(
   config: RxDBDataProviderParams,
-  progressCallback: (message: string, finished: boolean) => void,
+  progressCallback: (message: PolyglotMessage, finished: boolean) => void,
   sw?: ServiceWorkerGlobalScope,
   reinitialise = false,
 ): Promise<TranscrobesDatabase> {

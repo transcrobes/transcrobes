@@ -185,6 +185,4 @@ export interface DBParameters {
   loggingEnabled?: boolean;
 }
 
-export interface RxDBDataProviderParams extends DBParameters {
-  messagesLang: SystemLanguage;
-}
+export interface RxDBDataProviderParams extends DBParameters {}

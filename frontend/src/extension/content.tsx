@@ -1,4 +1,7 @@
-import { createTheme, ScopedCssBaseline, ThemeProvider } from "@mui/material";
+import createCache from "@emotion/cache";
+import { CacheProvider } from "@emotion/react";
+import { EmotionCache } from "@emotion/utils";
+import { createTheme, ThemeProvider, ScopedCssBaseline } from "@mui/material";
 import { createComponentVNode, render } from "inferno";
 import { Provider as InfernoProvider } from "inferno-redux";
 import jss from "jss";
@@ -77,33 +80,67 @@ const fromLang = () => store.getState().userData.user.fromLang;
 
 setPlatformHelper(proxy);
 const userData = await proxy.sendMessagePromise<UserState>({ source: DATA_SOURCE, type: "getUser" });
+if (!userData.username || !userData.password || !userData.baseUrl) {
+  // This should never be possible now, as the click on the extension action checks and redirects to the conf page
+  store.dispatch(setLoading(undefined));
+  alert("Account missing. Please log in again.");
+  throw new Error("Unable to find the current username");
+}
+
+// FIXME: it is DANGEROUS to use this here, as the async thunks do get and set dexie!!!
+store.dispatch(setUser(userData));
 await proxy.asyncInit({ username: userData.username });
 await ensureConfLoaded(store);
-
 const readerConfig = store.getState().extensionReader[id];
-
 const locale = !!userData.username ? readerConfig.locale : getLanguageFromPreferred(navigator.languages);
 const i18nProvider = getI18nProvider(locale);
 
-createRoot(document.body.appendChild(document.createElement("div"))!).render(
+function createTCRoot(key: string, doc: Document, isStreamer: boolean): [HTMLDivElement, EmotionCache] {
+  let loadingElement = doc.createElement("div");
+  let shadowRootElement = loadingElement;
+  doc.body.appendChild(loadingElement);
+
+  let emotionRoot: HTMLStyleElement | undefined;
+  if (!isStreamer) {
+    const shadowContainer = loadingElement.attachShadow({ mode: "open" });
+    emotionRoot = doc.createElement("style");
+    shadowRootElement = doc.createElement("div");
+    shadowContainer.appendChild(emotionRoot);
+    shadowContainer.appendChild(shadowRootElement);
+  }
+  const loadingCache = createCache({
+    key,
+    prepend: true,
+    container: emotionRoot,
+  });
+  return [shadowRootElement, loadingCache];
+}
+
+const [loadingRoot, loadingCache] = createTCRoot("loading", document, !!streamingSiteName);
+createRoot(loadingRoot).render(
   <Provider store={store}>
-    <Loading
-      position="fixed"
-      messageSx={
-        streamingSiteName
-          ? {
-              color: "black",
-              textShadow: `-1px -1px 0 #ffffff, 1px -1px 0 #ffffff, -1px 1px 0 #ffffff, 1px 1px 0 #ffffff,
+    <CacheProvider value={loadingCache}>
+      <ScopedCssBaseline>
+        <Loading
+          position="fixed"
+          messageSx={
+            streamingSiteName
+              ? {
+                  color: "black",
+                  textShadow: `-1px -1px 0 #ffffff, 1px -1px 0 #ffffff, -1px 1px 0 #ffffff, 1px 1px 0 #ffffff,
                 -2px 0 0 #ffffff, 2px 0 0 #ffffff, 0 2px 0 #ffffff, 0 -2px 0 #ffffff;`,
-            }
-          : undefined
-      }
-      message={i18nProvider.translate(
-        streamingSiteName ? "screens.extension.streamer.looking_for_subs" : "screens.extension.waiting_for_load",
-      )}
-    />
+                }
+              : undefined
+          }
+          message={i18nProvider.translate(
+            streamingSiteName ? "screens.extension.streamer.looking_for_subs" : "screens.extension.waiting_for_load",
+          )}
+        />
+      </ScopedCssBaseline>
+    </CacheProvider>
   </Provider>,
 );
+
 store.dispatch(setLoading(true));
 await ensureRestLoaded(proxy, store);
 
@@ -158,29 +195,14 @@ async function ensureRestLoaded(platformHelper: AbstractWorkerProxy, store: Admi
   await refreshDictionaries(store, platformHelper, fromLang());
 }
 
-if (!userData.username || !userData.password || !userData.baseUrl) {
-  // This should never be possible now, as the click on the extension action checks and redirects to the conf page
-  store.dispatch(setLoading(undefined));
-  alert(i18nProvider.translate("screens.extension.missing_account", { docs_domain: DOCS_DOMAIN }));
-  throw new Error("Unable to find the current username");
-}
-// FIXME: it is DANGEROUS to use this here, as the async thunks do get and set dexie!!!
-store.dispatch(setUser(userData));
-
 document.addEventListener("click", () => {
   store.dispatch(setTokenDetails(undefined));
 });
 
-jss.setup(preset());
-classes = jss
-  .createStyleSheet(ETFStyles, { link: true })
-  .attach()
-  .update({ ...readerConfig, scriptioContinuo: isScriptioContinuo(userData.user.fromLang) }).classes;
-
 const baseTheme = readerConfig.themeName === "dark" ? popupDarkTheme : popupLightTheme;
 let themeConfig: any = baseTheme;
 
-if (streamingSiteName) {
+if (!!streamingSiteName) {
   themeConfig = {
     ...baseTheme,
     components: { ...baseTheme.components, ...streamOverrides.components },
@@ -188,24 +210,59 @@ if (streamingSiteName) {
   };
 }
 
-createRoot(document.body.appendChild(document.createElement("div"))!).render(
+const [mainRoot, mainCache] = createTCRoot("transcrobes", document, !!streamingSiteName);
+const shadowTheme = createTheme(
+  !!streamingSiteName
+    ? themeConfig
+    : _.merge(_.cloneDeep(themeConfig), {
+        components: {
+          MuiPopover: {
+            defaultProps: {
+              container: mainRoot,
+            },
+          },
+          MuiPopper: {
+            defaultProps: {
+              container: mainRoot,
+            },
+          },
+          MuiModal: {
+            defaultProps: {
+              container: mainRoot,
+            },
+          },
+        },
+      }),
+);
+
+jss.setup(preset());
+// TODO: see if there is a way to do this with insertionPoint
+// jss.setup({ ...preset(), insertionPoint: mainRoot });
+classes = jss
+  .createStyleSheet(ETFStyles, { link: true })
+  .attach()
+  .update({ ...readerConfig, scriptioContinuo: isScriptioContinuo(userData.user.fromLang) }).classes;
+
+createRoot(mainRoot).render(
   <Provider store={store}>
-    <ThemeProvider theme={createTheme({ ...themeConfig })}>
+    <ThemeProvider theme={shadowTheme}>
       <I18nContextProvider value={i18nProvider}>
         <ScopedCssBaseline>
-          {!!streamingSiteName ? (
-            // FIXME: find out why the queryclientprovider is necessary...
-            <QueryClientProvider client={queryClient}>
-              <VideoPlayerScreen proxy={proxy} />
-            </QueryClientProvider>
-          ) : (
-            <>
-              <TokenDetails readerConfig={readerConfig} />
-              <Mouseover readerConfig={readerConfig} />
-            </>
-          )}
-          {readerConfig.analysisPosition !== "none" && <ContentAnalysisBrocrobes />}
-          {userData.showResearchDetails && <ContentAnalysisAccuracyBrocrobes proxy={proxy} />}
+          <CacheProvider value={mainCache}>
+            {!!streamingSiteName ? (
+              // FIXME: find out why the queryclientprovider is necessary...
+              <QueryClientProvider client={queryClient}>
+                <VideoPlayerScreen proxy={proxy} />
+              </QueryClientProvider>
+            ) : (
+              <>
+                <TokenDetails readerConfig={readerConfig} />
+                <Mouseover readerConfig={readerConfig} />
+                {readerConfig.analysisPosition !== "none" && <ContentAnalysisBrocrobes />}
+                {userData.showResearchDetails && <ContentAnalysisAccuracyBrocrobes proxy={proxy} />}
+              </>
+            )}
+          </CacheProvider>
         </ScopedCssBaseline>
       </I18nContextProvider>
     </ThemeProvider>

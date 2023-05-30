@@ -123,7 +123,7 @@ self.addEventListener("message", (event) => {
     if (!dataProvider) {
       const url = new URL(self.location.href);
       getUserDexie().then(({ username, user }) => {
-        dataProvider = RxDBProvider({ url: url, username, messagesLang: user.toLang });
+        dataProvider = RxDBProvider({ url: url, username });
         self.tcb = dataProvider.db();
         dataProvider[event.data.method](event.data.collection, event.data.params).then((res: DataProviderResult) => {
           event.ports[0].postMessage(res);

@@ -1,5 +1,5 @@
 import { ReactElement, useEffect, useState } from "react";
-import { Admin, CustomRoutes, Resource, useTheme } from "react-admin";
+import { Admin, CustomRoutes, Resource } from "react-admin";
 import { useIdleTimer } from "react-idle-timer";
 import { Route } from "react-router-dom";
 import Brocrobes from "./Brocrobes";
@@ -99,8 +99,6 @@ const sessionId = (window.asessionId = UUID().toString());
 function App({ config }: Props): ReactElement {
   const [inited, setInited] = useState(false);
   const dispatch = useAppDispatch();
-  // const theme = useAppSelector((state) => (state.theme === "dark" ? darkTheme : lightTheme));
-  // const [themeName] = useTheme();
   useIdleTimer({
     onAction: () => {
       if (inited) {
@@ -186,7 +184,7 @@ function App({ config }: Props): ReactElement {
         // }
 
         if (await isInitialisedAsync(username)) {
-          await config.proxy.asyncInit({ username: username });
+          await config.proxy.asyncInit({ username });
           await config.proxy.sendMessagePromise({
             source: DATA_SOURCE,
             type: "refreshSession",
