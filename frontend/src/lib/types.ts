@@ -431,34 +431,7 @@ export const USER_STATS_MODE = {
 export const SEGMENTED_BASE_PADDING = 6;
 
 export type USER_STATS_MODE_KEY = keyof typeof USER_STATS_MODE;
-
 export type USER_STATS_MODE_KEY_VALUES = (typeof USER_STATS_MODE)[USER_STATS_MODE_KEY];
-
-export const SIMPLE_POS_ENGLISH_NAMES: { [key in SimplePosType]: string } = {
-  NOUN: "Noun",
-  VERB: "Verb",
-  ADJ: "Adjective",
-  ADV: "Adverb",
-  PREP: "Preposition",
-  PRON: "Pronoun",
-  CONJ: "Conjunction",
-  DET: "Determiner",
-  MODAL: "Modal",
-  OTHER: "Other",
-};
-
-export const SIMPLE_POS_CHINESE_NAMES: { [key in SimplePosType]: string } = {
-  NOUN: "名词",
-  VERB: "动词",
-  ADJ: "形容词",
-  ADV: "副词",
-  PREP: "介词",
-  PRON: "代词",
-  CONJ: "连词",
-  DET: "限定词",
-  MODAL: "情态词",
-  OTHER: "其他",
-};
 
 export const BASE_DICT_PROVIDERS = {
   mst: "Bing",
@@ -475,178 +448,7 @@ export const ZHHANS_EN_DICT_PROVIDERS = {
 // export type EnZHHansDictProvider = keyof typeof EN_ZHHANS_DICT_PROVIDERS;
 // export type DictProvider = ZHHansEnDictProvider | EnZHHansDictProvider;
 
-// FIXME: This shouldn't be here...
-export const EN_TB_POS_LABELS_ZH: { [key in EnTreebankPosType]: string } = {
-  PU: "标点",
-  ADD: "其他",
-  AFX: "词缀",
-  HYPH: "连字符",
-  GW: "随之而来",
-  XX: "其他",
-  NFP: "其他",
-  CC: "协调连词",
-  CD: "基数",
-  DT: "决定者",
-  EX: "存在的_there_",
-  FW: "外来词",
-  IN: "介词或从属连词",
-  JJ: "形容词",
-  JJR: "形容词,比较级",
-  JJS: "形容词,最高级",
-  LS: "列表项标记",
-  MD: "模态",
-  NN: "名词,单数或质量",
-  NNS: "名词,复数",
-  NNP: "专有名词,单数",
-  NNPS: "专有名词,复数",
-  PDT: "预定者",
-  POS: "所有格结尾",
-  PRP: "人称代词",
-  PRP$: "所有格代词",
-  RB: "副词",
-  RBR: "副词,比较",
-  RBS: "副词,最高级",
-  RP: "粒子",
-  SYM: "符号",
-  TO: "_to_",
-  UH: "欹",
-  VB: "动词,基本形式",
-  VBD: "动词,过去时",
-  VBG: "动词、动名词或现在分词",
-  VBN: "动词,过去分词",
-  VBP: "动词,非第三人称单数现在时",
-  VBZ: "动词,第三人称单数现在时",
-  WDT: "Wh-确定器",
-  WP: "Wh-代词",
-  WP$: "所有格 wh-代词",
-  WRB: "Wh-副词",
-};
-
-export const EN_TB_POS_LABELS: { [key in EnTreebankPosType]: string } = {
-  PU: "Punctuation",
-  ADD: "Other",
-  AFX: "Affix",
-  GW: "Goes with",
-  XX: "Other",
-  HYPH: "hyphen",
-  NFP: "Other",
-  CC: "Coordinating conjunction",
-  CD: "Cardinal number",
-  DT: "Determiner",
-  EX: "Existential _there_",
-  FW: "Foreign word",
-  IN: "Preposition or subordinating conjunction",
-  JJ: "Adjective",
-  JJR: "Adjective, comparative",
-  JJS: "Adjective, superlative",
-  LS: "List item marker",
-  MD: "Modal",
-  NN: "Noun, singular or mass",
-  NNS: "Noun, plural",
-  NNP: "Proper noun, singular",
-  NNPS: "Proper noun, plural",
-  PDT: "Predeterminer",
-  POS: "Possessive ending",
-  PRP: "Personal pronoun",
-  PRP$: "Possessive pronoun",
-  RB: "Adverb",
-  RBR: "Adverb, comparitive",
-  RBS: "Adverb, superlative",
-  RP: "Particle",
-  SYM: "Symbol",
-  TO: "_to_",
-  UH: "Interjection",
-  VB: "Verb, base form",
-  VBD: "Verb, past tense",
-  VBG: "Verb, gerund or present participle",
-  VBN: "Verb, past participle",
-  VBP: "Verb, non-3rd person singular present",
-  VBZ: "Verb, 3rd person singular present",
-  WDT: "Wh-determiner",
-  WP: "Wh-pronoun",
-  WP$: "Possessive wh-pronoun",
-  WRB: "Wh-adverb",
-};
-
-// FIXME: This shouldn't be here...
-export const ZH_TB_POS_LABELS_ZH: { [key in ZhTreebankPosType]: string } = {
-  AD: "副词", // adverb
-  AS: "方面标记", // aspect marker
-  BA: "把", // in ba-construction ,
-  CC: "并列连词", // coordinating conjunction
-  CD: "基数", // cardinal number
-  CS: "从属连词", // subordinating conjunction
-  DEC: "的-关系从句", // in a relative-clause
-  DEG: "的-联想", // associative
-  DER: "的-动词-的-结果", // in V-de const. and V-de-R
-  DEV: "的-动词前", // before VP
-  DT: "限定词", // determiner
-  ETC: "“等”标记", // for words , ,
-  FW: "外来词", // foreign words
-  IJ: "欹", // interjection
-  JJ: "形容词", // other noun-modifier ,
-  LB: "长的“被”", // in long bei-const ,
-  LC: "定位器", // localizer
-  M: "量词", // measure word
-  MSP: "其他词粒子", // other particle
-  NN: "普通名词", // common noun
-  NR: "专有名词", // proper noun
-  NT: "时间名词", // temporal noun
-  OD: "序数词", // ordinal number
-  ON: "象声词", // onomatopoeia ,
-  P: "介词（不包括“和”）", // preposition excl. and
-  PN: "代词", // pronoun
-  PU: "标点", // punctuation
-  SB: "短的“被”", // in short bei-const ,
-  SP: "词尾粒子", // sentence-final particle
-  VA: "表语形容词", // predicative adjective
-  VC: "系动词",
-  VE: "“有”作为主要动词", // as the main verb
-  VV: "其他动词", // other verb
-  // Others added since then
-  URL: "网址",
-};
-
-export const ZH_TB_POS_LABELS_EN: { [key in ZhTreebankPosType]: string } = {
-  AD: "Adverb", // adverb
-  AS: "Aspect Marker", // aspect marker
-  BA: "BA-construction", // in ba-construction ,
-  CC: "Coordinating conjunction", // coordinating conjunction
-  CD: "Cardinal number", // cardinal number
-  CS: "Subordinating conjunction", // subordinating conjunction
-  DEC: "DE-relative clause", // in a relative-clause
-  DEG: "DE-associative", // associative
-  DER: "DE-V-de-R", // in V-de const. and V-de-R
-  DEV: "DE-before verb", // before VP
-  DT: "Determiner", // determiner
-  ETC: '"etc" marker', // for words , ,
-  FW: "Foreign word", // foreign words
-  IJ: "Interjection", // interjection
-  JJ: "Adjective", // other noun-modifier ,
-  LB: 'Long "BEI"', // in long bei-const ,
-  LC: "Localizer", // localizer
-  M: "Measure word", // measure word
-  MSP: "Other particle", // other particle
-  NN: "Common noun", // common noun
-  NR: "Proper noun", // proper noun
-  NT: "Temporal noun", // temporal noun
-  OD: "Ordinal number", // ordinal number
-  ON: "Onomatopoeia", // onomatopoeia ,
-  P: 'Preposition (excl "and")', // preposition excl. and
-  PN: "Pronoun", // pronoun
-  PU: "Punctuation", // punctuation
-  SB: 'Short "BEI"', // in short bei-const ,
-  SP: "Phrase-final particle", // sentence-final particle
-  VA: "Predicative adjective", // predicative adjective
-  VC: "Copula verb",
-  VE: "YOU as main verb", // as the main verb
-  VV: "Other verb", // other verb
-  // Others added since then
-  URL: "URL",
-};
-
 export const GLOSS_NUMBER_NOUNS = false;
-
 export type GlossPosition = "row" | "column-reverse" | "column" | "row-reverse";
 
 export type PopupPosition = {
@@ -1678,6 +1480,15 @@ export type GraderConfig = {
   wordLists: SelectableListElementType[];
   toLang: SystemLanguage;
   fromLang: InputLanguage;
+};
+
+export type RawVocabReview = {
+  id: string;
+  graph: string;
+  sound: string[];
+  meaning: string;
+  clicks: number;
+  lookedUp: boolean;
 };
 
 export type VocabReview = {

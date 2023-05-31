@@ -12,8 +12,7 @@ export default function POS({ token }: Props): ReactElement {
   const translate = useTranslate();
   return (
     <Box sx={{ paddingLeft: "0.3em" }}>
-      {/* <hr /> */}
-      <div>{token.pos ? toPosLabels(token.pos, toLang) : translate("general.pos_unknown")}</div>
+      <div>{token.pos ? translate(toPosLabels(token.pos, toLang)) : translate("general.pos_unknown")}</div>
     </Box>
   );
 }

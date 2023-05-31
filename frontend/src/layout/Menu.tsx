@@ -5,12 +5,11 @@ import {
   DashboardMenuItem,
   MenuItemLink,
   MenuProps,
+  WithPermissions,
   useSidebarState,
   useTranslate,
-  WithPermissions,
 } from "react-admin";
 import { makeStyles } from "tss-react/mui";
-import { useAppSelector } from "../app/hooks";
 import contents from "../contents";
 import textcrobes from "../contents/textcrobes";
 import dictionaries from "../dictionaries";
@@ -18,16 +17,16 @@ import statsExports from "../exports";
 import goals from "../goals";
 import help from "../help";
 import imports from "../imports";
+import languageclasses from "../languageclasses";
 import listrobes from "../listrobes";
 import notrobes from "../notrobes";
 import repetrobes from "../repetrobes";
 import stats from "../stats";
 import studentregistrations from "../studentregistrations";
 import studentstats from "../studentstats";
-import teacherregistrations from "../teacherregistrations";
-import languageclasses from "../languageclasses";
 import surveys from "../surveys";
 import system from "../system";
+import teacherregistrations from "../teacherregistrations";
 import userlists from "../userlists";
 import SubMenu from "./SubMenu";
 
@@ -59,12 +58,10 @@ function Menu({ dense = false }: MenuProps): ReactElement {
     menuTeaching: true,
   });
   const translate = useTranslate();
-  // useAppSelector((state) => state.theme); // force rerender on theme change
   const { classes } = useStyles();
   const handleToggle = (menu: MenuName) => {
     setState((state) => ({ ...state, [menu]: !state[menu] }));
   };
-  // const open = useSelector((state: ReduxState) => state.admin.ui.sidebarOpen);
   const [open] = useSidebarState();
   return (
     <div
@@ -82,7 +79,7 @@ function Menu({ dense = false }: MenuProps): ReactElement {
               <SubMenu
                 handleToggle={() => handleToggle("menuInput")}
                 isOpen={state.menuInput}
-                name="pos.menu.input"
+                name="screens.main.menu.input"
                 icon={<imports.icon />}
                 dense={dense}
               >
@@ -122,7 +119,7 @@ function Menu({ dense = false }: MenuProps): ReactElement {
               <SubMenu
                 handleToggle={() => handleToggle("menuOrganisation")}
                 isOpen={state.menuOrganisation}
-                name="pos.menu.organisation"
+                name="screens.main.menu.organisation"
                 icon={<goals.icon />}
                 dense={dense}
               >
@@ -170,7 +167,7 @@ function Menu({ dense = false }: MenuProps): ReactElement {
               <SubMenu
                 handleToggle={() => handleToggle("menuLearning")}
                 isOpen={state.menuLearning}
-                name="pos.menu.learning"
+                name="screens.main.menu.learning"
                 icon={<repetrobes.icon />}
                 dense={dense}
               >
@@ -219,7 +216,7 @@ function Menu({ dense = false }: MenuProps): ReactElement {
                 <SubMenu
                   handleToggle={() => handleToggle("menuTeaching")}
                   isOpen={state.menuTeaching}
-                  name="pos.menu.teaching"
+                  name="screens.main.menu.teaching"
                   icon={<teacherregistrations.icon />}
                   dense={dense}
                 >

@@ -136,7 +136,7 @@ function Init({ proxy }: Props): ReactElement {
         paddingTop: "3em",
       }}
     >
-      <Title title={translate("pos.system")} />
+      <Title title={translate("screens.main.system")} />
       <CardContent>
         <Typography sx={{ paddingBottom: "1em" }} variant="h4">
           {translate("screens.extension.initialisation.title")}

@@ -4,6 +4,7 @@ import { useAppSelector } from "../../../app/hooks";
 import { orderTranslations, toPosLabels } from "../../../lib/libMethods";
 import { DefinitionType, ProviderTranslationType } from "../../../lib/types";
 import { ReaderConfigContext } from "../../ReaderConfigProvider";
+import { useTranslate } from "react-admin";
 
 type Props = {
   definition: DefinitionType;
@@ -15,7 +16,7 @@ export default function Definitions({ definition, classes }: Props): ReactElemen
   const dictionaries = useAppSelector((state) => state.dictionary);
   const { readerConfig } = useContext(ReaderConfigContext);
   const [orderedTranslations, setOrderedTranslations] = useState<ProviderTranslationType[]>([]);
-
+  const translate = useTranslate();
   useEffect(() => {
     setOrderedTranslations(orderTranslations(definition.providerTranslations, readerConfig.translationProviderOrder));
   }, [readerConfig.translationProviderOrder, definition]);
@@ -32,7 +33,7 @@ export default function Definitions({ definition, classes }: Props): ReactElemen
                 return (
                   <Fragment key={provider.provider + translation.posTag + translation.sounds}>
                     <div className={classes.sourcePos}>
-                      {toPosLabels(translation.posTag, toLang)}
+                      {translate(toPosLabels(translation.posTag, toLang))}
                       {translation.sounds ? ` ${translation.sounds}` : ""}: <span>{translation.values.join(", ")}</span>
                     </div>
                   </Fragment>

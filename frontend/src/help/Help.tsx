@@ -14,7 +14,7 @@ export default function Help(): ReactElement {
   const helpUrl = `//${DOCS_DOMAIN}/page/software/learn/home/`;
   return (
     <Card>
-      <Title title={translate("pos.help")} />
+      <Title title={translate("screens.main.help")} />
       <CardHeader title={translate("screens.help.title")} />
       <CardContent>
         <Typography style={{ padding: "1em" }}>

@@ -14,6 +14,7 @@ import DefinitionTranslations from "./DefinitionTranslations";
 import EditableDefinitionTranslations from "./EditableDefinitionTranslations";
 import MeaningText from "./MeaningText";
 import SynonymsText from "./SynonymsText";
+import { useTranslate } from "react-admin";
 
 const useStyles = makeStyles()((theme) => {
   return {
@@ -50,6 +51,7 @@ export default function Meaning({
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const [anchorElClick, setAnchorElClick] = useState<HTMLElement | null>(null);
   const { fromLang, toLang } = useAppSelector((state) => state.userData.user);
+  const translate = useTranslate();
   function handleClickOpen(event: React.MouseEvent<HTMLElement, MouseEvent>) {
     setAnchorEl(null);
     if (editable) {
@@ -86,7 +88,7 @@ export default function Meaning({
             hasValidDefinitions = true;
             posTrans.push(
               <div key={"mean" + posTranslation.posTag}>
-                {toPosLabels(posTranslation.posTag, toLang)}: {finalList.join(", ")}
+                {translate(toPosLabels(posTranslation.posTag, toLang))}: {finalList.join(", ")}
               </div>,
             );
           }

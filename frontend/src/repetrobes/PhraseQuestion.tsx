@@ -14,6 +14,7 @@ import {
   PosSentences,
 } from "../lib/types";
 import QuestionDefinitionGraph from "./Common";
+import { useTranslate } from "react-admin";
 
 interface Props {
   recentSentences: PosSentences | null;
@@ -25,6 +26,7 @@ export default function PhraseQuestion({ recentSentences, showAnswer, characters
   const [current, setCurrent] = useState(0);
   const [sentences, setSentences] = useState<[AnyTreebankPosType, PosSentence][]>([]);
   const fromLang = useAppSelector((state) => state.userData.user.fromLang);
+  const translate = useTranslate();
   if (recentSentences) {
     const sents: [AnyTreebankPosType, PosSentence][] = [];
     useEffect(() => {
@@ -44,7 +46,7 @@ export default function PhraseQuestion({ recentSentences, showAnswer, characters
         <Grid container justifyContent="center" alignItems="center">
           <Grid item>
             <InfoBox>
-              ({toPosLabels(sentences[current][0], fromLang)}){" "}
+              ({translate(toPosLabels(sentences[current][0], fromLang))}){" "}
               <RecentSentenceExample
                 readerConfig={DEFAULT_RECENTS_READER_CONFIG_STATE}
                 isListItem={true}

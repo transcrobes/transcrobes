@@ -20,36 +20,99 @@ const customEnglishMessages: TranslationMessages = {
     button: "Download Edge",
   },
   pos: {
-    search: "Search",
-    configuration: "Configuration",
-    system: "Global Settings",
-    help: "Help!",
-    language: "Language",
-    theme: {
-      name: "Theme",
-      light: "Light",
-      dark: "Dark",
+    en_treebank: {
+      PU: "Punctuation",
+      ADD: "Other",
+      AFX: "Affix",
+      GW: "Goes with",
+      XX: "Other",
+      HYPH: "hyphen",
+      NFP: "Other",
+      CC: "Coordinating conjunction",
+      CD: "Cardinal number",
+      DT: "Determiner",
+      EX: "Existential _there_",
+      FW: "Foreign word",
+      IN: "Preposition or subordinating conjunction",
+      JJ: "Adjective",
+      JJR: "Adjective, comparative",
+      JJS: "Adjective, superlative",
+      LS: "List item marker",
+      MD: "Modal",
+      NN: "Noun, singular or mass",
+      NNS: "Noun, plural",
+      NNP: "Proper noun, singular",
+      NNPS: "Proper noun, plural",
+      PDT: "Predeterminer",
+      POS: "Possessive ending",
+      PRP: "Personal pronoun",
+      PRP$: "Possessive pronoun",
+      RB: "Adverb",
+      RBR: "Adverb, comparitive",
+      RBS: "Adverb, superlative",
+      RP: "Particle",
+      SYM: "Symbol",
+      TO: "_to_",
+      UH: "Interjection",
+      VB: "Verb, base form",
+      VBD: "Verb, past tense",
+      VBG: "Verb, gerund or present participle",
+      VBN: "Verb, past participle",
+      VBP: "Verb, non-3rd person singular present",
+      VBZ: "Verb, 3rd person singular present",
+      WDT: "Wh-determiner",
+      WP: "Wh-pronoun",
+      WP$: "Possessive wh-pronoun",
+      WRB: "Wh-adverb",
     },
-    dashboard: {
-      welcome: {
-        title: "Welcome to Transcrobes!",
-        subtitle: "Learn a language doing stuff you love.",
-        message_a: "Explore the app and get help for each page using the dedicated",
-        message_b: "button available on every screen.",
-      },
-      goals: {
-        title: "Goals Progress",
-      },
-      word_chars_progress: {
-        title: "Known words and characters (totals)",
-      },
+    simple: {
+      NOUN: "Noun",
+      VERB: "Verb",
+      ADJ: "Adjective",
+      ADV: "Adverb",
+      PREP: "Preposition",
+      PRON: "Pronoun",
+      CONJ: "Conjunction",
+      DET: "Determiner",
+      MODAL: "Modal",
+      OTHER: "Other",
     },
-    menu: {
-      input: "Input",
-      organisation: "Organisation",
-      learning: "Learning",
-      surveys: "Surveys",
-      teaching: "Teaching",
+    zh_treebank: {
+      AD: "Adverb", // adverb
+      AS: "Aspect Marker", // aspect marker
+      BA: "BA-construction", // in ba-construction ,
+      CC: "Coordinating conjunction", // coordinating conjunction
+      CD: "Cardinal number", // cardinal number
+      CS: "Subordinating conjunction", // subordinating conjunction
+      DEC: "DE-relative clause", // in a relative-clause
+      DEG: "DE-associative", // associative
+      DER: "DE-V-de-R", // in V-de const. and V-de-R
+      DEV: "DE-before verb", // before VP
+      DT: "Determiner", // determiner
+      ETC: '"etc" marker', // for words , ,
+      FW: "Foreign word", // foreign words
+      IJ: "Interjection", // interjection
+      JJ: "Adjective", // other noun-modifier ,
+      LB: 'Long "BEI"', // in long bei-const ,
+      LC: "Localizer", // localizer
+      M: "Measure word", // measure word
+      MSP: "Other particle", // other particle
+      NN: "Common noun", // common noun
+      NR: "Proper noun", // proper noun
+      NT: "Temporal noun", // temporal noun
+      OD: "Ordinal number", // ordinal number
+      ON: "Onomatopoeia", // onomatopoeia ,
+      P: 'Preposition (excl "and")', // preposition excl. and
+      PN: "Pronoun", // pronoun
+      PU: "Punctuation", // punctuation
+      SB: 'Short "BEI"', // in short bei-const ,
+      SP: "Phrase-final particle", // sentence-final particle
+      VA: "Predicative adjective", // predicative adjective
+      VC: "Copula verb",
+      VE: "YOU as main verb", // as the main verb
+      VV: "Other verb", // other verb
+      // Others added since then
+      URL: "URL",
     },
   },
   user: {
@@ -222,6 +285,8 @@ const customEnglishMessages: TranslationMessages = {
       dont_gloss_now: "Don't gloss right now",
       saving_cards: "Saving Cards...",
       translating: "Translating...",
+      no_hsk: "No HSK found,",
+      hsk_level: "HSK: %{hsk},",
     },
     practicerInput: {
       unknown_desc: "I don't know this word yet",
@@ -710,6 +775,37 @@ const customEnglishMessages: TranslationMessages = {
       },
     },
     main: {
+      search: "Search",
+      configuration: "Configuration",
+      system: "Global Settings",
+      help: "Help!",
+      language: "Language",
+      theme: {
+        name: "Theme",
+        light: "Light",
+        dark: "Dark",
+      },
+      dashboard: {
+        welcome: {
+          title: "Welcome to Transcrobes!",
+          subtitle: "Learn a language doing stuff you love.",
+          message_a: "Explore the app and get help for each page using the dedicated",
+          message_b: "button available on every screen.",
+        },
+        goals: {
+          title: "Goals Progress",
+        },
+        word_chars_progress: {
+          title: "Known words and characters (totals)",
+        },
+      },
+      menu: {
+        input: "Input",
+        organisation: "Organisation",
+        learning: "Learning",
+        surveys: "Surveys",
+        teaching: "Teaching",
+      },
       finishing: "Finishing initial index loading...",
     },
     notrobes: {

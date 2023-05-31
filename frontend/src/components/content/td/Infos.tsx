@@ -5,6 +5,7 @@ import { TokenDetailsState } from "../../../features/ui/uiSlice";
 import { DefinitionType } from "../../../lib/types";
 import { Frequency } from "../../Frequency";
 import POS from "./POS";
+import { useTranslate } from "react-admin";
 
 type Props = {
   definition: DefinitionType;
@@ -13,14 +14,15 @@ type Props = {
 
 export default function Infos({ definition, tokenDetails }: Props): ReactElement {
   const fromLang = useAppSelector((state) => state.userData.user.fromLang);
+  const translate = useTranslate();
   return (
     <>
       <Box sx={{ display: "flex", justifyContent: "left" }}>
         {fromLang === "zh-Hans" && (
           <div>
             {definition.hsk?.levels && definition.hsk.levels.length > 0
-              ? `HSK: ${definition.hsk.levels.join(", ")},`
-              : "No HSK found,"}
+              ? translate("widgets.popup.hsk_level", { hsk: definition.hsk.levels.join(", ") })
+              : translate("widgets.popup.no_hsk")}
           </div>
         )}
         <POS token={tokenDetails.token} />

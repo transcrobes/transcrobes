@@ -197,7 +197,7 @@ function System({ proxy }: Props): ReactElement {
       </TopToolbar>
       <CardHeader title={translate("screens.system.quickfix_actions")} />
       <Card>
-        <Title title={translate("pos.system")} />
+        <Title title={translate("screens.main.system")} />
         <CardContent>
           <Loading position="relative" show={loading} message={translate("screens.system.deleting_database")} />
           <div>
@@ -222,7 +222,7 @@ function System({ proxy }: Props): ReactElement {
         <>
           <CardHeader title={translate("screens.system.user_preferences")} />
           <Card>
-            <Title title={translate("pos.configuration")} />
+            <Title title={translate("screens.main.configuration")} />
             <CardContent>
               <FormControlLabel
                 control={

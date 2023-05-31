@@ -5,6 +5,7 @@ import { toPosLabels } from "../lib/libMethods";
 import { PosTranslationsType } from "../lib/types";
 import { InfoBox } from "./Common";
 import DW from "./DiscoverableWord";
+import { useTranslate } from "react-admin";
 
 interface Props {
   item: PosTranslationsType;
@@ -14,7 +15,8 @@ interface Props {
 export default function PosItem({ item, discoverableWords }: Props): ReactElement {
   // FIXME: remember why I'm not using useAppSelector here
   const user = store.getState().userData.user;
-  const posLabel = toPosLabels(item.posTag, user.toLang);
+  const translate = useTranslate();
+  const posLabel = translate(toPosLabels(item.posTag, user.toLang));
   return (
     <InfoBox>
       {item.values.length > 0 ? (

@@ -1,4 +1,5 @@
 import dayjs, { ManipulateType } from "dayjs";
+import split from "pinyin-split";
 import polyglotI18nProvider from "ra-i18n-polyglot";
 import unidecode from "unidecode";
 import { DefinitionDocument } from "../database/Schema";
@@ -10,32 +11,27 @@ import {
   AnyPosType,
   AnyTreebankPosType,
   DefinitionType,
-  EN_TB_POS_LABELS_ZH,
   EN_TB_POS_TO_SIMPLE_POS,
   EN_ZHHANS_DICT_PROVIDERS,
   IDEAL_GLOSS_STRING_LENGTH,
   ImportAnalysis,
   InputLanguage,
-  isEnTreebankPOS,
-  isSimplePOS,
-  isZhTreebankPOS,
   LOCALES,
   PosTranslationsType,
   ProviderTranslationType,
   PythonCounter,
   ReaderState,
-  SerialisableStringSet,
-  SIMPLE_POS_CHINESE_NAMES,
-  SIMPLE_POS_ENGLISH_NAMES,
   STREAMER_DETAILS,
+  SerialisableStringSet,
   SupportedStreamer,
   SystemLanguage,
   TokenType,
   ZHHANS_EN_DICT_PROVIDERS,
-  ZH_TB_POS_LABELS_EN,
   ZH_TB_POS_TO_SIMPLE_POS,
+  isEnTreebankPOS,
+  isSimplePOS,
+  isZhTreebankPOS,
 } from "./types";
-import split from "pinyin-split";
 
 export function getMessages(locale: string) {
   switch (locale) {
@@ -70,9 +66,9 @@ export function toSimplePos(pos: AnyPosType, fromLang: InputLanguage) {
 
 export function toPosLabels(pos: AnyPosType, toLang: SystemLanguage): string {
   if (toLang === "zh-Hans") {
-    return isEnTreebankPOS(pos) ? EN_TB_POS_LABELS_ZH[pos] : SIMPLE_POS_CHINESE_NAMES[pos];
+    return (isEnTreebankPOS(pos) ? "pos.en_treebank." : "pos.simple.") + pos;
   } else if (toLang === "en") {
-    return isZhTreebankPOS(pos) ? ZH_TB_POS_LABELS_EN[pos] : SIMPLE_POS_ENGLISH_NAMES[pos];
+    return (isZhTreebankPOS(pos) ? "pos.zh_treebank." : "pos.simple.") + pos;
   }
   throw new Error(`Unknown to language "${toLang}", can't find POS label`);
 }
@@ -378,9 +374,9 @@ export function complexPosToSimplePosLabels(
   toLang: SystemLanguage,
 ): string {
   if (toLang === "zh-Hans" && fromLang === "en") {
-    return SIMPLE_POS_CHINESE_NAMES[EN_TB_POS_TO_SIMPLE_POS[pos]];
+    return "pos.simple." + [EN_TB_POS_TO_SIMPLE_POS[pos]];
   } else if (toLang === "en" && fromLang === "zh-Hans") {
-    return SIMPLE_POS_ENGLISH_NAMES[ZH_TB_POS_TO_SIMPLE_POS[pos]];
+    return "pos.simple." + [ZH_TB_POS_TO_SIMPLE_POS[pos]];
   }
   throw new Error(`Unknown to language "${toLang}", can't find simple POS label`);
 }
@@ -409,19 +405,6 @@ export function sortByWcpm(a: DefinitionDocument, b: DefinitionDocument): number
     return 1;
   }
   return bb - aa;
-}
-
-export function shortMeaning(providerTranslations: ProviderTranslationType[], toLang: SystemLanguage): string {
-  for (const provTranslation of providerTranslations) {
-    if (provTranslation.posTranslations.length > 0) {
-      let meaning = "";
-      for (const posTranslation of provTranslation.posTranslations) {
-        meaning += `${toPosLabels(posTranslation.posTag, toLang)}: ${posTranslation.values.join(", ")}; `;
-      }
-      return meaning;
-    }
-  }
-  return "";
 }
 
 export function getDefaultLanguageDictionaries(fromLang: InputLanguage) {

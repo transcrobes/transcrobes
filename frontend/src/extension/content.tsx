@@ -40,7 +40,6 @@ import {
   ComponentFunction,
   DEBOUNCE_SELECTION_MS,
   DEFAULT_EXTENSION_READER_CONFIG_STATE,
-  DOCS_DOMAIN,
   EXTENSION_READER_ID,
   ExtensionReaderState,
   KeyedModels,

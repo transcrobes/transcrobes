@@ -28,7 +28,7 @@ export default function RecentSentencesElement({ recentPosSentences, onDelete, s
           (Object.entries(recentPosSentences) as [AnyTreebankPosType, PosSentence[]][]).map(([pos, entry]) => {
             return (
               <InfoBox key={pos}>
-                <div>{toPosLabels(pos, toLang)}:</div>
+                <div>{translate(toPosLabels(pos, toLang))}:</div>
                 <ul>
                   {entry &&
                     entry.map((s, index) => {

@@ -17,36 +17,99 @@ const customChineseMessages: TranslationMessages = {
     button: "下载微软 Edge",
   },
   pos: {
-    search: "搜索",
-    configuration: "配置",
-    system: "全局设置",
-    help: "帮助!",
-    language: "语言",
-    theme: {
-      name: "主题",
-      light: "亮色",
-      dark: "暗色",
+    en_treebank: {
+      PU: "标点",
+      ADD: "其他",
+      AFX: "词缀",
+      HYPH: "连字符",
+      GW: "随之而来",
+      XX: "其他",
+      NFP: "其他",
+      CC: "协调连词",
+      CD: "基数",
+      DT: "决定者",
+      EX: "存在的_there_",
+      FW: "外来词",
+      IN: "介词或从属连词",
+      JJ: "形容词",
+      JJR: "形容词,比较级",
+      JJS: "形容词,最高级",
+      LS: "列表项标记",
+      MD: "模态",
+      NN: "名词,单数或质量",
+      NNS: "名词,复数",
+      NNP: "专有名词,单数",
+      NNPS: "专有名词,复数",
+      PDT: "预定者",
+      POS: "所有格结尾",
+      PRP: "人称代词",
+      PRP$: "所有格代词",
+      RB: "副词",
+      RBR: "副词,比较",
+      RBS: "副词,最高级",
+      RP: "粒子",
+      SYM: "符号",
+      TO: "_to_",
+      UH: "欹",
+      VB: "动词,基本形式",
+      VBD: "动词,过去时",
+      VBG: "动词、动名词或现在分词",
+      VBN: "动词,过去分词",
+      VBP: "动词,非第三人称单数现在时",
+      VBZ: "动词,第三人称单数现在时",
+      WDT: "Wh-确定器",
+      WP: "Wh-代词",
+      WP$: "所有格 wh-代词",
+      WRB: "Wh-副词",
     },
-    dashboard: {
-      welcome: {
-        title: "欢迎来到Transcrobes!",
-        subtitle: "通过做你喜欢的事情学习语言。",
-        message_a: "探索应用程序并使用专用的",
-        message_b: "按钮获取每个页面的帮助。",
-      },
-      goals: {
-        title: "目标进度",
-      },
-      word_chars_progress: {
-        title: "已知单词和字符（总数）",
-      },
+    simple: {
+      NOUN: "名词",
+      VERB: "动词",
+      ADJ: "形容词",
+      ADV: "副词",
+      PREP: "介词",
+      PRON: "代词",
+      CONJ: "连词",
+      DET: "限定词",
+      MODAL: "情态词",
+      OTHER: "其他",
     },
-    menu: {
-      input: "输入",
-      organisation: "组织",
-      learning: "学习",
-      surveys: "调查",
-      teaching: "教学",
+    zh_treebank: {
+      AD: "副词", // adverb
+      AS: "方面标记", // aspect marker
+      BA: "把", // in ba-construction ,
+      CC: "并列连词", // coordinating conjunction
+      CD: "基数", // cardinal number
+      CS: "从属连词", // subordinating conjunction
+      DEC: "的-关系从句", // in a relative-clause
+      DEG: "的-联想", // associative
+      DER: "的-动词-的-结果", // in V-de const. and V-de-R
+      DEV: "的-动词前", // before VP
+      DT: "限定词", // determiner
+      ETC: "“等”标记", // for words , ,
+      FW: "外来词", // foreign words
+      IJ: "欹", // interjection
+      JJ: "形容词", // other noun-modifier ,
+      LB: "长的“被”", // in long bei-const ,
+      LC: "定位器", // localizer
+      M: "量词", // measure word
+      MSP: "其他词粒子", // other particle
+      NN: "普通名词", // common noun
+      NR: "专有名词", // proper noun
+      NT: "时间名词", // temporal noun
+      OD: "序数词", // ordinal number
+      ON: "象声词", // onomatopoeia ,
+      P: "介词（不包括“和”）", // preposition excl. and
+      PN: "代词", // pronoun
+      PU: "标点", // punctuation
+      SB: "短的“被”", // in short bei-const ,
+      SP: "词尾粒子", // sentence-final particle
+      VA: "表语形容词", // predicative adjective
+      VC: "系动词",
+      VE: "“有”作为主要动词", // as the main verb
+      VV: "其他动词", // other verb
+      // Others added since then
+      URL: "网址",
     },
   },
   user: {
@@ -162,8 +225,10 @@ const customChineseMessages: TranslationMessages = {
       synchronising: "新词同步中，请稍候",
       gloss_now: "马上光泽",
       dont_gloss_now: "现在不要亮",
-      translating: "翻译中",
       saving_cards: "保存卡片中",
+      translating: "翻译中",
+      no_hsk: "没有找到HSK，",
+      hsk_level: "HSK: %{hsk}，",
     },
     card_type: {
       graph: "图表",
@@ -676,6 +741,38 @@ const customChineseMessages: TranslationMessages = {
       },
     },
     main: {
+      search: "搜索",
+      configuration: "配置",
+      system: "全局设置",
+      help: "帮助!",
+      language: "语言",
+      theme: {
+        name: "主题",
+        light: "亮色",
+        dark: "暗色",
+      },
+      dashboard: {
+        welcome: {
+          title: "欢迎来到Transcrobes!",
+          subtitle: "通过做你喜欢的事情学习语言。",
+          message_a: "探索应用程序并使用专用的",
+          message_b: "按钮获取每个页面的帮助。",
+        },
+        goals: {
+          title: "目标进度",
+        },
+        word_chars_progress: {
+          title: "已知单词和字符（总数）",
+        },
+      },
+      menu: {
+        input: "输入",
+        organisation: "组织",
+        learning: "学习",
+        surveys: "调查",
+        teaching: "教学",
+      },
+
       finishing: "正在完成初始索引加载...",
     },
     notrobes: {

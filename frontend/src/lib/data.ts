@@ -9,42 +9,34 @@ import { v4 as uuidv4 } from "uuid";
 import { getDatabaseName, replStates } from "../database/Database";
 import {
   ActivityQueueDocument,
-  CardDocument,
   CARD_TYPES,
+  CardDocument,
   CharacterDocument,
   DefinitionDocument,
-  getCardId,
-  getCardTypeAsInt,
-  getWordId,
   RecentSentencesDocument,
   TranscrobesCollectionsKeys,
   TranscrobesDatabase,
   TranscrobesDocumentTypes,
+  getCardId,
+  getCardTypeAsInt,
+  getWordId,
 } from "../database/Schema";
 import { DBParameters } from "../ra-data-rxdb";
+import { IDBFileStorage, getFileStorage } from "./IDBFileStorage";
 import {
+  UUID,
   cleanSentence,
   configIsUsable,
   getKnownChars,
   getSuccessWords,
   pythonCounter,
   recentSentencesFromLZ,
-  UUID,
 } from "./funclib";
-import { getFileStorage, IDBFileStorage } from "./IDBFileStorage";
-import {
-  cleanAnalysis,
-  cleanedSound,
-  fetchPlus,
-  fetchPlusResponse,
-  shortMeaning,
-  simpOnly,
-  sortByWcpm,
-} from "./libMethods";
+import { cleanAnalysis, cleanedSound, fetchPlus, fetchPlusResponse, simpOnly, sortByWcpm } from "./libMethods";
 import { practice } from "./review";
 import {
-  ActionEvent,
   ACTIVITY_TIMEOUT,
+  ActionEvent,
   CalculatedContentStats,
   CalculatedContentValueStats,
   CardType,
@@ -65,10 +57,10 @@ import {
   InputLanguage,
   ListFirstSuccessStats,
   MIN_ACTIVITY_LENGTH,
+  PROCESSING,
+  PROCESS_TYPE,
   Participants,
   PracticeDetailsType,
-  PROCESS_TYPE,
-  PROCESSING,
   PythonCounter,
   RecentSentencesStoredType,
   RecentSentencesType,
@@ -79,14 +71,12 @@ import {
   SessionType,
   ShortChar,
   ShortWord,
-  StudentDayModelStatsType,
   StudentRegistrationType,
   TeacherRegistrationType,
   UserActivity,
   UserActivityType,
   UserDefinitionType,
   UserListWordType,
-  VocabReview,
   WordDetailsRxType,
   WordDetailsType,
   WordListNamesType,
@@ -1357,7 +1347,7 @@ async function orderVocabReviews(
 export async function getVocabReviews(
   db: TranscrobesDatabase,
   graderConfig: GraderConfig,
-): Promise<VocabReview[] | null> {
+): Promise<DefinitionType[] | null> {
   const selectedLists = graderConfig.wordLists.filter((x) => x.selected).map((x) => x.value);
   if (selectedLists.length === 0) {
     console.debug("No wordLists, not trying to find reviews");
@@ -1366,19 +1356,7 @@ export async function getVocabReviews(
   const wordListObjects = (await db.wordlists.findByIds(selectedLists).exec()).values();
   const potentialWordIds = [...new Set<string>([...wordListObjects].flatMap((x) => x.wordIds))];
   const potentialWords = await orderVocabReviews(db, graderConfig.itemOrdering, potentialWordIds);
-  return potentialWords
-    .slice(0, graderConfig.itemsPerPage)
-    .filter((x) => !!x)
-    .map((x) => {
-      return {
-        id: x.id,
-        graph: x.graph,
-        sound: cleanedSound(x, graderConfig.fromLang),
-        meaning: x.providerTranslations ? shortMeaning(x.providerTranslations, graderConfig.toLang) : "",
-        clicks: 0,
-        lookedUp: false,
-      };
-    });
+  return potentialWords.slice(0, graderConfig.itemsPerPage).filter((x) => !!x);
 }
 
 function getEmptyDailyReviewables(): DailyReviewables {
@@ -1752,8 +1730,8 @@ export async function getLanguageClassParticipants(
 }
 
 export async function forceDefinitionsInitialSync(): Promise<void> {
-  console.log("here I'm doing the initial sync");
+  console.log("Starting initial sync of definitions");
   const rs = replStates.get("definitions");
   await rs?.awaitInitialReplication();
-  console.log("here I'm done the initial sync");
+  console.log("Done with initial sync of definitions");
 }

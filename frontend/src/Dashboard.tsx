@@ -41,21 +41,23 @@ export default function Dashboard({ config, inited }: Props): ReactElement {
         <HelpButton url={helpUrl} />
       </TopToolbar>
       <CardHeader
-        title={`${translate("pos.dashboard.welcome.title")} ${translate("pos.dashboard.welcome.subtitle")}`}
+        title={`${translate("screens.main.dashboard.welcome.title")} ${translate(
+          "screens.main.dashboard.welcome.subtitle",
+        )}`}
       />
       <Box sx={{ marginLeft: "1em" }}>
         <Typography paragraph={true}>
-          {translate("pos.dashboard.welcome.message_a")} <HelpButton url={helpUrl} />{" "}
-          {translate("pos.dashboard.welcome.message_b")}
+          {translate("screens.main.dashboard.welcome.message_a")} <HelpButton url={helpUrl} />{" "}
+          {translate("screens.main.dashboard.welcome.message_b")}
         </Typography>
       </Box>
 
       <Card sx={{ marginTop: "1em" }}>
-        <CardHeader title={translate("pos.dashboard.goals.title")} />
+        <CardHeader title={translate("screens.main.dashboard.goals.title")} />
         <GoalsWidget config={config} inited={inited} />
       </Card>
       <Card sx={{ marginTop: "1em" }}>
-        <CardHeader title={translate("pos.dashboard.word_chars_progress.title")} />
+        <CardHeader title={translate("screens.main.dashboard.word_chars_progress.title")} />
         <ListProgress yIsNumber={true} nbPeriods={6} periodType="month" />
       </Card>
     </>

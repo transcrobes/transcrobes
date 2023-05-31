@@ -19,6 +19,7 @@ import {
   TokenType,
 } from "../../../lib/types";
 import SoundBox from "../../SoundBox";
+import { Translate, useTranslate } from "react-admin";
 
 export async function getPopoverTextNode(
   token: TokenType,
@@ -27,6 +28,7 @@ export async function getPopoverTextNode(
   fromLang: InputLanguage,
   systemLang: SystemLanguage,
   readerConfig: ReaderState,
+  translate: Translate,
 ) {
   const gloss = token.bg ? token.bg.split(",")[0].split(";")[0] : "";
   const l1 = await getL1(token, definitions, fromLang, systemLang, readerConfig, gloss);
@@ -37,7 +39,7 @@ export async function getPopoverTextNode(
   return (
     <Box component="span">
       <span>
-        {complexPosToSimplePosLabels(token.pos!, fromLang, systemLang)}: {l1} {l2 !== l1 ? `: ${l2}` : ""}
+        {translate(complexPosToSimplePosLabels(token.pos!, fromLang, systemLang))}: {l1} {l2 !== l1 ? `: ${l2}` : ""}
       </span>
       :{" "}
       {sound?.map((s, index) => (
@@ -63,7 +65,7 @@ export default function Mouseover({ readerConfig }: Props): ReactElement {
     visibility: "hidden",
   } as PopupPosition;
   const [styles, setStyles] = useState<PopupPosition>(invisible);
-
+  const translate = useTranslate();
   const knownWords = useAppSelector((state) => state.knownCards);
   const definitions = useAppSelector((state) => state.definitions);
   const mouseover = useAppSelector((state) => state.ui.mouseover);
@@ -86,34 +88,36 @@ export default function Mouseover({ readerConfig }: Props): ReactElement {
   });
   useEffect(() => {
     if (mouseover) {
-      getPopoverTextNode(mouseover.token, knownWords, definitions, fromLang, toLang, readerConfig).then((node) => {
-        setTextNode(node);
-        setTimeoutId(
-          window.setTimeout(() => {
-            platformHelper.sendMessage({
-              source: "Mouseover",
-              type: "submitUserEvents",
-              value: {
-                type: "bc_word_lookup",
-                data: {
-                  target_word: mouseover.token.l,
-                  target_sentence: originalSentenceFromTokens(mouseover.sentence.t),
-                },
-                userStatsMode: readerConfig.glossing,
+      getPopoverTextNode(mouseover.token, knownWords, definitions, fromLang, toLang, readerConfig, translate).then(
+        (node) => {
+          setTextNode(node);
+          setTimeoutId(
+            window.setTimeout(() => {
+              platformHelper.sendMessage({
                 source: "Mouseover",
-              },
-            });
-            setTimeoutId(0);
-          }, POPOVER_MIN_LOOKED_AT_EVENT_DURATION),
-        );
-        setTimeoutId(
-          window.setTimeout(() => {
-            if (readerConfig.sayOnMouseover) {
-              say(mouseover.token.w || mouseover.token.l, fromLang);
-            }
-          }, POPOVER_MIN_LOOKED_AT_SOUND_DURATION),
-        );
-      });
+                type: "submitUserEvents",
+                value: {
+                  type: "bc_word_lookup",
+                  data: {
+                    target_word: mouseover.token.l,
+                    target_sentence: originalSentenceFromTokens(mouseover.sentence.t),
+                  },
+                  userStatsMode: readerConfig.glossing,
+                  source: "Mouseover",
+                },
+              });
+              setTimeoutId(0);
+            }, POPOVER_MIN_LOOKED_AT_EVENT_DURATION),
+          );
+          setTimeoutId(
+            window.setTimeout(() => {
+              if (readerConfig.sayOnMouseover) {
+                say(mouseover.token.w || mouseover.token.l, fromLang);
+              }
+            }, POPOVER_MIN_LOOKED_AT_SOUND_DURATION),
+          );
+        },
+      );
     } else {
       if (timeoutId) {
         window.clearTimeout(timeoutId);

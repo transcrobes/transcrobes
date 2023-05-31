@@ -12,19 +12,23 @@ import WatchDemo from "../components/WatchDemo";
 import { CARD_TYPES, getCardId } from "../database/Schema";
 import { setCardWordsState } from "../features/card/knownCardsSlice";
 import { setLoading } from "../features/ui/uiSlice";
+import { cleanedSound, toPosLabels } from "../lib/libMethods";
 import { AbstractWorkerProxy } from "../lib/proxies";
 import { practice } from "../lib/review";
 import {
   ActionEventData,
   CardType,
   DOCS_DOMAIN,
+  DefinitionType,
   EMPTY_CARD,
   GraderConfig,
   GradesType,
   LISTROBES_YT_VIDEO,
   MIN_KNOWN_BEFORE_ADVANCED,
+  ProviderTranslationType,
   SelectableListElementType,
   SerialisableDayCardWords,
+  SystemLanguage,
   USER_STATS_MODE,
   VocabReview,
   WordOrdering,
@@ -67,11 +71,6 @@ export function Listrobes({ proxy }: Props): ReactElement {
   const isAdvanced = wordsCount > MIN_KNOWN_BEFORE_ADVANCED;
   const translate = useTranslate();
 
-  function gradesWithoutIcons(grades: GradesType[]) {
-    return grades.map((x) => {
-      return { id: x.id, content: translate(x.content) };
-    });
-  }
   const [graderConfig, setGraderConfig] = useState<GraderConfig>({
     isAdvanced,
     toLang,
@@ -81,6 +80,37 @@ export function Listrobes({ proxy }: Props): ReactElement {
     itemsPerPage: DEFAULT_ITEMS_PER_PAGE,
     wordLists: [],
   });
+  function gradesWithoutIcons(grades: GradesType[]) {
+    return grades.map((x) => {
+      return { id: x.id, content: translate(x.content) };
+    });
+  }
+  function shortMeaning(providerTranslations: ProviderTranslationType[], toLang: SystemLanguage): string {
+    for (const provTranslation of providerTranslations) {
+      if (provTranslation.posTranslations.length > 0) {
+        let meaning = "";
+        for (const posTranslation of provTranslation.posTranslations) {
+          meaning += `${translate(toPosLabels(posTranslation.posTag, toLang))}: ${posTranslation.values.join(", ")}; `;
+        }
+        return meaning;
+      }
+    }
+    return "";
+  }
+
+  function toVocabReviews(definitions: DefinitionType[]): VocabReview[] {
+    return definitions.map((x) => {
+      return {
+        id: x.id,
+        graph: x.graph,
+        sound: cleanedSound(x, graderConfig.fromLang),
+        meaning: x.providerTranslations ? shortMeaning(x.providerTranslations, graderConfig.toLang) : "",
+        clicks: 0,
+        lookedUp: false,
+      };
+    });
+  }
+
   useEffect(() => {
     const newOrder = graderConfig.isAdvanced ? GRADES : BASIC_GRADES;
     setGraderConfig({
@@ -108,17 +138,18 @@ export function Listrobes({ proxy }: Props): ReactElement {
         gradeOrder: graderConfig.isAdvanced ? GRADES : BASIC_GRADES,
       };
       setGraderConfig(gConfig);
-      const vocabbie = await proxy.sendMessagePromise<VocabReview[]>({
-        source: DATA_SOURCE,
-        type: "getVocabReviews",
-        value: {
-          ...gConfig,
-          gradeOrder: gradesWithoutIcons(gConfig.gradeOrder), // send only the IDs, this is a hack...
-          fromLang,
-        },
-      });
+      const vocabbie = toVocabReviews(
+        await proxy.sendMessagePromise<DefinitionType[]>({
+          source: DATA_SOURCE,
+          type: "getVocabReviews",
+          value: {
+            ...gConfig,
+            gradeOrder: gradesWithoutIcons(gConfig.gradeOrder), // send only the IDs, this is a hack...
+            fromLang,
+          },
+        }),
+      );
       setVocab(vocabbie);
-      console.log("i got me da vocabbie", vocabbie);
       dispatch(setLoading(undefined));
     })();
   }, []);
@@ -140,11 +171,13 @@ export function Listrobes({ proxy }: Props): ReactElement {
       !_.isEqual(graderConfigNew.wordLists, graderConfig.wordLists)
     ) {
       setVocab(
-        await proxy.sendMessagePromise<VocabReview[]>({
-          source: DATA_SOURCE,
-          type: "getVocabReviews",
-          value: { ...graderConfigNew, gradeOrder: gradesWithoutIcons(graderConfigNew.gradeOrder) },
-        }),
+        toVocabReviews(
+          await proxy.sendMessagePromise<DefinitionType[]>({
+            source: DATA_SOURCE,
+            type: "getVocabReviews",
+            value: { ...graderConfigNew, gradeOrder: gradesWithoutIcons(graderConfigNew.gradeOrder) },
+          }),
+        ),
       );
       setGraderConfig(graderConfigNew);
     } else {
@@ -208,14 +241,16 @@ export function Listrobes({ proxy }: Props): ReactElement {
     );
 
     setVocab(
-      await proxy.sendMessagePromise<VocabReview[]>({
-        source: DATA_SOURCE,
-        type: "getVocabReviews",
-        value: {
-          ...graderConfig,
-          gradeOrder: gradesWithoutIcons(graderConfig.gradeOrder),
-        },
-      }),
+      toVocabReviews(
+        await proxy.sendMessagePromise<DefinitionType[]>({
+          source: DATA_SOURCE,
+          type: "getVocabReviews",
+          value: {
+            ...graderConfig,
+            gradeOrder: gradesWithoutIcons(graderConfig.gradeOrder),
+          },
+        }),
+      ),
     );
     dispatch(setLoading(undefined));
     submitLookupEvents(consultedDefinitions, USER_STATS_MODE.L1);
