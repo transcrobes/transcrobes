@@ -1,19 +1,21 @@
-import D2Reader from "../../r2d2bc";
 import KeyboardArrowLeftIcon from "@mui/icons-material/KeyboardArrowLeft";
 import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
-import { Box, createTheme, StyledEngineProvider, ThemeProvider } from "@mui/material";
+import { Box, StyledEngineProvider, Theme, ThemeProvider, createTheme } from "@mui/material";
 import debounce from "debounce";
 import { ReactElement, useCallback, useEffect, useRef, useState } from "react";
-import { Button, ThemeType, useAuthenticated, useTheme, useThemesContext, useTranslate } from "react-admin";
+import { Button, ThemeType, useAuthenticated, useTheme, useTranslate } from "react-admin";
 import { useParams } from "react-router-dom";
 import { AdminStore, AppDispatch, store } from "../../app/createStore";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
+import Loading from "../../components/Loading";
 import Mouseover from "../../components/content/td/Mouseover";
 import TokenDetails from "../../components/content/td/TokenDetails";
-import Loading from "../../components/Loading";
 import { bookReaderActions } from "../../features/content/bookReaderSlice";
 import { getRefreshedState } from "../../features/content/contentSlice";
+import { WebpubManifest } from "../../lib/WebpubManifestTypes/WebpubManifest";
 import { fetcher } from "../../lib/fetcher";
+import { NAME_PREFIX, intervalCollection } from "../../lib/interval/interval-decorator";
+import { getDefaultLanguageDictionaries } from "../../lib/libMethods";
 import {
   BOOCROBES_HEADER_HEIGHT,
   BookReaderState,
@@ -22,7 +24,7 @@ import {
   DEFAULT_BOOK_READER_CONFIG_STATE,
   translationProviderOrder,
 } from "../../lib/types";
-import { WebpubManifest } from "../../lib/WebpubManifestTypes/WebpubManifest";
+import D2Reader from "../../r2d2bc";
 import {
   ColorMode,
   D2ColorMode,
@@ -32,8 +34,6 @@ import {
 } from "../common/types";
 import Header from "./Header";
 import injectables from "./injectables";
-import { intervalCollection, NAME_PREFIX } from "../../lib/interval/interval-decorator";
-import { getDefaultLanguageDictionaries } from "../../lib/libMethods";
 
 declare global {
   interface Window {
@@ -99,27 +99,31 @@ export default function BookReader({ proxy }: ContentProps): ReactElement {
   const dispatch = useAppDispatch();
   const readerConfig = useAppSelector((state) => state.bookReader[id] || DEFAULT_BOOK_READER_CONFIG_STATE);
   const user = useAppSelector((state) => state.userData.user);
-  // const themeName = useAppSelector((state) => state.theme);
-  // const { lightTheme, darkTheme, defaultTheme } = useThemesContext();
-  // defaultTheme?.palette?.mode;
-  //   darkTheme?.palette?.mode;
   const [loaded, setLoaded] = useState(false);
   const [themeName] = useTheme();
-  // const theme = themeName === "light" || (!themeName && defaultTheme === "light") ? lightTheme : darkTheme;
-  const theme = createTheme({
-    palette: {
-      mode: (themeName as ThemeType) || "light", // Switching the dark mode on is a single property value change.
-    },
-    breakpoints: {
-      values: {
-        xs: 0,
-        sm: 850,
-        md: 900,
-        lg: 1200,
-        xl: 1536,
-      },
-    },
-  });
+  const [theme, setTheme] = useState<Theme>();
+  useEffect(() => {
+    if (themeName) {
+      console.log("creating a theme from ", themeName);
+      setTheme(
+        createTheme({
+          palette: {
+            mode: (themeName as ThemeType) || "light", // Switching the dark mode on is a single property value change.
+          },
+          breakpoints: {
+            values: {
+              xs: 0,
+              sm: 850,
+              md: 900,
+              lg: 1200,
+              xl: 1536,
+            },
+          },
+        }),
+      );
+    }
+  }, [themeName]);
+
   useEffect(() => {
     if (user.accessToken) {
       fetcher
@@ -133,6 +137,7 @@ export default function BookReader({ proxy }: ContentProps): ReactElement {
         });
     }
   }, [id, user]);
+
   useEffect(() => {
     return () => {
       if (reader) {
@@ -294,7 +299,7 @@ export default function BookReader({ proxy }: ContentProps): ReactElement {
   const growWhenScrolling = DEFAULT_SHOULD_GROW_WHEN_SCROLLING;
   const shouldGrow = readerConfig.isScrolling && growWhenScrolling;
 
-  return (
+  return theme ? (
     <StyledEngineProvider injectFirst>
       <ThemeProvider theme={theme}>
         <Box>
@@ -306,9 +311,8 @@ export default function BookReader({ proxy }: ContentProps): ReactElement {
             flexDirection="column"
             position={"relative"}
             sx={{
-              // color: theme.palette.getContrastText(theme.palette.background.default),
               // FIXME: this should be declared somewhere less nasty
-              bgcolor: themeName === "dark" ? "#000000" : "#fff",
+              bgcolor: themeName === "dark" ? "black" : "white",
             }}
           >
             <div ref={containerRef} id="D2Reader-Container">
@@ -345,9 +349,6 @@ export default function BookReader({ proxy }: ContentProps): ReactElement {
               justifyContent: "space-between",
               position: "sticky",
               height: `${FOOTER_HEIGHT}px`,
-              color:
-                theme?.palette?.getContrastText?.(theme?.palette?.background?.default || "background.default") ||
-                "default",
               bgcolor: "background.default",
             }}
           >
@@ -373,5 +374,7 @@ export default function BookReader({ proxy }: ContentProps): ReactElement {
         </Box>
       </ThemeProvider>
     </StyledEngineProvider>
+  ) : (
+    <></>
   );
 }

@@ -123,7 +123,6 @@ export default function VideoConfig({ containerRef, onSubDelayChange, id }: Vide
           className={""}
           isPercent={false}
           onLess={() => {
-            console.log("onLess", readerConfig.subRaise);
             dispatch(actions.setSubRaise({ id, value: (readerConfig.subRaise || 0) - 10 }));
           }}
           onMore={() => {
