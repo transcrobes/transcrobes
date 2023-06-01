@@ -237,8 +237,14 @@ const customChineseMessages: TranslationMessages = {
       phrase: "短语",
     },
     fine_control: {
-      more: "增加 %{amount}%",
-      less: "减少 %{amount}%",
+      raw: {
+        more: "增加 %{amount}",
+        less: "减少 %{amount}",
+      },
+      percent: {
+        more: "增加 %{amount}%",
+        less: "减少 %{amount}%",
+      },
     },
     dictionary_provider: {
       title: "字典提供商",
@@ -737,6 +743,9 @@ const customChineseMessages: TranslationMessages = {
         },
         subs_raise: {
           title: "升起字幕",
+        },
+        volume_boost: {
+          title: "音量增强",
         },
       },
     },

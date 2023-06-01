@@ -46,6 +46,10 @@ const videoReaderSlice = createGenericSlice({
       state[action.payload.id] = state[action.payload.id] || DEFAULT_VIDEO_READER_CONFIG_STATE;
       state[action.payload.id].volume = action.payload.value;
     },
+    setVolumeBoost(state: GenericState<VideoReaderState>, action: PayloadAction<ContentConfigPayload<number>>) {
+      state[action.payload.id] = state[action.payload.id] || DEFAULT_VIDEO_READER_CONFIG_STATE;
+      state[action.payload.id].volumeBoost = action.payload.value;
+    },
     setPlayed(state: GenericState<VideoReaderState>, action: PayloadAction<ContentConfigPayload<number>>) {
       state[action.payload.id] = state[action.payload.id] || DEFAULT_VIDEO_READER_CONFIG_STATE;
       state[action.payload.id].played = action.payload.value;

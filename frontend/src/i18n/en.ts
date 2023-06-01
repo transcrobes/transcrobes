@@ -243,8 +243,14 @@ const customEnglishMessages: TranslationMessages = {
       unselected: "Unselected",
     },
     fine_control: {
-      more: "Increase %{amount}%",
-      less: "Decrease %{amount}%",
+      raw: {
+        more: "Increase by %{amount}",
+        less: "Decrease by %{amount}",
+      },
+      percent: {
+        more: "Increase %{amount}%",
+        less: "Decrease %{amount}%",
+      },
     },
     gloss_font_override: {
       font_family: "Font family",
@@ -771,6 +777,9 @@ const customEnglishMessages: TranslationMessages = {
         },
         subs_raise: {
           title: "Raise subs",
+        },
+        volume_boost: {
+          title: "Boost volume",
         },
       },
     },

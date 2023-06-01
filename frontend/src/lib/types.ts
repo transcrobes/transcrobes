@@ -678,6 +678,7 @@ export type TimeDisplayFormat = "remaining" | "normal";
 
 export interface VideoReaderState extends ReaderState {
   volume: number;
+  volumeBoost: number;
   played: number;
   muted: boolean;
   timeDisplayFormat: TimeDisplayFormat;
@@ -706,6 +707,7 @@ export const DEFAULT_VIDEO_READER_CONFIG_STATE: VideoReaderState = {
   subPosition: "bottom",
   subBackgroundBlur: false,
   volume: 1,
+  volumeBoost: 1,
   played: 0,
   timeDisplayFormat: "normal",
   muted: false,

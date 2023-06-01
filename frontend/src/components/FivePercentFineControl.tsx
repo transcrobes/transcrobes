@@ -13,8 +13,8 @@ function FivePercentFineControl({
   return (
     <FineControl
       title={label || ""}
-      labelLess={translate("widgets.fine_control.less", { amount: (increment || 0.05) * 100 })}
-      labelMore={translate("widgets.fine_control.more", { amount: (increment || 0.05) * 100 })}
+      labelLess={translate("widgets.fine_control.percent.less", { amount: (increment || 0.05) * 100 })}
+      labelMore={translate("widgets.fine_control.percent.more", { amount: (increment || 0.05) * 100 })}
       className={className}
       isPercent={true}
       onLess={() => {

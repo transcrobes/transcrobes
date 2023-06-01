@@ -115,11 +115,11 @@ export default function VideoConfig({ containerRef, onSubDelayChange, id }: Vide
           </ToggleButton>
         </ToggleButtonGroup>
       </Conftainer>
-      <Conftainer label={translate("screens.moocrobes.config.subs_raise.title")} id="glossFontSize">
+      <Conftainer label={translate("screens.moocrobes.config.subs_raise.title")} id="raiseSubs">
         <FineControl
           title={""}
-          labelLess={translate("widgets.fine_control.less", { amount: 10 })}
-          labelMore={translate("widgets.fine_control.more", { amount: 10 })}
+          labelLess={translate("widgets.fine_control.raw.less", { amount: 10 })}
+          labelMore={translate("widgets.fine_control.raw.more", { amount: 10 })}
           className={""}
           isPercent={false}
           onLess={() => {
@@ -129,6 +129,26 @@ export default function VideoConfig({ containerRef, onSubDelayChange, id }: Vide
             dispatch(actions.setSubRaise({ id, value: (readerConfig.subRaise || 0) + 10 }));
           }}
           value={readerConfig.subRaise || 0}
+        />
+      </Conftainer>
+      <Conftainer label={translate("screens.moocrobes.config.volume_boost.title")} id="volumeBoost">
+        <FineControl
+          title={""}
+          labelLess={translate("widgets.fine_control.raw.less", { amount: 1 })}
+          labelMore={translate("widgets.fine_control.raw.more", { amount: 1 })}
+          className={""}
+          isPercent={false}
+          onLess={() => {
+            if (readerConfig.volumeBoost > 1) {
+              dispatch(actions.setVolumeBoost({ id, value: (readerConfig.volumeBoost || 1) - 1 }));
+            }
+          }}
+          onMore={() => {
+            if (readerConfig.volumeBoost < 4) {
+              dispatch(actions.setVolumeBoost({ id, value: (readerConfig.volumeBoost || 1) + 1 }));
+            }
+          }}
+          value={readerConfig.volumeBoost || 1}
         />
       </Conftainer>
 

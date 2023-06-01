@@ -1,7 +1,7 @@
 import { Box, Container, Grid } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import useEventListener from "@use-it/event-listener";
-import { ReactElement, forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
+import { ReactElement, forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
 import ReactPlayer from "react-player";
 import { Cue } from "webvtt-parser";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
@@ -79,6 +79,8 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, Props>(
     const [track, setTrack] = useState<TextTrack | null>(null);
     const [controlsVisibility, setControlsVisibility] = useState<"hidden" | "visible">("visible");
     const [currentPlaybackRate, setCurrentPlaybackRate] = useState(1.0);
+    const [isFullscreen, toggleFullscreen] = useFullscreen();
+    const [gainNode, setGainNode] = useState<GainNode | null>(null);
     const dispatch = useAppDispatch();
     const readerConfig = useAppSelector((state) => state.videoReader[id] || DEFAULT_VIDEO_READER_CONFIG_STATE);
 
@@ -87,27 +89,50 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, Props>(
         shiftSubs(delay);
       },
     }));
+
+    const manageGainNode = useCallback(
+      function () {
+        const vid = playerRef.current?.getInternalPlayer() as HTMLMediaElement;
+        let lgainNode = gainNode;
+        if (lgainNode || (readerConfig.volumeBoost > 1 && vid)) {
+          if (!lgainNode) {
+            try {
+              const audioCtx = new AudioContext();
+              const source = audioCtx.createMediaElementSource(vid);
+              lgainNode = audioCtx.createGain();
+              source.connect(lgainNode);
+              lgainNode.connect(audioCtx.destination);
+              setGainNode(lgainNode);
+            } catch (e) {
+              // There is a bug... and only 5 years old!
+              // https://bugs.chromium.org/p/chromium/issues/detail?id=851310
+              console.log(e);
+              location.reload();
+            }
+          }
+          console.log("setting volume boost", readerConfig.volumeBoost);
+          lgainNode!.gain.value = readerConfig.volumeBoost;
+        }
+      },
+      [gainNode, readerConfig.volumeBoost],
+    );
+
     useEffect(() => {
-      // This emulates the FilePlayer url getting loaded and causes
-      // our Transcrobifier player to get wired up properly and be "isReady"
-      if (playerRef?.current?.getInternalPlayer()) {
-        playerRef.current.getInternalPlayer().dispatchEvent(new Event("canplay"));
+      const vid = playerRef.current?.getInternalPlayer() as HTMLMediaElement;
+      if (vid) {
+        // This emulates the FilePlayer url getting loaded and causes
+        // our Transcrobifier player to get wired up properly and be "isReady"
+        vid.dispatchEvent(new Event("canplay"));
+        manageGainNode();
       }
     }, [playerRef?.current]);
 
-    const [isFullscreen, toggleFullscreen] = useFullscreen();
+    useEffect(() => {
+      manageGainNode();
+    }, [readerConfig.volumeBoost]);
+
     useEffect(() => {
       setCurrentPlaybackRate(readerConfig.playbackRate || 1.0);
-      // set up components
-      // FIXME: do increase audio above 100%!
-      // if (!audioCtx) {
-      //   audioCtx = new AudioContext();
-      //   source = audioCtx.createMediaElementSource(video);
-      //   gainNode = audioCtx.createGain();
-      //   gainNode.gain.value = parameters.volumeValue;
-      //   source.connect(gainNode);
-      //   gainNode.connect(audioCtx.destination);
-      // }
     }, []);
 
     useEffect(() => {

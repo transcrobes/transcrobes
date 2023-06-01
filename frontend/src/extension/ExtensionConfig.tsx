@@ -5,7 +5,6 @@ import { useAppDispatch, useAppSelector } from "../app/hooks";
 import Conftainer from "../components/Conftainer";
 import ReaderConfig from "../contents/common/ContentConfig";
 import { extensionReaderActions as actions } from "../features/content/extensionReaderSlice";
-// import { changeTheme } from "../features/themes/themeReducer";
 import { setAndSaveUser } from "../features/user/userSlice";
 import {
   CornerPosition,
@@ -37,7 +36,6 @@ export default function ExtensionConfig(): ReactElement {
           exclusive
           value={readerConfig.themeName}
           onChange={(_e: React.MouseEvent<HTMLElement>, value: ThemeType) => {
-            // dispatch(changeTheme(value));
             setTheme(value);
             dispatch(actions.setThemeName({ id, value }));
           }}
