@@ -17,6 +17,25 @@ import { NAME_PREFIX } from "../lib/interval/interval-decorator";
 
 const CONNECTION_CHECK_FREQUENCY_MS = 10000;
 
+interface CleanResentSentencesButtonProps {
+  onPurged: (message: string) => void;
+  proxy: AbstractWorkerProxy;
+}
+
+function CleanResentSentencesButton({ proxy, onPurged }: CleanResentSentencesButtonProps): ReactElement {
+  const translate = useTranslate();
+
+  async function handleClick() {
+    const purged = await proxy.sendMessagePromise({ source: "System", type: "purgeInvalidRecentSentences" });
+    onPurged(JSON.stringify(purged));
+  }
+  return (
+    <Button variant="contained" sx={{ margin: "1em" }} color={"primary"} onClick={handleClick}>
+      {translate("screens.system.purge_invalid_recents")}
+    </Button>
+  );
+}
+
 interface RefreshCacheButtonProps {
   onCacheEmptied: (message: string) => void;
 }
@@ -32,8 +51,7 @@ function RefreshCacheButton({ onCacheEmptied }: RefreshCacheButtonProps): ReactE
           await caches.delete(cacheName);
         }),
       );
-      const message = `Cleared the following cached ${cacheNames.join(", ")}`;
-      console.log(message);
+      const message = translate("screens.system.caches_cleared", { cacheNames: cacheNames.join(", ") });
       onCacheEmptied(message);
     });
   }
@@ -47,14 +65,14 @@ function RefreshCacheButton({ onCacheEmptied }: RefreshCacheButtonProps): ReactE
 interface ReloadDBButtonProps {
   proxy: AbstractWorkerProxy;
 }
+
 function ReloadDBButton({ proxy }: ReloadDBButtonProps): ReactElement {
   const translate = useTranslate();
   const username = useAppSelector((state) => state.userData.username);
-  const [locale] = useLocaleState() as [SystemLanguage, (locale: SystemLanguage) => void];
 
   async function handleClick() {
     if (username) {
-      await proxy.sendMessagePromise<string>({ source: "System", type: "resetDBConnections", value: "" });
+      await proxy.sendMessagePromise({ source: "System", type: "resetDBConnections", value: "" });
       await proxy.asyncInit({ username });
     } else {
       console.error("No username found");
@@ -179,6 +197,9 @@ function System({ proxy }: Props): ReactElement {
           </div>
           <div>
             <ReloadDBButton proxy={proxy} />
+          </div>
+          <div>
+            <CleanResentSentencesButton proxy={proxy} onPurged={(message) => setMessage(message)} />
           </div>
           <div>
             <ReinstallDBButton

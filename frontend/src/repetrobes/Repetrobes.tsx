@@ -328,8 +328,8 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
 
     let currentCard: CardType | null = null;
     let getNew = newToday.size < activityConfig.maxNew;
-    log(
-      "getNew at the start",
+    console.log(
+      "getNewCard at the start",
       getNew,
       possibleRevisionsToday,
       new Set([...possibleRevisionsToday].map((c) => getWordId(c))),
@@ -340,7 +340,7 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
       Math.min(allNewToday, activityConfig.maxNew) / Math.min(allRevisionsToday, activityConfig.maxRevisions)
     ) {
       getNew = false;
-      debug("Setting getNew false due to ratio", getNew);
+      console.debug("Setting getNew false due to ratio", getNew);
     }
 
     if (state.potentialCardsMap.size > 0) {
@@ -354,10 +354,10 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
       currentCard = await unrevisedCard(getRandomNext(cards).id);
     } else {
       getNew = false; // strictly only useful for logging...
-      debug("Setting getNew false due to no more left", getNew);
+      console.debug("Setting getNew false due to no more left", getNew);
     }
 
-    debug("Next practice new card", getNew, currentCard, state.potentialCardsMap);
+    console.debug("Next practice new card", getNew, currentCard, state.potentialCardsMap);
     return { getNew, currentCard };
   }
 

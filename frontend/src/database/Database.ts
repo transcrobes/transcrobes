@@ -2,6 +2,7 @@ import { createClient } from "graphql-ws";
 import _ from "lodash";
 import { addRxPlugin, clone, createRxDatabase, removeRxDatabase } from "rxdb";
 import { GraphQLServerUrl } from "rxdb/dist/types/types";
+import { RxDBCleanupPlugin } from "rxdb/plugins/cleanup";
 import { RxDBDevModePlugin } from "rxdb/plugins/dev-mode";
 import { RxDBMigrationPlugin } from "rxdb/plugins/migration";
 import { RxDBQueryBuilderPlugin } from "rxdb/plugins/query-builder";
@@ -17,7 +18,7 @@ import asyncPool from "tiny-async-pool";
 import { store } from "../app/createStore";
 import { setUser, throttledRefreshToken } from "../features/user/userSlice";
 import { IDBFileStorage, getFileStorage } from "../lib/IDBFileStorage";
-import { fetchPlus, getMessages } from "../lib/libMethods";
+import { fetchPlus } from "../lib/libMethods";
 import { API_PREFIX, IS_DEV, PolyglotMessage, UserDetails } from "../lib/types";
 import { DBParameters, RxDBDataProviderParams } from "../ra-data-rxdb";
 import {
@@ -59,6 +60,7 @@ if (IS_DEV) {
 }
 addRxPlugin(RxDBMigrationPlugin);
 addRxPlugin(RxDBUpdatePlugin);
+addRxPlugin(RxDBCleanupPlugin);
 
 let dbPromise: Promise<TranscrobesDatabase> | null;
 

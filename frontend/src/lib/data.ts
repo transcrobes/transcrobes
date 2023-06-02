@@ -1454,6 +1454,26 @@ async function getPotentialWordIds(
   }
 }
 
+export async function purgeInvalidRecentSentences(db: TranscrobesDatabase) {
+  const recentSentences = await db.recentsentences.find().exec();
+  const purged: string[][] = [];
+  for (const rs of recentSentences) {
+    const lz = LZString.decompressFromUTF16(rs.lzContent);
+    try {
+      if (!lz) {
+        purged.push([rs.id, rs.updatedAt.toString(), "LZ"]);
+        await rs.remove();
+      } else {
+        JSON.parse(lz);
+      }
+    } catch (e) {
+      purged.push([rs.id, rs.updatedAt.toString(), "JSON"]);
+      await rs.remove();
+    }
+  }
+  return purged;
+}
+
 export async function getSRSReviews(
   db: TranscrobesDatabase,
   conf: { activityConfig: RepetrobesActivityConfigType; fromLang: InputLanguage },
