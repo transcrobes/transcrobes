@@ -10,7 +10,7 @@ interface MeaningQuestionProps {
   showL2LengthHint: boolean;
   characters: CharacterType[];
   showAnswer: boolean;
-  word?: string;
+  word?: DefinitionType;
   translationProviderOrder: Record<string, number>;
   onCardFrontUpdate: (card: CardType) => void;
 }
@@ -41,7 +41,13 @@ export default function MeaningQuestion({
           {showL2LengthHint && <div key="lenHint">(L2 length: {definition.graph.length})</div>}
         </MeaningWrapper>
       </StyledQuestion>
-      <QuestionDefinitionGraph word={word} characters={characters} showAnswer={showAnswer} />
+      <QuestionDefinitionGraph
+        word={word}
+        characters={characters}
+        showAnswer={showAnswer}
+        showDiscoverableWord={showAnswer}
+        showToneColours={showAnswer}
+      />
     </div>
   );
 }

@@ -55,11 +55,17 @@ export default function Question({
 }: QuestionProps): ReactElement {
   const { classes } = useStyles({ premature });
   const cardType = getCardType(card);
-  const word = showNormalFont || characters.length === 0 ? definition.graph : undefined;
+  const word = showNormalFont || characters.length === 0 ? definition : undefined;
   return (
     <div className={classes.question}>
       {(cardType === CARD_TYPES.GRAPH.toString() && (
-        <GraphQuestion word={word} card={card} characters={characters} />
+        <GraphQuestion
+          word={word}
+          card={card}
+          characters={characters}
+          showAnswer={showAnswer}
+          showDiscoverableWord={!!word}
+        />
       )) ||
         (cardType === CARD_TYPES.SOUND.toString() && (
           <SoundQuestion

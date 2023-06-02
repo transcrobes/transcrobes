@@ -29,6 +29,7 @@ import {
   SortableListElementType,
   WordModelStatsType,
 } from "../lib/types";
+import Sound from "../components/Sound";
 
 const useStyles = makeStyles()({
   characterDetails: {
@@ -36,18 +37,7 @@ const useStyles = makeStyles()({
     fontSize: "2em",
     verticalAlign: "middle",
   },
-  soundBoxInner: {
-    marginLeft: ".5em",
-    display: "flex",
-    alignItems: "center",
-  },
   definitionGraph: { fontSize: "2em" },
-  soundBoxOuter: {
-    margin: ".5em",
-    fontSize: "2em",
-    display: "flex",
-    justifyContent: "center",
-  },
   infoBox: {
     margin: "0.7em",
   },
@@ -87,12 +77,25 @@ function WordInfo({ definition, characters, meaningCard, onCardFrontUpdate }: Wo
         <div className={classes.definitionGraph}>
           <DefinitionGraph charWidth={100} charHeight={100} characters={characters} showAnswer={true} />
         </div>
-        <div className={classes.soundBoxOuter}>
-          <div className={classes.soundBoxInner}>
+        <Box
+          sx={{
+            margin: ".5em",
+            fontSize: "2em",
+            display: "flex",
+            justifyContent: "center",
+          }}
+        >
+          <Box
+            sx={{
+              marginLeft: ".5em",
+              display: "flex",
+              alignItems: "center",
+            }}
+          >
             <Sound definition={definition} fromLang={fromLang} />
             <SayIt graph={definition.graph} lang={fromLang} />
-          </div>
-        </div>
+          </Box>
+        </Box>
         {/*
           FIXME: Put this back, with proper editing and showing what the cards would actually look like
 
@@ -363,25 +366,6 @@ function ProviderTranslations({
       <Header text={translate("screens.notrobes.entry_definitions")} />
       <DefinitionTranslations definition={definition} translationProviderOrder={translationProviderOrder} />
     </>
-  );
-}
-
-// FIXME: what about properly typing the leftMargin...
-function Sound({
-  definition,
-  fromLang,
-  marginLeft = "0.2em",
-}: {
-  definition: DefinitionType;
-  fromLang: InputLanguage;
-  marginLeft?: string;
-}): ReactElement {
-  return (
-    <Box>
-      {cleanedSound(definition, fromLang).map((s, index) => (
-        <SoundBox key={`${s}${index}`} sound={s} index={index} marginLeft={marginLeft} />
-      ))}
-    </Box>
   );
 }
 

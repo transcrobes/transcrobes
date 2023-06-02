@@ -1,7 +1,7 @@
 import { ReactElement } from "react";
 import Meaning from "../components/Meaning";
 import RecentSentencesElement from "../components/RecentSentencesElement";
-import { MeaningWrapper, CommonAnswerProps } from "./Common";
+import { CommonAnswerProps, MeaningWrapper } from "./Common";
 
 export default function SoundAnswer({
   card,

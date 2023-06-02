@@ -2,9 +2,9 @@ import { ReactElement } from "react";
 import { useAppSelector } from "../app/hooks";
 import RecentSentencesElement from "../components/RecentSentencesElement";
 import SayIt from "../components/SayIt";
+import Sound from "../components/Sound";
 import { CardType, DefinitionType, PosSentences } from "../lib/types";
 import { CentredFlex, StyledAnswer } from "./Common";
-import { cleanedSound } from "../lib/libMethods";
 
 interface MeaningAnswerProps {
   card: CardType;
@@ -27,8 +27,10 @@ export default function MeaningAnswer({
       ) : (
         <>
           <CentredFlex>
-            <StyledAnswer> {cleanedSound(definition, fromLang)} </StyledAnswer>
-            <SayIt graph={definition.graph} lang={fromLang} />
+            <StyledAnswer>
+              <Sound definition={definition} fromLang={fromLang} />
+              <SayIt graph={definition.graph} lang={fromLang} />
+            </StyledAnswer>
           </CentredFlex>
           <CentredFlex>{showRecents && <RecentSentencesElement recentPosSentences={recentSentences} />}</CentredFlex>
         </>

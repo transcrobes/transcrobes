@@ -11,6 +11,7 @@ export interface Props {
 
 export default function SoundBox({ sound, index, graph, marginLeft = "0em" }: Props) {
   const fromLang = useAppSelector((state) => state.userData.user.fromLang);
+  console.log("sound", sound, hasTones(fromLang), toneColour(sound));
   return (
     <Box component="span" sx={{ color: hasTones(fromLang) ? toneColour(sound) : undefined, marginLeft }}>
       {graph || soundWithSeparators(sound, index, fromLang)}

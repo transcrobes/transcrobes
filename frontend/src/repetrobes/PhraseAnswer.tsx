@@ -3,8 +3,8 @@ import { useAppSelector } from "../app/hooks";
 import Meaning from "../components/Meaning";
 import RecentSentencesElement from "../components/RecentSentencesElement";
 import SayIt from "../components/SayIt";
+import Sound from "../components/Sound";
 import { CentredFlex, CommonAnswerProps, MeaningWrapper, StyledAnswer } from "./Common";
-import { cleanedSound } from "../lib/libMethods";
 
 export default function PhraseAnswer({
   card,
@@ -19,10 +19,10 @@ export default function PhraseAnswer({
   return (
     <div>
       <CentredFlex>
-        <StyledAnswer> {cleanedSound(definition, fromLang)} </StyledAnswer>
-      </CentredFlex>
-      <CentredFlex>
-        <SayIt graph={definition.graph} lang={fromLang} />
+        <StyledAnswer>
+          <Sound definition={definition} fromLang={fromLang} />
+          <SayIt graph={definition.graph} lang={fromLang} />
+        </StyledAnswer>
       </CentredFlex>
       <MeaningWrapper>
         <Meaning

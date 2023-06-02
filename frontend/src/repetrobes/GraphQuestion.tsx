@@ -1,21 +1,34 @@
 import { ReactElement } from "react";
-import QuestionDefinitionGraph from "./Common";
-import { CardType, CharacterType } from "../lib/types";
-import { GraphSoundQuestionStyle } from "./Common";
+import { CardType, CharacterType, DefinitionType } from "../lib/types";
+import QuestionDefinitionGraph, { GraphSoundQuestionStyle } from "./Common";
 
 interface GraphQuestionProps {
   card: CardType;
   characters: CharacterType[];
-  word?: string;
+  showAnswer: boolean;
+  showDiscoverableWord: boolean;
+  word?: DefinitionType;
 }
 
-export default function GraphQuestion({ card, characters, word }: GraphQuestionProps): ReactElement {
+export default function GraphQuestion({
+  card,
+  characters,
+  word,
+  showAnswer,
+  showDiscoverableWord,
+}: GraphQuestionProps): ReactElement {
   return (
     <GraphSoundQuestionStyle>
       {card && card.front ? (
         card.front
       ) : (
-        <QuestionDefinitionGraph word={word} characters={characters} showAnswer={true} />
+        <QuestionDefinitionGraph
+          word={word}
+          characters={characters}
+          showDiscoverableWord={showDiscoverableWord}
+          showToneColours={showAnswer}
+          showAnswer={showAnswer}
+        />
       )}
     </GraphSoundQuestionStyle>
   );

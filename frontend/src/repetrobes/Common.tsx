@@ -1,4 +1,4 @@
-import { styled, Typography } from "@mui/material";
+import { styled, Box } from "@mui/material";
 import { ReactElement } from "react";
 import { useTranslate } from "react-admin";
 import DefinitionGraph from "../components/DefinitionGraph";
@@ -9,13 +9,17 @@ import { CardType, CharacterType, DefinitionType, PosSentences } from "../lib/ty
 interface QuestionDefinitionGraphProps {
   characters: (CharacterType | null)[];
   showAnswer: boolean;
-  word?: string;
+  showDiscoverableWord: boolean;
+  showToneColours: boolean;
+  word?: DefinitionType;
 }
 
 export default function QuestionDefinitionGraph({
   characters,
   showAnswer,
   word,
+  showToneColours,
+  showDiscoverableWord,
 }: QuestionDefinitionGraphProps): ReactElement {
   const dimensions = useWindowDimensions();
   const translate = useTranslate();
@@ -23,12 +27,10 @@ export default function QuestionDefinitionGraph({
   const newDim = Math.max(72, Math.min(150, dimensions.width / characters.length - 18));
   return (
     <>
-      {showAnswer && word && (
-        <DiscoverableWord graph={word} newTab>
-          <Typography sx={{ fontFamily: "notaserifextralight", textAlign: "center", fontSize: newDim * 0.75 }}>
-            {word}
-          </Typography>
-        </DiscoverableWord>
+      {showDiscoverableWord && word && (
+        <Box sx={{ fontFamily: "notaserifextralight", textAlign: "center", fontSize: newDim * 0.75 }}>
+          <DiscoverableWord graph={word.graph} sound={showToneColours ? word.sound : undefined} newTab />
+        </Box>
       )}
       {characters && characters.length > 0 && (
         <DefinitionGraph

@@ -119,14 +119,13 @@ export function VocabRevisor({
                 recentSentences={recentPosSentences?.posSentences || null}
                 showSynonyms={showSynonyms}
                 showRecents={showRecents}
-                showNormalFont={showNormalFont}
                 onCardFrontUpdate={onCardFrontUpdate}
               />
-              <div style={{ display: "flex", justifyContent: "center" }}>
-                <div style={{ width: "100%", maxWidth: "800px" }}>
+              <Box sx={{ display: "flex", justifyContent: "center" }}>
+                <Box sx={{ width: "100%", maxWidth: "800px" }}>
                   <PracticerInput wordId={getWordId(currentCard)} onPractice={handlePractice} />
-                </div>
-              </div>
+                </Box>
+              </Box>
             </div>
           ) : (
             <CentredFlex>
