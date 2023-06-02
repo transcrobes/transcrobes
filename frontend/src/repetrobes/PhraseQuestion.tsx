@@ -25,7 +25,7 @@ interface Props {
 export default function PhraseQuestion({ recentSentences, showAnswer, characters, word }: Props): ReactElement {
   const [current, setCurrent] = useState(0);
   const [sentences, setSentences] = useState<[AnyTreebankPosType, PosSentence][]>([]);
-  const fromLang = useAppSelector((state) => state.userData.user.fromLang);
+  const toLang = useAppSelector((state) => state.userData.user.toLang);
   const translate = useTranslate();
   if (recentSentences) {
     const sents: [AnyTreebankPosType, PosSentence][] = [];
@@ -36,7 +36,7 @@ export default function PhraseQuestion({ recentSentences, showAnswer, characters
         }
       }
       const tmpSents = _.shuffle(sents);
-      console.log("setting sentences", tmpSents);
+      console.log("Setting sentences", tmpSents);
       setSentences(tmpSents);
     }, [recentSentences]);
   }
@@ -46,7 +46,7 @@ export default function PhraseQuestion({ recentSentences, showAnswer, characters
         <Grid container justifyContent="center" alignItems="center">
           <Grid item>
             <InfoBox>
-              ({translate(toPosLabels(sentences[current][0], fromLang))}){" "}
+              ({translate(toPosLabels(sentences[current][0], toLang))}){" "}
               <RecentSentenceExample
                 readerConfig={DEFAULT_RECENTS_READER_CONFIG_STATE}
                 isListItem={true}

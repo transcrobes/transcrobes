@@ -110,7 +110,6 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, Props>(
               location.reload();
             }
           }
-          console.log("setting volume boost", readerConfig.volumeBoost);
           lgainNode!.gain.value = readerConfig.volumeBoost;
         }
       },

@@ -226,21 +226,26 @@ export function missingWordIdsFromModels(models: KeyedModels, existing: Definiti
   return newIds;
 }
 
-export function wordIdsFromModels(models: KeyedModels): Set<string> {
-  const uniqueIds = new Set<string>();
-  for (const model of Object.values(models)) {
-    for (const sentence of model.s) {
-      for (const token of sentence.t) {
-        if (token.id) {
-          uniqueIds.add(token.id.toString());
-        }
-        if (token.oids) {
-          for (const oid of token.oids) {
-            uniqueIds.add(oid.toString());
-          }
+export function addUniqueIdsFromSentences(uniqueIds: Set<string>, sentences: SentenceType[]): Set<string> {
+  for (const sentence of sentences) {
+    for (const token of sentence.t) {
+      if (token.id) {
+        uniqueIds.add(token.id.toString());
+      }
+      if (token.oids) {
+        for (const oid of token.oids) {
+          uniqueIds.add(oid.toString());
         }
       }
     }
+  }
+  return uniqueIds;
+}
+
+export function wordIdsFromModels(models: KeyedModels): Set<string> {
+  const uniqueIds = new Set<string>();
+  for (const model of Object.values(models)) {
+    addUniqueIdsFromSentences(uniqueIds, model.s);
   }
   return uniqueIds;
 }
