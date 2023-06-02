@@ -1,6 +1,6 @@
 {
   "name": "transcrobes",
-  "version": "0.28.1",
+  "version": "0.28.2",
   "private": true,
   "type": "module",
   "prettier": {
@@ -151,10 +151,10 @@
     "rimraf": "^5.0.0",
     "typescript": "^5.0.2",
     "vite": "^4.0.1",
-    "vite-plugin-pwa": "^0.15.0",
-    "workbox-core": "^6.5.4",
-    "workbox-precaching": "^6.5.4",
-    "workbox-routing": "^6.5.4",
-    "workbox-window": "^6.5.4"
+    "vite-plugin-pwa": "^0.16.1",
+    "workbox-core": "^7.0.0",
+    "workbox-precaching": "^7.0.0",
+    "workbox-routing": "^7.0.0",
+    "workbox-window": "^7.0.0"
   }
 }
