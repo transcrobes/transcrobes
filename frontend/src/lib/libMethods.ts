@@ -484,10 +484,10 @@ export function orderTranslations(translations: ProviderTranslationType[], order
 export function isFakeL1(phone: string[], entry: string, fromLang: InputLanguage) {
   if (fromLang !== "zh-Hans") return false;
 
-  const local_phone = unidecode(phone.join("").split(/(\s+)/).join("")).toLowerCase();
+  const local_phone = unidecode(phone.join("").replace(/(\s+)/, "")).toLowerCase();
   // we DON'T do a entry.toLowerCase() because we DO want proper names, but proper names should always
   // be capitalised, so Xi Jingping, Huawei, etc. should be Ok.
-  const potential = entry.split(/(\s+)/).join("");
+  const potential = entry.replace(/(\s+)/, "");
   if (local_phone === potential) return true;
   if (`surname ${local_phone}` === potential.toLowerCase()) return true; // common in CCCedict
   return false;
