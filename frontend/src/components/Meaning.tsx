@@ -83,6 +83,7 @@ export default function Meaning({
           const finalList = filterFakeL1Definitions(
             filterUnhelpfulL1Definitions(posTranslation.values.filter((v) => !v.match(definition.graph))),
             cleanedSound(definition, fromLang),
+            fromLang,
           );
           if (finalList.length > 0) {
             hasValidDefinitions = true;

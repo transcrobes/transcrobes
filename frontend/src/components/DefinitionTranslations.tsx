@@ -44,6 +44,7 @@ export default function DefinitionTranslations({
         const values = filterFakeL1Definitions(
           filterUnhelpfulL1Definitions(posTrans.values.filter((v) => !v.match(definition.graph))),
           cleanedSound(definition, fromLang),
+          fromLang,
         );
         if (values.length > 0) {
           posTranslations.push({ posTag: posTrans.posTag, values });

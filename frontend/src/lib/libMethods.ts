@@ -115,7 +115,11 @@ function getFilteredBestGuess(
   allDefs: PosTranslationsType[],
   fromLang: InputLanguage,
 ) {
-  let filteredDefs = filterFakeL1Definitions(filterUnhelpfulL1Definitions(others), cleanedSound(definition, fromLang));
+  let filteredDefs = filterFakeL1Definitions(
+    filterUnhelpfulL1Definitions(others),
+    cleanedSound(definition, fromLang),
+    fromLang,
+  );
   if (filteredDefs.length) {
     return filteredDefs.sort(
       (a, b) => Math.abs(IDEAL_GLOSS_STRING_LENGTH - a.length) - Math.abs(IDEAL_GLOSS_STRING_LENGTH - b.length),
@@ -124,6 +128,7 @@ function getFilteredBestGuess(
   filteredDefs = filterFakeL1Definitions(
     filterUnhelpfulL1Definitions(allDefs.flatMap((p) => p.values)),
     cleanedSound(definition, fromLang),
+    fromLang,
   );
   if (filteredDefs.length) {
     return filteredDefs.sort(
@@ -194,6 +199,7 @@ export function bestGuessEnToZhHans(
         const filteredDefs = filterFakeL1Definitions(
           filterUnhelpfulL1Definitions(posEntry.values),
           cleanedSound(definition, fromLang),
+          fromLang,
         );
         if (filteredDefs) {
           // prefer one that is closer to our ideal length, particularly useful when there very long entries
@@ -248,6 +254,7 @@ export function bestGuessZhHansToEn(
         const filteredDefs = filterFakeL1Definitions(
           filterUnhelpfulL1Definitions(posEntry.values),
           cleanedSound(definition, fromLang),
+          fromLang,
         );
         if (filteredDefs) {
           // prefer one that is closer to our ideal length, particularly useful when there very long entries
@@ -285,10 +292,11 @@ export function filterUnhelpfulL1Definitions(entries: string[]): string[] {
   return filtered;
 }
 
-export function filterFakeL1Definitions(entries: string[], phone: string[]): string[] {
+export function filterFakeL1Definitions(entries: string[], phone: string[], fromLang: InputLanguage): string[] {
+  if (fromLang !== "zh-Hans") return entries;
   const filtered: string[] = [];
   for (const entry of entries) {
-    if (!isFakeL1(phone, entry)) {
+    if (!isFakeL1(phone, entry, fromLang)) {
       filtered.push(entry);
     }
   }
@@ -304,7 +312,7 @@ export function shortProviderTranslations(
   for (const provider of definition.providerTranslations) {
     for (const posTranslation of provider.posTranslations) {
       // TODO: probably don't need filterUnhelpfulL1Definitions here?
-      const cleanDefs = filterFakeL1Definitions(posTranslation.values, cleanedSound(definition, fromLang));
+      const cleanDefs = filterFakeL1Definitions(posTranslation.values, cleanedSound(definition, fromLang), fromLang);
       for (const def of cleanDefs.slice(0, 3)) {
         transes.add(def.toLocaleLowerCase());
       }
@@ -473,11 +481,16 @@ export function orderTranslations(translations: ProviderTranslationType[], order
     );
 }
 
-export function isFakeL1(phone: string[], entry: string) {
+export function isFakeL1(phone: string[], entry: string, fromLang: InputLanguage) {
+  if (fromLang !== "zh-Hans") return false;
+
   const local_phone = unidecode(phone.join("").split(/(\s+)/).join("")).toLowerCase();
   // we DON'T do a entry.toLowerCase() because we DO want proper names, but proper names should always
   // be capitalised, so Xi Jingping, Huawei, etc. should be Ok.
-  return local_phone === entry.split(/(\s+)/).join("");
+  const potential = entry.split(/(\s+)/).join("");
+  if (local_phone === potential) return true;
+  if (`surname ${local_phone}` === potential.toLowerCase()) return true; // common in CCCedict
+  return false;
 }
 
 export function affixCleaned(graph: string) {

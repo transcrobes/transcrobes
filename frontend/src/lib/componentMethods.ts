@@ -178,7 +178,11 @@ export async function getL1(
     defaultL1 &&
     !readerConfig.strictProviderOrdering &&
     affixCleaned(defaultL1) === defaultL1 &&
-    !(token.id && token.id in definitions && isFakeL1(cleanedSound(definitions[token.id], fromLang), defaultL1))
+    !(
+      token.id &&
+      token.id in definitions &&
+      isFakeL1(cleanedSound(definitions[token.id], fromLang), defaultL1, fromLang)
+    )
   ) {
     return defaultL1;
   }
