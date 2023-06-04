@@ -1,16 +1,9 @@
 import SettingsIcon from "@mui/icons-material/Settings";
-import { Box, Drawer, IconButton } from "@mui/material";
+import { Box, Drawer } from "@mui/material";
 import React, { ReactElement } from "react";
-import { makeStyles } from "tss-react/mui";
+import { Button, useTranslate } from "react-admin";
 import { RepetrobesActivityConfigType } from "../lib/types";
 import RepetrobesConfig from "./RepetrobesConfig";
-import { Button, useTranslate } from "react-admin";
-
-const useStyles = makeStyles()({
-  settings: {
-    paddingTop: 0,
-  },
-});
 
 interface Props {
   activityConfig: RepetrobesActivityConfigType;
@@ -19,7 +12,6 @@ interface Props {
 
 export default function RepetrobesConfigLauncher({ activityConfig, onConfigChange }: Props): ReactElement {
   const [isOpen, setIsOpen] = React.useState(false);
-  const { classes } = useStyles();
   const translate = useTranslate();
   // TODO: work out how to do this as proper functions!
   const toggleDrawer = (open: boolean) => (event: React.KeyboardEvent | React.MouseEvent) => {

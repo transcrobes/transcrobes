@@ -48,7 +48,6 @@ export default function RepetrobesConfig({ activityConfig, onConfigChange }: Pro
     control: (styles) => ({ ...styles, backgroundColor: theme.palette.background.default }),
     menu: (styles) => ({ ...styles, backgroundColor: theme.palette.background.default, zIndex: 2 }),
   };
-  console.log("RepetrobesConfig activityConfig", activityConfig);
 
   function handleWordListsChange(sls: any) {
     // FIXME: this is SUPER nasty but see
