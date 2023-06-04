@@ -1,30 +1,11 @@
+import { Box } from "@mui/material";
 import { ReactElement } from "react";
-import { makeStyles } from "tss-react/mui";
 import { CARD_TYPES, getCardType } from "../database/Schema";
 import { CardType, CharacterType, DefinitionType, PosSentences } from "../lib/types";
 import GraphQuestion from "./GraphQuestion";
 import MeaningQuestion from "./MeaningQuestion";
 import PhraseQuestion from "./PhraseQuestion";
 import SoundQuestion from "./SoundQuestion";
-
-interface StyleProps {
-  premature: boolean;
-}
-
-const useStyles = makeStyles<StyleProps>()((theme, params) => ({
-  question: {
-    backgroundColor: params.premature ? "orange" : "inherit",
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    [theme.breakpoints.down("md")]: {
-      padding: "0.3em",
-    },
-    [theme.breakpoints.up("sm")]: {
-      padding: "1em",
-    },
-  },
-}));
 
 interface QuestionProps {
   card: CardType;
@@ -53,11 +34,18 @@ export default function Question({
   translationProviderOrder,
   onCardFrontUpdate,
 }: QuestionProps): ReactElement {
-  const { classes } = useStyles({ premature });
   const cardType = getCardType(card);
   const word = showNormalFont || characters.length === 0 ? definition : undefined;
   return (
-    <div className={classes.question}>
+    <Box
+      sx={{
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        padding: { xs: "0.3em", sm: "1em" },
+        backgroundColor: premature ? "orange" : "inherit",
+      }}
+    >
       {(cardType === CARD_TYPES.GRAPH.toString() && (
         <GraphQuestion
           word={word}
@@ -97,6 +85,6 @@ export default function Question({
             characters={characters}
           />
         ))}
-    </div>
+    </Box>
   );
 }
