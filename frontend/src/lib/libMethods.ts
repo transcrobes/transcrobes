@@ -119,6 +119,7 @@ function getFilteredBestGuess(
     filterUnhelpfulL1Definitions(others),
     cleanedSound(definition, fromLang),
     fromLang,
+    false,
   );
   if (filteredDefs.length) {
     return filteredDefs.sort(
@@ -129,6 +130,7 @@ function getFilteredBestGuess(
     filterUnhelpfulL1Definitions(allDefs.flatMap((p) => p.values)),
     cleanedSound(definition, fromLang),
     fromLang,
+    false,
   );
   if (filteredDefs.length) {
     return filteredDefs.sort(
@@ -200,6 +202,7 @@ export function bestGuessEnToZhHans(
           filterUnhelpfulL1Definitions(posEntry.values),
           cleanedSound(definition, fromLang),
           fromLang,
+          providerEntry.provider === "fbk",
         );
         if (filteredDefs) {
           // prefer one that is closer to our ideal length, particularly useful when there very long entries
@@ -215,7 +218,14 @@ export function bestGuessEnToZhHans(
           break;
         }
       } else if (posEntry.posTag === "OTHER") {
-        others.push(...posEntry.values);
+        others.push(
+          ...filterFakeL1Definitions(
+            filterUnhelpfulL1Definitions(posEntry.values),
+            cleanedSound(definition, fromLang),
+            fromLang,
+            providerEntry.provider === "fbk",
+          ),
+        );
       }
     }
     if (best) {
@@ -255,6 +265,7 @@ export function bestGuessZhHansToEn(
           filterUnhelpfulL1Definitions(posEntry.values),
           cleanedSound(definition, fromLang),
           fromLang,
+          providerEntry.provider === "fbk",
         );
         if (filteredDefs) {
           // prefer one that is closer to our ideal length, particularly useful when there very long entries
@@ -292,11 +303,16 @@ export function filterUnhelpfulL1Definitions(entries: string[]): string[] {
   return filtered;
 }
 
-export function filterFakeL1Definitions(entries: string[], phone: string[], fromLang: InputLanguage): string[] {
+export function filterFakeL1Definitions(
+  entries: string[],
+  phone: string[],
+  fromLang: InputLanguage,
+  isFallback: boolean,
+): string[] {
   if (fromLang !== "zh-Hans") return entries;
   const filtered: string[] = [];
   for (const entry of entries) {
-    if (!isFakeL1(phone, entry, fromLang)) {
+    if (!isFakeL1(phone, entry, fromLang, isFallback)) {
       filtered.push(entry);
     }
   }
@@ -312,7 +328,12 @@ export function shortProviderTranslations(
   for (const provider of definition.providerTranslations) {
     for (const posTranslation of provider.posTranslations) {
       // TODO: probably don't need filterUnhelpfulL1Definitions here?
-      const cleanDefs = filterFakeL1Definitions(posTranslation.values, cleanedSound(definition, fromLang), fromLang);
+      const cleanDefs = filterFakeL1Definitions(
+        posTranslation.values,
+        cleanedSound(definition, fromLang),
+        fromLang,
+        provider.provider === "fbk",
+      );
       for (const def of cleanDefs.slice(0, 3)) {
         transes.add(def.toLocaleLowerCase());
       }
@@ -481,7 +502,7 @@ export function orderTranslations(translations: ProviderTranslationType[], order
     );
 }
 
-export function isFakeL1(phone: string[], entry: string, fromLang: InputLanguage) {
+export function isFakeL1(phone: string[], entry: string, fromLang: InputLanguage, isFallback: boolean) {
   if (fromLang !== "zh-Hans") return false;
 
   const local_phone = unidecode(phone.join("").replace(/(\s+)/, "")).toLowerCase();
@@ -490,6 +511,8 @@ export function isFakeL1(phone: string[], entry: string, fromLang: InputLanguage
   const potential = entry.replace(/(\s+)/, "");
   if (local_phone === potential) return true;
   if (`surname ${local_phone}` === potential.toLowerCase()) return true; // common in CCCedict
+  // Bing fallback has everything capitalised
+  if (isFallback && local_phone === potential.toLowerCase()) return true;
   return false;
 }
 

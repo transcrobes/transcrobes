@@ -181,7 +181,7 @@ export async function getL1(
     !(
       token.id &&
       token.id in definitions &&
-      isFakeL1(cleanedSound(definitions[token.id], fromLang), defaultL1, fromLang)
+      isFakeL1(cleanedSound(definitions[token.id], fromLang), defaultL1, fromLang, false)
     )
   ) {
     return defaultL1;

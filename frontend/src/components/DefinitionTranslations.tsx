@@ -41,10 +41,12 @@ export default function DefinitionTranslations({
       for (const posTrans of providerTranslation.posTranslations) {
         // Remove "meanings" that are just pinyin without tone markings as well as meanings that
         // have the initial word in them, and meanings that aren't proper words (eg. -ize, -footed)
+
         const values = filterFakeL1Definitions(
           filterUnhelpfulL1Definitions(posTrans.values.filter((v) => !v.match(definition.graph))),
           cleanedSound(definition, fromLang),
           fromLang,
+          providerTranslation.provider === "fbk",
         );
         if (values.length > 0) {
           posTranslations.push({ posTag: posTrans.posTag, values });

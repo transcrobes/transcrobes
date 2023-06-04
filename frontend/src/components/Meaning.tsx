@@ -84,6 +84,7 @@ export default function Meaning({
             filterUnhelpfulL1Definitions(posTranslation.values.filter((v) => !v.match(definition.graph))),
             cleanedSound(definition, fromLang),
             fromLang,
+            provider.provider === "fbk",
           );
           if (finalList.length > 0) {
             hasValidDefinitions = true;
