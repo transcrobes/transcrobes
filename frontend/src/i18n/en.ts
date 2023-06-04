@@ -890,6 +890,8 @@ const customEnglishMessages: TranslationMessages = {
       show_answer: "Show Answer",
       progress_new: `New: (%{completedNewToday}) %{newToday} / %{maxNew} (%{availableNewToday} available)`,
       progress_revisions: `Revisions: (%{completedRevisionsToday}) %{revisionsToday} / %{maxRevisions} (%{allRevisionsToday} due)`,
+      progress_new_short: `New: (%{completedNewToday}) %{newToday}/%{maxNew} (%{availableNewToday} avail)`,
+      progress_revisions_short: `Rev: (%{completedRevisionsToday}) %{revisionsToday}/%{maxRevisions} (%{allRevisionsToday} due)`,
     },
     signup: {
       learn: "I want to learn",

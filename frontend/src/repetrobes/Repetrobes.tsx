@@ -1,37 +1,36 @@
-import { useTheme } from "@mui/material";
+import { Box, useTheme } from "@mui/material";
 import dayjs from "dayjs";
 import _ from "lodash";
 import { ReactElement, useEffect, useRef, useState } from "react";
 import { TopToolbar, useTranslate } from "react-admin";
-import { makeStyles } from "tss-react/mui";
 import { useAppSelector } from "../app/hooks";
 import HelpButton from "../components/HelpButton";
 import { Loading } from "../components/Loading";
 import WatchDemo from "../components/WatchDemo";
-import { getCardId, getCardType, getWordId, GRADE } from "../database/Schema";
+import { GRADE, getCardId, getCardType, getWordId } from "../database/Schema";
 import { setSettingsValue } from "../lib/appSettings";
 import { configIsUsable, recentSentencesFromLZ } from "../lib/funclib";
 import { ServiceWorkerProxy } from "../lib/proxies";
 import {
   CardType,
   CharacterType,
+  DOCS_DOMAIN,
   DailyReviewables,
   DefinitionType,
-  DOCS_DOMAIN,
   EMPTY_CARD,
+  REPETROBES_YT_VIDEO,
   RecentSentencesStoredType,
   RecentSentencesType,
   RepetrobesActivityConfigType,
-  REPETROBES_YT_VIDEO,
   ReviewablesInfoType,
-  UserListWordType,
   USER_STATS_MODE,
+  UserListWordType,
 } from "../lib/types";
 import { getRandomNext } from "./Common";
-import { EMPTY_ACTIVITY, getUserConfig } from "./funclib";
 import Progress from "./Progress";
 import RepetrobesConfigLauncher from "./RepetrobesConfigLauncher";
 import VocabRevisor from "./VocabRevisor";
+import { EMPTY_ACTIVITY, getUserConfig } from "./funclib";
 
 const DATA_SOURCE = "Repetrobes.tsx";
 
@@ -51,20 +50,6 @@ const EMPTY_STATE = {
   completedRevisionsToday: 0,
   possibleRevisionsToday: 0,
 };
-
-const useStyles = makeStyles()({
-  toolbar: {
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  revisor: {
-    padding: "1em",
-  },
-  progress: {
-    display: "flex",
-    alignItems: "center",
-  },
-});
 
 interface RepetrobesProps {
   proxy: ServiceWorkerProxy;
@@ -563,15 +548,24 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
     }
     return null;
   }
-  const { classes } = useStyles();
   const theme = useTheme();
   const helpUrl = `//${DOCS_DOMAIN}/page/software/learn/repetrobes/`;
   return (
     <div>
       <div ref={windowBeginRef} />
-      <TopToolbar className={classes.toolbar}>
+      <TopToolbar
+        sx={{
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
         <RepetrobesConfigLauncher activityConfig={stateActivityConfig} onConfigChange={handleConfigChange} />
-        <div className={classes.progress}>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+          }}
+        >
           {stateActivityConfig.showProgress && (
             <Progress
               activityConfig={stateActivityConfig}
@@ -585,7 +579,7 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
           )}
           <WatchDemo url={REPETROBES_YT_VIDEO} />
           <HelpButton url={helpUrl} />
-        </div>
+        </Box>
       </TopToolbar>
       <Loading show={firstLoad || loading} message={loadingMessage} />
       {!firstLoad && (

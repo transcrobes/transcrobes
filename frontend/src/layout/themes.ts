@@ -45,10 +45,10 @@ export const darkTheme = {
       },
     },
     // No idea why this is necessary...
-    RaSidebar: {
-      fixed: { height: "calc(100vh - 4em)" },
-      root: { height: "calc(100vh - 4em)" },
-    },
+    // RaSidebar: {
+    //   fixed: { height: "calc(100vh - 4em)" },
+    //   root: { height: "calc(100vh - 4em)" },
+    // },
     MuiButtonBase: {
       defaultProps: {
         // disable ripple for perf reasons

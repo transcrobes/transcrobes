@@ -856,6 +856,8 @@ const customChineseMessages: TranslationMessages = {
       show_answer: "显示答案",
       progress_new: `新词: (%{completedNewToday}) %{newToday} / %{maxNew} (%{availableNewToday} 可用)`,
       progress_revisions: `修订: (%{completedRevisionsToday}) %{revisionsToday} / %{maxRevisions} (%{allRevisionsToday} 到期的)`,
+      progress_new_short: `新词: (%{completedNewToday}) %{newToday}/%{maxNew} (%{availableNewToday}可用)`,
+      progress_revisions_short: `修订: (%{completedRevisionsToday}) %{revisionsToday}/%{maxRevisions} (%{allRevisionsToday}到期的)`,
     },
     signup: {
       learn: "我想学习",
