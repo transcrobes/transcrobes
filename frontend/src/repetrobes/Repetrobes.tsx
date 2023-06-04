@@ -16,11 +16,9 @@ import {
   CardType,
   CharacterType,
   DailyReviewables,
-  debug,
   DefinitionType,
   DOCS_DOMAIN,
   EMPTY_CARD,
-  log,
   RecentSentencesStoredType,
   RecentSentencesType,
   RepetrobesActivityConfigType,
@@ -99,7 +97,7 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
     if (!proxy.loaded) return;
     (async () => {
       const conf = await getUserConfig(proxy);
-      console.log("Repetrobes.tsx: getUserConfig returned", conf);
+      console.debug("Repetrobes.tsx: getUserConfig returned", conf);
       const ulws = await proxy.sendMessagePromise<{
         userListWords: UserListWordType;
       }>({
@@ -115,7 +113,7 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
           conf.translationProviderOrder ||
           defaultProviderOrder.reduce((acc, next, ind) => ({ ...acc, [next]: ind }), {} as Record<string, number>),
       } as RepetrobesActivityConfigType;
-      console.log("Repetrobes.tsx: activityConfigNew", activityConfigNew);
+      console.debug("Repetrobes.tsx: activityConfigNew", activityConfigNew);
 
       const reviewLists = await proxy.sendMessagePromise<DailyReviewables>({
         source: DATA_SOURCE,
@@ -126,10 +124,10 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
         ...daState,
         ...reviewLists,
       };
-      debug("Config set up, about to get the next practice item", tempState);
+      console.debug("Config set up, about to get the next practice item", tempState);
       nextPractice(tempState, activityConfigNew).then((practiceOut) => {
         const partial = { ...tempState, ...practiceOut };
-        console.log("Setting loading and the partial state is", partial);
+        console.debug("Setting loading and the partial state is", partial);
         setLoadingMessage("");
         setLoading(!(!!partial.currentCard && !!partial.definition));
         setDaState({
@@ -145,7 +143,7 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
     (async () => {
       const usable = configIsUsable(stateActivityConfig);
       if (!usable) {
-        console.log(
+        console.debug(
           "Activity config is not usable after daState change, not doing anything",
           stateActivityConfig,
           firstLoad,
@@ -154,7 +152,7 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
         setLoading(true);
         return;
       }
-      console.log("daState seems to have changed so setting loading", daState.currentCard, daState.definition);
+      console.debug("daState seems to have changed so setting loading", daState.currentCard, daState.definition);
       setLoading(!(!!daState.currentCard && !!daState.definition));
     })();
   }, [daState]);
@@ -164,7 +162,7 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
     (async () => {
       const usable = configIsUsable(stateActivityConfig);
       if (!usable) {
-        console.log(
+        console.debug(
           "Activity config is not usable after proxy.loaded, stateActivityConfig, not doing anything",
           stateActivityConfig,
           firstLoad,
@@ -185,7 +183,7 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
       };
       const practiceOut = await nextPractice(tempState, stateActivityConfig);
       const partial = { ...tempState, ...practiceOut };
-      console.log(
+      console.debug(
         "proxy.loaded, stateActivityConfig seems to have changed so setting loading",
         daState.currentCard,
         daState.definition,
@@ -298,12 +296,12 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
         x.lastRevisionDate <= dayjs().add(-stateActivityConfig.badReviewWaitSecs, "seconds").unix() &&
         x.lastRevisionDate > todayStarts,
     );
-    log("getOverdueTodaysRepeat", candidates, readyCandidates, overdueRepeatNow);
+    console.debug("getOverdueTodaysRepeat", candidates, readyCandidates, overdueRepeatNow);
     if (overdueRepeatNow.length === 0 && forceUnfinished) {
       overdueRepeatNow = candidates.filter(
         (x) => x.lastRevisionDate >= dayjs().add(-stateActivityConfig.badReviewWaitSecs, "seconds").unix(),
       );
-      log(
+      console.debug(
         "getOverdueTodaysRepeat looks like we are already over quota, finishing " +
           "those started, even if they aren't officially ready",
         candidates,
@@ -328,7 +326,7 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
 
     let currentCard: CardType | null = null;
     let getNew = newToday.size < activityConfig.maxNew;
-    console.log(
+    console.debug(
       "getNewCard at the start",
       getNew,
       possibleRevisionsToday,
@@ -368,7 +366,7 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
     availableNewToday: number,
     activityConfig: RepetrobesActivityConfigType,
   ) {
-    console.log("sorted candidates and readies", candidates, readyCandidates);
+    console.debug("sorted candidates and readies", candidates, readyCandidates);
     let reviewCard: CardType;
     // if something is already due, chose one of those
     if (readyCandidates.length > 0) {
@@ -466,7 +464,7 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
     );
     if (goodCard) {
       currentCard = goodCard;
-      console.log("Doing a re-review for today", currentCard);
+      console.debug("Doing a re-review for today", currentCard);
     } else {
       const newStuff = await getNewCard(
         newToday,
@@ -481,15 +479,15 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
         currentCard =
           getReviewCard(candidates, readyCandidates, newToday, availableNewToday, activityConfig) ||
           newStuff.currentCard;
-        console.log("Either we don't need a new, or there isn't one to get", newStuff, currentCard);
+        console.debug("Either we don't need a new, or there isn't one to get", newStuff, currentCard);
       } else {
-        console.log("We need a new, and we have one", newStuff);
+        console.debug("We need a new, and we have one", newStuff);
         currentCard = newStuff.currentCard;
       }
     }
     if (currentCard) {
       definition = state.allReviewableDefinitions.get(getWordId(currentCard)) || null;
-      console.log("The definition found for the current card is", currentCard, definition);
+      console.debug("The definition found for the current card is", currentCard, definition);
     } else {
       console.warn("The current card is null, this is the end of our revisions...");
     }
@@ -515,7 +513,7 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
   async function handlePractice(wordIdStr: string, grade: number): Promise<void> {
     const { currentCard, definition } = daState;
     const { badReviewWaitSecs } = stateActivityConfig;
-    console.log("Doing a handlePractice, so setting loading to true");
+    console.debug("Doing a handlePractice, so setting loading to true");
     setLoadingMessage("");
     setLoading(true);
 
@@ -551,7 +549,7 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
     };
     const nextState = await nextPractice(newState, stateActivityConfig);
     setShowAnswer(false);
-    console.log("Done a handlePractice, so setting loading to undefined");
+    console.debug("Done a handlePractice, so setting loading to undefined");
     setLoadingMessage("");
     setLoading(false);
     setDaState({ ...nextState });

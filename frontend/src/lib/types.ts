@@ -777,31 +777,6 @@ export enum PROCESSING {
   ERROR = 4,
 }
 
-// each logging line will be prepended with the service worker version
-function dolog(
-  level: "log" | "warn" | "error" | "debug" = "log",
-  // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-  ...rest: any
-): void {
-  if (IS_DEV) console[level](`MAIN -`, ...rest);
-}
-
-export function warn(...rest: any): void {
-  dolog("warn", ...rest);
-}
-
-export function error(...rest: any): void {
-  dolog("error", ...rest);
-}
-
-export function debug(...rest: any): void {
-  dolog("debug", ...rest);
-}
-
-export function log(...rest: any): void {
-  dolog("log", ...rest);
-}
-
 export enum STATUS {
   INACTIVE = 0,
   ACTIVE = 1,

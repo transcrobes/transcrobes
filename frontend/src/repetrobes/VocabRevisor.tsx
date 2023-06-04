@@ -55,7 +55,7 @@ export function VocabRevisor({
   const premature = currentCard && currentCard?.dueDate > dayjs().unix();
   const theme = useTheme();
   const translate = useTranslate();
-  console.log(
+  console.debug(
     "prematurity",
     premature,
     currentCard,
