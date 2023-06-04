@@ -1356,7 +1356,10 @@ export async function getVocabReviews(
   const wordListObjects = (await db.wordlists.findByIds(selectedLists).exec()).values();
   const potentialWordIds = [...new Set<string>([...wordListObjects].flatMap((x) => x.wordIds))];
   const potentialWords = await orderVocabReviews(db, graderConfig.itemOrdering, potentialWordIds);
-  return potentialWords.slice(0, graderConfig.itemsPerPage).filter((x) => !!x);
+  return potentialWords
+    .slice(0, graderConfig.itemsPerPage)
+    .filter((x) => !!x)
+    .map((x) => clone(x.toJSON()));
 }
 
 function getEmptyDailyReviewables(): DailyReviewables {
