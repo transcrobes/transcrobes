@@ -27,7 +27,7 @@ export default function GraphQuestion({
           characters={characters}
           showDiscoverableWord={showDiscoverableWord}
           showToneColours={showAnswer}
-          showAnswer={showAnswer}
+          showAnswer
         />
       )}
     </GraphSoundQuestionStyle>
