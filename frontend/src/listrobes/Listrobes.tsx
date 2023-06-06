@@ -98,8 +98,8 @@ export function Listrobes({ proxy }: Props): ReactElement {
     return "";
   }
 
-  function toVocabReviews(definitions: DefinitionType[]): VocabReview[] {
-    return definitions.map((x) => {
+  function toVocabReviews(definitions?: DefinitionType[]): VocabReview[] | undefined {
+    return definitions?.map((x) => {
       return {
         id: x.id,
         graph: x.graph,
@@ -128,7 +128,6 @@ export function Listrobes({ proxy }: Props): ReactElement {
       const wordLists = await proxy.sendMessagePromise<SelectableListElementType[]>({
         source: DATA_SOURCE,
         type: "getDefaultWordLists",
-        value: {},
       });
       const gConfig = {
         ...graderConfig,
@@ -149,7 +148,7 @@ export function Listrobes({ proxy }: Props): ReactElement {
           },
         }),
       );
-      setVocab(vocabbie);
+      setVocab(vocabbie || []);
       dispatch(setLoading(undefined));
     })();
   }, []);
@@ -177,7 +176,7 @@ export function Listrobes({ proxy }: Props): ReactElement {
             type: "getVocabReviews",
             value: { ...graderConfigNew, gradeOrder: gradesWithoutIcons(graderConfigNew.gradeOrder) },
           }),
-        ),
+        ) || [],
       );
       setGraderConfig(graderConfigNew);
     } else {
@@ -188,7 +187,7 @@ export function Listrobes({ proxy }: Props): ReactElement {
   function handleMouseOver(index: number) {
     if (!timeoutId) {
       timeoutId = window.setTimeout(() => {
-        const items = [...vocab];
+        const items = [...(vocab || [])];
         items[index].lookedUp = true;
         setVocab(items);
         timeoutId = 0;
@@ -204,7 +203,7 @@ export function Listrobes({ proxy }: Props): ReactElement {
   }
 
   function handleGradeChange(index: number) {
-    const items = [...vocab];
+    const items = [...(vocab || [])];
     items[index].clicks = (items[index].clicks + 1) % graderConfig.gradeOrder.length;
     setVocab(items);
   }
@@ -214,7 +213,7 @@ export function Listrobes({ proxy }: Props): ReactElement {
     const newCards: CardType[] = [];
     const consultedDefinitions: ActionEventData[] = [];
     setLastWordsCount(wordsCount);
-    for (const word of vocab) {
+    for (const word of vocab || []) {
       if (word.lookedUp) {
         consultedDefinitions.push({ target_word: word.graph, target_sentence: "" });
       }
@@ -250,7 +249,7 @@ export function Listrobes({ proxy }: Props): ReactElement {
             gradeOrder: gradesWithoutIcons(graderConfig.gradeOrder),
           },
         }),
-      ),
+      ) || [],
     );
     dispatch(setLoading(undefined));
     submitLookupEvents(consultedDefinitions, USER_STATS_MODE.L1);
@@ -271,7 +270,7 @@ export function Listrobes({ proxy }: Props): ReactElement {
         <div className={classes.columnList}>
           <VocabList
             graderConfig={graderConfig}
-            vocab={vocab}
+            vocab={vocab || []}
             onGradeChange={handleGradeChange}
             onValidate={handleValidate}
             onMouseOver={handleMouseOver}

@@ -11,6 +11,9 @@ const minor = parseInt(browser?.version?.split(".")[1] || "0");
 if (["yandexbrowser", "edge-chromium", "chrome"].includes(browserName)) {
   if (version >= 110) {
     supported = true;
+  } else if (version >= 99 && navigator.userAgent.toLowerCase().includes("huawei")) {
+    // temp testing for huawei
+    supported = true;
   } else {
     supportMessage = "unsupported.chrome_version";
   }

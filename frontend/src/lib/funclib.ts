@@ -272,13 +272,19 @@ function exitFullscreen(doc: Document): void {
 }
 
 export function getVoices(): Promise<SpeechSynthesisVoice[]> {
-  return new Promise((resolve) => {
-    let voices = speechSynthesis.getVoices();
+  return new Promise((resolve, reject) => {
+    const synth = window.speechSynthesis;
+    if (!synth) return;
+    let voices = synth.getVoices();
+    if (!voices) {
+      reject(new Error("No voices available"));
+      return;
+    }
     if (voices.length > 0) {
       resolve(voices);
       return;
     }
-    speechSynthesis.onvoiceschanged = () => {
+    window.speechSynthesis.onvoiceschanged = () => {
       voices = speechSynthesis.getVoices();
       resolve(voices);
     };
@@ -287,6 +293,7 @@ export function getVoices(): Promise<SpeechSynthesisVoice[]> {
 
 export function say(text: string, lang: SystemLanguage, voice?: SpeechSynthesisVoice): void {
   const synth = window.speechSynthesis;
+  if (!synth) return;
   if (voice && voice.lang !== SYSTEM_LANG_TO_LOCALE[lang]) {
     throw new Error("The language of the voice and lang must be the same");
   }
