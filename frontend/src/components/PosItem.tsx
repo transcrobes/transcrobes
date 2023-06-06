@@ -1,11 +1,11 @@
 import { Typography } from "@mui/material";
 import { ReactElement } from "react";
-import { store } from "../app/createStore";
 import { toPosLabels } from "../lib/libMethods";
 import { PosTranslationsType } from "../lib/types";
 import { InfoBox } from "./Common";
 import DW from "./DiscoverableWord";
 import { useTranslate } from "react-admin";
+import { useAppSelector } from "../app/hooks";
 
 interface Props {
   item: PosTranslationsType;
@@ -13,9 +13,8 @@ interface Props {
 }
 
 export default function PosItem({ item, discoverableWords }: Props): ReactElement {
-  // FIXME: remember why I'm not using useAppSelector here
-  const user = store.getState().userData.user;
   const translate = useTranslate();
+  const user = useAppSelector((state) => state.userData.user);
   const posLabel = translate(toPosLabels(item.posTag, user.toLang));
   return (
     <InfoBox>
@@ -32,7 +31,7 @@ export default function PosItem({ item, discoverableWords }: Props): ReactElemen
           </span>
         </Typography>
       ) : (
-        <Typography>No {posLabel} found</Typography>
+        <Typography>{translate("widgets.pos_items.no_value_found", { value: posLabel })}</Typography>
       )}
     </InfoBox>
   );

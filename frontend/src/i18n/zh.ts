@@ -236,6 +236,16 @@ const customChineseMessages: TranslationMessages = {
       meaning: "意思",
       phrase: "短语",
     },
+    dictionary_provider: {
+      title: "字典提供商",
+      selected: "已选择",
+      unselected: "未选择",
+    },
+    editable_definition_translations: {
+      edit: "编辑",
+      use_me: "使用我",
+      current_value: "当前值",
+    },
     fine_control: {
       raw: {
         more: "增加 %{amount}",
@@ -245,11 +255,6 @@ const customChineseMessages: TranslationMessages = {
         more: "增加 %{amount}%",
         less: "减少 %{amount}%",
       },
-    },
-    dictionary_provider: {
-      title: "字典提供商",
-      selected: "已选择",
-      unselected: "未选择",
     },
     gloss_font_override: {
       font_family: "字体",
@@ -344,6 +349,9 @@ const customChineseMessages: TranslationMessages = {
     order_by: {
       absolute_frequency: "绝对频率",
       import_frequency: "导入频率",
+    },
+    pos_item: {
+      no_value_found: "未找到 %{value}",
     },
     processing: {
       none: "无",

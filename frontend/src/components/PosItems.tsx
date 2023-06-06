@@ -1,19 +1,18 @@
-import { ClassNameMap } from "@mui/material";
+import { Box } from "@mui/material";
 import { ReactElement } from "react";
 import { ProviderTranslationType } from "../lib/types";
 import PosItem from "./PosItem";
 
 interface Props {
   providerEntry: ProviderTranslationType;
-  classes?: ClassNameMap<"translations">;
 }
 
-export default function PosItems({ providerEntry, classes }: Props): ReactElement {
+export default function PosItems({ providerEntry }: Props): ReactElement {
   return (
-    <div className={classes?.translations}>
+    <Box sx={{ maxWidth: "500px" }}>
       {providerEntry.posTranslations.map((posItem) => {
         return <PosItem key={posItem.posTag} item={posItem} />;
       })}
-    </div>
+    </Box>
   );
 }

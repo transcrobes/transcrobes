@@ -250,7 +250,6 @@ function App({ config }: Props): ReactElement {
           dashboard={() => Dashboard({ config, inited })}
           title="Transcrobes"
           layout={Layout}
-          // loginPage={(props) => <Login {...props} config={config} />}
           loginPage={(props) => <Login {...props} />}
           history={localHistory}
         >

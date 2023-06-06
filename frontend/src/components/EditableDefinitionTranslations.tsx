@@ -1,18 +1,14 @@
-import { Button, Grid, Typography } from "@mui/material";
-import { makeStyles } from "tss-react/mui";
-import { ContentState, convertFromHTML, convertFromRaw, Editor, EditorState } from "draft-js";
+import { Box, Button, Grid, Typography } from "@mui/material";
+import { ContentState, Editor, EditorState, convertFromHTML, convertFromRaw } from "draft-js";
 import "draft-js/dist/Draft.css";
 import { ReactElement, useState } from "react";
+import { I18nContextProvider, useI18nProvider, useTranslate } from "react-admin";
 import { renderToString } from "react-dom/server";
-import { CardType, DefinitionType, noop, ProviderTranslationType } from "../lib/types";
+import { Provider } from "react-redux";
+import { store } from "../app/createStore";
+import { CardType, DefinitionType, ProviderTranslationType, noop } from "../lib/types";
 import MeaningEditor from "./MeaningEditor";
 import PosItems from "./PosItems";
-
-const useStyles = makeStyles()({
-  providerEntry: { padding: "1em" },
-  translations: { maxWidth: "500px" },
-  editorContent: { maxWidth: "500px" },
-});
 
 interface EditableDefinitionTranslationsProps {
   definition: DefinitionType;
@@ -29,17 +25,22 @@ export default function EditableDefinitionTranslations({
 }: EditableDefinitionTranslationsProps): ReactElement {
   const [current, setCurrent] = useState(card.front ? convertFromRaw(JSON.parse(card.front)) : undefined);
   const [editing, setEditing] = useState(false);
-
-  const { classes } = useStyles();
+  const translate = useTranslate();
+  const i18nProvider = useI18nProvider();
 
   function frontFromTranslations(providerTranslation: ProviderTranslationType): string {
-    return renderToString(<PosItems providerEntry={providerTranslation} />);
+    return renderToString(
+      <Provider store={store}>
+        <I18nContextProvider value={i18nProvider}>
+          <PosItems providerEntry={providerTranslation} />
+        </I18nContextProvider>
+      </Provider>,
+    );
   }
 
   function handleEditFromDefinition(providerTranslation: ProviderTranslationType): void {
     const contentHTML = convertFromHTML(frontFromTranslations(providerTranslation));
     const state = ContentState.createFromBlockArray(contentHTML.contentBlocks, contentHTML.entityMap);
-
     setCurrent(state);
     setEditing(true);
   }
@@ -55,12 +56,12 @@ export default function EditableDefinitionTranslations({
   return (
     <>
       {current && !editing && (
-        <Grid className={classes.providerEntry} container justifyContent="space-between">
+        <Grid sx={{ padding: "1em" }} container justifyContent="space-between">
           <Grid item>
-            <Typography>Current value</Typography>
-            <div className={classes.editorContent}>
+            <Typography>{translate("widgets.editable_definition_translations.current_value")}</Typography>
+            <Box sx={{ maxWidth: "500px" }}>
               <Editor editorState={EditorState.createWithContent(current)} onChange={noop} readOnly={true} />
-            </div>
+            </Box>
           </Grid>
           <Grid item>
             <Button
@@ -76,11 +77,11 @@ export default function EditableDefinitionTranslations({
         </Grid>
       )}
       {current && editing && (
-        <Grid className={classes.providerEntry} container justifyContent="space-between">
+        <Grid sx={{ padding: "1em" }} container justifyContent="space-between">
           <Grid item>
-            <div className={classes.editorContent}>
+            <Box sx={{ maxWidth: "500px" }}>
               <MeaningEditor initial={current} handleSave={handleSave} />
-            </div>
+            </Box>
           </Grid>
         </Grid>
       )}
@@ -88,15 +89,10 @@ export default function EditableDefinitionTranslations({
         definition.providerTranslations.map((providerEntry) => {
           return (
             providerEntry.posTranslations.length > 0 && (
-              <Grid
-                className={classes.providerEntry}
-                container
-                justifyContent="space-between"
-                key={providerEntry.provider}
-              >
+              <Grid sx={{ padding: "1em" }} container justifyContent="space-between" key={providerEntry.provider}>
                 <Grid item>
                   <Typography>{providerEntry.provider}</Typography>
-                  <PosItems providerEntry={providerEntry} classes={classes} />
+                  <PosItems providerEntry={providerEntry} />
                 </Grid>
                 <Grid item>
                   <Button
@@ -106,7 +102,11 @@ export default function EditableDefinitionTranslations({
                       handleEditFromDefinition(providerEntry);
                     }}
                   >
-                    {providerEntry.provider === defaultProvider && !current && !editing ? "Edit" : "Use Me Instead"}
+                    {translate(
+                      `widgets.editable_definition_translations.${
+                        providerEntry.provider === defaultProvider && !current && !editing ? "edit" : "use_me"
+                      }`,
+                    )}
                   </Button>
                 </Grid>
               </Grid>

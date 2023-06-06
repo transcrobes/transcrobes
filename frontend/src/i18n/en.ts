@@ -242,6 +242,11 @@ const customEnglishMessages: TranslationMessages = {
       selected: "Selected",
       unselected: "Unselected",
     },
+    editable_definition_translations: {
+      edit: "Edit",
+      use_me: "Use me instead",
+      current_value: "Current value",
+    },
     fine_control: {
       raw: {
         more: "Increase by %{amount}",
@@ -293,6 +298,9 @@ const customEnglishMessages: TranslationMessages = {
       translating: "Translating...",
       no_hsk: "No HSK found,",
       hsk_level: "HSK: %{hsk},",
+    },
+    pos_item: {
+      no_value_found: "No %{value} found",
     },
     practicerInput: {
       unknown_desc: "I don't know this word yet",
