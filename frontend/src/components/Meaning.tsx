@@ -1,34 +1,13 @@
-import Popover from "@mui/material/Popover";
-import { makeStyles } from "tss-react/mui";
+import Popover, { popoverClasses } from "@mui/material/Popover";
 import { ReactElement, useState } from "react";
+import { useTranslate } from "react-admin";
 import { useAppSelector } from "../app/hooks";
-import {
-  cleanedSound,
-  filterFakeL1Definitions,
-  filterUnhelpfulL1Definitions,
-  orderTranslations,
-  toPosLabels,
-} from "../lib/libMethods";
+import { cleanedSound, filterFakeL1Definitions, orderTranslations, toPosLabels } from "../lib/libMethods";
 import { CardType, DefinitionType } from "../lib/types";
 import DefinitionTranslations from "./DefinitionTranslations";
 import EditableDefinitionTranslations from "./EditableDefinitionTranslations";
 import MeaningText from "./MeaningText";
 import SynonymsText from "./SynonymsText";
-import { useTranslate } from "react-admin";
-
-const useStyles = makeStyles()((theme) => {
-  return {
-    popover: {
-      pointerEvents: "none",
-    },
-    paper: {
-      padding: theme.spacing(1),
-    },
-    typography: {
-      padding: theme.spacing(2),
-    },
-  };
-});
 
 interface MeaningProps {
   editable: boolean;
@@ -47,7 +26,6 @@ export default function Meaning({
   translationProviderOrder,
   onCardFrontUpdate,
 }: MeaningProps): ReactElement {
-  const { classes } = useStyles();
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const [anchorElClick, setAnchorElClick] = useState<HTMLElement | null>(null);
   const { fromLang, toLang } = useAppSelector((state) => state.userData.user);
@@ -75,13 +53,16 @@ export default function Meaning({
   const posTrans: ReactElement[] = [];
   let defaultProvider = "";
   if (!card.front) {
+    const allTrans: Record<string, ReactElement[]> = {};
     const translations = orderTranslations(definition.providerTranslations, translationProviderOrder);
     for (const provider of translations.length ? translations : definition.providerTranslations) {
+      allTrans[provider.provider] = [];
       if (provider.posTranslations.length > 0) {
         let hasValidDefinitions = false;
         for (const posTranslation of provider.posTranslations) {
+          const withoutGraph = posTranslation.values.filter((v) => !v.match(definition.graph));
           const finalList = filterFakeL1Definitions(
-            filterUnhelpfulL1Definitions(posTranslation.values.filter((v) => !v.match(definition.graph))),
+            withoutGraph,
             cleanedSound(definition, fromLang),
             fromLang,
             provider.provider === "fbk",
@@ -93,10 +74,26 @@ export default function Meaning({
                 {translate(toPosLabels(posTranslation.posTag, toLang))}: {finalList.join(", ")}
               </div>,
             );
+          } else {
+            allTrans[provider.provider].push(
+              <div key={"mean" + posTranslation.posTag}>
+                {translate(toPosLabels(posTranslation.posTag, toLang))}: {posTranslation.values.join(", ")}
+              </div>,
+            );
           }
         }
         if (hasValidDefinitions) {
           defaultProvider = provider.provider;
+          break;
+        }
+      }
+    }
+    if (posTrans.length === 0) {
+      // we've got nothing at all, let's show the first provider with something, even if it's bad
+      for (let i = 0; i < Object.keys(allTrans).length; i++) {
+        if (Object.keys(allTrans)[i].length > 0) {
+          defaultProvider = Object.keys(allTrans)[0];
+          posTrans.push(...allTrans[defaultProvider]);
           break;
         }
       }
@@ -120,9 +117,11 @@ export default function Meaning({
       </div>
       <Popover
         id="mouse-over-popover"
-        className={classes.popover}
-        classes={{
-          paper: classes.paper,
+        sx={{
+          pointerEvents: "none",
+          [`& .${popoverClasses.paper}`]: {
+            gap: 1,
+          },
         }}
         open={open}
         anchorEl={anchorEl}
