@@ -2,10 +2,8 @@ import { Box, Button, Grid, Typography } from "@mui/material";
 import { ContentState, Editor, EditorState, convertFromHTML, convertFromRaw } from "draft-js";
 import "draft-js/dist/Draft.css";
 import { ReactElement, useState } from "react";
-import { I18nContextProvider, useI18nProvider, useTranslate } from "react-admin";
+import { useTranslate } from "react-admin";
 import { renderToString } from "react-dom/server";
-import { Provider } from "react-redux";
-import { store } from "../app/createStore";
 import { CardType, DefinitionType, ProviderTranslationType, noop } from "../lib/types";
 import MeaningEditor from "./MeaningEditor";
 import PosItems from "./PosItems";
@@ -26,16 +24,9 @@ export default function EditableDefinitionTranslations({
   const [current, setCurrent] = useState(card.front ? convertFromRaw(JSON.parse(card.front)) : undefined);
   const [editing, setEditing] = useState(false);
   const translate = useTranslate();
-  const i18nProvider = useI18nProvider();
 
   function frontFromTranslations(providerTranslation: ProviderTranslationType): string {
-    return renderToString(
-      <Provider store={store}>
-        <I18nContextProvider value={i18nProvider}>
-          <PosItems providerEntry={providerTranslation} />
-        </I18nContextProvider>
-      </Provider>,
-    );
+    return renderToString(<PosItems providerEntry={providerTranslation} translate={translate} />);
   }
 
   function handleEditFromDefinition(providerTranslation: ProviderTranslationType): void {
@@ -92,7 +83,7 @@ export default function EditableDefinitionTranslations({
               <Grid sx={{ padding: "1em" }} container justifyContent="space-between" key={providerEntry.provider}>
                 <Grid item>
                   <Typography>{providerEntry.provider}</Typography>
-                  <PosItems providerEntry={providerEntry} />
+                  <PosItems providerEntry={providerEntry} translate={translate} />
                 </Grid>
                 <Grid item>
                   <Button

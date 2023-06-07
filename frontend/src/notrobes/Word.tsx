@@ -8,13 +8,14 @@ import { useAppSelector } from "../app/hooks";
 import { ThinHR } from "../components/Common";
 import DefinitionGraph from "../components/DefinitionGraph";
 import DefinitionTranslations from "../components/DefinitionTranslations";
-import { default as DiscoverableWord, default as DW } from "../components/DiscoverableWord";
+import { default as DW, default as DiscoverableWord } from "../components/DiscoverableWord";
 import { Frequency } from "../components/Frequency";
 import Header from "../components/Header";
 import PosItem from "../components/PosItem";
 import PracticerInput from "../components/PracticerInput";
 import RecentSentencesElement from "../components/RecentSentencesElement";
 import SayIt from "../components/SayIt";
+import Sound from "../components/Sound";
 import SoundBox from "../components/SoundBox";
 import { CARD_TYPES, getCardId, getCardType } from "../database/Schema";
 import useDecomposition from "../hooks/useDecomposition";
@@ -29,7 +30,6 @@ import {
   SortableListElementType,
   WordModelStatsType,
 } from "../lib/types";
-import Sound from "../components/Sound";
 
 const useStyles = makeStyles()({
   characterDetails: {
@@ -288,7 +288,7 @@ function Synonyms({ definition }: { definition: DefinitionType }): ReactElement 
         {(definition.synonyms.length > 0 && (
           <div>
             {definition.synonyms.map((result, ind) => {
-              return <PosItem key={ind} item={result} discoverableWords />;
+              return <PosItem key={ind} item={result} discoverableWords translate={translate} />;
             })}
           </div>
         )) || <div className={classes.infoBox}>{translate("screens.notrobes.no_related_words")}</div>}

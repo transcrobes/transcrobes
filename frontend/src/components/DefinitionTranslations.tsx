@@ -1,6 +1,7 @@
 import { Typography } from "@mui/material";
-import { makeStyles } from "tss-react/mui";
 import { Fragment, ReactElement } from "react";
+import { useTranslate } from "react-admin";
+import { makeStyles } from "tss-react/mui";
 import { useAppSelector } from "../app/hooks";
 import {
   cleanedSound,
@@ -29,6 +30,7 @@ export default function DefinitionTranslations({
 }: Props): ReactElement {
   const { classes } = useStyles();
   const dictionaries = useAppSelector((state) => state.dictionary);
+  const translate = useTranslate();
   const { fromLang } = useAppSelector((state) => state.userData.user);
   let providerTranslations: ProviderTranslationType[] = [];
   const orderedTranslations =
@@ -41,9 +43,11 @@ export default function DefinitionTranslations({
       for (const posTrans of providerTranslation.posTranslations) {
         // Remove "meanings" that are just pinyin without tone markings as well as meanings that
         // have the initial word in them, and meanings that aren't proper words (eg. -ize, -footed)
+        // const filtered = filterUnhelpfulL1Definitions(posTrans.values.filter((v) => !v.match(definition.graph)));
+        const filtered = posTrans.values.filter((v) => !v.match(definition.graph));
 
         const values = filterFakeL1Definitions(
-          filterUnhelpfulL1Definitions(posTrans.values.filter((v) => !v.match(definition.graph))),
+          filtered,
           cleanedSound(definition, fromLang),
           fromLang,
           providerTranslation.provider === "fbk",
@@ -75,7 +79,7 @@ export default function DefinitionTranslations({
                   <Typography>{dictionaries[providerEntry.provider] || providerEntry.provider}</Typography>
                   <div className={classes.translations}>
                     {providerEntry.posTranslations.map((posItem) => {
-                      return <PosItem key={posItem.posTag + posItem.sounds} item={posItem} />;
+                      return <PosItem key={posItem.posTag + posItem.sounds} item={posItem} translate={translate} />;
                     })}
                   </div>
                 </InfoBox>

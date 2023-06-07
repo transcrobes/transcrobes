@@ -1,23 +1,23 @@
-import { Typography } from "@mui/material";
+import { Box, Typography } from "@mui/material";
 import { ReactElement } from "react";
+import type { Translate } from "react-admin";
+import { store } from "../app/createStore";
 import { toPosLabels } from "../lib/libMethods";
 import { PosTranslationsType } from "../lib/types";
-import { InfoBox } from "./Common";
 import DW from "./DiscoverableWord";
-import { useTranslate } from "react-admin";
-import { useAppSelector } from "../app/hooks";
 
 interface Props {
   item: PosTranslationsType;
   discoverableWords?: boolean;
+  translate: Translate;
 }
 
-export default function PosItem({ item, discoverableWords }: Props): ReactElement {
-  const translate = useTranslate();
-  const user = useAppSelector((state) => state.userData.user);
+export default function PosItem({ item, discoverableWords, translate }: Props): ReactElement {
+  // contexts can't be use in renderToString, so we have to get the user from the store and pass translate
+  const user = store.getState().userData.user;
   const posLabel = translate(toPosLabels(item.posTag, user.toLang));
   return (
-    <InfoBox>
+    <Box sx={{ margin: "0.7em" }}>
       {item.values.length > 0 ? (
         <Typography>
           <span style={{ fontWeight: "bold" }}>{posLabel}: </span>
@@ -33,6 +33,6 @@ export default function PosItem({ item, discoverableWords }: Props): ReactElemen
       ) : (
         <Typography>{translate("widgets.pos_items.no_value_found", { value: posLabel })}</Typography>
       )}
-    </InfoBox>
+    </Box>
   );
 }
