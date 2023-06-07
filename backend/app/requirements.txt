@@ -1538,9 +1538,9 @@ starlette==0.27.0 \
     --hash=sha256:6a6b0d042acb8d469a01eba54e9cda6cbd24ac602c4cd016723117d6a7e73b75 \
     --hash=sha256:918416370e846586541235ccd38a474c08b80443ed31c578a418e2209b3eef91
     # via fastapi
-strawberry-graphql==0.180.5 \
-    --hash=sha256:3ef3e4a3d82f69c7da8436ca36504414230c83063e46a967df8eb5645121b6b5 \
-    --hash=sha256:f08c4445711205d9bb12fd59cba7631e754efe93fe08ec5b7a7d7f2ee60750fa
+strawberry-graphql==0.183.1 \
+    --hash=sha256:36845e3f834133b2be8f9f4b3f3f4b85e171fa05846bbffd6064dbb9d09889cd \
+    --hash=sha256:3e14764c39a9262b11ec1f260dfa6e809886a9ea1eeb4bfa90fac6b45362f2ff
     # via transcrobes (pyproject.toml)
 tenacity==8.2.2 \
     --hash=sha256:2f277afb21b851637e8f52e6a613ff08734c347dc19ade928e519d7d2d8569b0 \
