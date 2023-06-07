@@ -1,16 +1,16 @@
+import dayjs from "dayjs";
 import { CreateParams, DataProvider, GetListParams, GetManyParams, GetOneParams } from "ra-core";
 import { DeleteManyParams, DeleteParams, GetManyReferenceParams, UpdateManyParams, UpdateParams } from "react-admin";
 import { v4 as uuidv4 } from "uuid";
-
 import { getDb } from "../database/Database";
-import { getNamedFileStorage } from "../lib/data";
 import { TranscrobesCollectionsKeys, TranscrobesDatabase } from "../database/Schema";
-import dayjs from "dayjs";
-import { SystemLanguage } from "../lib/types";
+import { getNamedFileStorage } from "../lib/data";
 
 type DbDataProvider = DataProvider & { db: () => Promise<TranscrobesDatabase> };
 
-type ClassParticipants = "students" | "teachers";
+export function regexfilterQuery(field: string, searchText: string) {
+  return { [field]: { $regex: `.*${searchText}.*` } };
+}
 
 export default function RxDBProvider(params: RxDBDataProviderParams): DbDataProvider {
   const parameters = params;
@@ -46,8 +46,9 @@ export default function RxDBProvider(params: RxDBDataProviderParams): DbDataProv
       if (params.sort) {
         const sortField = params.sort.field;
         if (!finder["selector"]) finder["selector"] = {};
-
-        finder["selector"][sortField] = { $exists: true }; // a sort field MUST be in the selector
+        if (!(sortField in finder["selector"])) {
+          finder["selector"][sortField] = { $exists: true }; // a sort field MUST be in the selector
+        }
         finder["sort"] = [{ [sortField]: params.sort.order.toLowerCase() }];
       }
       if (params.pagination) {
@@ -61,9 +62,7 @@ export default function RxDBProvider(params: RxDBDataProviderParams): DbDataProv
       if (!params.meta || !params.meta?.filteredAsAll) {
         resTot = [...(await db[resource].find().exec())].length;
       }
-
       const resArr = res.map((val) => val.toJSON());
-
       return { data: resArr, total: resTot };
     },
     getOne: async (resource: TranscrobesCollectionsKeys, params: GetOneParams) => {

@@ -1,4 +1,5 @@
 import {
+  AutocompleteInput,
   BooleanInput,
   Create,
   NumberInput,
@@ -12,6 +13,7 @@ import {
 import { HelpCreateActions } from "../components/HelpCreateActions";
 import { GRADE, KNOWLEDGE_UNSET } from "../database/Schema";
 import { DOCS_DOMAIN, PROCESSING, STATUS, USERLISTS_YT_VIDEO } from "../lib/types";
+import { regexfilterQuery } from "../ra-data-rxdb";
 
 export default function UserListCreate() {
   const translate = useTranslate();
@@ -30,9 +32,14 @@ export default function UserListCreate() {
           sort={{ field: "title", order: "ASC" }}
           source="theImport"
           reference="imports"
+          validate={[required()]}
           filter={{ status: STATUS.ACTIVE, processing: PROCESSING.FINISHED }}
         >
-          <SelectInput validate={[required()]} optionText="title" />
+          <AutocompleteInput
+            optionText="title"
+            filterToQuery={(q) => regexfilterQuery("title", q)}
+            validate={[required()]}
+          />
         </ReferenceInput>
         {/* <BooleanInput label="Only dictionary words" source="onlyDictionaryWords" defaultValue={true} /> */}
         <NumberInput min={-1} source="minimumAbsFrequency" step={1} defaultValue={-1} />
