@@ -339,7 +339,8 @@ export function shortProviderTranslations(
       }
     }
   }
-  return [...transes].join(", ").slice(0, maxLength);
+  const all = [...transes].join(", ");
+  return all.length > maxLength ? all.slice(0, maxLength) + "..." : all;
 }
 
 export function enrichNodes(nodes: Node[], transcroberObserver: IntersectionObserver, fromLang: InputLanguage): void {
