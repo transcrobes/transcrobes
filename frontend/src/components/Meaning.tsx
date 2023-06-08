@@ -15,6 +15,7 @@ interface MeaningProps {
   showSynonyms: boolean;
   card: CardType;
   translationProviderOrder: Record<string, number>;
+  showAnswer?: boolean;
   onCardFrontUpdate: (card: CardType) => void;
 }
 
@@ -25,6 +26,7 @@ export default function Meaning({
   card,
   translationProviderOrder,
   onCardFrontUpdate,
+  showAnswer,
 }: MeaningProps): ReactElement {
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const [anchorElClick, setAnchorElClick] = useState<HTMLElement | null>(null);
@@ -137,7 +139,7 @@ export default function Meaning({
         disableRestoreFocus
       >
         <DefinitionTranslations
-          cleanMeanings
+          cleanMeanings={!showAnswer}
           definition={definition}
           translationProviderOrder={translationProviderOrder}
         />

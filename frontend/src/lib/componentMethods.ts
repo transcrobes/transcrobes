@@ -161,7 +161,7 @@ export async function getDefinitions(token: TokenType, definitions: DefinitionsS
       defs.push(def);
     }
   }
-  return defs || [await getWord(token.l)];
+  return defs.length > 0 ? defs : [await getWord(token.l)];
 }
 
 export async function getL1(
@@ -218,8 +218,8 @@ export async function getNormalGloss(
   fromLang: InputLanguage,
   toLang: SystemLanguage,
 ): Promise<string> {
-  // Default L1, context-aware, "best guess" gloss
   const { glossing } = readerConfig;
+  // FIXME: decide whether to forget about the python bg...
   let gloss = token.bg ? token.bg.split(",")[0].split(";")[0] : "";
   if (glossing == USER_STATS_MODE.L1) {
     gloss = await getL1(token, definitions, fromLang, toLang, readerConfig, gloss);
