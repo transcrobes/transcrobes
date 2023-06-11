@@ -447,10 +447,10 @@ function Notrobes({ proxy, url }: Props): ReactElement {
       setMessage(translate("screens.notrobes.no_traditional"));
     } else if (fromLang === "en" && q.length > EN_MAX_ALLOWED_CHARACTERS) {
       console.debug(`Entered a query of more than ${EN_MAX_ALLOWED_CHARACTERS} characters`, q);
-      setMessage(translate("screens.notrobes.query_max_length", { max_chars: EN_MAX_ALLOWED_CHARACTERS }));
+      setMessage(translate("screens.notrobes.query_max_length", { maxChars: EN_MAX_ALLOWED_CHARACTERS }));
     } else if (fromLang === "zh-Hans" && q.length > ZH_MAX_ALLOWED_CHARACTERS) {
       console.debug(`Entered a query of more than ${ZH_MAX_ALLOWED_CHARACTERS} characters`, q);
-      setMessage(translate("screens.notrobes.query_max_length", { max_chars: ZH_MAX_ALLOWED_CHARACTERS }));
+      setMessage(translate("screens.notrobes.query_max_length", { maxChars: ZH_MAX_ALLOWED_CHARACTERS }));
     } else {
       dispatch(setLoading(true));
       setMessage("");

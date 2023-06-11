@@ -32,8 +32,8 @@ function Login(): ReactElement {
 
   const messages = {
     "001": translate("user.login.messages.001"),
-    "002": translate("user.login.messages.002", { admin_emails: ADMIN_EMAILS.join(" or ") }),
-    "003": translate("user.login.messages.003", { admin_emails: ADMIN_EMAILS.join(" or ") }),
+    "002": translate("user.login.messages.002", { adminEmails: ADMIN_EMAILS.join(" or ") }),
+    "003": translate("user.login.messages.003", { adminEmails: ADMIN_EMAILS.join(" or ") }),
   };
 
   useEffect(() => {

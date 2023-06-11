@@ -119,8 +119,8 @@ const customChineseMessages: TranslationMessages = {
     login: {
       messages: {
         "001": "电子邮件验证成功",
-        "002": "电子邮件验证错误，请联系 %{admin_emails}",
-        "003": "电子邮件验证已过期，请联系 %{admin_emails}",
+        "002": "电子邮件验证错误，请联系 %{adminEmails}",
+        "003": "电子邮件验证已过期，请联系 %{adminEmails}",
       },
     },
     signup: {
@@ -599,7 +599,7 @@ const customChineseMessages: TranslationMessages = {
       save_warning: "进行更改后不要忘记点击保存（在底部）！",
       login_error: `登录 %{baseUrl} 时出错。 \n\n请检查登录详细信息，或稍后重试。`,
       sync_error: "启动初始同步时出错。 请稍后再试。",
-      error: `设置 Transcrobes 时出错。 请稍后再试，或联系 Transcrobes 支持（<a href="http://%{docs_domain}/page/contact/">此处</a>）`,
+      error: `设置 Transcrobes 时出错。 请稍后再试，或联系 Transcrobes 支持（<a href="http://%{docsDomain}/page/contact/">此处</a>）`,
       init_complete: "初始化完成！",
       update_complete: "更新完成！",
       saving_now: "保存选项，请稍候并保持此窗口打开...",
@@ -627,7 +627,7 @@ const customChineseMessages: TranslationMessages = {
       },
       missing_account: `您需要 Transcrobes 服务器上的帐户才能转译页面。 \n\n
           如果您有帐户，请使用您的登录信息（用户名、密码、服务器 URL）填写选项页面（右键单击 Transcrobe Me! 图标 -> 扩展选项）。\n\n
-          请参阅 Transcrobes 网站 http://%{docs_domain} 了解更多信息`,
+          请参阅 Transcrobes 网站 http://%{docsDomain} 了解更多信息`,
       waiting_for_load: "等待页面加载...",
       popup_theme_mode: {
         title: "弹出主题模式",
@@ -679,7 +679,7 @@ const customChineseMessages: TranslationMessages = {
     listrobes: {
       name: "Listrobes",
       minimum_training_complete: "完成最低限度的培训。 继续培训或开始使用该平台！",
-      percent_training_complete: "告诉系统你知道的单词（%{percent_complete} 完成）",
+      percent_training_complete: "告诉系统你知道的单词（%{percentComplete} 完成）",
       minimum_entry_complete: {
         title: "最低建议培训完成",
         message: `现在您已经向系统介绍了一些关于您自己的信息，您可以开始使用该平台了。
@@ -832,7 +832,7 @@ const customChineseMessages: TranslationMessages = {
       cards_recorded: "记录的卡片",
       only_simplified: "只能搜索简体字",
       no_traditional: "系统暂不支持繁体字",
-      query_max_length: "系统只处理最多 %{max_chars} 个字符的单词",
+      query_max_length: "系统只处理最多 %{maxChars} 个字符的单词",
       common_only: "只显示最常见的词",
       by_chars: "按字母",
       by_sound: "按声音",
@@ -890,7 +890,7 @@ const customChineseMessages: TranslationMessages = {
       name: "系统",
       initialise: "初始化",
       refresh_caches: "刷新缓存（即时）",
-      caches_cleared: "清除缓存：%{cache_names}",
+      caches_cleared: "清除缓存：%{cacheNames}",
       reload_db: "重新加载数据库（几乎即时）",
       purge_invalid_recents: "清除最近无效的句子（快）",
       refresh_db_from_server: "从服务器刷新数据库（最多 10 分钟）",
@@ -907,7 +907,7 @@ const customChineseMessages: TranslationMessages = {
       name: "Textcrobes",
       settings: "Textcrobes设置",
       enrich_error: "丰富文本时出错。",
-      too_many_words: `编辑器的字符限制为 %{max_text_length}。 请在添加更多内容之前删除文本。
+      too_many_words: `编辑器的字符限制为 %{maxTextLength}。 请在添加更多内容之前删除文本。
         如果您的文本超过此长度，请将文本内容以纯文本格式放入 .txt 文件中，并使用导入系统导入。`,
       type_something_here: "在这里输入一些东西...",
       input_label: "要Transcrobe的文本",

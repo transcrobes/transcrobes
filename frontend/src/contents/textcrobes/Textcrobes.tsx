@@ -157,7 +157,7 @@ export default function Textcrobes({ proxy }: Props): ReactElement {
     const paste = event.clipboardData.getData("text");
     const currentLength = editorState.getCurrentContent().getPlainText("").length;
     if (currentLength + paste.length > MAX_TEXT_LENGTH) {
-      setError(translate("screens.textcrobes.input_label", { max_text_length: MAX_TEXT_LENGTH }));
+      setError(translate("screens.textcrobes.input_label", { maxTextLength: MAX_TEXT_LENGTH }));
       event.preventDefault();
     }
   }

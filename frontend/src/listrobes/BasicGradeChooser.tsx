@@ -31,7 +31,7 @@ export default function BasicGradeChooser({ graderConfig, setGraderConfig }: Pro
       return translate("screens.listrobes.minimum_training_complete");
     } else {
       return translate("screens.listrobes.percent_training_complete", {
-        percent_complete: new Intl.NumberFormat("default", { style: "percent" }).format(completed),
+        percentComplete: new Intl.NumberFormat("default", { style: "percent" }).format(completed),
       });
     }
   });

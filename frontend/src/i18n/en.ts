@@ -122,8 +122,8 @@ const customEnglishMessages: TranslationMessages = {
     login: {
       messages: {
         "001": "Email validated successfully",
-        "002": "Email validation error, please contact %{admin_emails}",
-        "003": "Email validation expired, please contact %{admin_emails}",
+        "002": "Email validation error, please contact %{adminEmails}",
+        "003": "Email validation expired, please contact %{adminEmails}",
       },
     },
     signup: {
@@ -621,7 +621,7 @@ const customEnglishMessages: TranslationMessages = {
           Please check the login details, or try again in a short while.`,
       sync_error: "There was an error starting the initial synchronisation. Please try again in a short while.",
       error: `There was an error setting up Transcrobes.
-        Please try again in a little while, or contact Transcrobes support (<a href="http://%{docs_domain}/page/contact/">here</a>)`,
+        Please try again in a little while, or contact Transcrobes support (<a href="http://%{docsDomain}/page/contact/">here</a>)`,
       init_complete: "Initialisation complete!",
       update_complete: "Update complete!",
       saving_now: "Saving the options, please wait and keep this window open...",
@@ -654,7 +654,7 @@ const customEnglishMessages: TranslationMessages = {
       missing_account: `You need an account on a Transcrobes server to Transcrobe a page. \n\n
         If you have an account please fill in the options page (right-click on the Transcrobe Me! icon -> Extension Options)
         with your login information (username, password, server URL).\n\n
-        See the Transcrobes site http://%{docs_domain} for more information`,
+        See the Transcrobes site http://%{docsDomain} for more information`,
       waiting_for_load: "Waiting for page to load...",
       popup_theme_mode: {
         title: "Popup Theme Mode",
@@ -712,7 +712,7 @@ const customEnglishMessages: TranslationMessages = {
     listrobes: {
       name: "Listrobes",
       minimum_training_complete: "Minimum training completed. Continue training or start using the platform!",
-      percent_training_complete: "Tell the system about the words you know (%{percent_complete} complete)",
+      percent_training_complete: "Tell the system about the words you know (%{percentComplete} complete)",
       minimum_entry_complete: {
         title: "Minimum recommended training complete",
         message: `Now you've told the system a little about yourself, you can start using the platform.
@@ -865,7 +865,7 @@ const customEnglishMessages: TranslationMessages = {
       cards_recorded: "Cards recorded",
       only_simplified: "Only simplified characters can be searched for",
       no_traditional: "The system does not currently support traditional characters",
-      query_max_length: "The system only handles words of up to %{max_chars} characters",
+      query_max_length: "The system only handles words of up to %{maxChars} characters",
       common_only: "Only commonly recognised words",
       by_chars: "By Character",
       by_sound: "By Sound",
@@ -931,7 +931,7 @@ const customEnglishMessages: TranslationMessages = {
       name: "Global Settings",
       initialise: "Get Started!",
       refresh_caches: "Refresh caches (Instant)",
-      caches_cleared: "Cleared the caches: %{cache_names}",
+      caches_cleared: "Cleared the caches: %{cacheNames}",
       reload_db: "Reload DB (Almost Instant)",
       purge_invalid_recents: "Purge invalid recent sentences (Quick)",
       refresh_db_from_server: "Refresh DB from server (Up to 10 mins)",
@@ -948,7 +948,7 @@ const customEnglishMessages: TranslationMessages = {
       name: "Textcrobes",
       settings: "Textcrobes Settings",
       enrich_error: "Error enriching the text.",
-      too_many_words: `The editor has a character limit of %{max_text_length}. Please delete text before adding more.
+      too_many_words: `The editor has a character limit of %{maxTextLength}. Please delete text before adding more.
         If your text is longer than this, please put the text content in a .txt file in plain text format
         and import using the import system.`,
       type_something_here: "Type something here...",

@@ -210,7 +210,7 @@ export default function Options(): ReactElement {
           } catch (err: any) {
             setRunning(false);
             dispatch(setLoading(false));
-            setMessage(translate("screens.extension.error", { docs_domain: DOCS_DOMAIN }));
+            setMessage(translate("screens.extension.error", { docsDomain: DOCS_DOMAIN }));
             console.log("getDb() threw an error in options.ts");
             console.dir(err);
             console.error(err);
