@@ -383,9 +383,9 @@ colorlog==6.7.0 \
     --hash=sha256:0d33ca236784a1ba3ff9c532d4964126d8a2c44f1f0cb1d2b0728196f512f662 \
     --hash=sha256:bd94bd21c1e13fac7bd3153f4bc3a7dc0eb0974b8bc2fdf1a989e474f6e582e5
     # via mode-streaming
-croniter==1.3.15 \
-    --hash=sha256:924a38fda88f675ec6835667e1d32ac37ff0d65509c2152729d16ff205e32a65 \
-    --hash=sha256:f17f877be1d93b9e3191151584a19d8b367b017ab0febc8c5472b9300da61c4c
+croniter==1.4.1 \
+    --hash=sha256:1a6df60eacec3b7a0aa52a8f2ef251ae3dd2a7c7c8b9874e73e791636d55a361 \
+    --hash=sha256:9595da48af37ea06ec3a9f899738f1b2c1c13da3c38cea606ef7cd03ea421128
     # via faust-streaming, mode-streaming
 cryptography==41.0.1 \
     --hash=sha256:059e348f9a3c1950937e1b5d7ba1f8e968508ab181e75fc32b879452f08356db \
@@ -412,9 +412,9 @@ cssselect==1.2.0 \
     --hash=sha256:666b19839cfaddb9ce9d36bfe4c969132c647b92fc9088c4e23f786b30f1b3dc \
     --hash=sha256:da1885f0c10b60c03ed5eccbb6b68d6eff248d91976fcde348f395d54c9fd35e
     # via premailer
-cssutils==2.7.0 \
-    --hash=sha256:7881646b4d16106bb66cb1ba3b399a1a9793ff68cbc0d89f9d38a853d6198912 \
-    --hash=sha256:b361836e4c39cf94f052351521e706016cc9d380026a9513a74000dbadcb3804
+cssutils==2.7.1 \
+    --hash=sha256:1e92e0d9dab2ec8af9f38d715393964ba533dc3beacab9b072511dfc241db775 \
+    --hash=sha256:340ecfd9835d21df8f98500f0dfcea0aee41cb4e19ecbc2cf94f0a6d36d7cb6c
     # via emails, premailer
 dawn==0.11.0 \
     --hash=sha256:7cbf1495f5c1d79cd6c7750da66246eb162accc72f9b693810bdb4b9bc695199
@@ -442,9 +442,9 @@ emails==0.6 \
     --hash=sha256:72c1e3198075709cc35f67e1b49e2da1a2bc087e9b444073db61a379adfb7f3c \
     --hash=sha256:a4c2d67ea8b8831967a750d8edc6e77040d7693143fe280e6d2a367d9c36ff88
     # via transcrobes (pyproject.toml)
-fastapi==0.96.1 \
-    --hash=sha256:22d773ce95f14f04f8f37a0c8998fc163e67af83b65510d2879de6cbaaa10215 \
-    --hash=sha256:5c1d243030e63089ccfc0aec69c2da6d619943917727e8e82ee502358d5119bf
+fastapi==0.97.0 \
+    --hash=sha256:95d757511c596409930bd20673358d4a4d709004edb85c5d24d6ffc48fabcbf2 \
+    --hash=sha256:b53248ee45f64f19bb7600953696e3edf94b0f7de94df1e5433fc5c6136fa986
     # via transcrobes (pyproject.toml)
 faust-streaming==0.10.13 \
     --hash=sha256:135ed1a40cb90e8600970cd59a4c4c0544277602721bef327c94c53fbc1a4c58 \
@@ -1538,9 +1538,9 @@ starlette==0.27.0 \
     --hash=sha256:6a6b0d042acb8d469a01eba54e9cda6cbd24ac602c4cd016723117d6a7e73b75 \
     --hash=sha256:918416370e846586541235ccd38a474c08b80443ed31c578a418e2209b3eef91
     # via fastapi
-strawberry-graphql==0.183.6 \
-    --hash=sha256:36beb6ad64af935d53920fc47e1f94ef16ebba26ad611eb847aae94ac2a55f43 \
-    --hash=sha256:cf8a6266a806afea27f399632e832c5d96e606f1a65e1b7807feb781f0c6c561
+strawberry-graphql==0.186.0 \
+    --hash=sha256:5dddc9deba323a4fe54ecad85e0a6c8cc249cbca3b5d17c34b9c8a55534f9f05 \
+    --hash=sha256:6a788de7f6168cff0577d380070ddc0e79515505c112cf9e9c3396df7374c6c3
     # via transcrobes (pyproject.toml)
 tenacity==8.2.2 \
     --hash=sha256:2f277afb21b851637e8f52e6a613ff08734c347dc19ade928e519d7d2d8569b0 \
