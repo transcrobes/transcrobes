@@ -1,3 +1,4 @@
+import CloseIcon from "@mui/icons-material/Close";
 import { Box, Button, Grid, Typography } from "@mui/material";
 import { ContentState, Editor, EditorState, convertFromHTML, convertFromRaw } from "draft-js";
 import "draft-js/dist/Draft.css";
@@ -13,6 +14,7 @@ interface EditableDefinitionTranslationsProps {
   card: CardType;
   defaultProvider: string;
   onUpdate: (card: CardType) => void;
+  onClose: () => void;
 }
 
 export default function EditableDefinitionTranslations({
@@ -20,6 +22,7 @@ export default function EditableDefinitionTranslations({
   defaultProvider,
   card,
   onUpdate,
+  onClose,
 }: EditableDefinitionTranslationsProps): ReactElement {
   const [current, setCurrent] = useState(card.front ? convertFromRaw(JSON.parse(card.front)) : undefined);
   const [editing, setEditing] = useState(false);
@@ -104,6 +107,11 @@ export default function EditableDefinitionTranslations({
             )
           );
         })}
+      <Box sx={{ display: { xs: "flex", md: "none" }, alignItems: "flex-end", alignContent: "flex-end" }}>
+        <Button sx={{ ml: "auto", padding: "0.5em" }} size="small" onClick={onClose} startIcon={<CloseIcon />}>
+          {translate("ra.action.close")}
+        </Button>
+      </Box>
     </>
   );
 }

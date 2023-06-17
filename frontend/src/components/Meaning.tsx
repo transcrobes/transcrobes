@@ -1,4 +1,4 @@
-import Popover, { popoverClasses } from "@mui/material/Popover";
+import { Popover, popoverClasses } from "@mui/material";
 import { ReactElement, useState } from "react";
 import { useTranslate } from "react-admin";
 import { useAppSelector } from "../app/hooks";
@@ -103,70 +103,68 @@ export default function Meaning({
   }
   return (
     <div>
-      <div
-        aria-owns={open ? "mouse-over-popover" : undefined}
-        aria-haspopup="true"
-        onMouseEnter={handlePopoverOpen}
-        onMouseLeave={() => setAnchorEl(null)}
-        onClick={handleClickOpen}
-      >
-        <MeaningText defaultElements={posTrans} card={card} />
-        {showSynonyms && (
-          <>
-            <SynonymsText synonyms={definition.synonyms} showHr />
-          </>
-        )}
-      </div>
-      <Popover
-        id="mouse-over-popover"
-        sx={{
-          pointerEvents: "none",
-          [`& .${popoverClasses.paper}`]: {
-            gap: 1,
-          },
-        }}
-        open={open}
-        anchorEl={anchorEl}
-        anchorOrigin={{
-          vertical: "bottom",
-          horizontal: "center",
-        }}
-        transformOrigin={{
-          vertical: "top",
-          horizontal: "center",
-        }}
-        onClose={() => setAnchorEl(null)}
-        disableRestoreFocus
-      >
-        <DefinitionTranslations
-          cleanMeanings={!showAnswer}
-          definition={definition}
-          translationProviderOrder={translationProviderOrder}
-        />
-      </Popover>
-      <Popover
-        id={id}
-        open={clickOpen}
-        anchorEl={anchorElClick}
-        onClose={handleClickClose}
-        anchorOrigin={{
-          vertical: "bottom",
-          horizontal: "center",
-        }}
-        transformOrigin={{
-          vertical: "top",
-          horizontal: "center",
-        }}
-      >
-        <EditableDefinitionTranslations
-          definition={definition}
-          card={card}
-          defaultProvider={defaultProvider}
-          onUpdate={(card: CardType) => {
-            onCardFrontUpdate(card);
+      <div>
+        <div
+          aria-owns={open ? "mouse-over-popover" : undefined}
+          aria-haspopup="true"
+          onMouseEnter={handlePopoverOpen}
+          onMouseLeave={() => setAnchorEl(null)}
+          onClick={handleClickOpen}
+        >
+          <MeaningText defaultElements={posTrans} card={card} />
+          {showSynonyms && <SynonymsText synonyms={definition.synonyms} showHr />}
+        </div>
+        <Popover
+          id="mouse-over-popover"
+          sx={{
+            pointerEvents: "none",
+            [`& .${popoverClasses.paper}`]: {
+              gap: 1,
+            },
           }}
-        />
-      </Popover>
+          open={open}
+          anchorEl={anchorEl}
+          anchorOrigin={{
+            vertical: "bottom",
+            horizontal: "center",
+          }}
+          transformOrigin={{
+            vertical: "top",
+            horizontal: "center",
+          }}
+          onClose={() => setAnchorEl(null)}
+          disableRestoreFocus
+        >
+          <DefinitionTranslations
+            onClose={handleClickClose}
+            cleanMeanings={!showAnswer}
+            definition={definition}
+            translationProviderOrder={translationProviderOrder}
+          />
+        </Popover>
+        <Popover
+          id={id}
+          open={clickOpen}
+          anchorEl={anchorElClick}
+          onClose={handleClickClose}
+          anchorOrigin={{
+            vertical: "bottom",
+            horizontal: "center",
+          }}
+          transformOrigin={{
+            vertical: "top",
+            horizontal: "center",
+          }}
+        >
+          <EditableDefinitionTranslations
+            onClose={handleClickClose}
+            definition={definition}
+            card={card}
+            defaultProvider={defaultProvider}
+            onUpdate={(card: CardType) => onCardFrontUpdate(card)}
+          />
+        </Popover>
+      </div>
     </div>
   );
 }

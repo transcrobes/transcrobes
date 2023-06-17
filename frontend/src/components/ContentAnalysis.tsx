@@ -1,19 +1,24 @@
 import CloseIcon from "@mui/icons-material/Close";
-import { Card, CardContent, CardHeader, Typography } from "@mui/material";
-import Button from "@mui/material/Button";
-import Dialog from "@mui/material/Dialog";
-import DialogActions from "@mui/material/DialogActions";
-import DialogContent from "@mui/material/DialogContent";
-import DialogTitle from "@mui/material/DialogTitle";
-import Paper from "@mui/material/Paper";
-import Slide from "@mui/material/Slide";
-import Table from "@mui/material/Table";
-import TableBody from "@mui/material/TableBody";
-import TableCell from "@mui/material/TableCell";
-import TableContainer from "@mui/material/TableContainer";
-import TableRow from "@mui/material/TableRow";
+import {
+  Box,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Paper,
+  Slide,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableRow,
+  Typography,
+} from "@mui/material";
 import { TransitionProps } from "@mui/material/transitions";
-import { Box } from "@mui/system";
 import * as React from "react";
 import { useTranslate } from "react-admin";
 import { useAppSelector } from "../app/hooks";

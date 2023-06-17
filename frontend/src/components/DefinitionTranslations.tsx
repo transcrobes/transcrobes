@@ -1,34 +1,26 @@
-import { Typography } from "@mui/material";
+import CloseIcon from "@mui/icons-material/Close";
+import { Box, Button, Typography } from "@mui/material";
 import { Fragment, ReactElement } from "react";
 import { useTranslate } from "react-admin";
-import { makeStyles } from "tss-react/mui";
 import { useAppSelector } from "../app/hooks";
-import {
-  cleanedSound,
-  filterFakeL1Definitions,
-  filterUnhelpfulL1Definitions,
-  orderTranslations,
-} from "../lib/libMethods";
+import { cleanedSound, filterFakeL1Definitions, orderTranslations } from "../lib/libMethods";
 import { DefinitionType, PosTranslationsType, ProviderTranslationType } from "../lib/types";
 import { InfoBox, ThinHR } from "./Common";
 import PosItem from "./PosItem";
-
-const useStyles = makeStyles()({
-  translations: { maxWidth: "500px" },
-});
 
 interface Props {
   definition: DefinitionType;
   cleanMeanings?: boolean;
   translationProviderOrder: Record<string, number>;
+  onClose?: () => void;
 }
 
 export default function DefinitionTranslations({
   definition,
   cleanMeanings,
   translationProviderOrder,
+  onClose,
 }: Props): ReactElement {
-  const { classes } = useStyles();
   const dictionaries = useAppSelector((state) => state.dictionary);
   const translate = useTranslate();
   const { fromLang } = useAppSelector((state) => state.userData.user);
@@ -77,16 +69,27 @@ export default function DefinitionTranslations({
                 {index > 0 && <ThinHR />}
                 <InfoBox>
                   <Typography>{dictionaries[providerEntry.provider] || providerEntry.provider}</Typography>
-                  <div className={classes.translations}>
+                  <Box sx={{ maxWidth: "500px" }}>
                     {providerEntry.posTranslations.map((posItem) => {
                       return <PosItem key={posItem.posTag + posItem.sounds} item={posItem} translate={translate} />;
                     })}
-                  </div>
+                  </Box>
                 </InfoBox>
               </Fragment>
             )
           );
         })}
+      <Box
+        sx={{
+          display: { xs: onClose ? "flex" : "none", md: "none" },
+          alignItems: "flex-end",
+          alignContent: "flex-end",
+        }}
+      >
+        <Button sx={{ ml: "auto", padding: "0.5em" }} size="small" onClick={onClose} startIcon={<CloseIcon />}>
+          {translate("ra.action.close")}
+        </Button>
+      </Box>
     </>
   );
 }
