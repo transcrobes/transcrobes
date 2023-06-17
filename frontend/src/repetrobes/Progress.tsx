@@ -1,8 +1,8 @@
 import { Box, Theme, useTheme } from "@mui/material";
 import { ReactElement } from "react";
 import { useTranslate } from "react-admin";
-import { RepetrobesActivityConfigType } from "../lib/types";
 import useWindowDimensions from "../hooks/WindowDimensions";
+import { RepetrobesActivityConfigType } from "../lib/types";
 
 interface ProgressProps {
   activityConfig: RepetrobesActivityConfigType;
@@ -12,12 +12,20 @@ interface ProgressProps {
   revisionsToday: number;
   completedRevisionsToday: number;
   possibleRevisionsToday: number;
+  currentIsNew: boolean;
 }
 
-function progressColour(theme: Theme, started: number, completed: number, maxTodo: number): string {
-  if (completed >= maxTodo) return theme.palette.success.main;
-  if (started >= maxTodo) return theme.palette.warning.main;
-  return "inherit";
+function progressColour(theme: Theme, started: number, completed: number, maxTodo: number, current: boolean) {
+  let backgroundColor = "inherit";
+  let color = current ? theme.palette.warning.main : "inherit";
+  if (completed >= maxTodo) {
+    backgroundColor = theme.palette.success.main;
+    color = current ? theme.palette.warning.main : theme.palette.success.contrastText;
+  } else if (started >= maxTodo) {
+    backgroundColor = theme.palette.info.main;
+    color = current ? theme.palette.warning.main : theme.palette.info.contrastText;
+  }
+  return { backgroundColor, color };
 }
 
 export default function Progress({
@@ -28,6 +36,7 @@ export default function Progress({
   revisionsToday,
   completedRevisionsToday,
   possibleRevisionsToday,
+  currentIsNew,
 }: ProgressProps): ReactElement {
   const allRevisionsToday = revisionsToday + possibleRevisionsToday;
   const allNewToday = newToday + availableNewToday;
@@ -39,11 +48,12 @@ export default function Progress({
       <Box
         sx={{
           padding: "0.2em",
-          backgroundColor: progressColour(
+          ...progressColour(
             theme,
             newToday,
             completedNewToday,
             Math.min(allNewToday, activityConfig.maxNew),
+            currentIsNew,
           ),
         }}
       >
@@ -57,11 +67,12 @@ export default function Progress({
       <Box
         sx={{
           padding: "0.2em",
-          backgroundColor: progressColour(
+          ...progressColour(
             theme,
             revisionsToday,
             completedRevisionsToday,
             Math.min(allRevisionsToday, activityConfig.maxRevisions),
+            !currentIsNew,
           ),
         }}
       >

@@ -568,6 +568,10 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
         >
           {stateActivityConfig.showProgress && (
             <Progress
+              currentIsNew={
+                daState.currentCard?.firstRevisionDate === 0 ||
+                (daState.currentCard?.firstRevisionDate || 0) > stateActivityConfig.todayStarts
+              }
               activityConfig={stateActivityConfig}
               newToday={daState.newToday}
               completedNewToday={daState.completedNewToday}
