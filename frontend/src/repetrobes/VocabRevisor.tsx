@@ -2,7 +2,7 @@ import { Box, Button, Theme, useTheme } from "@mui/material";
 import dayjs from "dayjs";
 import timezone from "dayjs/plugin/timezone";
 import utc from "dayjs/plugin/utc";
-import { ReactElement } from "react";
+import { ReactElement, useEffect, useState } from "react";
 import { useTranslate } from "react-admin";
 import PracticerInput from "../components/PracticerInput";
 import { getWordId } from "../database/Schema";
@@ -52,7 +52,15 @@ export function VocabRevisor({
     onPractice(wordId, grade);
   }
   const { showSynonyms, showL2LengthHint, showRecents, showNormalFont } = activityConfig;
-  const premature = currentCard && currentCard?.dueDate > dayjs().unix();
+  const [premature, setPremature] = useState(false);
+  useEffect(() => {
+    setPremature(
+      !!currentCard &&
+        currentCard.lastRevisionDate > activityConfig.todayStarts &&
+        currentCard.dueDate > dayjs().unix(),
+    );
+  }, [currentCard]);
+
   const theme = useTheme();
   const translate = useTranslate();
   console.debug(
@@ -90,7 +98,7 @@ export function VocabRevisor({
       {!loading && !!definition && !!currentCard && !!characters && (
         <>
           {premature && (
-            <Box sx={{ backgroundColor: premature ? "orange" : "inherit", textAlign: "center" }}>
+            <Box sx={{ backgroundColor: theme.palette.warning.light, textAlign: "center" }}>
               Card not due until{" "}
               {dayjs(currentCard.dueDate * 1000)
                 .tz(dayjs.tz.guess())
