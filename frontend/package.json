@@ -40,7 +40,7 @@
     "buildext:nf": "cross-env BASE_URL=/ SOURCE_MAP=true vite build --config vite.nf.config.ts --mode=production",
     "buildext:devbuild": "tsc --noEmit && rimraf extbuild && npm run buildext:nf && cross-env DEBUG=vite-plugin-pwa:* BASE_URL=/ SOURCE_MAP=true SW=true NODE_OPTIONS='--max-old-space-size=8192' vite build --config vite.ext.config.ts --mode=development",
     "buildext:prod": "tsc --noEmit && npm run buildext:nf && rimraf extbuild && cross-env DEBUG=vite-plugin-pwa:* BASE_URL=/ SOURCE_MAP=true SW=true NODE_OPTIONS='--max-old-space-size=8192' vite build --config vite.ext.config.ts --mode=production",
-    "buildext:release": "rm -f ./extdist/brocrobes-$(git describe --tags).zip && npm run buildext:prod && cd extbuild && mkdir -p ../extdist && zip -r ../extdist/brocrobes-$(git describe --tags).zip *"
+    "buildext:release": "rm -f ./extdist/brocrobes-$(git describe --tags).zip && npm run buildext:prod && cd extbuild && mkdir -p ../extdist && zip -r ../extdist/brocrobes-$(git describe --tags).zip assets manifest.json nf.iife.js public service-worker-loader.js src static"
   },
   "dependencies": {
     "@hello-pangea/dnd": "^16.0.0",
