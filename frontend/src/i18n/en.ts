@@ -299,7 +299,7 @@ const customEnglishMessages: TranslationMessages = {
       no_hsk: "No HSK found,",
       hsk_level: "HSK: %{hsk},",
     },
-    pos_item: {
+    pos_items: {
       no_value_found: "No %{value} found",
     },
     practicerInput: {

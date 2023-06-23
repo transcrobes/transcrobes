@@ -267,9 +267,11 @@ function Synonyms({ definition }: { definition: DefinitionType }): ReactElement 
         <Header text={translate("screens.notrobes.related_words")} />
         {(definition.synonyms.length > 0 && (
           <div>
-            {definition.synonyms.map((result, ind) => {
-              return <PosItem key={ind} item={result} discoverableWords translate={translate} />;
-            })}
+            {definition.synonyms
+              .filter((x) => x.values.length > 0)
+              .map((result, ind) => {
+                return <PosItem key={ind} item={result} discoverableWords translate={translate} />;
+              })}
           </div>
         )) || <Box sx={infoBox}>{translate("screens.notrobes.no_related_words")}</Box>}
       </div>

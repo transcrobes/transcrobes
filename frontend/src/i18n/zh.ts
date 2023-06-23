@@ -350,7 +350,7 @@ const customChineseMessages: TranslationMessages = {
       absolute_frequency: "绝对频率",
       import_frequency: "导入频率",
     },
-    pos_item: {
+    pos_items: {
       no_value_found: "未找到 %{value}",
     },
     processing: {
