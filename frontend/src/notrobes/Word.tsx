@@ -1,9 +1,8 @@
-import { Box, Divider } from "@mui/material";
+import { Box, Divider, Table, TableBody, TableHead, Typography } from "@mui/material";
 import dayjs from "dayjs";
 import React, { ReactElement } from "react";
 import { useTranslate } from "react-admin";
 import { $enum } from "ts-enum-util";
-import { makeStyles } from "tss-react/mui";
 import { useAppSelector } from "../app/hooks";
 import { ThinHR } from "../components/Common";
 import DefinitionGraph from "../components/DefinitionGraph";
@@ -31,33 +30,9 @@ import {
   WordModelStatsType,
 } from "../lib/types";
 
-const useStyles = makeStyles()({
-  characterDetails: {
-    margin: ".5em",
-    fontSize: "2em",
-    verticalAlign: "middle",
-  },
-  definitionGraph: { fontSize: "2em" },
-  infoBox: {
-    margin: "0.7em",
-  },
-  meaningBox: {
-    margin: ".5em",
-    fontSize: "1.5em",
-    display: "flex",
-    justifyContent: "center",
-  },
-  caps: {
-    textTransform: "capitalize",
-  },
-  cardsTable: {
-    width: "400px",
-    textAlign: "center",
-  },
-  fieldName: {
-    fontWeight: "bold",
-  },
-});
+const infoBox = {
+  margin: "0.7em",
+};
 
 interface WordInfoProps {
   definition: DefinitionType;
@@ -67,16 +42,15 @@ interface WordInfoProps {
 }
 
 function WordInfo({ definition, characters, meaningCard, onCardFrontUpdate }: WordInfoProps): ReactElement {
-  const { classes } = useStyles();
   const translate = useTranslate();
   const fromLang = useAppSelector((state) => state.userData.user.fromLang);
   return (
     <>
       <div>
         <Header text={translate("screens.notrobes.card_revision_details")} />
-        <div className={classes.definitionGraph}>
+        <Box sx={{ fontSize: "2em" }}>
           <DefinitionGraph charWidth={100} charHeight={100} characters={characters} showAnswer={true} />
-        </div>
+        </Box>
         <Box
           sx={{
             margin: ".5em",
@@ -134,7 +108,7 @@ function Practicer({ wordId, onPractice }: PracticerProps): ReactElement {
   );
 }
 
-function ExistingCards({ cards, classes }: { cards: CardType[]; classes: any }): ReactElement {
+function ExistingCards({ cards }: { cards: CardType[] }): ReactElement {
   const cardsArray = [...cards.values()];
   const translate = useTranslate();
   const toLang = useAppSelector((state) => state.userData.user.toLang);
@@ -142,7 +116,9 @@ function ExistingCards({ cards, classes }: { cards: CardType[]; classes: any }):
     return (
       card && (
         <tr key={card.id}>
-          <td className={classes.caps}>{$enum(CARD_TYPES).getKeyOrThrow(parseInt(getCardType(card)))}</td>
+          <td style={{ textTransform: "capitalize" }}>
+            {$enum(CARD_TYPES).getKeyOrThrow(parseInt(getCardType(card)))}
+          </td>
           <td>
             {/* FIXME: don't hardcode the localeString!!! */}
             {dayjs
@@ -163,16 +139,21 @@ function ExistingCards({ cards, classes }: { cards: CardType[]; classes: any }):
         <Header text={translate("screens.notrobes.existing_cards")} />
         <div>
           {cardsArray.length > 0 ? ( // cards is a map
-            <table className={classes.cardsTable}>
-              <thead>
+            <Table
+              sx={{
+                width: "400px",
+                textAlign: "center",
+              }}
+            >
+              <TableHead>
                 <tr>
                   <th>{translate("screens.notrobes.type")}</th>
                   <th>{translate("screens.notrobes.due_date")}</th>
                   <th>{translate("screens.notrobes.known")}</th>
                 </tr>
-              </thead>
-              <tbody>{cardsRows}</tbody>
-            </table>
+              </TableHead>
+              <TableBody>{cardsRows}</TableBody>
+            </Table>
           ) : (
             <span>{translate("screens.notrobes.no_cards")}</span>
           )}
@@ -182,7 +163,6 @@ function ExistingCards({ cards, classes }: { cards: CardType[]; classes: any }):
   );
 }
 function WordLists({ lists }: { lists: SortableListElementType[] }): ReactElement {
-  const { classes } = useStyles();
   const translate = useTranslate();
   return (
     <>
@@ -190,9 +170,9 @@ function WordLists({ lists }: { lists: SortableListElementType[] }): ReactElemen
       <div>
         <Header text={translate("screens.notrobes.lists")} />
         {lists.length > 0 ? ( // cards is a map
-          <div className={classes.infoBox}>
+          <Box sx={infoBox}>
             {lists.map((wl) => `${wl.name}: ${wl.position}`).reduce((prev, curr) => prev + ", " + curr)}
-          </div>
+          </Box>
         ) : (
           <span>{translate("screens.notrobes.no_lists")}</span>
         )}
@@ -205,13 +185,7 @@ function cSound(def: DefinitionType | undefined, fromLang: InputLanguage): strin
   return def ? cleanedSound(def, fromLang) : undefined;
 }
 
-function CharacterDetails({
-  characters,
-  classes,
-}: {
-  characters: (CharacterType | null)[];
-  classes: any;
-}): ReactElement {
+function CharacterDetails({ characters }: { characters: (CharacterType | null)[] }): ReactElement {
   const translate = useTranslate();
   const fromLang = useAppSelector((state) => state.userData.user.fromLang);
   const [decomp, subs] = useDecomposition(
@@ -234,11 +208,18 @@ function CharacterDetails({
                 return (
                   <React.Fragment key={ind}>
                     <div>
-                      <span className={classes.characterDetails}>
+                      <Typography
+                        component="span"
+                        style={{
+                          margin: ".5em",
+                          fontSize: "2em",
+                          verticalAlign: "middle",
+                        }}
+                      >
                         <DW graph={char?.id} sound={cSound(def, fromLang)} /> :{" "}
                         <SoundBox index={0} sound={cSound(def, fromLang)?.join("") || ""} /> :{" "}
                         <DW graph={char?.radical} /> : {char?.decomposition}
-                      </span>
+                      </Typography>
                       <span>
                         {char?.etymology?.type
                           ? ` => Type: ${char?.etymology?.type}${
@@ -255,7 +236,7 @@ function CharacterDetails({
                 );
               })}
           </div>
-        )) || <div className={classes.infoBox}>{translate("screens.notrobes.no_radicals")}</div>}
+        )) || <Box sx={infoBox}>{translate("screens.notrobes.no_radicals")}</Box>}
         {subs && subs?.size > 0 && (
           <>
             <Divider /> <span>{translate("widgets.subwords.title")}</span>
@@ -278,7 +259,6 @@ function CharacterDetails({
 }
 
 function Synonyms({ definition }: { definition: DefinitionType }): ReactElement {
-  const { classes } = useStyles();
   const translate = useTranslate();
   return (
     <>
@@ -291,14 +271,13 @@ function Synonyms({ definition }: { definition: DefinitionType }): ReactElement 
               return <PosItem key={ind} item={result} discoverableWords translate={translate} />;
             })}
           </div>
-        )) || <div className={classes.infoBox}>{translate("screens.notrobes.no_related_words")}</div>}
+        )) || <Box sx={infoBox}>{translate("screens.notrobes.no_related_words")}</Box>}
       </div>
     </>
   );
 }
 
 function WordModelStats({ wordModelStats }: { wordModelStats: WordModelStatsType }): ReactElement {
-  const { classes } = useStyles();
   const translate = useTranslate();
   const toLang = useAppSelector((state) => state.userData.user.toLang);
   return (
@@ -308,11 +287,11 @@ function WordModelStats({ wordModelStats }: { wordModelStats: WordModelStatsType
         <Header text={translate("screens.notrobes.personal_word_stats.title")} />
         {(wordModelStats && (
           <div>
-            <div className={classes.infoBox}>
+            <Box sx={infoBox}>
               <span style={{ fontWeight: "bold" }}>{translate("screens.notrobes.personal_word_stats.nb_seen")} </span>
               <span>{wordModelStats.nbSeen} </span>
-            </div>
-            <div className={classes.infoBox}>
+            </Box>
+            <Box sx={infoBox}>
               <span style={{ fontWeight: "bold" }}>{translate("screens.notrobes.personal_word_stats.last_seen")} </span>
               {/* FIXME: nasty hardcoded locale!!! */}
               <span>
@@ -321,18 +300,18 @@ function WordModelStats({ wordModelStats }: { wordModelStats: WordModelStatsType
                   .toDate()
                   .toLocaleString(toLang === "zh-Hans" ? "zh-CN" : "en-UK")}{" "}
               </span>
-            </div>
-            <div className={classes.infoBox}>
+            </Box>
+            <Box sx={infoBox}>
               <span style={{ fontWeight: "bold" }}>
                 {translate("screens.notrobes.personal_word_stats.nb_seen_since_last_check")}
               </span>
               <span>{wordModelStats.nbSeenSinceLastCheck} </span>
-            </div>
-            <div className={classes.infoBox}>
+            </Box>
+            <Box sx={infoBox}>
               <span style={{ fontWeight: "bold" }}>{translate("screens.notrobes.personal_word_stats.nb_checked")}</span>
               <span>{wordModelStats.nbChecked} </span>
-            </div>
-            <div className={classes.infoBox}>
+            </Box>
+            <Box sx={infoBox}>
               <span style={{ fontWeight: "bold" }}>
                 {translate("screens.notrobes.personal_word_stats.last_checked")}{" "}
               </span>
@@ -342,11 +321,9 @@ function WordModelStats({ wordModelStats }: { wordModelStats: WordModelStatsType
                   .toDate()
                   .toLocaleString(toLang === "zh-Hans" ? "zh-CN" : "en-UK")}{" "}
               </span>
-            </div>
+            </Box>
           </div>
-        )) || (
-          <div className={classes.infoBox}>{translate("screens.notrobes.personal_word_stats.no_word_stats_found")}</div>
-        )}
+        )) || <Box sx={infoBox}>{translate("screens.notrobes.personal_word_stats.no_word_stats_found")}</Box>}
       </div>
     </>
   );
@@ -370,7 +347,6 @@ function ProviderTranslations({
 }
 
 function WordMetadata({ definition }: { definition: DefinitionType }): ReactElement {
-  const { classes } = useStyles();
   const translate = useTranslate();
   const fromLang = useAppSelector((state) => state.userData.user.fromLang);
   return (
@@ -379,18 +355,20 @@ function WordMetadata({ definition }: { definition: DefinitionType }): ReactElem
       <div>
         <Header text={translate("screens.notrobes.metadata")} />
         {fromLang === "zh-Hans" && (
-          <div className={classes.infoBox}>
-            <span className={classes.fieldName}>HSK: </span>
+          <Box sx={infoBox}>
+            <Typography variant="body1" component="span" style={{ fontWeight: "bold" }}>
+              HSK:
+            </Typography>
             <span>
               {definition.hsk?.levels && definition.hsk.levels.length > 0
                 ? definition.hsk.levels.join(", ")
                 : "Not in the HSK"}
             </span>
-          </div>
+          </Box>
         )}
-        <div className={classes.infoBox}>
+        <Box sx={infoBox}>
           <Frequency frequency={definition.frequency} />
-        </div>
+        </Box>
       </div>
     </>
   );
@@ -421,7 +399,6 @@ function Word({
   onPractice,
   onCardFrontUpdate,
 }: WordProps): ReactElement {
-  const { classes } = useStyles();
   const fromLang = useAppSelector((state) => state.userData.user.fromLang);
   return (
     definition && (
@@ -438,8 +415,8 @@ function Word({
           onCardFrontUpdate={onCardFrontUpdate}
         />
         <Practicer wordId={definition.id} onPractice={onPractice} />
-        <ExistingCards cards={cards} classes={classes} />
-        {fromLang === "zh-Hans" && <CharacterDetails characters={characters} classes={classes} />}
+        <ExistingCards cards={cards} />
+        {fromLang === "zh-Hans" && <CharacterDetails characters={characters} />}
         <WordLists lists={lists} />
         <RecentSentencesElement recentPosSentences={recentPosSentences} onDelete={onDeleteRecent} sameTab />
         <WordMetadata definition={definition} />
