@@ -88,16 +88,15 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
       }>({
         source: DATA_SOURCE,
         type: "getUserListWords",
-        value: {},
       });
       setUserListWords(ulws.userListWords);
-      const activityConfigNew = {
+      const activityConfigNew: RepetrobesActivityConfigType = {
         ...stateActivityConfig,
         ...conf,
         translationProviderOrder:
           conf.translationProviderOrder ||
           defaultProviderOrder.reduce((acc, next, ind) => ({ ...acc, [next]: ind }), {} as Record<string, number>),
-      } as RepetrobesActivityConfigType;
+      };
       console.debug("Repetrobes.tsx: activityConfigNew", activityConfigNew);
 
       const reviewLists = await proxy.sendMessagePromise<DailyReviewables>({
@@ -172,6 +171,8 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
         "proxy.loaded, stateActivityConfig seems to have changed so setting loading",
         daState.currentCard,
         daState.definition,
+        stateActivityConfig,
+        reviewLists,
       );
       setLoadingMessage("");
       setLoading(!(!!daState.currentCard && !!daState.definition));

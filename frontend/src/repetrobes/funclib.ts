@@ -7,34 +7,25 @@ import { RepetrobesActivityConfigType, SelectableListElementType, WordOrdering }
 
 const DATA_SOURCE = "repetrobes/funclib.ts";
 
-const DEFAULT_ITEM_ORDERING: WordOrdering = "Personal"; // repeated from listrobes, show this be the same?
-const DEFAULT_ONLY_SELECTED_WORDLIST_REVISIONS = false;
-const DEFAULT_QUESTION_SHOW_SYNONYMS = false;
-const DEFAULT_QUESTION_SHOW_PROGRESS = true;
-const DEFAULT_QUESTION_SHOW_L2_LENGTH_HINT = false;
-const DEFAULT_ANSWER_SHOW_RECENTS = false;
-const DEFAULT_DAY_STARTS_HOUR = 0;
-const DEFAULT_BAD_REVIEW_WAIT_SECS = 600;
-const DEFAULT_MAX_NEW = 20;
-const DEFAULT_MAX_REVISIONS = 100;
-const DEFAULT_SYSTEM_WORD_SELECTION = true;
-export const EMPTY_ACTIVITY = {
-  badReviewWaitSecs: DEFAULT_BAD_REVIEW_WAIT_SECS,
-  maxNew: DEFAULT_MAX_NEW,
-  maxRevisions: DEFAULT_MAX_REVISIONS,
-  systemWordSelection: DEFAULT_SYSTEM_WORD_SELECTION,
-  newCardOrdering: DEFAULT_ITEM_ORDERING,
-  onlySelectedWordListRevisions: DEFAULT_ONLY_SELECTED_WORDLIST_REVISIONS,
-  dayStartsHour: DEFAULT_DAY_STARTS_HOUR,
+export const EMPTY_ACTIVITY: RepetrobesActivityConfigType = {
+  badReviewWaitSecs: 600,
+  maxNew: 20,
+  maxRevisions: 100,
+  systemWordSelection: true,
+  newCardOrdering: "Personal",
+  onlySelectedWordListRevisions: false,
+  dayStartsHour: 0,
   wordLists: undefined,
-  showProgress: DEFAULT_QUESTION_SHOW_PROGRESS,
-  showSynonyms: DEFAULT_QUESTION_SHOW_SYNONYMS,
-  showRecents: DEFAULT_ANSWER_SHOW_RECENTS,
-  showL2LengthHint: DEFAULT_QUESTION_SHOW_L2_LENGTH_HINT,
+  showProgress: true,
+  showSynonyms: false,
+  showRecents: false,
+  showL2LengthHint: false,
+  filterUnsure: true,
+  showNormalFont: false,
   activeCardTypes: undefined,
   todayStarts: 0,
   translationProviderOrder: undefined,
-} as RepetrobesActivityConfigType;
+};
 
 export async function getUserConfig(proxy: ServiceWorkerProxy): Promise<RepetrobesActivityConfigType> {
   const savedConf = await getSettingsValue("repetrobes", "config");

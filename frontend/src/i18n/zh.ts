@@ -849,6 +849,7 @@ const customChineseMessages: TranslationMessages = {
         show_daily_progress: "显示每日进度信息",
         show_l2_length_hint: "显示 L2 长度提示",
         show_recents: "显示最近的短语",
+        filter_unsure: "过滤不确定的卡片",
         day_starts_hour: "日开始时间（0 到 23）",
         bad_review_wait_minutes: "差评等待分钟（1 到 300）",
         max_new_cards_per_day: "每天最大新增数量（0 到 10000）",

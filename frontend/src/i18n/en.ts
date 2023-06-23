@@ -882,6 +882,7 @@ const customEnglishMessages: TranslationMessages = {
         show_daily_progress: "Show daily progress information",
         show_l2_length_hint: "Show L2 length hint",
         show_recents: "Show recent phrases",
+        filter_unsure: "Filter fallback words",
         day_starts_hour: "Day start hour (0 to 23)",
         bad_review_wait_minutes: "Bad review wait mins (1 to 300)",
         max_new_cards_per_day: "Max new p/d (0 to 10000)",

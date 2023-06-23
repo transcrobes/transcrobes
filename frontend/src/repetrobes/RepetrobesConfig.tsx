@@ -234,6 +234,13 @@ export default function RepetrobesConfig({ activityConfig, onConfigChange }: Pro
           variant="outlined"
         />
       </div>
+      <TCCheckbox
+        name="filterUnsure"
+        className={classes.checkbox}
+        label={translate("screens.repetrobes.config.filter_unsure")}
+        isSelected={activityConfig.filterUnsure}
+        onCheckboxChange={handleSimpleChange}
+      />
       <FormControl component="fieldset" className={classes.wordSelection}>
         <FormControlLabel
           control={<Switch checked={!activityConfig.systemWordSelection} onChange={handleSystemWordSelectionChange} />}

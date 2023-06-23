@@ -82,6 +82,7 @@ import {
   WordListNamesType,
   WordOrdering,
 } from "./types";
+import { isUnsure } from "./componentMethods";
 
 const IMPORT_FILE_STORAGE = "import_file_storage";
 
@@ -1376,12 +1377,12 @@ async function orderedPotentialCardsMap(
   db: TranscrobesDatabase,
   ordering: WordOrdering,
   inPotentialCardsMap: Map<string, Set<string>>,
-  potentialWordsMap: Map<string, DefinitionDocument>,
+  potentialWordsMap: Map<string, DefinitionType>,
 ): Promise<Map<string, Set<string>>> {
   // By default order according to the order of the lists or by wcpm from the Ghent lads
   // we have the final set of potential cards, now we just need to set the final ordering
   if (ordering === "WCPM") {
-    const potentialWords: DefinitionDocument[] = [];
+    const potentialWords: DefinitionType[] = [];
     for (const wordId of inPotentialCardsMap.keys()) {
       const def = potentialWordsMap.get(wordId);
       if (def) potentialWords.push(def);
@@ -1566,22 +1567,21 @@ export async function getSRSReviews(
     }
   }
   // get all the definitions for both the existing and potential news
-  const allReviewableDefinitions: Map<string, DefinitionDocument> = await db.definitions
-    .findByIds([...potentialCardsMap.keys()].concat([...allWordIdsForExistingCards]))
-    .exec();
-
+  const ukeys = [...potentialCardsMap.keys()].concat([...allWordIdsForExistingCards]);
+  const allReviewableDefinitions = await db.definitions.findByIds(ukeys).exec();
   // now clean the potential news and definitions that might have invalid graphs (for reviewing anyway!)
   const cleanReviewableDefinitions = new Map<string, DefinitionType>();
   for (const def of allReviewableDefinitions.values()) {
     if (
-      (potentialCardsMap.has(def.id) && simpOnly(def.graph, conf.fromLang)) ||
+      (potentialCardsMap.has(def.id) &&
+        simpOnly(def.graph, conf.fromLang) &&
+        (!conf.activityConfig.filterUnsure || !isUnsure(def))) ||
       allWordIdsForExistingCards.has(def.id)
     ) {
       cleanReviewableDefinitions.set(def.id, clone(def.toJSON()));
     } else if (potentialCardsMap.has(def.id)) {
-      // it doesn't only have simplified chars, so we can't/won't review
+      // it doesn't only have simplified chars or is unsure and filtered, so we can't/won't review
       potentialCardsMap.delete(def.id);
-      allReviewableDefinitions.delete(def.id);
     }
   }
 
@@ -1591,13 +1591,13 @@ export async function getSRSReviews(
       db,
       conf.activityConfig.newCardOrdering,
       potentialCardsMap,
-      allReviewableDefinitions,
+      cleanReviewableDefinitions,
     );
   }
 
   // Get all the chars that we have for all the definitions graphs
   const allPotentialCharacters: Map<string, CharacterDocument> = await db.characters
-    .findByIds([...new Set<string>([...allReviewableDefinitions.values()].map((x) => x.graph).join(""))])
+    .findByIds([...new Set<string>([...cleanReviewableDefinitions.values()].map((x) => x.graph).join(""))])
     .exec();
   return {
     allReviewableDefinitions: cleanReviewableDefinitions,

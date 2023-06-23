@@ -1147,6 +1147,7 @@ export type RepetrobesActivityConfigType = {
   showSynonyms: boolean;
   showNormalFont: boolean;
   showL2LengthHint: boolean;
+  filterUnsure: boolean;
   activeCardTypes?: SelectableListElementType[];
   translationProviderOrder?: Record<string, number>;
 };

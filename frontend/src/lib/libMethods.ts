@@ -425,7 +425,7 @@ export function dateRange(
   });
 }
 
-export function sortByWcpm(a: DefinitionDocument, b: DefinitionDocument): number {
+export function sortByWcpm(a: DefinitionType, b: DefinitionType): number {
   const aa = parseFloat(a.frequency.wcpm);
   const bb = parseFloat(b.frequency.wcpm);
   if (isNaN(bb)) {
