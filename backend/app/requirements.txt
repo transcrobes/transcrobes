@@ -144,10 +144,6 @@ anyio==3.7.0 \
     --hash=sha256:275d9973793619a5374e1c89a4f4ad3f4b0a5510a2b5b939444bee8f4c4d37ce \
     --hash=sha256:eddca883c4175f14df8aedce21054bfca3adb70ffe76a9f607aef9d7fa2ea7f0
     # via starlette, watchfiles
-appdirs==1.4.4 \
-    --hash=sha256:7d5d0167b2b1ba821647616af46a749d1c653740dd0d2415100fe26e27afdf41 \
-    --hash=sha256:a841dacd6b99318a741b166adb07e19ee71a274450e68237b4650ca1055ab128
-    # via zhon
 async-timeout==4.0.2 \
     --hash=sha256:2163e1640ddb52b7a8c80d0a67a08587e5d245cc9c553a74a847056bc2976b15 \
     --hash=sha256:8ca1e4fcf50d07413d66d1a5e416e42cfdf5851c981d679a09851a6853383b3c
@@ -1496,9 +1492,9 @@ starlette==0.27.0 \
     --hash=sha256:6a6b0d042acb8d469a01eba54e9cda6cbd24ac602c4cd016723117d6a7e73b75 \
     --hash=sha256:918416370e846586541235ccd38a474c08b80443ed31c578a418e2209b3eef91
     # via fastapi
-strawberry-graphql==0.189.0 \
-    --hash=sha256:85b29d8ae84e75331afe0496452de603467091ed7029c9049489eb73382b773a \
-    --hash=sha256:b04d3f2e33547684d6c54fbd6f752575780e9494a1e1e3981defdd606a841d3d
+strawberry-graphql==0.189.1 \
+    --hash=sha256:167f12c8855ebffa9f948bacfdefdc8a7f092079f60dc2a8defbc4f477481407 \
+    --hash=sha256:79d6c4001b399781609a802876051610f280737685f2f2b9b3918695cc3e95d2
     # via transcrobes (pyproject.toml)
 tenacity==8.2.2 \
     --hash=sha256:2f277afb21b851637e8f52e6a613ff08734c347dc19ade928e519d7d2d8569b0 \
@@ -1828,9 +1824,9 @@ yarl==1.9.2 \
     --hash=sha256:f4e2d08f07a3d7d3e12549052eb5ad3eab1c349c53ac51c209a0e5991bbada78 \
     --hash=sha256:f7a3d8146575e08c29ed1cd287068e6d02f1c7bdff8970db96683b9591b86ee7
     # via aiohttp, faust-streaming
-zhon==2.0.0 \
-    --hash=sha256:766cf66d1e6a3b6efe43790fada0cc0c428e6d4bc0e3b28b66a07fe8175050a6 \
-    --hash=sha256:a3e12593ebeab2f77b9f4bbe32f920bc684dafa840bccbf47fe95bb7059b6b44
+zhon==2.0.1 \
+    --hash=sha256:0f1c5e94a7c706beb4b01dff67b7b137ee016dd219a454cf840f5ade49c011e2 \
+    --hash=sha256:436773a7ee38efafefa8abaf78fd15bf6df94663ad3e862372adfa16e26824db
     # via transcrobes (pyproject.toml)
 
 # The following packages are considered to be unsafe in a requirements file:
