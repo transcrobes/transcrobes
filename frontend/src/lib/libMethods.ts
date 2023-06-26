@@ -511,8 +511,16 @@ export function isFakeL1(phone: string[], entry: string, fromLang: InputLanguage
   // be capitalised, so Xi Jingping, Huawei, etc. should be Ok.
   const potential = entry.replace(/(\s+)/, "");
   if (local_phone === potential) return true;
-  if (potential.startsWith("also pr.")) return true; // common in CCCedict
-  if (`surname${local_phone}` === potential.toLowerCase()) return true; // common in CCCedict
+  if (
+    // common in CCCedict
+    entry.includes("also pr.") ||
+    entry.includes("variant of") ||
+    `surname${local_phone}` === potential.toLowerCase()
+    // or maybe just
+    // entry.includes("surname ") // sometimes we get Cantonese surnames though, which aren't just the pinyin, so we can keep them
+  ) {
+    return true;
+  }
   // Bing fallback has everything capitalised
   if (isFallback && local_phone === potential.toLowerCase()) return true;
   return false;
