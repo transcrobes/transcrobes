@@ -185,6 +185,16 @@ function App({ config }: Props): ReactElement {
 
         if (await isInitialisedAsync(username)) {
           await config.proxy.asyncInit({ username });
+          // FIXME: this can't be blocking, and appears to be required for queries to start returning in a reasonable period
+          config.proxy
+            .sendMessagePromise({
+              source: "App",
+              type: "forceDefinitionsInitialSync",
+            })
+            .then(() => {
+              console.log("forceDefinitionsInitialSync done");
+            });
+
           await config.proxy.sendMessagePromise({
             source: DATA_SOURCE,
             type: "refreshSession",

@@ -120,15 +120,16 @@ function Init({ proxy }: Props): ReactElement {
   useEffect(() => {
     if (isInited) {
       if (location.href.endsWith("/#/init")) {
-        dispatch(setLoading(true));
-        proxy
-          .sendMessagePromise({
-            source: "App",
-            type: "forceDefinitionsInitialSync",
-          })
-          .then(() => {
-            window.location.href = "/";
-          });
+        // FIXME: NASTINESS!!! this can't be done here and awaited because it takes FAR too long (rxdb 14.12.1, 20+ minutes on Android)
+        // dispatch(setLoading(true));
+        // proxy.sendMessagePromise({
+        //   source: "App",
+        //   type: "forceDefinitionsInitialSync",
+        // })
+        // .then(() => {
+        //   window.location.href = "/";
+        // });
+        window.location.href = "/";
       }
     }
   }, [isInited]);
