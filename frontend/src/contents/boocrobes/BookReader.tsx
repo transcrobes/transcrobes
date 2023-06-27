@@ -1,6 +1,6 @@
 import KeyboardArrowLeftIcon from "@mui/icons-material/KeyboardArrowLeft";
 import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
-import { Box, StyledEngineProvider, Theme, ThemeProvider, createTheme } from "@mui/material";
+import { Box, StyledEngineProvider, Theme, ThemeProvider, createTheme, useMediaQuery } from "@mui/material";
 import debounce from "debounce";
 import { ReactElement, useCallback, useEffect, useRef, useState } from "react";
 import { Button, ThemeType, useAuthenticated, useTheme, useTranslate } from "react-admin";
@@ -100,29 +100,24 @@ export default function BookReader({ proxy }: ContentProps): ReactElement {
   const readerConfig = useAppSelector((state) => state.bookReader[id] || DEFAULT_BOOK_READER_CONFIG_STATE);
   const user = useAppSelector((state) => state.userData.user);
   const [loaded, setLoaded] = useState(false);
-  const [themeName] = useTheme();
-  const [theme, setTheme] = useState<Theme>();
-  useEffect(() => {
-    if (themeName) {
-      console.log("creating a theme from ", themeName);
-      setTheme(
-        createTheme({
-          palette: {
-            mode: (themeName as ThemeType) || "light", // Switching the dark mode on is a single property value change.
-          },
-          breakpoints: {
-            values: {
-              xs: 0,
-              sm: 850,
-              md: 900,
-              lg: 1200,
-              xl: 1536,
-            },
-          },
-        }),
-      );
-    }
-  }, [themeName]);
+  const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
+  const [themeName] = useTheme(prefersDarkMode ? "dark" : "light");
+  const [theme] = useState<Theme>(
+    createTheme({
+      palette: {
+        mode: (themeName as ThemeType) || "light", // Switching the dark mode on is a single property value change.
+      },
+      breakpoints: {
+        values: {
+          xs: 0,
+          sm: 850,
+          md: 900,
+          lg: 1200,
+          xl: 1536,
+        },
+      },
+    }),
+  );
 
   useEffect(() => {
     if (user.accessToken) {
