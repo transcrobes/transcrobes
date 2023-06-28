@@ -45,7 +45,6 @@ function Init({ proxy }: Props): ReactElement {
   const [runStarted, setRunStarted] = useState<boolean | null>(null);
   const [message, setMessage] = useState<string>("");
   const [isInited, setIsInited] = useState(false);
-  const [locale] = useLocaleState() as [SystemLanguage, (locale: SystemLanguage) => void];
 
   if (progress === 0) progress = window.setTimeout(progressUpdate, 5000);
 
@@ -113,6 +112,7 @@ function Init({ proxy }: Props): ReactElement {
   useEffect(() => {
     if (username) {
       isInitialisedAsync(username).then((inited) => {
+        console.log("isInitialisedAsync", inited);
         setIsInited(inited);
       });
     }

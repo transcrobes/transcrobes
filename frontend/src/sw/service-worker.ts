@@ -17,7 +17,7 @@ import {
   WEBPUB_CACHE_NAME,
 } from "../lib/types";
 import RxDBProvider from "../ra-data-rxdb";
-import { cachePublications, log, manageEvent, resetDBConnections } from "./SWManager";
+import { cachePublications, manageEvent, resetDBConnections } from "./SWManager";
 
 /**
  * We claim the clients immediately and skip waiting because we don't care if
@@ -37,14 +37,14 @@ declare global {
 }
 let dataProvider: DataProvider | null;
 
-log("INITIALIZING");
+console.debug("INITIALIZING");
 self.addEventListener("install", (event) => {
-  log("INSTALLING ");
+  console.debug("INSTALLING");
   async function installSW() {
     // perform any install tasks
     // skip the waiting phase and activate immediately
     await self.skipWaiting();
-    log("INSTALLED");
+    console.debug("INSTALLED, setting needsReload");
     self.needsReload = true;
   }
   event.waitUntil(installSW());
@@ -107,9 +107,9 @@ self.addEventListener("message", (event) => {
     dataProvider = null;
     self.tcb = null;
     resetDBConnections(self).then(() => {
-      console.log("Database unloaded");
-      event.ports[0].postMessage("Database unloaded");
+      console.log("Database unloaded, setting needsReload");
       self.needsReload = true;
+      event.ports[0].postMessage("Database unloaded");
     });
   } else if (event.data && event.data.type === "NEEDS_RELOAD") {
     event.ports[0].postMessage({
@@ -136,13 +136,13 @@ self.addEventListener("message", (event) => {
     }
   } else if (event.data.type === PRECACHE_PUBLICATIONS) {
     // This code largely inspired/stolen from @nypl/web-reader
-    log("Precaching publications");
+    console.debug("Precaching publications");
     if (typeof event.data.publications !== "object") {
       console.error("Precache event missing publications");
       return;
     }
     cachePublications(event.data.publications).then(() => {
-      log("Finished caching publications", event.data.publications);
+      console.debug("Finished caching publications", event.data.publications);
     });
   } else if (event.data && event.data.type) {
     manageEvent(self, event);

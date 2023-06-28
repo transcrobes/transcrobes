@@ -1753,8 +1753,8 @@ export async function getLanguageClassParticipants(
 }
 
 export async function forceDefinitionsInitialSync(): Promise<void> {
-  console.log("Starting initial sync of definitions");
+  console.debug("Starting initial sync of definitions");
   const rs = replStates.get("definitions");
   await rs?.awaitInitialReplication();
-  console.log("Done with initial sync of definitions");
+  console.debug("Done with initial sync of definitions");
 }

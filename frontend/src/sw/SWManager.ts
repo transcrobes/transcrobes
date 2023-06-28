@@ -156,12 +156,6 @@ function handleBadResponse(url: string, response: Response) {
   }
 }
 
-// each logging line will be prepended with the service worker version
-// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-export function log(message: string, ...rest: any): void {
-  if (IS_DEV) console.log(`SW (${VERSION}) -`, message, ...rest);
-}
-
 /**
  * Register the additional urls we sent with a stale-while-revalidate strategy
  * Cache all the manifests in parallel. They're top priority.
@@ -174,7 +168,7 @@ export async function cachePublications(publications: PublicationConfig[]): Prom
   // first route the swr urls
   for (const pub of publications) {
     for (const url of pub.swrUrls ?? []) {
-      log(`Routing ${url}`);
+      console.debug(`Routing ${url}`);
       registerRoute(url, new StaleWhileRevalidate({ cacheName: WEBPUB_CACHE_NAME }));
     }
   }
