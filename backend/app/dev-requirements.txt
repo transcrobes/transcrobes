@@ -559,23 +559,16 @@ fastapi==0.98.0 \
     --hash=sha256:0d3c18886f652038262b5898fec6b09f4ca92ee23e9d9b1d1d24e429f84bf27b \
     --hash=sha256:f4165fb1fe3610c52cb1b8282c1480de9c34bc270f56a965aa93a884c350d605
     # via transcrobes (pyproject.toml)
-faust-streaming==0.10.13 \
-    --hash=sha256:135ed1a40cb90e8600970cd59a4c4c0544277602721bef327c94c53fbc1a4c58 \
-    --hash=sha256:32fbe4bce38facaa036b1eee979424410e2d9ff3c78aa0cfa3a92b6dcdb4b1cb \
-    --hash=sha256:436c22a707f48fc6cd02e67b03d86b5ca3684ff418f6c7e1c20440270d83ab26 \
-    --hash=sha256:5d586c6fdb3fb4a42290b89027131e0db0c975a30b8845b867befc501fab37a0 \
-    --hash=sha256:73e9ae26533bbd39ac51be9b0e06c4c10ba40d0b6786633a3708d917e3caa91b \
-    --hash=sha256:78a591d31b8107fd37edaa30e6b5b36c04d66d909fffb26abf822839bc5c4bc6 \
-    --hash=sha256:7e2a3e9082e8771d72a35f78c94dcd59d632bbd6320ce573c8e44f0f5eadd9db \
-    --hash=sha256:8f11e2489c33662d7aeff245c0c84aa1c080de2cf1a31d2e9bfcb4725c87e029 \
-    --hash=sha256:9058fdd2eb84dd98a38174e1f37e2a77b7ff496a1d44f10c39bc919e9b365cd5 \
-    --hash=sha256:942fdd8756bcc89aca3c68345bcfbedb9a6f211c1127301b1369132dc8c1cee8 \
-    --hash=sha256:a2df35ffe84ae70b0081be6e6051fa2edbfbd210c1460f0f793861190e7fc9a4 \
-    --hash=sha256:cb36a823377598e25bc91615c1af6c18bbd0744f35e6007d584b90daee1c6afd \
-    --hash=sha256:cfda185974ed7f04731e23008b2f6d7ffc8674d7d04c446bb5bd6e9f4ef8673a \
-    --hash=sha256:e65f7cc7028aa0d69952428d7dcbbda9bdf6b5a31a185510883b5eb417f119f2 \
-    --hash=sha256:f982e0d69940584ae2db15f36602b2c1add4afae2ceeef5803fa4555a0840366 \
-    --hash=sha256:ffbb340b6643d12080984de1ceef867fd90307df5c69fa1e0c0d5daeecc3052c
+faust-streaming==0.10.14 \
+    --hash=sha256:1bc5c9f7ed8392025e3d2b3243ec2449670e09319495554eb91e93d3b7df2f53 \
+    --hash=sha256:357ed1daa6d2db54fcbcef7269a0a40ad89b3ab514bb5214f8c657050d3fd4e3 \
+    --hash=sha256:37dc5fb1a5784ddda1988c333a7370ac5cf55f6626c73dbd47d8dc2b09a9af10 \
+    --hash=sha256:595372920695a870df2253bfdcaf6a8070d600f61e215dc467cbd19a2c314895 \
+    --hash=sha256:79f51391c57be2361d0d17966afca7442f2d46360b4a0f7d40f91984b37ff7fa \
+    --hash=sha256:942c73f481f55df1e2d1a80366388269c366e67d4e312d33c43657f437074b66 \
+    --hash=sha256:afac69fbea5e6693601930a066f0d28cedbf318825625d3a0f8f90ade2671c6d \
+    --hash=sha256:c48ac5331dec52180f20ccd79a4b257f8828969bbfff2bcf6f6f49deed866882 \
+    --hash=sha256:d65a39f3777a2d131068b5959af3d41e960f9336e41966c8bbbff0d1d15bbc12
     # via transcrobes (pyproject.toml)
 filelock==3.12.2 \
     --hash=sha256:002740518d8aa59a26b0c76e10fb8c6e15eae825d34b6fdf670333fd7b938d81 \
@@ -1731,9 +1724,9 @@ starlette==0.27.0 \
     --hash=sha256:6a6b0d042acb8d469a01eba54e9cda6cbd24ac602c4cd016723117d6a7e73b75 \
     --hash=sha256:918416370e846586541235ccd38a474c08b80443ed31c578a418e2209b3eef91
     # via fastapi
-strawberry-graphql==0.189.1 \
-    --hash=sha256:167f12c8855ebffa9f948bacfdefdc8a7f092079f60dc2a8defbc4f477481407 \
-    --hash=sha256:79d6c4001b399781609a802876051610f280737685f2f2b9b3918695cc3e95d2
+strawberry-graphql==0.190.0 \
+    --hash=sha256:179fe9aa57f478b1d27aa249b3fb682c6fcab99809671597e18c4a73b8a66123 \
+    --hash=sha256:8e9bdb5080a97bc4e0dd67cbb0ce77261d4e624be57d4cf45581c75d4a5605e0
     # via transcrobes (pyproject.toml)
 tenacity==8.2.2 \
     --hash=sha256:2f277afb21b851637e8f52e6a613ff08734c347dc19ade928e519d7d2d8569b0 \
@@ -2075,9 +2068,9 @@ yarl==1.9.2 \
     --hash=sha256:f4e2d08f07a3d7d3e12549052eb5ad3eab1c349c53ac51c209a0e5991bbada78 \
     --hash=sha256:f7a3d8146575e08c29ed1cd287068e6d02f1c7bdff8970db96683b9591b86ee7
     # via aiohttp, faust-streaming
-zhon==2.0.1 \
-    --hash=sha256:0f1c5e94a7c706beb4b01dff67b7b137ee016dd219a454cf840f5ade49c011e2 \
-    --hash=sha256:436773a7ee38efafefa8abaf78fd15bf6df94663ad3e862372adfa16e26824db
+zhon==2.0.2 \
+    --hash=sha256:c834df6b1b182f7e973e796ded80ed1f61f271fd25f6b0dc0c44f7c4ea467184 \
+    --hash=sha256:e868e8308766e04866eacf37e8cf054a089d4b07cac62179b03f90a80757afe6
     # via transcrobes (pyproject.toml)
 
 # The following packages are considered to be unsafe in a requirements file:
