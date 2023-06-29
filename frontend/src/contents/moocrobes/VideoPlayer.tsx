@@ -107,10 +107,10 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, Props>(
               // There is a bug... and only 5 years old!
               // https://bugs.chromium.org/p/chromium/issues/detail?id=851310
               console.log(e);
-              location.reload();
+              // location.reload();
             }
           }
-          lgainNode!.gain.value = readerConfig.volumeBoost;
+          if (lgainNode) lgainNode.gain.value = readerConfig.volumeBoost;
         }
       },
       [gainNode, readerConfig.volumeBoost],
