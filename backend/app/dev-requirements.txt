@@ -1724,9 +1724,9 @@ starlette==0.27.0 \
     --hash=sha256:6a6b0d042acb8d469a01eba54e9cda6cbd24ac602c4cd016723117d6a7e73b75 \
     --hash=sha256:918416370e846586541235ccd38a474c08b80443ed31c578a418e2209b3eef91
     # via fastapi
-strawberry-graphql==0.190.0 \
-    --hash=sha256:179fe9aa57f478b1d27aa249b3fb682c6fcab99809671597e18c4a73b8a66123 \
-    --hash=sha256:8e9bdb5080a97bc4e0dd67cbb0ce77261d4e624be57d4cf45581c75d4a5605e0
+strawberry-graphql==0.192.0 \
+    --hash=sha256:1662a99fd6d7df8f4def7b6e11f19c42c12d459f5f9a3ccc3d3812fa6d5d5083 \
+    --hash=sha256:1eb84b96e75fccabbfc4b908da4bfc6e9177ab1632d246323ef99b7482da079a
     # via transcrobes (pyproject.toml)
 tenacity==8.2.2 \
     --hash=sha256:2f277afb21b851637e8f52e6a613ff08734c347dc19ade928e519d7d2d8569b0 \
@@ -1744,9 +1744,9 @@ tomlkit==0.11.8 \
     --hash=sha256:8c726c4c202bdb148667835f68d68780b9a003a9ec34167b6c673b38eff2a171 \
     --hash=sha256:9330fc7faa1db67b541b28e62018c17d20be733177d290a13b24c62d1614e0c3
     # via pylint
-typing-extensions==4.6.3 \
-    --hash=sha256:88a4153d8505aabbb4e13aacb7c486c2b4a33ca3b3f807914a9b4c844c471c26 \
-    --hash=sha256:d91d5919357fe7f681a9f2b5b4cb2a5f1ef0a1e9f59c4d8ff0d3491e05c0ffd5
+typing-extensions==4.7.0 \
+    --hash=sha256:5d8c9dac95c27d20df12fb1d97b9793ab8b2af8a3a525e68c80e21060c161771 \
+    --hash=sha256:935ccf31549830cda708b42289d44b6f74084d616a00be651601a4f968e77c82
     # via alembic, mypy, psycopg, pydantic, sqlalchemy, strawberry-graphql
 ua-parser==0.16.1 \
     --hash=sha256:ed3efc695f475ffe56248c9789b3016247e9c20e3556cfa4d5aadc78ab4b26c6 \
