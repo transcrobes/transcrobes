@@ -2,7 +2,6 @@ import dayjs, { ManipulateType } from "dayjs";
 import split from "pinyin-split";
 import polyglotI18nProvider from "ra-i18n-polyglot";
 import unidecode from "unidecode";
-import { DefinitionDocument } from "../database/Schema";
 import englishMessages from "../i18n/en";
 import chineseMessages from "../i18n/zh";
 import { fetcher } from "./fetcher";
@@ -32,6 +31,8 @@ import {
   isSimplePOS,
   isZhTreebankPOS,
 } from "./types";
+
+const CCCedictAltPr = /.+ pr\. \[.+\]/;
 
 export function getMessages(locale: string) {
   switch (locale) {
@@ -513,7 +514,7 @@ export function isFakeL1(phone: string[], entry: string, fromLang: InputLanguage
   if (local_phone === potential) return true;
   if (
     // common in CCCedict
-    entry.includes("also pr.") ||
+    CCCedictAltPr.test(entry) ||
     entry.includes("variant of") ||
     `surname${local_phone}` === potential.toLowerCase()
     // or maybe just
