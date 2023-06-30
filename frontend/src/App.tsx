@@ -186,7 +186,6 @@ function App({ config }: Props): ReactElement {
         if (await isInitialisedAsync(username)) {
           await config.proxy.asyncInit({ username });
           // FIXME: this can't be blocking, and appears to be required for queries to start returning in a reasonable period
-          console.debug("Running the forceDefinitionsInitialSync");
           config.proxy
             .sendMessagePromise({
               source: "App",
@@ -196,7 +195,6 @@ function App({ config }: Props): ReactElement {
               console.log("forceDefinitionsInitialSync done");
             });
 
-          console.debug("Running the refreshSession");
           await config.proxy.sendMessagePromise({
             source: DATA_SOURCE,
             type: "refreshSession",
@@ -206,10 +204,8 @@ function App({ config }: Props): ReactElement {
             },
           });
           submitActivity(config.proxy, "start", "web", window.location.href, sessionId, window.getTimestamp);
-          console.debug("Adding App.tsx reload and activity interval");
           setInterval(
             () => {
-              console.debug("Checking for NEEDS_RELOAD and potentially submitting activity");
               window.componentsConfig.proxy
                 .sendMessagePromise<boolean>({
                   source: EVENT_SOURCE,

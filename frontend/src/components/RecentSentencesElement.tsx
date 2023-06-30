@@ -49,7 +49,7 @@ export default function RecentSentencesElement({ recentPosSentences, onDelete, s
           })}
         <Mouseover readerConfig={DEFAULT_RECENTS_READER_CONFIG_STATE} />
       </div>
-      {!recentPosSentences && (
+      {(!recentPosSentences || Object.entries(recentPosSentences).length === 0) && (
         <Box sx={{ marginLeft: "1em" }}>{translate("screens.notrobes.no_recently_seen_phrases")}</Box>
       )}
     </>

@@ -1,17 +1,15 @@
-import { Container, FormControlLabel, Switch, TextField, Typography, useTheme } from "@mui/material";
+import { Container, TextField, Typography, useTheme } from "@mui/material";
 import axios, { CancelTokenSource } from "axios";
-import { Converter, ConvertText } from "opencc-js";
+import { ConvertText, Converter } from "opencc-js";
 import { ReactElement, useEffect, useMemo, useRef, useState } from "react";
 import { TopToolbar, useTranslate } from "react-admin";
 import { useLocation, useNavigate } from "react-router-dom";
-import { $enum } from "ts-enum-util";
 import { makeStyles } from "tss-react/mui";
 import { getAxiosHeaders } from "../app/createStore";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
 import HelpButton from "../components/HelpButton";
-import GlobalLoading, { Loading } from "../components/Loading";
+import GlobalLoading from "../components/Loading";
 import WatchDemo from "../components/WatchDemo";
-import { CardDocument, CARD_TYPES, getCardId, getWordId } from "../database/Schema";
 import { setLoading } from "../features/ui/uiSlice";
 import { simpOnly } from "../lib/libMethods";
 import { ServiceWorkerProxy } from "../lib/proxies";
@@ -19,8 +17,8 @@ import {
   AnyTreebankPosType,
   CardType,
   CharacterType,
-  DefinitionType,
   DOCS_DOMAIN,
+  DefinitionType,
   NOTROBES_YT_VIDEO,
   PosSentence,
   PosSentences,
@@ -28,14 +26,13 @@ import {
   ShortChar,
   ShortWord,
   SortableListElementType,
-  UserListWordType,
   USER_STATS_MODE,
+  UserListWordType,
   WordDetailsType,
   WordListNamesType,
   WordModelStatsType,
 } from "../lib/types";
-import ShortWordList from "./ShortWordList";
-import Word from "./Word";
+import SearchResults from "./SearchResults";
 
 let timeoutId: number;
 const MIN_LOOKED_AT_EVENT_DURATION = 2000; // ms
@@ -97,39 +94,33 @@ function Notrobes({ proxy, url }: Props): ReactElement {
   const converter = useRef<ConvertText>(Converter({ from: "t", to: "cn" }));
   const [query, setQuery] = useState<string>(currentQueryParam.get("q") || "");
   const [wordListNames, setWordListNames] = useState<WordListNamesType>({});
-  const [userListWords, setUserListWords] = useState<UserListWordType>({});
+  const [userListWords, setUserListWords] = useState<UserListWordType | null>(null);
   const [word, setWord] = useState<DefinitionType | null>(null);
   const [initialised, setInitialised] = useState<boolean>(false);
   const [message, setMessage] = useState<string>("");
-  const [characters, setCharacters] = useState<(CharacterType | null)[] | null>(null);
-  const [cards, setCards] = useState<CardType[] | null>(null);
-  const [wordModelStats, setWordModelStats] = useState<WordModelStatsType | null>(null);
   const [recentPosSentences, setRecentPosSentences] = useState<PosSentences | null>(null);
-  const [lists, setLists] = useState<SortableListElementType[] | null>(null);
-  const [showRelated, setShowRelated] = useState<boolean>(false);
-  const [dictOnly, setDictOnly] = useState<boolean>(true);
   const [allWords, setAllWords] = useState<Record<string, ShortWord>>({});
   const [allChars, setAllChars] = useState<Record<string, ShortChar>>({});
   const [userDictWords, setUserDictWords] = useState<Record<string, null>>({});
   const [byChar, setByChar] = useState<Record<string, Set<ShortWord>>>({});
   const [bySound, setBySound] = useState<Record<string, Set<ShortWord>>>({});
   const [byRadical, setByRadical] = useState<Record<string, Set<ShortWord>>>({});
-  const [filteredExistingByChars, setFilteredExistingByChars] = useState<Record<string, ShortWord>>();
-  const [filteredExistingBySounds, setFilteredExistingBySounds] = useState<Record<string, ShortWord>>();
-  const [filteredExistingByRadicals, setFilteredExistingByRadicals] = useState<Record<string, ShortWord>>();
-
   const fromLang = useAppSelector((state) => state.userData.user.fromLang);
   const dispatch = useAppDispatch();
   const { classes } = useStyles();
   const theme = useTheme();
-
-  const dictionaries = useAppSelector((state) => state.dictionary);
-  const translationProviderOrder = Object.keys(dictionaries).reduce(
-    (acc, next, ind) => ({ ...acc, [next]: ind }),
-    {} as Record<string, number>,
-  );
-
   let cancel: CancelTokenSource;
+
+  const [showRelated, setShowRelated] = useState<boolean>(false);
+  const [dictOnly, setDictOnly] = useState<boolean>(true);
+  const [characters, setCharacters] = useState<(CharacterType | null)[] | null>(null);
+  const [cards, setCards] = useState<CardType[] | null>(null);
+  const [wordModelStats, setWordModelStats] = useState<WordModelStatsType | null>(null);
+  const [lists, setLists] = useState<SortableListElementType[] | null>(null);
+  const [filteredExistingByChars, setFilteredExistingByChars] = useState<Record<string, ShortWord>>();
+  const [filteredExistingBySounds, setFilteredExistingBySounds] = useState<Record<string, ShortWord>>();
+  const [filteredExistingByRadicals, setFilteredExistingByRadicals] = useState<Record<string, ShortWord>>();
+  const dictionaries = useAppSelector((state) => state.dictionary);
 
   useEffect(() => {
     if (!proxy.loaded) return;
@@ -144,10 +135,6 @@ function Notrobes({ proxy, url }: Props): ReactElement {
       setWordListNames(ulws.wordListNames);
       setUserListWords(ulws.userListWords);
       setInitialised(true);
-
-      if (query) {
-        runSearch(query);
-      }
     })();
   }, [proxy.loaded]);
 
@@ -189,6 +176,12 @@ function Notrobes({ proxy, url }: Props): ReactElement {
       runSearch(q);
     }
   }, [currentQueryParam]);
+
+  useEffect(() => {
+    if (userListWords && !!query) {
+      runSearch(query);
+    }
+  }, [userListWords]);
 
   async function filterExistingWords(
     graph: string,
@@ -259,6 +252,31 @@ function Notrobes({ proxy, url }: Props): ReactElement {
       value: { lemmaAndContexts: lookupEvents, userStatsMode, source: DATA_SOURCE },
     });
   }
+
+  async function handleDeleteRecent(modelId: number | bigint) {
+    if (word && recentPosSentences) {
+      const newRecents: RecentSentencesType = { id: word.id, posSentences: {} };
+      for (const [k, posSentence] of Object.entries(recentPosSentences) as [AnyTreebankPosType, PosSentence[]][]) {
+        if (posSentence) {
+          for (const sent of posSentence) {
+            if (sent.modelId != modelId) {
+              if (!newRecents.posSentences[k]) {
+                newRecents.posSentences[k] = [];
+              }
+              newRecents.posSentences[k]!.push(sent);
+            }
+          }
+        }
+      }
+      await proxy.sendMessagePromise({
+        source: DATA_SOURCE,
+        type: "updateRecentSentences",
+        value: [newRecents],
+      });
+      setRecentPosSentences(newRecents.posSentences);
+    }
+  }
+
   /**
    * Fetch the search results and update the state with the result.
    * Also cancels the previous query before making the new one.
@@ -304,7 +322,7 @@ function Notrobes({ proxy, url }: Props): ReactElement {
       setMessage("");
       dispatch(setLoading(undefined));
       setLists(
-        (userListWords[details.word.id] || []).map((x) => ({
+        ((userListWords && userListWords[details.word.id]) || []).map((x) => ({
           listId: x.listId,
           name: wordListNames[x.listId],
           position: x.position,
@@ -369,50 +387,6 @@ function Notrobes({ proxy, url }: Props): ReactElement {
     }
   }
 
-  async function handleCardFrontUpdate(card: CardType) {
-    await proxy.sendMessagePromise({
-      source: DATA_SOURCE,
-      type: "updateCard",
-      value: card,
-    });
-    const updatedCards = await proxy.sendMessagePromise<CardType[]>({
-      source: DATA_SOURCE,
-      type: "getByIds",
-      value: {
-        collection: "cards",
-        ids: Array.from($enum(CARD_TYPES).getValues()).map((ctype) => getCardId(getWordId(card), ctype)),
-      },
-    });
-
-    setCards(updatedCards);
-  }
-
-  async function addOrUpdateCards(wordId: string, grade: number): Promise<void> {
-    // FIXME: grade should be an enum
-    if (word) {
-      proxy.sendMessagePromise({
-        source: DATA_SOURCE,
-        type: "submitUserEvents",
-        value: {
-          type: "practice_card",
-          data: {
-            target_word: word.graph,
-            grade: grade,
-            source_sentence: "",
-          },
-          source: DATA_SOURCE,
-        },
-      });
-    }
-    const updatedCards = await proxy.sendMessagePromise<CardDocument[]>({
-      source: DATA_SOURCE,
-      type: "addOrUpdateCardsForWord",
-      value: { wordId: wordId, grade },
-    });
-    setCards(updatedCards);
-    dispatch(setLoading(undefined));
-    setMessage(translate("screens.notrobes.cards_recorded"));
-  }
   function handleOnInputChange(event: React.ChangeEvent<HTMLInputElement>) {
     if (event.target.value !== query) {
       runSearch(event.target.value);
@@ -459,117 +433,6 @@ function Notrobes({ proxy, url }: Props): ReactElement {
     }
   }
 
-  async function handleDeleteRecent(modelId: number | bigint) {
-    if (word && recentPosSentences) {
-      const newRecents: RecentSentencesType = { id: word.id, posSentences: {} };
-      for (const [k, posSentence] of Object.entries(recentPosSentences) as [AnyTreebankPosType, PosSentence[]][]) {
-        if (posSentence) {
-          for (const sent of posSentence) {
-            if (sent.modelId != modelId) {
-              if (!newRecents.posSentences[k]) {
-                newRecents.posSentences[k] = [];
-              }
-              newRecents.posSentences[k]!.push(sent);
-            }
-          }
-        }
-      }
-      await proxy.sendMessagePromise({
-        source: DATA_SOURCE,
-        type: "updateRecentSentences",
-        value: [newRecents],
-      });
-      setRecentPosSentences(newRecents.posSentences);
-    }
-  }
-
-  function renderSearchResults(): ReactElement {
-    if (word && Object.entries(word).length > 0 && characters && cards && wordModelStats && lists) {
-      return (
-        <div>
-          <div>
-            <FormControlLabel
-              control={
-                <Switch
-                  name={"sr"}
-                  size="small"
-                  checked={showRelated}
-                  onChange={(_: any, checked: boolean) => setShowRelated(checked)}
-                />
-              }
-              label={translate("screens.notrobes.show_related")}
-              labelPlacement="end"
-            />
-          </div>
-          {showRelated && query && Object.keys(allWords).length > 0 && Object.keys(allChars).length > 0 && (
-            <>
-              <div>
-                <FormControlLabel
-                  control={
-                    <Switch
-                      name={"do"}
-                      size="small"
-                      checked={dictOnly}
-                      onChange={(_: any, checked: boolean) => setDictOnly(checked)}
-                    />
-                  }
-                  label={translate("screens.notrobes.common_only")}
-                  labelPlacement="end"
-                />
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-evenly" }}>
-                {filteredExistingByChars && (
-                  <ShortWordList
-                    sourceGraph={word.graph}
-                    label={translate("screens.notrobes.by_chars")}
-                    data={Object.values(filteredExistingByChars)}
-                    onRowClick={(id) => `/notrobes?q=${id}`}
-                  />
-                )}
-                {filteredExistingBySounds && (
-                  <ShortWordList
-                    sourceGraph={word.graph}
-                    label={translate("screens.notrobes.by_sound")}
-                    data={Object.values(filteredExistingBySounds)}
-                    onRowClick={(id) => `/notrobes?q=${id}`}
-                  />
-                )}
-                {fromLang === "zh-Hans" && filteredExistingByRadicals && (
-                  <ShortWordList
-                    sourceGraph={word.graph}
-                    label={translate("screens.notrobes.by_radical")}
-                    data={Object.values(filteredExistingByRadicals)}
-                    onRowClick={(id) => `/notrobes?q=${id}`}
-                  />
-                )}
-              </div>
-            </>
-          )}
-          <Loading
-            show={showRelated && Object.keys(allWords).length === 0 && Object.keys(allChars).length === 0}
-            top="0px"
-            position="relative"
-            message={translate("screens.notrobes.loading_related")}
-          />
-
-          <Word
-            definition={word}
-            characters={characters}
-            cards={cards}
-            wordModelStats={wordModelStats}
-            recentPosSentences={recentPosSentences}
-            lists={lists}
-            translationProviderOrder={translationProviderOrder}
-            onDeleteRecent={handleDeleteRecent}
-            onPractice={addOrUpdateCards}
-            onCardFrontUpdate={handleCardFrontUpdate}
-          />
-        </div>
-      );
-    } else {
-      return <></>;
-    }
-  }
   const helpUrl = `//${DOCS_DOMAIN}/page/software/learn/notrobes/`;
   return (
     <>
@@ -594,7 +457,29 @@ function Notrobes({ proxy, url }: Props): ReactElement {
         </div>
         <GlobalLoading />
         {message && <Typography className={classes.message}>{message}</Typography>}
-        {renderSearchResults()}
+        <SearchResults
+          allChars={allChars}
+          allWords={allWords}
+          query={query}
+          proxy={proxy}
+          showRelated={showRelated}
+          setShowRelated={setShowRelated}
+          setDictOnly={setDictOnly}
+          word={word}
+          wordModelStats={wordModelStats}
+          recentPosSentences={recentPosSentences}
+          characters={characters}
+          cards={cards}
+          dictOnly={dictOnly}
+          fromLang={fromLang}
+          lists={lists}
+          filteredExistingByRadicals={filteredExistingByRadicals}
+          filteredExistingBySounds={filteredExistingBySounds}
+          filteredExistingByChars={filteredExistingByChars}
+          handleDeleteRecent={handleDeleteRecent}
+          setMessage={setMessage}
+          setCards={setCards}
+        />
       </Container>
     </>
   );
