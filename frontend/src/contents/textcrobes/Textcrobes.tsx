@@ -1,4 +1,4 @@
-import { createTheme, StyledEngineProvider, ThemeProvider } from "@mui/material";
+import { createTheme, Theme, StyledEngineProvider, ThemeProvider, useMediaQuery } from "@mui/material";
 import { EditorState } from "draft-js";
 import { stateToHTML } from "draft-js-export-html";
 import "draft-js/dist/Draft.css";
@@ -67,18 +67,19 @@ export default function Textcrobes({ proxy }: Props): ReactElement {
 
   const dispatch = useAppDispatch();
   const readerConfig = useAppSelector((state) => state.simpleReader[id] || DEFAULT_TEXT_READER_CONFIG_STATE);
-  // const themeName = useAppSelector((state) => state.theme);
-  const [themeName] = useTheme();
   const fromLang = useAppSelector((state) => state.userData.user.fromLang);
 
   const { classes } = useStyles();
   const etfClasses = useJssStyles({ ...readerConfig, scriptioContinuo: isScriptioContinuo(fromLang) });
-
-  const theme = createTheme({
-    palette: {
-      mode: (themeName as ThemeType) || "light", // Switching the dark mode on is a single property value change.
-    },
-  });
+  const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
+  const [themeName] = useTheme(prefersDarkMode ? "dark" : "light");
+  const [theme] = useState<Theme>(
+    createTheme({
+      palette: {
+        mode: themeName as ThemeType, // Switching the dark mode on is a single property value change.
+      },
+    }),
+  );
 
   const helpUrl = `//${DOCS_DOMAIN}/page/software/learn/textcrobes/`;
   // FIXME: this is still the way to style the editor because there is hardcoding

@@ -105,7 +105,7 @@ export default function BookReader({ proxy }: ContentProps): ReactElement {
   const [theme] = useState<Theme>(
     createTheme({
       palette: {
-        mode: (themeName as ThemeType) || "light", // Switching the dark mode on is a single property value change.
+        mode: themeName as ThemeType, // Switching the dark mode on is a single property value change.
       },
       breakpoints: {
         values: {

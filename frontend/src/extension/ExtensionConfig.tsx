@@ -13,8 +13,10 @@ import {
   translationProviderOrder,
 } from "../lib/types";
 import { getDefaultLanguageDictionaries } from "../lib/libMethods";
-
-export default function ExtensionConfig(): ReactElement {
+interface Props {
+  themeName: ThemeType;
+}
+export default function ExtensionConfig({ themeName }: Props): ReactElement {
   const id = EXTENSION_READER_ID;
 
   const user = useAppSelector((state) => state.userData);
@@ -22,6 +24,7 @@ export default function ExtensionConfig(): ReactElement {
     (state) =>
       state.extensionReader[id] || {
         ...DEFAULT_EXTENSION_READER_CONFIG_STATE,
+        themeName,
         translationProviderOrder: translationProviderOrder(getDefaultLanguageDictionaries(user.user.fromLang)),
       },
   );

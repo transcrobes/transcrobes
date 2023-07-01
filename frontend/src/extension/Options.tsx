@@ -1,5 +1,6 @@
 import {
   Box,
+  Button,
   Container,
   createTheme,
   CssBaseline,
@@ -7,10 +8,11 @@ import {
   FormLabel,
   ThemeProvider,
   Typography,
+  useMediaQuery,
+  Theme,
 } from "@mui/material";
-import Button from "@mui/material/Button";
 import { ReactElement, useEffect, useState } from "react";
-import { useLocaleState, useTheme, useTranslate } from "react-admin";
+import { ThemeType, useLocaleState, useTheme, useTranslate } from "react-admin";
 import { FormContainer, TextFieldElement } from "react-hook-form-mui";
 import { makeStyles } from "tss-react/mui";
 import { store } from "../app/createStore";
@@ -26,7 +28,6 @@ import { getRefreshedState } from "../features/content/contentSlice";
 import { extensionReaderActions } from "../features/content/extensionReaderSlice";
 import { setLoading } from "../features/ui/uiSlice";
 import { setUser, throttledLogin, updateBaseUrl, updatePassword, updateUsername } from "../features/user/userSlice";
-import { darkTheme, lightTheme } from "../layout/themes";
 import { refreshDictionaries } from "../lib/dictionary";
 import { getDefaultLanguageDictionaries } from "../lib/libMethods";
 import { BackgroundWorkerProxy, setPlatformHelper } from "../lib/proxies";
@@ -115,8 +116,13 @@ export default function Options(): ReactElement {
   const [password, setPassword] = useState("");
   const [baseUrl, setBaseUrl] = useState(DEFAULT_SERVER_URL);
   const [loaded, setLoaded] = useState(false);
-  const [themeName, setTheme] = useTheme();
-  const theme = createTheme(themeName === "dark" ? darkTheme : lightTheme);
+  const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
+  const [themeName, setTheme] = useTheme(prefersDarkMode ? "dark" : "light");
+  const theme = createTheme({
+    palette: {
+      mode: themeName as ThemeType, // Switching the dark mode on is a single property value change.
+    },
+  });
   const [locale, setLocale] = useLocaleState() as [SystemLanguage, (locale: SystemLanguage) => void];
   const translate = useTranslate();
 
@@ -318,7 +324,7 @@ export default function Options(): ReactElement {
                 </Box>
               </div>
 
-              {inited && <ExtensionConfig />}
+              {inited && <ExtensionConfig themeName={themeName as ThemeType} />}
               <FormGroup className={classes.buttonGroup}>
                 <Box className={classes.controls}>
                   <Button
