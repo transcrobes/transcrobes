@@ -11,6 +11,7 @@ import {
   guessBetter,
   isNumberToken,
   isUnsure,
+  syncDefs,
 } from "../../../lib/componentMethods";
 import {
   BOOK_READER_TYPE,
@@ -215,6 +216,7 @@ class Entry extends Component<StatedEntryProps, LocalEntryState> {
       this.context.store.dispatch(setTokenDetails({ ...tokenDetails, gloss: !!localGloss }));
     }
     if (localGloss.startsWith(DEFINITION_LOADING)) {
+      syncDefs();
       window.setTimeout(this.lookForDefinitionUpdate, RETRY_DEFINITION_MS, {
         readerConfig: readerConfig,
         attemptsRemaining: RETRY_DEFINITION_MAX_TRIES,
@@ -250,6 +252,7 @@ class Entry extends Component<StatedEntryProps, LocalEntryState> {
     }
     promise.then((def) => {
       if (!def) {
+        syncDefs();
         window.setTimeout(this.lookForDefinitionUpdate, RETRY_DEFINITION_MS, {
           glossing: (readerConfig || this.props.readerConfig).glossing,
           attemptsRemaining: attemptsRemaining - 1,

@@ -9,10 +9,7 @@ from collections import defaultdict
 from typing import TYPE_CHECKING, Tuple
 
 import sqlalchemy
-from app.api.api_v1 import types
-from app.api.api_v1.subs import publish_readonly_collection
 from app.cache import TimestampedDict, cache_loading, cached_definitions  # noqa:F401
-from app.data.context import get_broadcast
 from app.etypes import Token
 from app.models.data import CachedDefinition
 from app.models.lookups import BingApiLookup
@@ -247,7 +244,9 @@ async def definitions(  # pylint: disable=R0914
                 str("43"),
             )
 
-        await publish_readonly_collection(await get_broadcast(), types.Definitions.__name__)
+        # FIXME: testing not actually doing this - it creates huge amounts of traffic, likely for no benefit
+        # await publish_readonly_collection(await get_broadcast(), types.Definitions.__name__)
+
         logger.debug("Managed to submit broadcast definitions for  %s", str("42"))
         if refresh:  # we just want to regenerate in the DB, leave now
             return []

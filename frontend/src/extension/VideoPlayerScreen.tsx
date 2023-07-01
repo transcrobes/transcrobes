@@ -105,10 +105,11 @@ export default function VideoPlayerScreen({ proxy }: ContentProps): ReactElement
         const parser = new WebVTTParser();
         const tree = parser.parse(currentCueString.data, "metadata");
         // force syncing down any new definitions
-        await proxy.sendMessagePromise<string>({
+        await proxy.sendMessagePromise({
           source: "Extension",
           type: "forceDefinitionsSync",
         });
+
         const uniqueIds = missingWordIdsFromModels(currentModels.data, definitions);
         setCues(tree.cues);
         setModels(currentModels.data);

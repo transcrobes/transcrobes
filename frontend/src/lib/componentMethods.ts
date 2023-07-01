@@ -129,6 +129,13 @@ export async function getWord(lemma: string): Promise<DefinitionType> {
   });
 }
 
+export async function syncDefs(): Promise<void> {
+  platformHelper.sendMessagePromise({
+    source: DATA_SOURCE,
+    type: "forceDefinitionsSync",
+  });
+}
+
 export function getStreamerVideoElement(document: Document, streamer: SupportedStreamer) {
   let wrapper: HTMLDivElement | undefined = undefined;
   switch (streamer) {

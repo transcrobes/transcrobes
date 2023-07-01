@@ -447,9 +447,11 @@ function setupGraphQLSubscription(wsEndpointUrl: string, query: string, sw?: Ser
       if (sw && colName === "cards") {
         console.debug("Nulling sw.dayCardWords after subscription resync");
         sw.dayCardWords = null;
+      } else if (colName === "contents") {
+        // We need to re-sync definitions as well
+        console.debug("Running definitions resync before contents sub update");
+        replStates.get("definitions")!.reSync();
       }
-      // FIXME: work out why this doesn't work
-      // _.throttle(col.reSync, 5000);
       col.reSync();
     };
 

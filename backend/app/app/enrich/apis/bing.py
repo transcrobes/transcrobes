@@ -54,7 +54,7 @@ class BingAPI(ABC):
                 connector=aiohttp.TCPConnector(enable_cleanup_closed=True, force_close=True),
             ) as client:
                 try:
-                    logger.info(f"Bing API request {content=}")
+                    logger.info(f"Bing API request {path=} {content=}")
                     async with client.post(
                         f"{URL_SCHEME}{self._api_host}{path}",
                         data=req_json.encode("utf-8"),

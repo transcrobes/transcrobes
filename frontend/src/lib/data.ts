@@ -1758,3 +1758,11 @@ export async function forceDefinitionsInitialSync(): Promise<void> {
   await rs?.awaitInitialReplication();
   console.debug("Done with initial sync of definitions");
 }
+
+export async function forceDefinitionsSync() {
+  // This is async because we will never need to await this, and it might be very slow
+  console.debug("Starting reSync of definitions");
+  // FIXME: this uses debounced internally, which is *not* what we want (we want throttle)
+  // but trying to submit anything to rxdb is horrible...
+  replStates.get("definitions")!.reSync();
+}

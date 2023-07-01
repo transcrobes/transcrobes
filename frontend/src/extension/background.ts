@@ -23,6 +23,7 @@ import {
 import scriptPath from "./content?script";
 import importPopup from "./importPopup?script";
 import { getRawYoukuData, getYoukuData } from "./yk";
+import { syncDefs } from "../lib/componentMethods";
 
 let db: TranscrobesDatabase;
 let dayCardWords: SerialisableDayCardWords | null;
@@ -366,20 +367,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           sendResponse({ source: message.source, type: message.type, value: translation });
         });
     });
-  } else if (message.type === "forceDefinitionsSync") {
-    loadDb(console.debug, message).then(() => {
-      const rs = replStates.get("definitions");
-      if (rs) {
-        rs.reSync(); // sync method
-      } else {
-        console.error("Unable to force reSync");
-      }
-      sendResponse({
-        source: message.source,
-        type: message.type,
-        value: true,
-      });
-    });
   } else if (message.type === "serverGet") {
     loadDb(console.debug, message).then(() => {
       const { url, retries, isText } = message.value;
@@ -504,6 +491,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       "getDictionaryEntries",
       "getAllFromDB",
       "getWordsByGraphs",
+      "forceDefinitionsSync",
     ].includes(message.type)
   ) {
     loadDb(console.debug, message).then((ldb) => {

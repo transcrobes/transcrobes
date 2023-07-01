@@ -390,6 +390,7 @@ export function manageEvent(sw: ServiceWorkerGlobalScope, event: ExtendableMessa
     case "submitActivityEvent":
     case "getLanguageClassParticipants":
     case "forceDefinitionsInitialSync":
+    case "forceDefinitionsSync":
     case "purgeInvalidRecentSentences":
     case "refreshSession":
       loadDb(message, sw).then(([ldb, msg]) => {
