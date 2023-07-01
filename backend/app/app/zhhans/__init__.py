@@ -370,15 +370,24 @@ class CoreNLP_ZHHANS_Enricher(Enricher):
         all_defs = []
 
         # TODO: decide whether this is ok
-        token_definitions = best_deep_def(token, all_token_definitions).get("defs", [])
+        token_definitions = best_deep_def(token, all_token_definitions).get("defs", {})
+
+        # BEFORE THERE WAS THIS
+        # FIXME: currently the tokens are stored in keyed order of the "best" source, "fallback" and then the
+        # secondary dictionaries. Actually only the "best" currently has any notion of confidence (cf)
+        # and all the "fallback" are "OTHER", meaning the "fallback" will only be considered after
+        # the secondaries. If anything changes in that, this algo may well not return the "best"
+        # translation
+
+        # NOW I AM REORDERING SO fbk IS LAST - the other dictionaries probably have better definitions and also don't have POS, so
+        # they won't get used before the fbk ones. They probably should be? Maybe?
+        tmp = token_definitions.pop("fbk", None)
+        if tmp:
+            token_definitions["fbk"] = tmp
+
         for t in token_definitions.keys():
             if t not in available_def_providers:
                 continue
-            # FIXME: currently the tokens are stored in keyed order of the "best" source, "fallback" and then the
-            # secondary dictionaries. Actually only the "best" currently has any notion of confidence (cf)
-            # and all the "fallback" are "OTHER", meaning the "fallback" will only be considered after
-            # the secondaries. If anything changes in that, this algo may well not return the "best"
-            # translation
             for def_pos, defs in token_definitions[t].items():
                 if not defs:
                     continue
