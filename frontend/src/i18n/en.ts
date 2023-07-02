@@ -744,6 +744,12 @@ const customEnglishMessages: TranslationMessages = {
       fullscreen: "Fullscreen",
       config: {
         title: "Settings",
+        text_shadow: {
+          none: "None",
+          title: "Text Outline",
+          black: "Black",
+          white: "White",
+        },
         central_controls: {
           previous_sub: "Previous Sub",
           next_sub: "Next Sub",

@@ -28,39 +28,49 @@ export const Conftainer = styled("div")(() => ({
   width: "100%",
 }));
 
+const textShadow = ({ fontTextShadow }: ReaderState) =>
+  fontTextShadow !== "none"
+    ? `-1px -1px 0 ${fontTextShadow}, 1px -1px 0 ${fontTextShadow}, -1px 1px 0 ${fontTextShadow},
+      1px 1px 0 ${fontTextShadow}, -2px 0 0 ${fontTextShadow}, 2px 0 0 ${fontTextShadow}, 0 2px 0 ${fontTextShadow},
+      0 -2px 0 ${fontTextShadow}`
+    : undefined;
+
+const fontStuff = {
+  fontFamily: ({ fontFamilyMain }: ReaderState) => fontFamilyMain || "inherit",
+  fontSize: ({ fontSize }: ReaderState) => `${fontSize * 100}%`,
+  textShadow,
+};
+
 export const ETFStyles = {
   entry: {
-    flexDirection: (props: ReaderState) => props.glossPosition,
+    flexDirection: ({ glossPosition }: ReaderState) => glossPosition,
     alignItems: "center",
     display: "inline-flex",
     position: "relative",
-    // cursor: (props: ReaderState) => (props.clickable ? "pointer" : "auto"),
+    // cursor: ({ clickable }: ReaderState) => (clickable ? "pointer" : "auto"),
     cursor: "pointer",
     textIndent: 0,
     paddingLeft: (props: LanguagedReaderState) =>
       props.scriptioContinuo && props.segmentation ? (SEGMENTED_BASE_PADDING * props.fontSize * 100) / 100 + "px" : "",
   },
   word: {
-    color: (props: ReaderState) =>
-      props.fontColour && props.fontColour !== "tones" ? [hslToHex(props.fontColour), "!important"] : "inherit",
-    fontFamily: (props: ReaderState) => props.fontFamilyMain || "inherit",
-    fontSize: (props: ReaderState) => `${props.fontSize * 100}%`,
+    ...fontStuff,
+    color: ({ fontColour }: ReaderState) =>
+      fontColour && fontColour !== "tones" ? [hslToHex(fontColour), "!important"] : "inherit",
   },
-  wordPinyinColours: {
-    fontFamily: (props: ReaderState) => props.fontFamilyMain || "inherit",
-    fontSize: (props: ReaderState) => `${props.fontSize * 100}%`,
-  },
+  wordPinyinColours: fontStuff,
   gloss: {
     [`&[${UNSURE_ATTRIBUTE}]`]: {
-      backgroundColor: (props: ReaderState) =>
-        props.glossUnsureBackgroundColour ? [hslToHex(props.glossUnsureBackgroundColour), "!important"] : "inherit",
+      backgroundColor: ({ glossUnsureBackgroundColour }: ReaderState) =>
+        glossUnsureBackgroundColour ? [hslToHex(glossUnsureBackgroundColour), "!important"] : "inherit",
     },
-    color: (props: ReaderState) =>
-      props.glossFontColour ? [hslToHex(props.glossFontColour), "!important"] : "inherit",
-    fontFamily: (props: ReaderState) =>
-      props.fontFamilyGloss && props.fontFamilyGloss !== "Original" ? props.fontFamilyGloss : "inherit",
-    fontSize: (props: ReaderState) => `${props.glossFontSize * props.fontSize * 100}%`,
-    verticalAlign: (props: ReaderState) => `${(100 - props.glossFontSize * 100) / 2}%`,
+    color: ({ glossFontColour }: ReaderState) =>
+      glossFontColour ? [hslToHex(glossFontColour), "!important"] : "inherit",
+    fontFamily: ({ fontFamilyGloss }: ReaderState) =>
+      fontFamilyGloss && fontFamilyGloss !== "Original" ? fontFamilyGloss : "inherit",
+    fontSize: ({ glossFontSize, fontSize }: ReaderState) => `${glossFontSize * fontSize * 100}%`,
+    verticalAlign: ({ glossFontSize }: ReaderState) => `${(100 - glossFontSize * 100) / 2}%`,
+    textShadow,
   },
 };
 export type ETFStylesType = typeof ETFStyles;

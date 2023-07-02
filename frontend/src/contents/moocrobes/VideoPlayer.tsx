@@ -253,7 +253,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, Props>(
         count += 1;
       }
       if (!seeking) {
-        // FIXME: this could be bad here!!!
+        // FIXME: currently this is causing a save to the db every 500ms
         dispatch(videoReaderActions.setPlayed({ id, value: changeState.played }));
       }
     }

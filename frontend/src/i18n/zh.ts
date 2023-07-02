@@ -710,6 +710,12 @@ const customChineseMessages: TranslationMessages = {
       fullscreen: "全屏",
       config: {
         title: "设置",
+        text_shadow: {
+          none: "无",
+          title: "文本阴影",
+          black: "黑色",
+          white: "白色",
+        },
         central_controls: {
           previous_sub: "上一个字幕",
           next_sub: "下一个字幕",

@@ -552,13 +552,14 @@ export const RECENTS_READER_ID = "recentsReader";
 export const EXTENSION_READER_ID = "extensionReader";
 
 export type FontColourType = HslColor | null | "tones";
-
+export type FontShadowType = "black" | "white" | "none";
 export interface ReaderState {
   id: string;
   readerType: ReaderType;
   fontColour: FontColourType;
   fontFamilyGloss: FontFamily | FontFamilyChinese;
   fontFamilyMain: FontFamily | FontFamilyChinese;
+  fontTextShadow: FontShadowType;
   fontSize: number;
   glossFontSize: number;
   glossFontColour: HslColor | null;
@@ -600,6 +601,7 @@ export const DEFAULT_READER_CONFIG_STATE: ReaderState = {
   fontFamilyMain: "Original",
   fontSize: 1,
   fontColour: null,
+  fontTextShadow: "none",
   glossFontSize: 0.9,
   glossFontColour: { h: 240, s: 100, l: 70 },
   glossUnsureBackgroundColour: null,

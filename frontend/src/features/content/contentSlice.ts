@@ -10,6 +10,7 @@ import {
   FontColourType,
   FontFamily,
   FontFamilyChinese,
+  FontShadowType,
   GenericState,
   GlossPosition,
   ReaderState,
@@ -99,6 +100,10 @@ export const createGenericSlice = <T extends ReaderState, Reducers extends Slice
       setFontColour(state: GenericState<T>, action: PayloadAction<ContentConfigPayload<FontColourType>>) {
         state[action.payload.id] = state[action.payload.id] || defaultValue;
         state[action.payload.id].fontColour = action.payload.value;
+      },
+      setFontTextShadow(state: GenericState<T>, action: PayloadAction<ContentConfigPayload<FontShadowType>>) {
+        state[action.payload.id] = state[action.payload.id] || defaultValue;
+        state[action.payload.id].fontTextShadow = action.payload.value;
       },
       setGlossFontSize(state: GenericState<T>, action: PayloadAction<ContentConfigPayload<number>>) {
         state[action.payload.id] = state[action.payload.id] || defaultValue;

@@ -322,7 +322,7 @@ class Entry extends Component<StatedEntryProps, LocalEntryState> {
   }
 
   render(): VNode {
-    let wordStyle: { [key: string]: string } = this.props.token.style || {};
+    const wordStyle: { [key: string]: string } = this.props.token.style || {};
     if (this.props.token.b) {
       wordStyle["padding-left"] = `${this.props.token.b.length * 0.25}em`;
     }

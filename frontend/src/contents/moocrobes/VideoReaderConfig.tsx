@@ -8,7 +8,7 @@ import FineControl from "../../components/FineControl";
 import FivePercentFineControl from "../../components/FivePercentFineControl";
 import { videoReaderActions } from "../../features/content/videoReaderSlice";
 import { isOnFullscreen } from "../../hooks/useFullscreen";
-import { DEFAULT_VIDEO_READER_CONFIG_STATE, SubPosition } from "../../lib/types";
+import { DEFAULT_VIDEO_READER_CONFIG_STATE, FontShadowType, SubPosition } from "../../lib/types";
 import ReaderConfig from "../common/ContentConfig";
 import PlaybackRate from "./PlaybackRate";
 import SubDelay from "./SubDelay";
@@ -150,6 +150,26 @@ export default function VideoConfig({ containerRef, onSubDelayChange, id }: Vide
           }}
           value={readerConfig.volumeBoost || 1}
         />
+      </Conftainer>
+      <Conftainer label={translate("screens.moocrobes.config.text_shadow.title")} id="sp">
+        <ToggleButtonGroup
+          className={localClasses.button}
+          value={readerConfig.fontTextShadow}
+          exclusive
+          onChange={(event: React.MouseEvent<HTMLElement>, value: "black" | "white" | "none") => {
+            dispatch(actions.setFontTextShadow({ id, value }));
+          }}
+        >
+          <ToggleButton className={localClasses.button} value="none">
+            {translate("screens.moocrobes.config.text_shadow.none")}
+          </ToggleButton>
+          <ToggleButton className={localClasses.button} value="black">
+            {translate("screens.moocrobes.config.text_shadow.black")}
+          </ToggleButton>
+          <ToggleButton className={localClasses.button} value="white">
+            {translate("screens.moocrobes.config.text_shadow.white")}
+          </ToggleButton>
+        </ToggleButtonGroup>
       </Conftainer>
 
       <ReaderConfig
