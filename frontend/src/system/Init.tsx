@@ -95,7 +95,7 @@ function Init({ proxy }: Props): ReactElement {
           navigator.serviceWorker.getRegistration().then((reg) => {
             reg?.unregister().then((res) => {
               console.log("Unregistering SW after install", res);
-              window.location.reload();
+              window.location.href = "/";
             });
           });
         });
@@ -117,28 +117,8 @@ function Init({ proxy }: Props): ReactElement {
       });
     }
   }, [username]);
-  useEffect(() => {
-    if (isInited) {
-      if (location.href.endsWith("/#/init")) {
-        // FIXME: NASTINESS!!! this can't be done here and awaited because it takes FAR too long (rxdb 14.12.1, 20+ minutes on Android)
-        // dispatch(setLoading(true));
-        // proxy.sendMessagePromise({
-        //   source: "App",
-        //   type: "forceDefinitionsInitialSync",
-        // })
-        // .then(() => {
-        //   window.location.href = "/";
-        // });
-        window.location.href = "/";
-      }
-    }
-  }, [isInited]);
   return (
-    <Card
-      sx={{
-        paddingTop: "3em",
-      }}
-    >
+    <Card sx={{ paddingTop: "3em" }}>
       <Title title={translate("screens.main.system")} />
       <CardContent>
         <Typography sx={{ paddingBottom: "1em" }} variant="h4">

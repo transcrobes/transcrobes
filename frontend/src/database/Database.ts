@@ -612,6 +612,10 @@ async function loadFromExports(
         await rStates[i].awaitInitialReplication();
       }
     }
+  } else {
+    // we can't await this because it will block the UI and because it takes too much memory, it will crash the browser
+    // if we do it just after creating (because of rxdb memory management...)
+    replStates.get("definitions")!.awaitInitialReplication();
   }
   progressCallback({ phrase: "database.synchronised" }, false);
   if (activateSubscription) {
