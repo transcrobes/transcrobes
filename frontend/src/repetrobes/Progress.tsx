@@ -80,7 +80,7 @@ export default function Progress({
           completedRevisionsToday,
           revisionsToday,
           maxRevisions: Math.min(allRevisionsToday, activityConfig.maxRevisions),
-          allRevisionsToday,
+          allRevisionsToday: allRevisionsToday - completedRevisionsToday,
         })}
       </Box>
     </div>
