@@ -555,9 +555,9 @@ emails==0.6 \
     --hash=sha256:72c1e3198075709cc35f67e1b49e2da1a2bc087e9b444073db61a379adfb7f3c \
     --hash=sha256:a4c2d67ea8b8831967a750d8edc6e77040d7693143fe280e6d2a367d9c36ff88
     # via transcrobes (pyproject.toml)
-fastapi==0.99.0 \
-    --hash=sha256:b87fffddf9c761c5618f638b492cfb73bba1d208ab170b89122cce52d1fb044a \
-    --hash=sha256:eab70f072d6c424d16f02ba635dc0945fecab549210e7961c838f4b467f0b4a7
+fastapi==0.99.1 \
+    --hash=sha256:976df7bab51ac7beda9f68c4513b8c4490b5c1135c72aafd0a5ee4023ec5282e \
+    --hash=sha256:ac78f717cd80d657bd183f94d33b9bda84aa376a46a9dab513586b8eef1dc6fc
     # via transcrobes (pyproject.toml)
 faust-streaming==0.10.14 \
     --hash=sha256:1bc5c9f7ed8392025e3d2b3243ec2449670e09319495554eb91e93d3b7df2f53 \
@@ -1254,9 +1254,9 @@ pinyinsplit==0.1.4 \
     --hash=sha256:21ad509e70b07a9488100c1dc1794be4829e00366a4270672f633543164e3cfa \
     --hash=sha256:e0a767ba7ea1ab84c61532db209b3ea5c7c0c388f13a0150c633880c34b4ab4d
     # via transcrobes (pyproject.toml)
-pip-tools==6.13.0 \
-    --hash=sha256:50943f151d87e752abddec8158622c34ad7f292e193836e90e30d87da60b19d9 \
-    --hash=sha256:61d46bd2eb8016ed4a924e196e6e5b0a268cd3babd79e593048720db23522bb1
+pip-tools==6.14.0 \
+    --hash=sha256:06366be0e08d86b416407333e998b4d305d5bd925151b08942ed149380ba3e47 \
+    --hash=sha256:c5ad042cd27c0b343b10db1db7f77a7d087beafbec59ae6df1bba4d3368dfe8c
     # via transcrobes (pyproject.toml)
 platformdirs==3.8.0 \
     --hash=sha256:b0cabcb11063d21a0b261d557acb0a9d2126350e63b70cdf7db6347baea456dc \
@@ -1724,9 +1724,9 @@ starlette==0.27.0 \
     --hash=sha256:6a6b0d042acb8d469a01eba54e9cda6cbd24ac602c4cd016723117d6a7e73b75 \
     --hash=sha256:918416370e846586541235ccd38a474c08b80443ed31c578a418e2209b3eef91
     # via fastapi
-strawberry-graphql==0.192.0 \
-    --hash=sha256:1662a99fd6d7df8f4def7b6e11f19c42c12d459f5f9a3ccc3d3812fa6d5d5083 \
-    --hash=sha256:1eb84b96e75fccabbfc4b908da4bfc6e9177ab1632d246323ef99b7482da079a
+strawberry-graphql==0.192.1 \
+    --hash=sha256:00f8d922aad72997766622c939b57a12720f4208b46d3a258993f305757d3b92 \
+    --hash=sha256:d389936fa353691fd05385860934b9b5ecb0e6127426ce48006c6719571bda91
     # via transcrobes (pyproject.toml)
 tenacity==8.2.2 \
     --hash=sha256:2f277afb21b851637e8f52e6a613ff08734c347dc19ade928e519d7d2d8569b0 \
@@ -1744,9 +1744,9 @@ tomlkit==0.11.8 \
     --hash=sha256:8c726c4c202bdb148667835f68d68780b9a003a9ec34167b6c673b38eff2a171 \
     --hash=sha256:9330fc7faa1db67b541b28e62018c17d20be733177d290a13b24c62d1614e0c3
     # via pylint
-typing-extensions==4.7.0 \
-    --hash=sha256:5d8c9dac95c27d20df12fb1d97b9793ab8b2af8a3a525e68c80e21060c161771 \
-    --hash=sha256:935ccf31549830cda708b42289d44b6f74084d616a00be651601a4f968e77c82
+typing-extensions==4.7.1 \
+    --hash=sha256:440d5dd3af93b060174bf433bccd69b0babc3b15b1a8dca43789fd7f61514b36 \
+    --hash=sha256:b75ddc264f0ba5615db7ba217daeb99701ad295353c45f9e95963337ceeeffb2
     # via alembic, fastapi, mypy, psycopg, pydantic, sqlalchemy, strawberry-graphql
 ua-parser==0.16.1 \
     --hash=sha256:ed3efc695f475ffe56248c9789b3016247e9c20e3556cfa4d5aadc78ab4b26c6 \
