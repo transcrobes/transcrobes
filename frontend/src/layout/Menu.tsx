@@ -77,6 +77,54 @@ function Menu({ dense = false }: MenuProps): ReactElement {
           return Array.isArray(permissions) && permissions.includes("initialised") ? (
             <>
               <SubMenu
+                handleToggle={() => handleToggle("menuLearning")}
+                isOpen={state.menuLearning}
+                name="screens.main.menu.learning"
+                icon={<repetrobes.icon />}
+                dense={dense}
+              >
+                <MenuItemLink
+                  to={`/repetrobes`}
+                  primaryText={translate(`screens.repetrobes.name`, {
+                    smart_count: 2,
+                  })}
+                  leftIcon={<repetrobes.icon />}
+                  dense={dense}
+                />
+                <MenuItemLink
+                  to={`/contents`}
+                  primaryText={translate(`resources.contents.name`, {
+                    smart_count: 2,
+                  })}
+                  leftIcon={<contents.icon />}
+                  dense={dense}
+                />
+                <MenuItemLink
+                  to={`/textcrobes`}
+                  primaryText={translate(`screens.textcrobes.name`, {
+                    smart_count: 2,
+                  })}
+                  leftIcon={<textcrobes.icon />}
+                  dense={dense}
+                />
+                <MenuItemLink
+                  to={`/brocrobes`}
+                  primaryText={translate(`screens.brocrobes.name`, {
+                    smart_count: 2,
+                  })}
+                  leftIcon={<OpenInBrowserIcon />}
+                  dense={dense}
+                />
+                <MenuItemLink
+                  to={`/notrobes`}
+                  primaryText={translate(`screens.notrobes.name`, {
+                    smart_count: 2,
+                  })}
+                  leftIcon={<notrobes.icon />}
+                  dense={dense}
+                />
+              </SubMenu>
+              <SubMenu
                 handleToggle={() => handleToggle("menuInput")}
                 isOpen={state.menuInput}
                 name="screens.main.menu.input"
@@ -89,14 +137,6 @@ function Menu({ dense = false }: MenuProps): ReactElement {
                     smart_count: 2,
                   })}
                   leftIcon={<imports.icon />}
-                  dense={dense}
-                />
-                <MenuItemLink
-                  to={`/notrobes`}
-                  primaryText={translate(`screens.notrobes.name`, {
-                    smart_count: 2,
-                  })}
-                  leftIcon={<notrobes.icon />}
                   dense={dense}
                 />
                 <MenuItemLink
@@ -115,6 +155,14 @@ function Menu({ dense = false }: MenuProps): ReactElement {
                   leftIcon={<dictionaries.icon />}
                   dense={dense}
                 />
+                <MenuItemLink
+                  to={`/surveys`}
+                  primaryText={translate(`resources.surveys.name`, {
+                    smart_count: 2,
+                  })}
+                  leftIcon={<surveys.icon />}
+                  dense={dense}
+                />
               </SubMenu>
               <SubMenu
                 handleToggle={() => handleToggle("menuOrganisation")}
@@ -124,11 +172,19 @@ function Menu({ dense = false }: MenuProps): ReactElement {
                 dense={dense}
               >
                 <MenuItemLink
-                  to={`/studentregistrations`}
-                  primaryText={translate(`resources.studentregistrations.name`, {
+                  to={`/userlists`}
+                  primaryText={translate(`resources.userlists.name`, {
                     smart_count: 2,
                   })}
-                  leftIcon={<studentregistrations.icon />}
+                  leftIcon={<userlists.icon />}
+                  dense={dense}
+                />
+                <MenuItemLink
+                  to={`/goals`}
+                  primaryText={translate(`resources.goals.name`, {
+                    smart_count: 2,
+                  })}
+                  leftIcon={<goals.icon />}
                   dense={dense}
                 />
                 <MenuItemLink
@@ -148,70 +204,14 @@ function Menu({ dense = false }: MenuProps): ReactElement {
                   dense={dense}
                 />
                 <MenuItemLink
-                  to={`/goals`}
-                  primaryText={translate(`resources.goals.name`, {
+                  to={`/studentregistrations`}
+                  primaryText={translate(`resources.studentregistrations.name`, {
                     smart_count: 2,
                   })}
-                  leftIcon={<goals.icon />}
-                  dense={dense}
-                />
-                <MenuItemLink
-                  to={`/userlists`}
-                  primaryText={translate(`resources.userlists.name`, {
-                    smart_count: 2,
-                  })}
-                  leftIcon={<userlists.icon />}
+                  leftIcon={<studentregistrations.icon />}
                   dense={dense}
                 />
               </SubMenu>
-              <SubMenu
-                handleToggle={() => handleToggle("menuLearning")}
-                isOpen={state.menuLearning}
-                name="screens.main.menu.learning"
-                icon={<repetrobes.icon />}
-                dense={dense}
-              >
-                <MenuItemLink
-                  to={`/repetrobes`}
-                  primaryText={translate(`screens.repetrobes.name`, {
-                    smart_count: 2,
-                  })}
-                  leftIcon={<repetrobes.icon />}
-                  dense={dense}
-                />
-                <MenuItemLink
-                  to={`/textcrobes`}
-                  primaryText={translate(`screens.textcrobes.name`, {
-                    smart_count: 2,
-                  })}
-                  leftIcon={<textcrobes.icon />}
-                  dense={dense}
-                />
-                <MenuItemLink
-                  to={`/contents`}
-                  primaryText={translate(`resources.contents.name`, {
-                    smart_count: 2,
-                  })}
-                  leftIcon={<contents.icon />}
-                  dense={dense}
-                />
-                <MenuItemLink
-                  to={`/brocrobes`}
-                  primaryText={translate(`screens.brocrobes.name`, {
-                    smart_count: 2,
-                  })}
-                  leftIcon={<OpenInBrowserIcon />}
-                  dense={dense}
-                />
-              </SubMenu>
-              <MenuItemLink
-                to={`/surveys`}
-                primaryText={translate(`resources.surveys.name`, {
-                  smart_count: 2,
-                })}
-                leftIcon={<surveys.icon />}
-                dense={dense}
-              />
               {permissions.includes("teacher") && (
                 <SubMenu
                   handleToggle={() => handleToggle("menuTeaching")}
