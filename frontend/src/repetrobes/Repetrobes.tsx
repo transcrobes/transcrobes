@@ -56,15 +56,15 @@ interface RepetrobesProps {
 }
 
 function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
+  const translate = useTranslate();
   const [showAnswer, setShowAnswer] = useState<boolean>(false);
   const [userListWords, setUserListWords] = useState<UserListWordType>({});
-  const [loadingMessage, setLoadingMessage] = useState<string>("");
+  const [loadingMessage, setLoadingMessage] = useState<string>(translate("screens.repetrobes.personalising_cards"));
   const [firstLoad, setFirstLoad] = useState<boolean>(true);
   const [daState, setDaState] = useState<ReviewablesInfoType>(EMPTY_STATE);
   const [loading, setLoading] = useState<boolean>(false);
   const [stateActivityConfig, setStateActivityConfig] = useState<RepetrobesActivityConfigType>(EMPTY_ACTIVITY);
 
-  const translate = useTranslate();
   const defaultProviderOrder = useAppSelector((state) => state.userData.user.translationProviders);
   const fromLang = useAppSelector((state) => state.userData.user.fromLang);
 
@@ -112,7 +112,7 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
       nextPractice(tempState, activityConfigNew).then((practiceOut) => {
         const partial = { ...tempState, ...practiceOut };
         console.debug("Setting loading and the partial state is", partial);
-        setLoadingMessage("");
+        setLoadingMessage(translate("screens.repetrobes.personalising_cards"));
         setLoading(!(!!partial.currentCard && !!partial.definition));
         setDaState({
           ...daState,
@@ -151,7 +151,11 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
           stateActivityConfig,
           firstLoad,
         );
-        setLoadingMessage(usable === undefined ? "" : translate("screens.repetrobes.settings_incomplete"));
+        setLoadingMessage(
+          usable === undefined
+            ? translate("screens.repetrobes.personalising_cards")
+            : translate("screens.repetrobes.settings_incomplete"),
+        );
         setLoading(true);
         return;
       }
@@ -174,7 +178,7 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
         stateActivityConfig,
         reviewLists,
       );
-      setLoadingMessage("");
+      setLoadingMessage(translate("screens.repetrobes.personalising_cards"));
       setLoading(!(!!daState.currentCard && !!daState.definition));
       setDaState({ ...daState, ...partial });
       setFirstLoad(false);
@@ -201,7 +205,7 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
 
   function handleConfigChange(activityConfig: RepetrobesActivityConfigType) {
     if (!_.isEqual(activityConfig, stateActivityConfig)) {
-      setLoadingMessage("");
+      setLoadingMessage(translate("screens.repetrobes.personalising_cards"));
       setLoading(true);
       setStateActivityConfig(activityConfig);
       setSettingsValue("repetrobes", "config", JSON.stringify(activityConfig));

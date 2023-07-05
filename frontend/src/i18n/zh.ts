@@ -868,6 +868,7 @@ const customChineseMessages: TranslationMessages = {
       },
       hanzi_writer_help: "记住单词并使用鼠标或触摸屏在此处绘制，或者更好地使用笔和纸！",
       settings_incomplete: "设置不完整，请配置",
+      personalising_cards: "计算个性化卡片",
       show_answer: "显示答案",
       progress_new: `新词: (%{completedNewToday}) %{newToday} / %{maxNew} (%{availableNewToday} 可用)`,
       progress_revisions: `修订: (%{completedRevisionsToday}) %{revisionsToday} / %{maxRevisions} (%{allRevisionsToday} 到期的)`,

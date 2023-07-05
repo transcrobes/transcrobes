@@ -902,6 +902,7 @@ const customEnglishMessages: TranslationMessages = {
       hanzi_writer_help:
         "Remember the word and draw it here with a mouse or touchscreen, or even better use a pen and paper!",
       settings_incomplete: "Settings incomplete, please configure",
+      personalising_cards: "Calculating Personalised Cards",
       show_answer: "Show Answer",
       progress_new: `New: (%{completedNewToday}) %{newToday} / %{maxNew} (%{availableNewToday} available)`,
       progress_revisions: `Revisions: (%{completedRevisionsToday}) %{revisionsToday} / %{maxRevisions} (%{allRevisionsToday} due)`,
