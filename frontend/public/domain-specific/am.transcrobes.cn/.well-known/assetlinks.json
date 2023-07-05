@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "cn.transcrobes.am.twa",
+        "sha256_cert_fingerprints": ["93:39:9F:E9:49:DF:77:26:A5:9E:D4:F6:E9:B1:12:7F:BA:96:51:28:56:66:B9:9D:BA:25:F6:99:53:FF:BE:9E"]
+      }
+    }]
