@@ -639,7 +639,7 @@ const customEnglishMessages: TranslationMessages = {
       },
       initialisation: {
         title: "Welcome! It's Transcrobes initialisation time!",
-        intro_a: `Transcrobes is entirely browser-based but needs to download a lot (25-50MB) of reference data in order to save on
+        intro_a: `Transcrobes is entirely browser-based but needs to download a some (25-50MB) reference data in order to save on
         bandwidth and dramatically improve performance, and that is going to take a while (3-10 minutes, depending on how fast your
           phone/tablet/computer is).`,
         intro_b: `It's better to not interrupt the initialisation while it's happening, so make sure your device has plenty
@@ -701,10 +701,10 @@ const customEnglishMessages: TranslationMessages = {
     },
     initialisation: {
       title: "Welcome! It's Transcrobes initialisation time!",
-      intro: `Even though Transcrobes is entirely browser-based, a lot of Transcrobes' functionality is available offline
-      (it's a "Progressive Web App"), which means you can keep reading your favourite books, watching your favourite movies or
-      doing active learning exercises wherever you are, whenever you want. This does mean that the system needs to download and
-      prepare some things, and that is going to take a while (3-10 minutes depending on how fast your phone/tablet/computer is).`,
+      intro: `A lot of Transcrobes' functionality is available offline, which means you can keep reading your favourite books,
+      watching your favourite movies or doing active learning exercises wherever you are, whenever you want. This does mean that
+      the system needs to download and prepare some things, and that is going to take a while (3-10 minutes depending on how fast
+       your phone/tablet/computer is).`,
       started: "Initialisation started",
       started_message: `Please be patient while the initialisation finishes. The initialisation will give some
           updates but you should not be worried unless you see no update for over 5 minutes.`,
