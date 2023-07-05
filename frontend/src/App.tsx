@@ -52,6 +52,7 @@ import System from "./system/System";
 import teacherregistrations from "./teacherregistrations";
 import { supported } from "./unsupported";
 import userlists from "./userlists";
+import ResetPassword from "./system/ResetPassword";
 
 declare global {
   interface Window {
@@ -289,6 +290,14 @@ function App({ config }: Props): ReactElement {
                 element={
                   <NolayoutWrapper proxy={config.proxy} userMenu={false}>
                     <RecoverPassword />
+                  </NolayoutWrapper>
+                }
+              />
+              <Route
+                path="/reset-password"
+                element={
+                  <NolayoutWrapper proxy={config.proxy} userMenu={false}>
+                    <ResetPassword />
                   </NolayoutWrapper>
                 }
               />
