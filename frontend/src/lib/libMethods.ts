@@ -516,6 +516,7 @@ export function isFakeL1(phone: string[], entry: string, fromLang: InputLanguage
     // common in CCCedict
     CCCedictAltPr.test(entry) ||
     entry.includes("variant of") ||
+    entry.includes("also written") ||
     `surname${local_phone}` === potential.toLowerCase()
     // or maybe just
     // entry.includes("surname ") // sometimes we get Cantonese surnames though, which aren't just the pinyin, so we can keep them
