@@ -36,7 +36,8 @@ const textShadow = ({ fontTextShadow }: ReaderState) =>
     : undefined;
 
 const fontStuff = {
-  fontFamily: ({ fontFamilyMain }: ReaderState) => fontFamilyMain || "inherit",
+  fontFamily: ({ fontFamilyMain }: ReaderState) =>
+    fontFamilyMain && fontFamilyMain !== "Original" ? fontFamilyMain : "inherit",
   fontSize: ({ fontSize }: ReaderState) => `${fontSize * 100}%`,
   textShadow,
 };
