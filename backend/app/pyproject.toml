@@ -18,6 +18,8 @@ dependencies = [
   "passlib[bcrypt]",
   "tenacity",
   "pydantic",
+  "pydantic-settings",
+  "typing_extensions",
   "emails",
   "raven",
   "gunicorn",

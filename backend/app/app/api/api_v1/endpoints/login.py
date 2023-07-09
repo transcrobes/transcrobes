@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 import uuid
 from datetime import datetime, timedelta
-from typing import Any, TypedDict
+from typing import Any
 
 from app import crud, models, schemas
 from app.api import deps
@@ -21,6 +21,7 @@ from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette import status
 from starlette.responses import Response
+from typing_extensions import TypedDict
 
 logger = logging.getLogger(__name__)
 router = APIRouter()

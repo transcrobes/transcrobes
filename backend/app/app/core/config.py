@@ -2,7 +2,8 @@ import os
 import secrets
 from typing import Any, Dict, List, Literal, Optional, Union
 
-from pydantic import AnyHttpUrl, BaseSettings, EmailStr, PostgresDsn, validator
+from pydantic import AnyHttpUrl, EmailStr, PostgresDsn, validator
+from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
@@ -89,7 +90,7 @@ class Settings(BaseSettings):
     POSTGRES_USER: str
     POSTGRES_PASSWORD: str
     POSTGRES_DB: str
-    POSTGRES_PORT: Optional[str]
+    POSTGRES_PORT: Optional[int]
     SQLALCHEMY_DATABASE_URI: Optional[PostgresDsn] = None
     SQLALCHEMY_DATABASE_SYNC_URI: Optional[PostgresDsn] = None
     SQLALCHEMY_POOL_SIZE: int = 10
@@ -100,34 +101,20 @@ class Settings(BaseSettings):
     def assemble_db_connection(cls, v: Optional[str], values: Dict[str, Any]) -> Any:
         if isinstance(v, str):
             return v
-        return PostgresDsn.build(
-            scheme="postgresql+psycopg",
-            user=values.get("POSTGRES_USER"),
-            password=values.get("POSTGRES_PASSWORD"),
-            host=values.get("POSTGRES_SERVER"),
-            port=values.get("POSTGRES_PORT", "5432"),
-            path=f"/{values.get('POSTGRES_DB', '')}",
-        )
+        return f"postgresql+psycopg://{values.get('POSTGRES_USER')}:{values.get('POSTGRES_PASSWORD')}@{values.get('POSTGRES_SERVER')}:{values.get('POSTGRES_PORT', '5432')}/{values.get('POSTGRES_DB')}"
 
     @validator("SQLALCHEMY_DATABASE_SYNC_URI", pre=True)
     @classmethod
     def assemble_sync_db_connection(cls, v: Optional[str], values: Dict[str, Any]) -> Any:
         if isinstance(v, str):
             return v
-        return PostgresDsn.build(
-            scheme="postgresql+psycopg",
-            user=values.get("POSTGRES_USER"),
-            password=values.get("POSTGRES_PASSWORD"),
-            host=values.get("POSTGRES_SERVER"),
-            port=values.get("POSTGRES_PORT", "5432"),
-            path=f"/{values.get('POSTGRES_DB', '')}",
-        )
+        return f"postgresql+psycopg://{values.get('POSTGRES_USER')}:{values.get('POSTGRES_PASSWORD')}@{values.get('POSTGRES_SERVER')}:{values.get('POSTGRES_PORT', '5432')}/{values.get('POSTGRES_DB')}"
 
     STATS_POSTGRES_SERVER: str
     STATS_POSTGRES_USER: str
     STATS_POSTGRES_PASSWORD: str
     STATS_POSTGRES_DB: str
-    STATS_POSTGRES_PORT: Optional[str]
+    STATS_POSTGRES_PORT: Optional[int]
     STATS_SQLALCHEMY_DATABASE_URI: Optional[PostgresDsn] = None
     STATS_SQLALCHEMY_DATABASE_SYNC_URI: Optional[PostgresDsn] = None
     STATS_SQLALCHEMY_POOL_SIZE: int = 10
@@ -138,28 +125,14 @@ class Settings(BaseSettings):
     def stats_assemble_db_connection(cls, v: Optional[str], values: Dict[str, Any]) -> Any:
         if isinstance(v, str):
             return v
-        return PostgresDsn.build(
-            scheme="postgresql+psycopg",
-            user=values.get("STATS_POSTGRES_USER"),
-            password=values.get("STATS_POSTGRES_PASSWORD"),
-            host=values.get("STATS_POSTGRES_SERVER"),
-            port=values.get("STATS_POSTGRES_PORT", "5432"),
-            path=f"/{values.get('STATS_POSTGRES_DB', '')}",
-        )
+        return f"postgresql+psycopg://{values.get('STATS_POSTGRES_USER')}:{values.get('STATS_POSTGRES_PASSWORD')}@{values.get('STATS_POSTGRES_SERVER')}:{values.get('STATS_POSTGRES_PORT', '5432')}/{values.get('STATS_POSTGRES_DB')}"
 
     @validator("STATS_SQLALCHEMY_DATABASE_SYNC_URI", pre=True)
     @classmethod
     def stats_assemble_sync_db_connection(cls, v: Optional[str], values: Dict[str, Any]) -> Any:
         if isinstance(v, str):
             return v
-        return PostgresDsn.build(
-            scheme="postgresql+psycopg",
-            user=values.get("STATS_POSTGRES_USER"),
-            password=values.get("STATS_POSTGRES_PASSWORD"),
-            host=values.get("STATS_POSTGRES_SERVER"),
-            port=values.get("STATS_POSTGRES_PORT", "5432"),
-            path=f"/{values.get('STATS_POSTGRES_DB', '')}",
-        )
+        return f"postgresql+psycopg://{values.get('STATS_POSTGRES_USER')}:{values.get('STATS_POSTGRES_PASSWORD')}@{values.get('STATS_POSTGRES_SERVER')}:{values.get('STATS_POSTGRES_PORT', '5432')}/{values.get('STATS_POSTGRES_DB')}"
 
     SMTP_TLS: bool = True
     SMTP_PORT: Optional[int] = None
@@ -195,7 +168,7 @@ class Settings(BaseSettings):
     DATA_ROOT: str = "/data/"
     LOCAL_DATA_ROOT: str = "/localdata/"
 
-    BROADCASTER_MESSAGING_LAYER = "postgres"
+    BROADCASTER_MESSAGING_LAYER: str = "postgres"
 
     KAFKA_BROKER: str = "kafka:9092"
     KAFKA_CONSUMER_TIMEOUT_MS: int = 5000
@@ -427,12 +400,6 @@ class Settings(BaseSettings):
 
     class Config:
         case_sensitive = True
-
-        @classmethod
-        def parse_env_var(cls, field_name: str, raw_val: str) -> Any:
-            if field_name == "NODE_HOSTS" or field_name == "PER_DOMAIN":
-                return [x.strip() for x in raw_val.split(",")]
-            return cls.json_loads(raw_val)
 
 
 settings = Settings()

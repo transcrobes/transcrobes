@@ -6,7 +6,7 @@ import logging
 import os
 import uuid
 from datetime import datetime, timedelta
-from typing import TYPE_CHECKING, List, TypedDict
+from typing import TYPE_CHECKING, List
 
 from app.api.api_v1 import types
 from app.api.api_v1.subs import publish_message
@@ -33,6 +33,7 @@ from sqlalchemy.future import select
 from sqlalchemy.orm import declarative_mixin, relationship
 from sqlalchemy.orm.decl_api import declared_attr
 from sqlalchemy.sql.expression import text, update
+from typing_extensions import TypedDict
 
 logger = logging.getLogger(__name__)
 
