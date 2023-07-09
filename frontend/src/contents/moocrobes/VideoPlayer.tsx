@@ -20,6 +20,7 @@ import VideoCentralControls from "./VideoCentralControls";
 import VideoHeaderControls from "./VideoHeaderControls";
 import useStateRef from "react-usestateref";
 import Loading from "../../components/Loading";
+import { getStreamerId } from "../../lib/libMethods";
 
 ReactPlayer.addCustomPlayer(TranscrobesLayerPlayer as any); // FIXME: the upstream typing is wrong here
 overrideTextTrackListeners();
@@ -77,7 +78,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, Props>(
     const [seeking, setSeeking] = useState(false);
     const [currentCue, setCurrentCue] = useState("");
     const [track, setTrack] = useState<TextTrack | null>(null);
-    const [controlsVisibility, setControlsVisibility] = useState<"hidden" | "visible">("visible");
+    const [controlsVisibility, setControlsVisibility] = useState<"hidden" | "visible">("hidden");
     const [currentPlaybackRate, setCurrentPlaybackRate] = useState(1.0);
     const [isFullscreen, toggleFullscreen] = useFullscreen();
     const [gainNode, setGainNode] = useState<GainNode | null>(null);
@@ -123,8 +124,17 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, Props>(
         // our Transcrobifier player to get wired up properly and be "isReady"
         vid.dispatchEvent(new Event("canplay"));
         manageGainNode();
+
+        console.log("Setting up videoplayer");
+        // these seem to happen when arriving from a different page - the browser doesn't want them playing or with sound. Sometimes anyway...
+        setPlaying(!vid.paused);
+        if (vid.muted) {
+          dispatch(videoReaderActions.setMuted({ id, value: true }));
+        }
+      } else {
+        console.warn("No current internal player", playerRef?.current, playerRef?.current?.getInternalPlayer());
       }
-    }, [playerRef?.current]);
+    }, [playerRef?.current?.getInternalPlayer()]);
 
     useEffect(() => {
       manageGainNode();
@@ -294,7 +304,9 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, Props>(
             }
           });
         }
-        if (readerConfig.played > 0) playerRef?.current?.seekTo(readerConfig.played, "fraction");
+        if (readerConfig.played > 0 && !getStreamerId(window.location.href)) {
+          playerRef?.current?.seekTo(readerConfig.played, "fraction");
+        }
       }
     }
     function handleSeekMouseUp(_e: Event | React.SyntheticEvent<Element, Event>, value: number | number[]): void {
@@ -369,8 +381,8 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, Props>(
       return true;
     }
 
-    const currentTime = playerRef && playerRef.current ? playerRef.current.getCurrentTime() : 0;
-    const duration = playerRef && playerRef.current ? playerRef.current.getDuration() : 0;
+    const currentTime = playerRef?.current?.getCurrentTime() || 0;
+    const duration = playerRef?.current?.getDuration() || 0;
     const elapsedTime =
       readerConfig.timeDisplayFormat == "normal" ? format(currentTime) : `-${format(duration - currentTime)}`;
     const totalDuration = format(duration);

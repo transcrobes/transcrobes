@@ -38,13 +38,24 @@ export default class TranscrobesLayerPlayer extends Component<TranscrobesLayerPl
   }
   player: HTMLVideoElement;
 
-  componentDidMount() {
+  async componentDidMount() {
     // We should never actually attempt to mount if we aren't supported...
     if (this.streamer) {
-      this.player = getStreamerVideoElement(document, this.streamer)!;
+      let i = 0;
+      let ply: HTMLVideoElement | undefined = undefined;
+      while (!ply && i < 50) {
+        ply = getStreamerVideoElement(document, this.streamer);
+        if (!ply) {
+          console.log("Waiting for video element to appear...", i);
+          await new Promise((res) => setTimeout(res, 500));
+          i++;
+        }
+      }
+      if (ply) this.player = ply;
     }
     this.addListeners(this.player);
     this.props.onMount && this.props.onMount(this);
+    console.log("Found player", this.props.onMount, this.player?.readyState, this.player);
   }
 
   componentWillUnmount() {
@@ -111,8 +122,10 @@ export default class TranscrobesLayerPlayer extends Component<TranscrobesLayerPl
       } else {
         throw new Error("TranscrobesLayerPlayer requires config.transcrobesLayer.cues");
       }
-
       this.divRef.current?.appendChild(this.player);
+      console.log("Set up player", this.player, url, isReady);
+    } else {
+      console.log("Ran load without a player", url, isReady);
     }
   }
 

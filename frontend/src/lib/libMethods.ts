@@ -43,6 +43,24 @@ export function getMessages(locale: string) {
   }
 }
 
+export function streamContentIdCacheKey(url: string) {
+  return `${streamingSite(url)}:${getStreamerId(url)}`;
+}
+
+export function getStreamerId(url: string) {
+  const streamer = streamingSite(url);
+  let urlMatch: RegExpMatchArray | null = null;
+  switch (streamer) {
+    case "netflix":
+      urlMatch = url.match(STREAMER_DETAILS.netflix.ui);
+      return parseInt(urlMatch?.[2] || "") || null;
+    case "youku":
+      urlMatch = url.match(STREAMER_DETAILS.youku.ui);
+      return urlMatch?.[1] || null;
+  }
+  return null;
+}
+
 export function streamingSite(url: string): SupportedStreamer | null {
   for (const [name, pattern] of Object.entries(STREAMER_DETAILS)) {
     if (pattern.ui.test(url)) {

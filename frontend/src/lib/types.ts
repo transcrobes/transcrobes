@@ -187,7 +187,10 @@ export type KnownLanguage = SystemLanguage;
 export type InputLanguage = SystemLanguage;
 export type CornerPosition = "none" | "top-left" | "top-right" | "bottom-left" | "bottom-right";
 
-export type NetflixDetails = { language: string; subs: Record<number, [{ url: string }, { url: string }]> };
+export type NetflixDetails = {
+  language: string;
+  subs: Record<number, [{ url: string }, { url: string }]>;
+};
 export const DEBOUNCE_SELECTION_MS = 1000;
 
 const SIMPLE_POS_VALUES = ["ADV", "OTHER", "CONJ", "DET", "NOUN", "VERB", "PREP", "PRON", "ADJ", "MODAL"] as const;

@@ -16,7 +16,7 @@ import useWindowDimensions from "../hooks/WindowDimensions";
 import { getNetflixData } from "../lib/componentMethods";
 import { ensureDefinitionsLoaded } from "../lib/dictionary";
 import { getSubsURL, missingWordIdsFromModels } from "../lib/funclib";
-import { getDefaultLanguageDictionaries, streamingSite } from "../lib/libMethods";
+import { getDefaultLanguageDictionaries, streamingSite, streamContentIdCacheKey } from "../lib/libMethods";
 import { AbstractWorkerProxy } from "../lib/proxies";
 import {
   ContentProps,
@@ -30,6 +30,7 @@ import {
   VideoReaderState,
   translationProviderOrder,
 } from "../lib/types";
+import { ModelCache } from "./modelsCache";
 
 export async function getStreamDetails(url: string, proxy: AbstractWorkerProxy, fromLang: InputLanguage) {
   const streamer = streamingSite(url);
@@ -69,6 +70,7 @@ export async function getStreamDetails(url: string, proxy: AbstractWorkerProxy, 
       return { error };
     }
     loops++;
+    console.log("Waiting before another attempt", loops);
     await new Promise((res) => setTimeout(res, 5000)); // sleep
   }
   return { error };
@@ -85,6 +87,15 @@ export default function VideoPlayerScreen({ proxy }: ContentProps): ReactElement
   const dims = useWindowDimensions();
   const user = useAppSelector((state) => state.userData.user);
   const translate = useTranslate();
+
+  async function handleBack() {
+    await proxy.sendMessagePromise({
+      source: "Extension",
+      type: "removeStreamAutoPlay",
+      value: { url: window.location.href },
+    });
+    location.reload();
+  }
 
   const updateState = useCallback(async () => {
     if (id && cues.length === 0) {
@@ -130,25 +141,33 @@ export default function VideoPlayerScreen({ proxy }: ContentProps): ReactElement
 
   useEffect(() => {
     (async () => {
-      const { data, error } = await getStreamDetails(window.location.href, proxy, user.fromLang);
-      console.debug("Got back from streamdetails", data, error);
-      if (data) {
-        store.dispatch(setLoadingMessage(translate("screens.extension.streamer.processing_subs")));
-        const contents = await proxy.sendMessagePromise<{ data: { content_ids?: string[] } }>({
-          source: "Extension",
-          type: "streamingTitleSearch",
-          value: data,
-        });
-        console.debug("Got back from streamingTitleSearch", contents);
-        if (contents?.data?.content_ids && contents.data.content_ids.length > 0) {
-          // setContentIds(contents.data.content_ids);
-          setId(contents.data.content_ids[0]);
-        } else {
-          store.dispatch(setLoadingMessage(translate("screens.extension.streamer.sub_content_error")));
+      const cached = await proxy.sendMessagePromise<ModelCache | null>({
+        source: "Extension",
+        type: "getCacheValue",
+        value: streamContentIdCacheKey(window.location.href),
+      });
+      if (cached?.value) {
+        setId(cached?.value.split(":")[0]);
+      } else {
+        const { data, error } = await getStreamDetails(window.location.href, proxy, user.fromLang);
+        console.debug("Got back from streamdetails", data, error);
+        if (data) {
+          store.dispatch(setLoadingMessage(translate("screens.extension.streamer.processing_subs")));
+          const contents = await proxy.sendMessagePromise<{ data: { content_ids?: string[] } }>({
+            source: "Extension",
+            type: "streamingTitleSearch",
+            value: data,
+          });
+          console.debug("Got back from streamingTitleSearch", contents);
+          if (contents?.data?.content_ids && contents.data.content_ids.length > 0) {
+            setId(contents.data.content_ids[0]);
+          } else {
+            store.dispatch(setLoadingMessage(translate("screens.extension.streamer.sub_content_error")));
+          }
+        } else if (error) {
+          store.dispatch(setLoadingMessage(translate(error)));
+          setTimeout(() => location.reload(), 3000);
         }
-      } else if (error) {
-        store.dispatch(setLoadingMessage(translate(error)));
-        setTimeout(() => location.reload(), 3000);
       }
     })();
   }, []);
@@ -208,7 +227,7 @@ export default function VideoPlayerScreen({ proxy }: ContentProps): ReactElement
             />
             <WatchDemo url={MOOCROBES_YT_VIDEO} />
             <Button
-              onClick={() => location.reload()}
+              onClick={handleBack}
               sx={{ marginLeft: ".2em" }}
               children={<ArrowBackIcon />}
               variant="text"

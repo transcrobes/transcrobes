@@ -23,7 +23,10 @@ import {
 import scriptPath from "./content?script";
 import importPopup from "./importPopup?script";
 import { getRawYoukuData, getYoukuData } from "./yk";
-import { syncDefs } from "../lib/componentMethods";
+import { cleanCache, getCacheValue, setCacheValue } from "./modelsCache";
+import streamerAutoPlay from "./streamerAutoPlay?script";
+
+cleanCache();
 
 let db: TranscrobesDatabase;
 let dayCardWords: SerialisableDayCardWords | null;
@@ -49,7 +52,7 @@ async function getLocalCardWords(message: EventData) {
   if (dayCardWords) {
     return Promise.resolve(dayCardWords);
   } else {
-    const ldb = await loadDb(console.debug, message);
+    const ldb = await loadDb(message);
     const val = await data.getSerialisableCardWords(ldb);
     dayCardWords = val;
     return Promise.resolve(dayCardWords);
@@ -63,10 +66,9 @@ async function getUserDictionary(ldb: TranscrobesDatabase, dictionaryId: string)
   return dictionaries[dictionaryId];
 }
 
-// FIXME: any
-async function loadDb(callback: any, message: EventData) {
+async function loadDb(message: EventData, callback?: (message: EventData) => void) {
   if (db) {
-    callback({ source: message.source, type: message.type, value: "success" });
+    callback?.({ source: message.source, type: message.type, value: "success" });
     return db;
   }
   clearTimeout(eventQueueTimer);
@@ -96,7 +98,7 @@ async function loadDb(callback: any, message: EventData) {
       EVENT_QUEUE_PROCESS_FREQ,
     ) as unknown as number; // typescript considers this is a nodejs setInterval, not worker.
   }
-  callback({ source: message.source, type: message.type, value: "success" });
+  callback?.({ source: message.source, type: message.type, value: "success" });
   return db;
 }
 const messages: {
@@ -125,6 +127,7 @@ async function runMain(tab: chrome.tabs.Tab) {
               localStorage.setItem("TCLang", lang);
               location.reload(); // reload so the content_script has a value from the beginning
             }
+
             // @ts-ignore
             const subs = window.nftts;
             // @ts-ignore
@@ -146,6 +149,15 @@ async function runMain(tab: chrome.tabs.Tab) {
           world: "MAIN",
         });
         ({ data: messages.getYoukuData } = getYoukuData(raw[0]?.result || raw[0]));
+      }
+      if (tab.url?.match(STREAMER_DETAILS.netflix.ui) || tab.url?.match(STREAMER_DETAILS.youku.ui)) {
+        const contentIdAutoPlay = await getCacheValue(utils.streamContentIdCacheKey(tab.url));
+        if (contentIdAutoPlay) {
+          setCacheValue(utils.streamContentIdCacheKey(tab.url), {
+            cachedDate: Date.now(),
+            value: `${contentIdAutoPlay.value.split(":")[0]}:true`,
+          });
+        }
       }
       chrome.scripting.executeScript({
         target: { tabId: tab.id, allFrames: false },
@@ -196,7 +208,7 @@ async function runImportEpub(item: chrome.contextMenus.OnClickData, tab?: chrome
             message: (await getPolyglot()).t("screens.extension.import.sending", { linkUrl, destUrl }),
             status: "ongoing",
           };
-          const ldb = await loadDb(() => {}, { type: "syncDB", source: "background" });
+          const ldb = await loadDb({ type: "syncDB", source: "background" });
           const filename = await data.createEpubImportFromURL(ldb, destUrl, item.selectionText || "");
           // this doesn't actually work at the moment...
           replStates.get("imports")!.reSync();
@@ -239,7 +251,19 @@ chrome.scripting
       world: "MAIN",
     },
   ])
-  .catch((err) => console.warn("unexpected error", err));
+  .catch((err) => console.warn("unexpected nf.iife.js error", err));
+
+chrome.scripting
+  .registerContentScripts([
+    {
+      id: "streamerAutoPlay",
+      js: [streamerAutoPlay],
+      persistAcrossSessions: true,
+      matches: ["https://www.netflix.com/*", "https://v.youku.com/v_show/*"],
+      runAt: "document_start",
+    },
+  ])
+  .catch((err) => console.warn("unexpected streamerAutoPlay error", err));
 
 chrome.runtime.onInstalled.addListener(async () => {
   chrome.contextMenus.create({
@@ -265,7 +289,7 @@ chrome.runtime.onInstalled.addListener(async () => {
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === "syncDB") {
     console.log("Starting a background syncDB db load");
-    loadDb(sendResponse, message);
+    loadDb(message, sendResponse);
   } else if (message.type === "showOptions") {
     chrome.runtime.openOptionsPage(() => console.debug("Show options from", message.source));
   } else if (message.type === "heartbeat") {
@@ -276,6 +300,42 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     getUserDexie().then((user) => {
       sendResponse({ source: message.source, type: message.type, value: user });
     });
+  } else if (message.type === "getCacheValue") {
+    getCacheValue(message.value).then((value) => {
+      sendResponse({ source: message.source, type: message.type, value });
+    });
+  } else if (message.type === "removeStreamAutoPlay") {
+    const cacheKey = utils.streamContentIdCacheKey(message.value.url);
+    if (!cacheKey) {
+      sendResponse({ source: message.source, type: message.type, value: false });
+    } else {
+      getCacheValue(cacheKey).then((contentIdAutoPlay) => {
+        const contentId = contentIdAutoPlay?.value?.split(":")[0];
+        const autoPlay = contentIdAutoPlay?.value?.split(":")[1];
+        if (autoPlay === "true") {
+          // don't need to remove if it's already false
+          setCacheValue(cacheKey, { cachedDate: Date.now(), value: `${contentId}:false` });
+        }
+        sendResponse({ source: message.source, type: message.type, value: true });
+      });
+    }
+  } else if (message.type === "streamerAutoPlay") {
+    console.debug("Running autoplay bg check");
+    const cacheKey = utils.streamContentIdCacheKey(message.value);
+    getCacheValue(cacheKey).then((contentIdAutoPlay) => {
+      console.debug("Found cache value", contentIdAutoPlay);
+      const autoPlay = contentIdAutoPlay?.value?.split(":")[1];
+      if (autoPlay === "true" && sender.tab && sender.tab.id) {
+        console.log("Executing scriptPath");
+        chrome.scripting.executeScript({
+          target: { tabId: sender.tab.id, allFrames: false },
+          files: [scriptPath],
+        });
+      } else {
+        console.debug("Not executing scriptPath", sender.tab);
+      }
+      sendResponse({ source: message.source, type: message.type, value: true });
+    });
   } else if (message.type === "seekNetflix") {
     if (sender.tab?.id) {
       chrome.scripting
@@ -284,9 +344,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           func: (timestamp) => {
             const playManager: any = (window as any).netflix?.appContext?.state?.playerApp?.getAPI?.()?.videoPlayer;
             const player = playManager?.getVideoPlayerBySessionId(playManager.getAllPlayerSessionIds()?.[0]);
-            if (player && player.getCurrentTime) {
+            console.debug("Seeking nf to", player?.getCurrentTime, timestamp, parseInt(timestamp) * 1000);
+            if (player?.getCurrentTime) {
               player.seek(parseInt(timestamp) * 1000); // convert to ms
               return true;
+            } else {
+              console.warn("Could not find player to seek on", parseInt(timestamp) * 1000);
             }
             return false;
           },
@@ -308,7 +371,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       });
     });
   } else if (message.type === "submitLookupEvents") {
-    loadDb(console.debug, message).then((ldb) => {
+    loadDb(message).then((ldb) => {
       data
         .submitLookupEvents(ldb, {
           lemmaAndContexts: message.value.lookupEvents,
@@ -326,7 +389,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     });
   } else if (message.type === "addOrUpdateCardsForWord") {
     const practiceDetails = message.value;
-    loadDb(console.debug, message).then((ldb) => {
+    loadDb(message).then((ldb) => {
       dayCardWords = null;
       data.addOrUpdateCardsForWord(ldb, practiceDetails).then((values) => {
         console.debug("addOrUpdateCardsForWord", message, values);
@@ -336,7 +399,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   } else if (message.type === "practiceCardsForWord") {
     const practiceDetails = message.value;
     const { wordInfo, grade } = practiceDetails;
-    loadDb(console.debug, message).then((ldb) => {
+    loadDb(message).then((ldb) => {
       getLocalCardWords(message).then((dayCW) => {
         data.practiceCardsForWord(ldb, practiceDetails).then((values) => {
           dayCW.allCardWordGraphs[wordInfo.graph] = null;
@@ -353,7 +416,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     });
   } else if (message.type === "sentenceTranslation") {
     console.debug("Translating sentence", message.value);
-    loadDb(console.debug, message).then(() => {
+    loadDb(message).then(() => {
       utils
         .fetchPlus(
           store.getState().userData.baseUrl + "/api/v1/enrich/translate", // FIXME: hardcoded nastiness
@@ -368,38 +431,49 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         });
     });
   } else if (message.type === "serverGet") {
-    loadDb(console.debug, message).then(() => {
+    loadDb(message).then(() => {
       const { url, retries, isText } = message.value;
-      utils
-        .fetchPlusResponse(store.getState().userData.baseUrl + url, undefined, retries, false, !isText)
-        .then((result) => {
-          if (result.ok) {
-            const res = isText ? result.text() : result.json();
-            res.then((data) => {
-              sendResponse({
-                source: message.source,
-                type: message.type,
-                value: { data },
-              });
-            });
-          } else {
-            sendResponse({
-              source: message.source,
-              type: message.type,
-              value: { error: result.statusText },
-            });
-          }
-        })
-        .catch((e) => {
+      getCacheValue(url).then((cachedValue) => {
+        if (cachedValue) {
           sendResponse({
             source: message.source,
             type: message.type,
-            value: { error: e },
+            value: { data: cachedValue },
           });
-        });
+        } else {
+          utils
+            .fetchPlusResponse(store.getState().userData.baseUrl + url, undefined, retries, false, !isText)
+            .then((result) => {
+              if (result.ok) {
+                const res = isText ? result.text() : result.json();
+                res.then((data) => {
+                  setCacheValue(url, data);
+                  sendResponse({
+                    source: message.source,
+                    type: message.type,
+                    value: { data },
+                  });
+                });
+              } else {
+                sendResponse({
+                  source: message.source,
+                  type: message.type,
+                  value: { error: result.statusText },
+                });
+              }
+            })
+            .catch((e) => {
+              sendResponse({
+                source: message.source,
+                type: message.type,
+                value: { error: e },
+              });
+            });
+        }
+      });
     });
   } else if (message.type === "enrichText") {
-    loadDb(console.debug, message).then(() => {
+    loadDb(message).then(() => {
       utils
         .fetchPlus(
           store.getState().userData.baseUrl + "/api/v1/enrich/enrich_json",
@@ -422,7 +496,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         });
     });
   } else if (message.type === "streamingTitleSearch") {
-    loadDb(console.debug, message).then(() => {
+    loadDb(message).then(() => {
       const converted: any = {};
       const sd: StreamDetails = message.value;
       for (const [key, value] of Object.entries(sd)) {
@@ -435,7 +509,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         )
         .then((result) => {
           if (result.ok) {
-            result.json().then((data) => {
+            result.json().then((data: { content_ids: string[] }) => {
+              setCacheValue(utils.streamContentIdCacheKey(sd.canonicalUrl), {
+                cachedDate: Date.now(),
+                value: `${data.content_ids[0]}:true`,
+              });
               sendResponse({
                 source: message.source,
                 type: message.type,
@@ -459,7 +537,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         });
     });
   } else if (message.type === "getContentAccuracyStatsForImport") {
-    loadDb(console.debug, message).then((ldb) => {
+    loadDb(message).then((ldb) => {
       getLocalCardWords(message).then((dayCW) => {
         data.getContentAccuracyStatsForImport(ldb, message.value, dayCW).then((result) => {
           sendResponse({ source: message.source, type: message.type, value: result });
@@ -467,7 +545,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       });
     });
   } else if (message.type === "getDictionaryEntriesByGraph") {
-    loadDb(console.debug, message).then((ldb) => {
+    loadDb(message).then((ldb) => {
       const outputEntries: Record<string, UserDefinitionType> = {};
       getUserDictionary(ldb, message.value.dictionaryId).then((entries) => {
         for (const graph of message.value.graphs) {
@@ -494,7 +572,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       "forceDefinitionsSync",
     ].includes(message.type)
   ) {
-    loadDb(console.debug, message).then((ldb) => {
+    loadDb(message).then((ldb) => {
       data[message.type](ldb, message.value).then((result: any) => {
         sendResponse({ source: message.source, type: message.type, value: result });
       });
