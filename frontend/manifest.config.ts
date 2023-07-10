@@ -25,7 +25,7 @@ export default defineManifest((env) => ({
   },
   web_accessible_resources: [
     {
-      resources: ["img/*.*", "*.css", "nf.iife.js"],
+      resources: ["static/*.*", "*.css", "nf.iife.js"],
       matches: ["<all_urls>"],
     },
   ],

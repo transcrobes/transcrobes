@@ -1,7 +1,7 @@
 import createCache from "@emotion/cache";
 import { CacheProvider } from "@emotion/react";
 import { EmotionCache } from "@emotion/utils";
-import { createTheme, ThemeProvider, ScopedCssBaseline } from "@mui/material";
+import { ScopedCssBaseline, ThemeProvider, createTheme } from "@mui/material";
 import { createComponentVNode, render } from "inferno";
 import { Provider as InfernoProvider } from "inferno-redux";
 import jss from "jss";
@@ -14,10 +14,10 @@ import { QueryClient, QueryClientProvider } from "react-query";
 import { Provider } from "react-redux";
 import { AdminStore, store } from "../app/createStore";
 import { ETFStyles, ETFStylesProps } from "../components/Common";
+import Loading from "../components/Loading";
 import EnrichedTextFragment from "../components/content/etf/EnrichedTextFragment";
 import Mouseover from "../components/content/td/Mouseover";
 import TokenDetails from "../components/content/td/TokenDetails";
-import Loading from "../components/Loading";
 import { setCardWordsState } from "../features/card/knownCardsSlice";
 import { getRefreshedState } from "../features/content/contentSlice";
 import { extensionReaderActions } from "../features/content/extensionReaderSlice";
@@ -27,7 +27,7 @@ import { setUser } from "../features/user/userSlice";
 import { popupDarkTheme, popupLightTheme } from "../layout/themes";
 import { sessionActivityUpdate, submitActivity } from "../lib/componentMethods";
 import { ensureDefinitionsLoaded, refreshDictionaries } from "../lib/dictionary";
-import { getLanguageFromPreferred, isScriptioContinuo, missingWordIdsFromModels, toEnrich, UUID } from "../lib/funclib";
+import { UUID, getLanguageFromPreferred, isScriptioContinuo, missingWordIdsFromModels, toEnrich } from "../lib/funclib";
 import { NAME_PREFIX } from "../lib/interval/interval-decorator";
 import {
   enrichNodes,
@@ -49,13 +49,14 @@ import {
   ModelType,
   SerialisableDayCardWords,
   SerialisableStringSet,
-  translationProviderOrder,
   UserState,
+  translationProviderOrder,
 } from "../lib/types";
 import ContentAnalysisAccuracyBrocrobes from "./ContentAnalysisAccuracyBrocrobes";
 import ContentAnalysisBrocrobes from "./ContentAnalysisBrocrobes";
-import { streamOverrides } from "./streaming";
 import VideoPlayerScreen from "./VideoPlayerScreen";
+import { fontHack } from "./fontHack";
+import { streamOverrides } from "./streaming";
 
 const DATA_SOURCE = "content.ts";
 const KEEPALIVE_QUERY_FREQUENCY_MS = 5000;
@@ -176,7 +177,6 @@ async function ensureRestLoaded(platformHelper: AbstractWorkerProxy, store: Admi
   const value = await platformHelper.sendMessagePromise<SerialisableDayCardWords>({
     source: DATA_SOURCE,
     type: "getSerialisableCardWords",
-    value: "",
   });
   store.dispatch(setCardWordsState(value));
   for (const word of Object.keys(value.knownCardWordGraphs)) {
@@ -208,6 +208,10 @@ if (!!streamingSiteName) {
     components: { ...baseTheme.components, ...streamOverrides.components },
     typography: { ...baseTheme.typography, ...streamOverrides.typography },
   };
+  // FIXME: hack for fonts for streamers
+  const fa = document.createElement("style");
+  fa.textContent = fontHack;
+  document.head.appendChild(fa);
 }
 
 const [mainRoot, mainCache] = createTCRoot("transcrobes", document, !!streamingSiteName);
