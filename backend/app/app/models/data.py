@@ -637,7 +637,7 @@ class StreamDetails(DetailedMixin, Base):
     season_id = Column(Text)
     season_title = Column(Text)
     season_short_name = Column(Text)
-    season_number = Column(Text)
+    season_number = Column(Text)  # FIXME: this is mistyped... it should be an int!
     season_year = Column(Integer)
     episode = Column(Integer)
     episode_title = Column(Text)

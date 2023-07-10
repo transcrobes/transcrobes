@@ -73,8 +73,8 @@ export async function getNetflixData(proxy: AbstractWorkerProxy, fromLang: Input
         }),
     ),
   );
-  const showTitle = netflix.video?.title;
-  const showId = netflix.video?.id;
+  const showTitle = netflix.video?.title?.toString();
+  const showId = netflix.video?.id?.toString();
   let curEpisode: any = null;
   let curSeason: any = null;
   let firstSeason: any = null;
@@ -91,10 +91,10 @@ export async function getNetflixData(proxy: AbstractWorkerProxy, fromLang: Input
     }
   }
 
-  const duration = curEpisode?.runtime || netflix.video?.runtime;
+  const duration = parseInt(curEpisode?.runtime || netflix.video?.runtime || "0");
   const year = firstSeason?.year || netflix.video?.year || 0;
-  const episode = curEpisode?.seq;
-  const episodeTitle = curEpisode?.title;
+  const episode = parseInt(curEpisode?.seq?.toString() || "0") || undefined;
+  const episodeTitle = curEpisode?.title?.toString();
   const category = netflix.video.type === "show" ? "series" : netflix.video.type === "movie" ? "movie" : "unknown";
   const streamDets: StreamDetails = {
     streamer: "netflix",
@@ -103,7 +103,7 @@ export async function getNetflixData(proxy: AbstractWorkerProxy, fromLang: Input
     duration,
     seasonTitle: curSeason?.longName || curSeason?.shortName,
     seasonShortName: curSeason?.shortName,
-    seasonId: curSeason?.id,
+    seasonId: curSeason?.id?.toString(),
     streamType: "full", // can this be something else?
     episode,
     episodeTitle,

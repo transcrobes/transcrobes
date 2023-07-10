@@ -8,7 +8,7 @@ import os
 import pathlib
 import uuid
 from collections import ChainMap
-from typing import Any, Optional
+from typing import Any
 
 import aiofiles
 from app import models, schemas
@@ -47,34 +47,34 @@ class InfoRequest(BaseModel):
 
 class Subtitle(BaseModel):
     url: str
-    lang: Optional[str]
-    label: Optional[str]
-    content: Optional[str]
+    lang: str | None = None
+    label: str | None = None
+    content: str | None = None
 
 
 class StreamDetails(BaseModel):
-    imdb_id: Optional[str]
+    imdb_id: str | None = None
     streamer: str  # "youku" | "netflix"
     canonical_url: str
     streamer_id: str
     category: str  # "movie" | "series" | "unknown"
     language: str  # the two-letter language code ('zh', 'fr', 'en') of the StreamDetails titles, etc.
     duration: int
-    subtitles: Optional[list[Subtitle]]
-    stream_type: Optional[str]  # "trailer" | "full" | "unknown"
-    season_id: Optional[str]
-    season_title: Optional[str]
-    season_short_name: Optional[str]
-    season_number: Optional[int]
-    season_year: Optional[int]
-    episode: Optional[int]
-    episode_title: Optional[str]
-    year: Optional[int]  # year of movie or first season
-    country: Optional[str]
-    show_id: Optional[str]
-    show_title: Optional[str]
-    original_title: Optional[str]
-    show_genre: Optional[str]
+    subtitles: list[Subtitle] | None = None
+    stream_type: str  # "trailer" | "full" | "unknown"
+    season_id: str | None = None
+    season_title: str | None = None
+    season_short_name: str | None = None
+    season_number: int | None = None
+    season_year: int | None = None
+    episode: int | None = None
+    episode_title: str | None = None
+    year: int | None = None  # year of movie or first season
+    country: str | None = None
+    show_id: str | None = None
+    show_title: str | None = None
+    original_title: str | None = None
+    show_genre: str | None = None
 
 
 router = APIRouter()

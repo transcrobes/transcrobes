@@ -31,9 +31,8 @@ export function getRawYoukuData() {
   const initialData = window.__INITIAL_DATA__;
   const mediaResource = videoPlayer?.context?.mediaData?.mediaResource;
   const show = mediaResource?.show;
-
-  const streamerId = videoPlayer?.context?.config?.vid;
-  const seasonId = show?.encodeid;
+  const streamerId = videoPlayer?.context?.config?.vid?.toString();
+  const seasonId = show?.encodeid?.toString();
   const availableSeasons: YoukuSeason[] = (initialData?.data?.data?.nodes?.[0]?.nodes?.[2]?.data?.series || []).map(
     (x) => {
       return {
@@ -45,17 +44,17 @@ export function getRawYoukuData() {
       };
     },
   );
-  const episodeTitle = mediaResource?.title || ""; // "老友记 第四季 19"
-  const seasonTitle: string = show?.title || ""; // "老友记 第四季"
+  const episodeTitle = mediaResource?.title?.toString(); // "老友记 第四季 19"
+  const seasonTitle: string | undefined = show?.title?.toString(); // "老友记 第四季"
 
-  const videoType = show?.show_videotype || "";
+  const videoType = show?.show_videotype;
   const episode: number = show?.stage || 0;
-  const category = show?.showcategory;
+  const category = show?.showcategory?.toString();
 
-  const infoStr = initialData.data?.data?.nodes?.[0]?.nodes?.[0]?.nodes?.[0]?.data?.introSubTitle || "";
+  const infoStr = initialData.data?.data?.nodes?.[0]?.nodes?.[0]?.nodes?.[0]?.data?.introSubTitle?.toString();
 
   const canonicalUrl = (mediaResource?.video?.weburl || "").replace("http://", "https://");
-  const duration = mediaResource?.duration || 0;
+  const duration = parseInt(mediaResource?.duration) || 0;
   const sub = videoPlayer?.context?.mediaData?.currentSubtitle;
   const subtitles = sub
     ? [
