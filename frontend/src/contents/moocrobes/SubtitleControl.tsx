@@ -18,12 +18,13 @@ function SubtitleControl({ currentCue, models, id }: Props): ReactElement {
   const fromLang = useAppSelector((state) => state.userData.user.fromLang);
   const etfClasses = useJssStyles({ ...readerConfig, scriptioContinuo: isScriptioContinuo(fromLang) });
 
+  const blurPx = "10px";
   const dims = useWindowDimensions();
   const pseudo = {
     content: "''",
     flex: "1 1 auto",
     maxWidth: dims.width > 1500 ? "10em" : "5em",
-    backdropFilter: "blur(6px)",
+    backdropFilter: `blur(${blurPx})`,
   };
   useEffect(() => {
     if (ref.current && models) {
@@ -44,7 +45,7 @@ function SubtitleControl({ currentCue, models, id }: Props): ReactElement {
     >
       <Box
         sx={{
-          backdropFilter: !readerConfig.subBackgroundBlur ? undefined : "blur(6px)",
+          backdropFilter: !readerConfig.subBackgroundBlur ? undefined : `blur(${blurPx})`,
           minHeight: !readerConfig.subBackgroundBlur ? undefined : "6em",
           maxWidth: `${(readerConfig.subBoxWidth || 1) * 100}%`,
         }}
