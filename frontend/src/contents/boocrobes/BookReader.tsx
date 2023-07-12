@@ -11,13 +11,14 @@ import Loading from "../../components/Loading";
 import Mouseover from "../../components/content/td/Mouseover";
 import TokenDetails from "../../components/content/td/TokenDetails";
 import { bookReaderActions } from "../../features/content/bookReaderSlice";
-import { getRefreshedState } from "../../features/content/contentSlice";
+import { getRawState, getRefreshedState } from "../../features/content/contentSlice";
 import { WebpubManifest } from "../../lib/WebpubManifestTypes/WebpubManifest";
 import { fetcher } from "../../lib/fetcher";
 import { NAME_PREFIX, intervalCollection } from "../../lib/interval/interval-decorator";
 import { getDefaultLanguageDictionaries } from "../../lib/libMethods";
 import {
   BOOCROBES_HEADER_HEIGHT,
+  BOOK_READER_TYPE,
   BookReaderState,
   ContentParams,
   ContentProps,
@@ -148,14 +149,17 @@ export default function BookReader({ proxy }: ContentProps): ReactElement {
       return;
     }
     (async () => {
-      const conf = await getRefreshedState<BookReaderState>(
-        proxy,
-        {
-          ...DEFAULT_BOOK_READER_CONFIG_STATE,
-          translationProviderOrder: translationProviderOrder(getDefaultLanguageDictionaries(user.fromLang)),
-        },
-        id,
-      );
+      const def = (await getRawState(proxy, BOOK_READER_TYPE)) || {};
+      const defConfig = {
+        ...DEFAULT_BOOK_READER_CONFIG_STATE,
+        ...def,
+        location: undefined,
+        atStart: true,
+        atEnd: false,
+        onScreenModels: [],
+        translationProviderOrder: translationProviderOrder(getDefaultLanguageDictionaries(user.fromLang)),
+      };
+      const conf = await getRefreshedState<BookReaderState>(proxy, defConfig, id);
       dispatch(bookReaderActions.setState({ id, value: conf }));
 
       const userSettings = {

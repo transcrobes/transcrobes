@@ -9,11 +9,6 @@ import { streamingSite } from "../lib/libMethods";
 import { platformHelper } from "../lib/proxies";
 import { I18nContext } from "react-admin";
 
-/*
-  Things to do:
-  -
-*/
-
 interface TranscrobesLayerPlayerConfig {
   transcrobesLayer: {
     cues: Cue[];

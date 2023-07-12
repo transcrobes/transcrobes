@@ -9,7 +9,7 @@ import HelpButton from "../components/HelpButton";
 import WatchDemo from "../components/WatchDemo";
 import VideoPlayer, { VideoPlayerHandle } from "../contents/moocrobes/VideoPlayer";
 import VideoReaderConfigLauncher from "../contents/moocrobes/VideoReaderConfigLauncher";
-import { getRefreshedState } from "../features/content/contentSlice";
+import { getRawState, getRefreshedState } from "../features/content/contentSlice";
 import { videoReaderActions } from "../features/content/videoReaderSlice";
 import { setLoading, setLoadingMessage } from "../features/ui/uiSlice";
 import useWindowDimensions from "../hooks/WindowDimensions";
@@ -27,6 +27,7 @@ import {
   MOOCROBES_YT_VIDEO,
   SUBS_DATA_SUFFIX,
   StreamDetails,
+  VIDEO_READER_TYPE,
   VideoReaderState,
   translationProviderOrder,
 } from "../lib/types";
@@ -176,15 +177,16 @@ export default function VideoPlayerScreen({ proxy }: ContentProps): ReactElement
     if (!proxy.loaded || !id) return;
     (async () => {
       const streamer = streamingSite(location.href);
+      const def = (await getRawState(proxy, VIDEO_READER_TYPE)) || {};
       const defConfig = {
         ...DEFAULT_VIDEO_READER_CONFIG_STATE,
-        fontSize: dims.width < 1000 ? 1.5 : dims.width < 1500 ? 2 : 2.6,
+        ...def,
+        fontSize: def?.fontSize || (dims.width < 1000 ? 1.5 : dims.width < 1500 ? 2 : 2.6),
         subBackgroundBlur: streamer === "youku",
         subRaise: streamer !== "youku" ? 0 : dims.width < 1000 ? 100 : dims.width < 1500 ? 120 : 150,
         subBoxWidth: 1,
         translationProviderOrder: translationProviderOrder(getDefaultLanguageDictionaries(user.fromLang)),
       };
-
       const conf = await getRefreshedState<VideoReaderState>(proxy, defConfig, id);
       dispatch(videoReaderActions.setState({ id, value: conf }));
     })();
@@ -236,6 +238,7 @@ export default function VideoPlayerScreen({ proxy }: ContentProps): ReactElement
             <HelpButton url={helpUrl} />
           </TopToolbar>
         }
+        progressInterval={2000}
         models={models}
         cues={cues}
         ref={vpHandle as any}

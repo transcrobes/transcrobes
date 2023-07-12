@@ -56,6 +56,7 @@ interface Props {
   videoUrl: string;
   contentLabel?: string;
   srcLang?: string;
+  progressInterval?: number;
   ref: React.RefObject<ReactElement>;
 }
 
@@ -71,7 +72,7 @@ export interface OnProgressProps {
 }
 
 const VideoPlayer = forwardRef<VideoPlayerHandle, Props>(
-  ({ cues, models, subsUrl, videoUrl, contentLabel, srcLang, id, topToolbar }, ref) => {
+  ({ cues, models, subsUrl, videoUrl, contentLabel, srcLang, id, topToolbar, progressInterval }, ref) => {
     const playerRef = useRef<ReactPlayer>(null);
     const playerContainerRef = useRef<HTMLDivElement>(null);
     const [playing, setPlaying, playingRef] = useStateRef(true);
@@ -424,7 +425,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, Props>(
                 volume={readerConfig.volume}
                 muted={readerConfig.muted}
                 onProgress={handleProgress}
-                progressInterval={500}
+                progressInterval={progressInterval || 500}
                 onReady={handleReady}
                 config={{
                   // @ts-ignore

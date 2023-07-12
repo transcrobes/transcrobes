@@ -7,7 +7,7 @@ import { store } from "../../app/createStore";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import HelpButton from "../../components/HelpButton";
 import WatchDemo from "../../components/WatchDemo";
-import { getRefreshedState } from "../../features/content/contentSlice";
+import { getRawState, getRefreshedState } from "../../features/content/contentSlice";
 import { videoReaderActions } from "../../features/content/videoReaderSlice";
 import useWindowDimensions from "../../hooks/WindowDimensions";
 import { ensureDefinitionsLoaded } from "../../lib/dictionary";
@@ -22,6 +22,7 @@ import {
   KeyedModels,
   MOOCROBES_YT_VIDEO,
   SUBS_DATA_SUFFIX,
+  VIDEO_READER_TYPE,
   VideoReaderState,
   translationProviderOrder,
 } from "../../lib/types";
@@ -52,9 +53,11 @@ export default function VideoPlayerScreen({ proxy }: ContentProps): ReactElement
   useEffect(() => {
     if (!proxy.loaded) return;
     (async () => {
+      const def = (await getRawState(proxy, VIDEO_READER_TYPE)) || {};
       const defConfig = {
         ...DEFAULT_VIDEO_READER_CONFIG_STATE,
-        fontSize: dims.width < 1000 ? 1.5 : dims.width < 1500 ? 2 : 2.6,
+        ...def,
+        fontSize: def?.fontSize || (dims.width < 1000 ? 1.5 : dims.width < 1500 ? 2 : 2.6),
         translationProviderOrder: translationProviderOrder(getDefaultLanguageDictionaries(user.fromLang)),
       };
       const conf = await getRefreshedState<VideoReaderState>(proxy, defConfig, id);

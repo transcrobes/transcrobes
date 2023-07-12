@@ -29,28 +29,40 @@ export function handleConfigUpdate<T extends ReaderState>(newConfig: T, id: stri
     type: "setContentConfigToStore",
     value: configToSave,
   });
+  // These are for default values, rather than starting from scratch
+  if (["bookReader", "videoReader"].includes(newConfig.readerType)) {
+    proxy.sendMessagePromise({
+      source: "contentSlice.ts",
+      type: "setContentConfigToStore",
+      value: { ...configToSave, id: newConfig.readerType },
+    });
+  }
 }
 export type ContentConfigPayload<T> = {
   id: string;
   value: T;
 };
 
+export async function getRawState(proxy: AbstractWorkerProxy, id: string) {
+  const raw = await proxy.sendMessagePromise<ContentConfigType>({
+    source: "ContentConfig.ts",
+    type: "getContentConfigFromStore",
+    value: id,
+  });
+  return raw?.configString ? JSON.parse(raw.configString).readerState : null;
+}
+
 export async function getRefreshedState<T extends ReaderState>(
   proxy: AbstractWorkerProxy,
   defaultConfig: T,
   id: string,
 ): Promise<T> {
-  const config = await proxy.sendMessagePromise<ContentConfigType>({
-    source: "ContentConfig.ts",
-    type: "getContentConfigFromStore",
-    value: id,
-  });
-
-  const conf: T = !config?.configString
+  const config = await getRawState(proxy, id);
+  const conf: T = !config
     ? _.cloneDeep({ ...defaultConfig, id })
     : {
         ..._.cloneDeep({ ...defaultConfig, id }),
-        ...JSON.parse(config.configString).readerState,
+        ...config,
       };
   return conf;
 }
