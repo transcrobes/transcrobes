@@ -336,6 +336,31 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       }
       sendResponse({ source: message.source, type: message.type, value: true });
     });
+  } else if (message.type === "getNetflixPlayerError") {
+    if (sender.tab?.id) {
+      chrome.scripting
+        .executeScript({
+          target: { tabId: sender.tab?.id },
+          func: () => {
+            const playManager: any = (window as any).netflix?.appContext?.state?.playerApp?.getAPI?.()?.videoPlayer;
+            const player = playManager?.getVideoPlayerBySessionId(playManager.getAllPlayerSessionIds()?.[0]);
+            const error = player?.getError();
+            console.debug("Getting nf error", error);
+            if (player) {
+              return error;
+            } else {
+              console.warn("Could not find player to get error from");
+            }
+            return false;
+          },
+          world: "MAIN",
+        })
+        .then((success) => {
+          sendResponse({ source: message.source, type: message.type, value: success[0]?.result || success[0] });
+        });
+    } else {
+      sendResponse({ source: message.source, type: message.type, value: false });
+    }
   } else if (message.type === "seekNetflix") {
     if (sender.tab?.id) {
       chrome.scripting

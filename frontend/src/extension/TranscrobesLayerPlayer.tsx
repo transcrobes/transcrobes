@@ -204,9 +204,35 @@ export default class TranscrobesLayerPlayer extends Component<TranscrobesLayerPl
       console.debug("Changed url, reloading", location.href, this.lastHref);
       location.reload();
     }
-    if (this.props.playing && this.player.currentTime === this.currentTime && !store.getState().ui.loading) {
-      store.dispatch(setLoading(true));
-      store.dispatch(setLoadingMessage(this.context.translate("screens.extension.streamer.buffering")));
+    if (this.props.playing && this.player.currentTime === this.currentTime) {
+      if (!store.getState().ui.loading) {
+        store.dispatch(setLoading(true));
+        store.dispatch(setLoadingMessage(this.context.translate("screens.extension.streamer.buffering")));
+      } else if (this.streamer === "netflix") {
+        // FIXME: previously a player.play() would restart but now some other magic is happening, so we need to
+        // reload the page. The transcrobing should now be autorestarted, so should only be of very minor inconvenience.
+        platformHelper
+          .sendMessagePromise<{ display: { code: string } } | null | false>({
+            source: "tlp",
+            type: "getNetflixPlayerError",
+          })
+          .then((result) => {
+            /*
+            display : {code: 'D7500', text: undefined}
+            messageIdList : ['pause_timeout', 'D7500']
+            */
+            if (result) {
+              console.debug("Netflix player error", result);
+              if (result?.display?.code === "D7500") {
+                // pause_timeout
+                window.location.reload();
+              } // ??? maybe a reload here also for good measure?
+            } else if (result === false) {
+              // no player
+              window.location.reload();
+            } // else it should be null, which means no error
+          });
+      }
     } else if (this.player.currentTime !== this.currentTime) {
       if (store.getState().ui.loading) {
         store.dispatch(setLoading(undefined));
