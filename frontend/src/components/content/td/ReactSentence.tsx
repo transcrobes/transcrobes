@@ -26,10 +26,14 @@ export default function ReactSentence({ sentence, readerConfig, sameTab }: Props
       if (uniqueIds.size > 0) {
         await ensureDefinitionsLoaded(platformHelper, [...uniqueIds], store);
       }
+      const elementIds: Set<string> = new Set();
+      const uniqueId: string = "fake:1";
       const wrappedSentence = createComponentVNode(ComponentClass, Provider, {
         store: store,
         children: [
           createComponentVNode(ComponentFunction, Sentence, {
+            uniqueId,
+            elementIds,
             classes: etfClasses,
             readerConfig,
             sentence,

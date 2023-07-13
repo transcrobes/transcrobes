@@ -7,13 +7,14 @@ import { ETFStylesProps } from "../../Common";
 import Entry from "./Entry";
 
 type Props = {
+  elementIds?: Set<string>;
   model: ModelType;
   readerConfig: ReaderState;
   classes: ETFStylesProps["classes"];
   clickable?: boolean;
 };
 
-export default function EnrichedTextFragment({ model, readerConfig, classes, clickable }: Props): VNode[] {
+export default function EnrichedTextFragment({ model, readerConfig, classes, clickable, elementIds }: Props): VNode[] {
   if (model?.s) {
     const ls = model.s.length;
     const sents: VNode[] = [];
@@ -22,8 +23,11 @@ export default function EnrichedTextFragment({ model, readerConfig, classes, cli
       if (lt) {
         const tokens: VNode[] = [];
         for (let j = 0; j < lt; j++) {
+          elementIds?.add(`${model.id}:${i.toString()}:${j.toString()}`);
           tokens.push(
             createComponentVNode(ComponentClass, Entry, {
+              elementIds,
+              uniqueId: `${model.id}:${i.toString()}:${j.toString()}`,
               readerConfig,
               token: model.s[i].t[j],
               sentence: model.s[i],
@@ -48,17 +52,18 @@ export function enrichETFElements(
   models: KeyedModels,
   store: AdminStore,
   classes: ETFStylesProps["classes"],
+  elementIds?: Set<string>,
 ) {
   element.innerHTML = html;
   const elements = element.querySelectorAll("enriched-text-fragment");
   const readObserver = new IntersectionObserver(
     observerFunc(
-      () => readerConfig,
       models,
+      () => readerConfig,
       () => store.getState().knownCards,
     ),
     {
-      threshold: [1.0],
+      threshold: [0, 1.0],
     },
   );
   for (let i = 0; i < elements.length; ++i) {
@@ -82,6 +87,7 @@ export function enrichETFElements(
             ComponentFunction,
             EnrichedTextFragment,
             {
+              elementIds,
               readerConfig: readerConfig,
               model: models[id],
               classes: classes,

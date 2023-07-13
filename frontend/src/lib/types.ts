@@ -4,6 +4,7 @@ import { HslColor } from "react-colorful";
 import { CardDocument, CharacterDocument, DefinitionDocument, WordModelStatsDocument } from "../database/Schema";
 import type { AbstractWorkerProxy, ProgressCallbackMessage } from "./proxies";
 import type Polyglot from "node-polyglot";
+import { Locator } from "../r2d2bc";
 
 export const SUBS_DATA_SUFFIX = ".data.json";
 
@@ -588,8 +589,8 @@ export interface BookReaderState extends ReaderState {
   currentTocUrl: string | null;
   atStart: boolean;
   atEnd: boolean;
-  // location?: Locator | undefined;
-  location?: any | undefined;
+  onScreenModels?: string[];
+  location?: Locator | undefined;
   readerType: typeof BOOK_READER_TYPE;
 }
 
@@ -628,6 +629,7 @@ export const DEFAULT_BOOK_READER_CONFIG_STATE: BookReaderState = {
   currentTocUrl: null,
   atStart: true,
   atEnd: false,
+  onScreenModels: [],
   location: undefined,
 };
 
@@ -1374,7 +1376,7 @@ export type ModelType = {
   /**
    * Model Id, a nano-second timestamp of the parse (or enrich) time
    */
-  id: bigint | number;
+  id?: bigint | number;
   /**
    * Sentences
    */

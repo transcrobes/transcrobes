@@ -145,7 +145,7 @@ createRoot(loadingRoot).render(
 store.dispatch(setLoading(true));
 await ensureRestLoaded(proxy, store);
 
-const readObserver = new IntersectionObserver(observerFunc(getReaderConfig, models, getKnownCards), {
+const readObserver = new IntersectionObserver(observerFunc(models, getReaderConfig, getKnownCards, new Set<string>()), {
   threshold: [1.0],
 });
 

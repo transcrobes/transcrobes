@@ -19,6 +19,8 @@ declare global {
   }
 }
 
+console.debug("Loading readium.tsx");
+
 const MAX_TOKENS_FOR_PRE_ENRICHMENT = 30000;
 
 const proxy = window.parent.componentsConfig.proxy;
@@ -32,9 +34,12 @@ const definitions = store.getState().definitions;
 const getReaderConfig = () => readerConfig;
 const getKnownCards = () => store.getState().knownCards;
 const user = store.getState().userData.user;
-const readObserver = new IntersectionObserver(observerFunc(getReaderConfig, currentModels, getKnownCards), {
-  threshold: [1.0],
-});
+const readObserver = new IntersectionObserver(
+  observerFunc(currentModels, getReaderConfig, getKnownCards, window.parent.onScreenModels),
+  {
+    threshold: [1.0],
+  },
+);
 
 document.addEventListener("click", () => {
   store.dispatch(setTokenDetails(undefined));
@@ -51,13 +56,15 @@ sheet.update({ ...readerConfig, scriptioContinuo: isScriptioContinuo(user.fromLa
 
 const classes = sheet.classes;
 
+setPlatformHelper(proxy);
+
 export function onEntryId(entries: IntersectionObserverEntry[]): void {
   if (store.getState().ui.loading) {
     store.dispatch(setLoading(undefined));
   }
   entries.forEach((change) => {
     const etf = change.target as HTMLElement;
-    if (!change.isIntersecting || (etf.dataset as any).tced === "true") return;
+    if (!change.isIntersecting || etf.dataset.tced === "true") return;
     etf.innerHTML = "";
     readObserver.observe(etf);
     render(
@@ -68,6 +75,7 @@ export function onEntryId(entries: IntersectionObserverEntry[]): void {
             ComponentFunction,
             EnrichedTextFragment,
             {
+              elementIds: window.parent.elementIds,
               readerConfig: readerConfig,
               model: currentModels[etf.id],
               classes: classes,
@@ -76,6 +84,7 @@ export function onEntryId(entries: IntersectionObserverEntry[]): void {
             {
               onComponentWillUnmount() {
                 readObserver.unobserve(etf);
+                window.parent.onScreenModels.delete(etf.id);
               },
             },
           ),
@@ -83,7 +92,7 @@ export function onEntryId(entries: IntersectionObserverEntry[]): void {
       }),
       etf,
     );
-    (etf.dataset as any).tced = "true";
+    etf.dataset.tced = "true";
     if (window.parent.etfLoaded) {
       window.parent.etfLoaded.add("loaded");
     }
@@ -93,18 +102,7 @@ const transcroberObserver: IntersectionObserver = new IntersectionObserver(onEnt
   threshold: [0.9],
 });
 
-function loadSettingsFromParentFrame() {
-  setPlatformHelper(proxy);
-
-  if (window.parent.etfLoaded) {
-    window.parent.etfLoaded.add("loaded");
-  }
-}
-
-loadSettingsFromParentFrame();
-
-const uniqueIds = missingWordIdsFromModels(currentModels, definitions);
-
+// make sure the stylesheet is updated when the config values change
 let w = watch(store.getState, "bookReader");
 store.subscribe(
   w((newVal) => {
@@ -112,6 +110,7 @@ store.subscribe(
   }),
 );
 
+const uniqueIds = missingWordIdsFromModels(currentModels, definitions);
 ensureDefinitionsLoaded(proxy, [...uniqueIds], store).then(() => {
   if (tokensInModel(currentModels) > MAX_TOKENS_FOR_PRE_ENRICHMENT) {
     for (const etf of document.getElementsByTagName("enriched-text-fragment")) {
@@ -123,6 +122,7 @@ ensureDefinitionsLoaded(proxy, [...uniqueIds], store).then(() => {
       if (!etf.id) continue;
       etf.innerHTML = "";
       readObserver.observe(etf);
+      currentModels[etf.id]!.id = parseInt(etf.id);
       render(
         createComponentVNode(ComponentClass, InfernoProvider, {
           store: store,
@@ -131,6 +131,7 @@ ensureDefinitionsLoaded(proxy, [...uniqueIds], store).then(() => {
               ComponentFunction,
               EnrichedTextFragment,
               {
+                elementIds: window.parent.elementIds,
                 readerConfig: readerConfig,
                 model: currentModels[etf.id],
                 classes: classes,
@@ -146,12 +147,11 @@ ensureDefinitionsLoaded(proxy, [...uniqueIds], store).then(() => {
         }),
         etf,
       );
-      (etf.dataset as any).tced = "true";
+      etf.dataset.tced = "true";
     }
   }
-  store.dispatch(setLoading(undefined));
-  console.debug("Finished setting up elements for readium");
   if (window.parent.etfLoaded) {
     window.parent.etfLoaded.add("loaded");
   }
+  console.debug("Finished setting up elements for readium");
 });

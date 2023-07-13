@@ -590,6 +590,7 @@ const customEnglishMessages: TranslationMessages = {
       },
       previous: "Previous",
       next: "Next",
+      finding_previous_position: "Finding previous position",
     },
     brocrobes: {
       name: "Brocrobes",

@@ -14,7 +14,6 @@ import { bookReaderActions } from "../../features/content/bookReaderSlice";
 import { getRawState, getRefreshedState } from "../../features/content/contentSlice";
 import { WebpubManifest } from "../../lib/WebpubManifestTypes/WebpubManifest";
 import { fetcher } from "../../lib/fetcher";
-import { NAME_PREFIX, intervalCollection } from "../../lib/interval/interval-decorator";
 import { getDefaultLanguageDictionaries } from "../../lib/libMethods";
 import {
   BOOCROBES_HEADER_HEIGHT,
@@ -25,7 +24,7 @@ import {
   DEFAULT_BOOK_READER_CONFIG_STATE,
   translationProviderOrder,
 } from "../../lib/types";
-import D2Reader from "../../r2d2bc";
+import D2Reader, { Locator } from "../../r2d2bc";
 import {
   ColorMode,
   D2ColorMode,
@@ -35,11 +34,14 @@ import {
 } from "../common/types";
 import Header from "./Header";
 import injectables from "./injectables";
+import { setLoading, setLoadingMessage } from "../../features/ui/uiSlice";
 
 declare global {
   interface Window {
     r2d2bc: any;
     etfLoaded?: Set<string>; // this could probably be a boolean?
+    onScreenModels: Set<string>;
+    elementIds?: Set<string>;
     r2d2bcFontSize: number;
     bookId: string;
     transcrobesStore: AdminStore;
@@ -86,12 +88,46 @@ function enableResizeEvent(reader: any, dispatch: AppDispatch, id: string) {
   window.addEventListener("resize", debouncedResizeHandler, { passive: true });
 }
 
+function useInterval(callback, delay) {
+  const savedCallback = useRef();
+
+  // Remember the latest callback.
+  useEffect(() => {
+    savedCallback.current = callback;
+  }, [callback]);
+
+  // Set up the interval.
+  useEffect(() => {
+    function tick() {
+      // @ts-ignore
+      savedCallback.current();
+    }
+    let id = 0;
+    if (delay !== null) {
+      id = setInterval(tick, delay) as unknown as number;
+    }
+    return () => clearInterval(id);
+  }, [delay]);
+}
+
+function getUserSettings(conf: BookReaderState, themeName: ThemeType) {
+  return {
+    verticalScroll: !!conf.isScrolling,
+    appearance: getColorMode(themeName as ColorMode),
+    fontFamily: `${conf.fontFamilyGloss},${conf.fontFamilyMain}`,
+    currentTocUrl: conf.currentTocUrl,
+    location: conf.location,
+    atStart: conf.atStart,
+    atEnd: conf.atEnd,
+    pageMargins: conf.pageMargins,
+  };
+}
+
 export default function BookReader({ proxy }: ContentProps): ReactElement {
   useAuthenticated(); // redirects to login if not authenticated, required because shown as RouteWithoutLayout
   const { id = "" } = useParams<ContentParams>();
   const translate = useTranslate();
   window.bookId = id;
-
   const url = new URL(`/api/v1/data/content/${id}/manifest.json`, window.location.href);
   const [manifest, setManifest] = useState<WebpubManifest>();
   const [, setError] = useState<Error | undefined>(undefined);
@@ -100,7 +136,8 @@ export default function BookReader({ proxy }: ContentProps): ReactElement {
   const dispatch = useAppDispatch();
   const readerConfig = useAppSelector((state) => state.bookReader[id] || DEFAULT_BOOK_READER_CONFIG_STATE);
   const user = useAppSelector((state) => state.userData.user);
-  const [loaded, setLoaded] = useState(false);
+  const [loaded, setLoaded] = useState(0);
+  const [loadLocation, setLoadLocation] = useState<Locator>();
   const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
   const [themeName] = useTheme(prefersDarkMode ? "dark" : "light");
   const [theme] = useState<Theme>(
@@ -119,7 +156,6 @@ export default function BookReader({ proxy }: ContentProps): ReactElement {
       },
     }),
   );
-
   useEffect(() => {
     if (user.accessToken) {
       fetcher
@@ -143,12 +179,39 @@ export default function BookReader({ proxy }: ContentProps): ReactElement {
       }
     };
   }, [reader]);
+  // This is a hack to make sure that the D2Reader resizes after all the web components have
+  // been loaded. If not, in scrolling mode, the size (and so end of the iframe viewport gets finalised
+  // before the components have been loaded, and potentially large amounts of text are not visible.
+  // While it seems like a hack, it is also unclear how one might do this better, as this needs to be
+  // done after the last component has loaded. Potentially setTimeout could be used instead, repeating
+  // once more if etfLoaded still has a "loaded", otherwise stop. This is pretty lightweight though, so
+  // for the moment it will suffice.
+  // There might be a prettier way of doing this without setting the fontSize to itself, but I couldn't
+  // find it.
+  useInterval(
+    () => {
+      if (reader) {
+        if (window.elementIds && !window.elementIds?.size && window.etfLoaded && window.etfLoaded.delete("loaded")) {
+          console.log("Running loaded", loaded + 1);
+          if (loaded === 0) {
+            dispatch(setLoadingMessage(translate("screens.boocrobes.finding_previous_position")));
+          }
+          reader.applyUserSettings({ fontSize: 100 }).then(() => {
+            setLoaded(loaded + 1);
+          });
+        }
+      }
+    },
+    1000,
+    // NAME_PREFIX + "r2d2bcHack",
+  );
 
   useEffect(() => {
     if (!proxy.loaded || !manifest) {
       return;
     }
     (async () => {
+      window.onScreenModels = new Set<string>();
       const def = (await getRawState(proxy, BOOK_READER_TYPE)) || {};
       const defConfig = {
         ...DEFAULT_BOOK_READER_CONFIG_STATE,
@@ -162,19 +225,10 @@ export default function BookReader({ proxy }: ContentProps): ReactElement {
       const conf = await getRefreshedState<BookReaderState>(proxy, defConfig, id);
       dispatch(bookReaderActions.setState({ id, value: conf }));
 
-      const userSettings = {
-        verticalScroll: !!conf.isScrolling,
-        appearance: getColorMode(themeName as ColorMode),
-        fontFamily: `${conf.fontFamilyGloss},${conf.fontFamilyMain}`,
-        currentTocUrl: conf.currentTocUrl,
-        location: conf.location,
-        atStart: conf.atStart,
-        atEnd: conf.atEnd,
-        pageMargins: conf.pageMargins,
-      };
+      const userSettings = getUserSettings(conf, themeName as ThemeType);
       window.transcrobesStore = store;
       console.log("Loading the reader with ", url, userSettings, conf);
-      const reader = await D2Reader.load({
+      const lreader = await D2Reader.load({
         url,
         injectables: injectables,
         injectablesFixed: [],
@@ -188,10 +242,10 @@ export default function BookReader({ proxy }: ContentProps): ReactElement {
            * takes forever.
            */
           autoGeneratePositions: false,
-        } as any,
+        },
         userSettings: userSettings,
         api: {
-          updateCurrentLocation: async (loc: any) => {
+          updateCurrentLocation: async (loc: Locator) => {
             // This is needed so that setBookBoundary has the updated "reader" value.
             dispatch(bookReaderActions.setLocationChanged({ id, value: loc }));
             return loc;
@@ -199,47 +253,45 @@ export default function BookReader({ proxy }: ContentProps): ReactElement {
           onError: (e: Error) => {
             setError(e);
           },
-        } as any, // FIXME: many params seem to not be *required* here, so any...
+        }, // FIXME: many params seem to not be *required* here, so any...
       });
       window.etfLoaded = new Set<string>();
-      setReader(reader);
-      enableResizeEvent(reader, dispatch, id);
-      const curLoc = readerConfig.location || userSettings.location;
+      setReader(lreader);
+      enableResizeEvent(lreader, dispatch, id);
+      const curLoc = conf.location || userSettings.location;
+      setLoadLocation(curLoc);
       if (curLoc) {
-        reader.goTo(curLoc);
-        // FIXME: am i necessary?
-        reader.applyUserSettings({ fontSize: 100 });
+        await lreader.goTo(curLoc);
+        await lreader.applyUserSettings({ fontSize: 100 });
       }
-      // This is a hack to make sure that the D2Reader resizes after all the web components have
-      // been loaded. If not, in scrolling mode, the size (and so end of the iframe viewport gets finalised
-      // before the components have been loaded, and potentially large amounts of text are not visible.
-      // While it seems like a hack, it is also unclear how one might do this better, as this needs to be
-      // done after the last component has loaded. Potentially setTimeout could be used instead, repeating
-      // once more if etfLoaded still has a "loaded", otherwise stop. This is pretty lightweight though, so
-      // for the moment it will suffice.
-      // There might be a prettier way of doing this without setting the fontSize to itself, but I couldn't
-      // find it.
-      setInterval(
-        () => {
-          if (reader) {
-            if (reader.currentSettings.verticalScroll) {
-              if (window.etfLoaded && window.etfLoaded.delete("loaded")) {
-                reader.applyUserSettings({ fontSize: 100 });
-              }
-            }
-          }
-          setLoaded(true);
-        },
-        1000,
-        NAME_PREFIX + "r2d2bcHack",
-      );
+
+      window.elementIds = new Set<string>();
     })();
     return () => {
       window.etfLoaded = undefined;
-      intervalCollection.removeAll();
+      window.elementIds = undefined;
       reader?.stop();
     };
   }, [proxy.loaded, manifest]);
+
+  useEffect(() => {
+    if (
+      loaded === 1 &&
+      reader &&
+      loadLocation &&
+      loadLocation.locations.progression != reader?.currentLocator?.locations.progression
+    ) {
+      reader.goTo(loadLocation).then(() => {
+        reader.applyUserSettings({ fontSize: 100 }).then(() => {
+          dispatch(setLoadingMessage(""));
+          dispatch(setLoading(undefined));
+        });
+      });
+    } else if (loaded && reader) {
+      dispatch(setLoadingMessage(""));
+      dispatch(setLoading(undefined));
+    }
+  }, [loaded]);
 
   useEffect(() => {
     if (loaded && reader) {
@@ -268,8 +320,9 @@ export default function BookReader({ proxy }: ContentProps): ReactElement {
   useEffect(() => {
     if (readerConfig.currentTocUrl && reader) {
       const toto = { href: readerConfig.currentTocUrl } as any;
-      reader.goTo(toto);
-      reader.applyUserSettings({ fontSize: 100 });
+      reader.goTo(toto).then(() => {
+        reader.applyUserSettings({ fontSize: 100 });
+      });
     }
   }, [readerConfig.currentTocUrl]);
 

@@ -155,53 +155,57 @@ function vocabCountersFromETF(model: ModelType, glossing: number, knownCards: Pa
 
 // the callback function that will be fired when the enriched-text-fragment element apears in the viewport
 export function observerFunc(
-  readerConfig: () => ReaderState,
   models: KeyedModels,
+  readerConfig: () => ReaderState,
   knownCards: () => Partial<SerialisableDayCardWords>,
+  onScreenModels?: Set<string>,
 ) {
-  return function onScreen(entries: IntersectionObserverEntry[], observer: IntersectionObserver): void {
+  return function onScreen(entries: IntersectionObserverEntry[]): void {
     for (const entry of entries) {
       // if (typeof entry.isVisible === "undefined") {
       //   entry.isVisible = true;
       // } // Feature detection for Intersection V2
 
       // if (entry.isIntersecting && entry.isVisible) {  // FIXME: exchange for the following for V2 onscreen detection
+      const target = entry.target as HTMLElement;
+
+      // There is sometimes etfs that don't have models (or text usually) for some hardly defensible hacky reasons
       if (entry.isIntersecting) {
-        if (!models[entry.target.id]) {
-          // There is sometimes etfs that don't have models (or text usually) for some hardly defensible hacky reasons
-          continue;
+        onScreenModels?.add(target.id);
+        if (target.dataset.tcread !== "true" && models[target.id]) {
+          // eslint-disable-next-line no-loop-func
+          timeouts[target.id] = window.setTimeout(() => {
+            target.dataset.tcread = "true";
+            const tstats = vocabCountersFromETF(models[target.id], readerConfig().glossing, knownCards());
+            if (Object.entries(tstats).length === 0) {
+              console.debug("An empty model - how can this happen?", target.id, models[target.id]);
+            } else {
+              // TODO: WARNING:!!! the tstats consider that if it has been glossed, it has been looked up!!!
+              // TODO: WARNING:!!! if you turn off/on glossing for a word temporarily, it considers only the
+              // actual known state, not what was onscreen!!!
+              const userEvent = {
+                type: "bulk_vocab",
+                source: DATA_SOURCE,
+                data: tstats,
+                userStatsMode: readerConfig().glossing,
+              };
+              platformHelper.sendMessage({
+                source: "stats",
+                type: "submitUserEvents",
+                value: userEvent,
+              });
+              // We are NOT waiting here, as this is a nice-to-have really, and we don't want it to
+              // hold up other, immediately user-visible tasks. Only collect if we are doing that now,
+              // which we do by default
+              if (readerConfig().collectRecents) {
+                addToRecentSentences(models[target.id]);
+              }
+            }
+          }, ONSCREEN_DELAY_IS_CONSIDERED_READ);
         }
-        // eslint-disable-next-line no-loop-func
-        timeouts[entry.target.id] = window.setTimeout(() => {
-          observer.unobserve(entry.target);
-          const tstats = vocabCountersFromETF(models[entry.target.id], readerConfig().glossing, knownCards());
-          if (Object.entries(tstats).length === 0) {
-            console.debug("An empty model - how can this happen?", entry.target.id, models[entry.target.id]);
-          } else {
-            // TODO: WARNING:!!! the tstats consider that if it has been glossed, it has been looked up!!!
-            // TODO: WARNING:!!! if you turn off/on glossing for a word temporarily, it considers only the
-            // actual known state, not what was onscreen!!!
-            const userEvent = {
-              type: "bulk_vocab",
-              source: DATA_SOURCE,
-              data: tstats,
-              userStatsMode: readerConfig().glossing,
-            };
-            platformHelper.sendMessage({
-              source: "stats",
-              type: "submitUserEvents",
-              value: userEvent,
-            });
-          }
-          // We are NOT waiting here, as this is a nice-to-have really, and we don't want it to
-          // hold up other, immediately user-visible tasks. Only collect if we are doing that now,
-          // which we do by default
-          if (readerConfig().collectRecents) {
-            addToRecentSentences(models[entry.target.id]);
-          }
-        }, ONSCREEN_DELAY_IS_CONSIDERED_READ);
       } else {
-        clearTimeout(timeouts[entry.target.id]);
+        clearTimeout(timeouts[target.id]);
+        onScreenModels?.delete(target.id);
       }
     }
   };

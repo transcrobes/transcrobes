@@ -1,4 +1,4 @@
-import { Component, createTextVNode, createVNode, VNode } from "inferno";
+import { Component, createVNode, VNode } from "inferno";
 import { connect } from "inferno-redux";
 import _ from "lodash";
 import type { RootState } from "../../../app/createStore";
@@ -13,11 +13,15 @@ import {
   isUnsure,
   syncDefs,
 } from "../../../lib/componentMethods";
+import { hasTones, toneColour } from "../../../lib/funclib";
+import { affixCleaned, cleanedSound } from "../../../lib/libMethods";
 import {
+  AnyTreebankPosType,
   BOOK_READER_TYPE,
-  DefinitionType,
   DEFINITION_LOADING,
+  DefinitionType,
   EXTENSION_READER_TYPE,
+  FontColourType,
   GLOSS_NUMBER_NOUNS,
   HasTextChildren,
   HasVNodeChildren,
@@ -25,20 +29,18 @@ import {
   MultipleChildren,
   ReaderState,
   SentenceType,
+  SerialisableDayCardWords,
   SIMPLE_READER_TYPE,
   TokenType,
   UNSURE_ATTRIBUTE,
   USER_STATS_MODE,
   VIDEO_READER_TYPE,
-  SerialisableDayCardWords,
-  AnyTreebankPosType,
-  FontColourType,
 } from "../../../lib/types";
 import { ETFStylesProps } from "../../Common";
-import { affixCleaned, cleanedSound } from "../../../lib/libMethods";
-import { hasTones, toneColour } from "../../../lib/funclib";
 
 type EntryProps = {
+  elementIds?: Set<string>;
+  uniqueId: string;
   token: TokenType;
   readerConfig: ReaderState;
   sentence: SentenceType;
@@ -323,6 +325,7 @@ class Entry extends Component<StatedEntryProps, LocalEntryState> {
 
   render(): VNode {
     const wordStyle: { [key: string]: string } = this.props.token.style || {};
+    let returnNode: VNode;
     if (this.props.token.b) {
       wordStyle["padding-left"] = `${this.props.token.b.length * 0.25}em`;
     }
@@ -384,8 +387,7 @@ class Entry extends Component<StatedEntryProps, LocalEntryState> {
           ),
         );
       }
-
-      return createVNode(
+      returnNode = createVNode(
         HtmlElement,
         "span",
         this.props.classes.entry,
@@ -398,7 +400,7 @@ class Entry extends Component<StatedEntryProps, LocalEntryState> {
         },
       );
     } else {
-      return createVNode(
+      returnNode = createVNode(
         HtmlElement,
         "span",
         this.props.classes.word,
@@ -409,6 +411,8 @@ class Entry extends Component<StatedEntryProps, LocalEntryState> {
         null,
       );
     }
+    this.props.elementIds?.delete(this.props.uniqueId);
+    return returnNode;
   }
 }
 

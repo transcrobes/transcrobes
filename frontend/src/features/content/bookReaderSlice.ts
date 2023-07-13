@@ -2,6 +2,7 @@ import { PayloadAction } from "@reduxjs/toolkit";
 import { ContentConfigPayload, createGenericSlice } from "./contentSlice";
 // import { Locator } from "@d-i-t-a/reader";
 import { BookReaderState, BOOK_READER_TYPE, DEFAULT_BOOK_READER_CONFIG_STATE, GenericState } from "../../lib/types";
+import { Locator } from "../../r2d2bc";
 
 const bookReaderSlice = createGenericSlice({
   name: BOOK_READER_TYPE,
@@ -16,7 +17,7 @@ const bookReaderSlice = createGenericSlice({
       state[action.payload.id] = state[action.payload.id] || DEFAULT_BOOK_READER_CONFIG_STATE;
       state[action.payload.id].currentTocUrl = action.payload.value;
     },
-    setLocationChanged(state: GenericState<BookReaderState>, action: PayloadAction<ContentConfigPayload<any>>) {
+    setLocationChanged(state: GenericState<BookReaderState>, action: PayloadAction<ContentConfigPayload<Locator>>) {
       state[action.payload.id] = state[action.payload.id] || DEFAULT_BOOK_READER_CONFIG_STATE;
       state[action.payload.id].location = action.payload.value;
     },

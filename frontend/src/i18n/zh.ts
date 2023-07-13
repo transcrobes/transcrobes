@@ -571,6 +571,7 @@ const customChineseMessages: TranslationMessages = {
       },
       previous: "上一页",
       next: "下一页",
+      finding_previous_position: "查找上一个位置",
     },
     brocrobes: {
       name: "Brocrobes",
