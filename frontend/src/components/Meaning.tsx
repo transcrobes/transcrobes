@@ -48,7 +48,7 @@ export default function Meaning({
     setAnchorElClick(null);
     setAnchorEl(event.currentTarget);
   }
-
+  const touch = matchMedia("(hover: none)").matches;
   const open = Boolean(anchorEl);
   const clickOpen = editable && Boolean(anchorElClick);
   const id = clickOpen ? "simple-popover" : undefined;
@@ -117,7 +117,7 @@ export default function Meaning({
         <Popover
           id="mouse-over-popover"
           sx={{
-            pointerEvents: "none",
+            pointerEvents: touch ? "auto" : "none",
             [`& .${popoverClasses.paper}`]: {
               gap: 1,
             },
