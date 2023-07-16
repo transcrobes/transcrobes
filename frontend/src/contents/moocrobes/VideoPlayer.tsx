@@ -28,9 +28,8 @@ overrideTextTrackListeners();
 let count = 0;
 let timeoutId = 0;
 
-// FIXME: don't hardcode here
 const TIMER_CLEAR_PREVIOUS_MS = 5000;
-const TIMER_HIDE_CONTROLS_TICKS = 8;
+const TIMER_HIDE_CONTROLS_DURATION_MS = 5000;
 const SEEK_SECONDS = 5;
 
 function format(seconds: number) {
@@ -72,7 +71,7 @@ export interface OnProgressProps {
 }
 
 const VideoPlayer = forwardRef<VideoPlayerHandle, Props>(
-  ({ cues, models, subsUrl, videoUrl, contentLabel, srcLang, id, topToolbar, progressInterval }, ref) => {
+  ({ cues, models, subsUrl, videoUrl, contentLabel, srcLang, id, topToolbar, progressInterval = 500 }, ref) => {
     const playerRef = useRef<ReactPlayer>(null);
     const playerContainerRef = useRef<HTMLDivElement>(null);
     const [playing, setPlaying, playingRef] = useStateRef(true);
@@ -256,7 +255,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, Props>(
       loaded: number;
       loadedSeconds: number;
     }): void {
-      if (count > TIMER_HIDE_CONTROLS_TICKS) {
+      if (count > TIMER_HIDE_CONTROLS_DURATION_MS / progressInterval) {
         setControlsVisibility("hidden");
         count = 0;
       }
