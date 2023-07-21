@@ -3,6 +3,7 @@ import { Box } from "@mui/system";
 import { useEffect, useState } from "react";
 import { useTranslate } from "react-admin";
 import { LanguageClassType, PersonType, StudentRegistrationType, TeacherRegistrationType } from "../lib/types";
+import { platformHelper } from "../app/createStore";
 
 type StudentSelectorProps = {
   onChange: (event: SelectChangeEvent) => void;
@@ -22,31 +23,21 @@ function PersonSelector({ classId, onChange }: StudentSelectorProps) {
   const translate = useTranslate();
   useEffect(() => {
     console.log("starting the effect", classId, studentId);
-    if (window.componentsConfig.proxy.loaded) {
-      setStudentId(undefined);
-      (async function () {
-        const [registrations, persons] = await Promise.all([
-          window.componentsConfig.proxy.sendMessagePromise<StudentRegistrationType[] | null>({
-            source: "ClassSelector",
-            type: "getAllFromDB",
-            value: { collection: "studentregistrations" },
-          }),
-          window.componentsConfig.proxy.sendMessagePromise<PersonType[] | null>({
-            source: "ClassSelector",
-            type: "getAllFromDB",
-            value: { collection: "persons" },
-          }),
-        ]);
-        const classStudents = new Set<string>(
-          registrations?.filter((r) => r.classId === classId && r.status).map((r) => r.userId) || [],
-        );
-        const studs = persons?.filter((c) => classStudents.has(c.id.toLocaleString())) || [];
+    setStudentId(undefined);
+    (async function () {
+      const [registrations, persons] = await Promise.all([
+        platformHelper.getAllFromDB({ collection: "studentregistrations" }),
+        platformHelper.getAllFromDB({ collection: "persons" }),
+      ]);
+      const classStudents = new Set<string>(
+        registrations?.filter((r) => r.classId === classId && r.status).map((r) => r.userId) || [],
+      );
+      const studs = persons?.filter((c) => classStudents.has(c.id.toLocaleString())) || [];
 
-        if (studs && studs.length > 0) {
-          setStudents(studs);
-        }
-      })();
-    }
+      if (studs && studs.length > 0) {
+        setStudents(studs);
+      }
+    })();
   }, [classId]);
 
   return (
@@ -83,29 +74,19 @@ export function StudentSelector({ onChange }: { onChange: (event: SelectChangeEv
   }
 
   useEffect(() => {
-    if (window.componentsConfig.proxy.loaded) {
-      (async function () {
-        const [classes, teachers] = await Promise.all([
-          window.componentsConfig.proxy.sendMessagePromise<LanguageClassType[] | null>({
-            source: "ClassSelector",
-            type: "getAllFromDB",
-            value: { collection: "languageclasses" },
-          }),
-          window.componentsConfig.proxy.sendMessagePromise<TeacherRegistrationType[] | null>({
-            source: "ClassSelector",
-            type: "getAllFromDB",
-            value: { collection: "teacherregistrations" },
-          }),
-        ]);
-        const taughtClasses = new Set<string>(teachers?.map((t) => t.classId) || []);
-        const existing = classes?.filter((c) => c.status && taughtClasses.has(c.id.toLocaleString())) || [];
+    (async function () {
+      const [classes, teachers] = await Promise.all([
+        platformHelper.getAllFromDB({ collection: "languageclasses" }),
+        platformHelper.getAllFromDB({ collection: "teacherregistrations" }),
+      ]);
+      const taughtClasses = new Set<string>(teachers?.map((t) => t.classId) || []);
+      const existing = classes?.filter((c) => c.status && taughtClasses.has(c.id.toLocaleString())) || [];
 
-        if (existing && existing.length > 0) {
-          setClasses(existing);
-        }
-      })();
-    }
-  }, [window.componentsConfig.proxy.loaded]);
+      if (existing && existing.length > 0) {
+        setClasses(existing);
+      }
+    })();
+  }, []);
 
   return (
     <Box sx={{ display: "flex", alignItems: "center" }}>

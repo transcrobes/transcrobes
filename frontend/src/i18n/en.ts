@@ -171,22 +171,17 @@ const customEnglishMessages: TranslationMessages = {
     upload: "Upload",
   },
   database: {
-    retrieving_files: "Retrieving data files : 1% complete",
-    files_downloaded: "The data files have been downloaded, loading to the database : 13% complete",
     files_loaded: "The data files have been loaded into the database : 93% complete",
-    synchronised: "The collections have been synchronised : 98% complete",
-    synchronising: "Synchronising %{filename} : %{percent}% complete",
-    init_finished: "The indexes have now been generated. The initialisation has finished! : 100% complete",
-    importing: "Importing file %{i} : initialisation %{percent}% complete",
-    updating_indexes: "Updating indexes : initialisation 90% complete",
-    cache_exports_error:
-      "There was an error downloading the data files. Please completely close your browser and try again in a few minutes and if you get this message again, contact Transcrobes support: ERROR!",
+    synchronised: "The collections have been synchronised : 20% complete",
+    synchronising: "Synchronising %{collection}",
+    install_error:
+      "There was an error installing the database. Please completely close your browser and try again in a few minutes and if you get this message again, contact Transcrobes support: ERROR!",
     datafile: "Retrieved data file: %{datafile}",
-    getting_cache_list: "Getting list of data files",
-    init_temp_storage: "Initialising temporary storage",
-    init_storage: "Initialising storage",
     reinstalling: "Reinstalling database",
     init_structure: "Initialising database structure",
+    installing: "Installing database",
+    rxinstalled: "RxDB database installed",
+    sqlinstalled: "Database installed",
   },
   widgets: {
     beginners: {
@@ -462,6 +457,7 @@ const customEnglishMessages: TranslationMessages = {
       no_goals_message_d: "create a list",
       no_goals_message_e: ", then return here.",
       create_goals_now: "Create Goals now",
+      percents_loading: "Calculating goal completion statistics",
     },
     imports: {
       name: "Imports",
@@ -906,9 +902,9 @@ const customEnglishMessages: TranslationMessages = {
       personalising_cards: "Calculating Personalised Cards",
       show_answer: "Show Answer",
       progress_new: `New: (%{completedNewToday}) %{newToday} / %{maxNew} (%{availableNewToday} available)`,
-      progress_revisions: `Revisions: (%{completedRevisionsToday}) %{revisionsToday} / %{maxRevisions} (%{allRevisionsToday} due)`,
+      progress_revisions: `Rev: (%{completedRevisionsToday}) %{revisionsToday} / %{maxRevisions} (%{allRevisionsToday} available)`,
       progress_new_short: `New: (%{completedNewToday}) %{newToday}/%{maxNew} (%{availableNewToday} avail)`,
-      progress_revisions_short: `Rev: (%{completedRevisionsToday}) %{revisionsToday}/%{maxRevisions} (%{allRevisionsToday} due)`,
+      progress_revisions_short: `Rev: (%{completedRevisionsToday}) %{revisionsToday}/%{maxRevisions} (%{allRevisionsToday} avail)`,
     },
     signup: {
       learn: "I want to learn",

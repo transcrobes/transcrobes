@@ -13,7 +13,7 @@ import { makeStyles } from "tss-react/mui";
 import contents from "../contents";
 import textcrobes from "../contents/textcrobes";
 import dictionaries from "../dictionaries";
-import statsExports from "../exports";
+// import statsExports from "../exports";
 import goals from "../goals";
 import help from "../help";
 import imports from "../imports";
@@ -195,14 +195,14 @@ function Menu({ dense = false }: MenuProps): ReactElement {
                   leftIcon={<stats.icon />}
                   dense={dense}
                 />
-                <MenuItemLink
+                {/* <MenuItemLink
                   to={`/exports`}
                   primaryText={translate(`screens.exports.name`, {
                     smart_count: 2,
                   })}
                   leftIcon={<statsExports.icon />}
                   dense={dense}
-                />
+                /> */}
                 <MenuItemLink
                   to={`/studentregistrations`}
                   primaryText={translate(`resources.studentregistrations.name`, {

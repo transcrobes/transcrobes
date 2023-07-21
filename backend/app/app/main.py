@@ -8,6 +8,7 @@ from app.api.api_v1.endpoints.data import aioproducer
 from app.api.api_v1.graphql import schema
 from app.core.config import settings
 from app.data.asgi import TranscrobesGraphQL
+from app.data.context import get_broadcast
 from app.enrich import data
 from app.perdomain import get_content_response
 from fastapi import APIRouter, FastAPI, Request, status
@@ -30,6 +31,7 @@ async def startup_event():
 @app.on_event("shutdown")
 async def shutdown_event():
     await aioproducer.stop()
+    await (await get_broadcast()).disconnect()
 
 
 @app.exception_handler(RequestValidationError)

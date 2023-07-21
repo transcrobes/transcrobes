@@ -1,13 +1,10 @@
-import { FormControlLabel, Switch } from "@mui/material";
 import { useTranslate } from "react-admin";
 import { $enum } from "ts-enum-util";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
-import { Loading } from "../components/Loading";
-import { CARD_TYPES, getCardId, getWordId } from "../database/Schema";
+import { DataManager } from "../data/types";
 import { setLoading } from "../features/ui/uiSlice";
-import { ServiceWorkerProxy } from "../lib/proxies";
 import {
-  CardType,
+  CardCacheType,
   CharacterType,
   DefinitionType,
   InputLanguage,
@@ -17,29 +14,31 @@ import {
   SortableListElementType,
   WordModelStatsType,
 } from "../lib/types";
-import ShortWordList from "./ShortWordList";
+import { CARD_TYPES, getCardId, getWordId } from "../workers/rxdb/Schema";
 import Word from "./Word";
+import { practiceCardsForWords } from "../workers/common-db";
 
 const DATA_SOURCE = "SearchResults";
 
 interface Props {
+  onPractice: (wordId: string, grade: number) => void;
   handleDeleteRecent: (modelId: number | bigint) => void;
-  setMessage: (message: string) => void;
-  setCards: (cards: CardType[] | null) => void;
-  setShowRelated: (showRelated: boolean) => void;
-  setDictOnly: (dictOnly: boolean) => void;
-  allWords: Record<string, ShortWord>;
-  allChars: Record<string, ShortChar>;
+  // setMessage: (message: string) => void;
+  // setCards: (cards: CardCacheType[] | null) => void;
+  setDictOnly?: (dictOnly: boolean) => void;
+  setShowRelated?: (showRelated: boolean) => void;
+  allWords?: Record<string, ShortWord>;
+  allChars?: Record<string, ShortChar>;
   recentPosSentences: PosSentences | null;
   query: string;
-  proxy: ServiceWorkerProxy;
+  proxy: DataManager;
   characters: (CharacterType | null)[] | null;
-  cards: CardType[] | null;
+  cards: CardCacheType[] | null;
   wordModelStats: WordModelStatsType | null;
   lists: SortableListElementType[] | null;
-  showRelated: boolean;
-  dictOnly: boolean;
   word: DefinitionType | null;
+  dictOnly?: boolean;
+  showRelated?: boolean;
   filteredExistingByChars?: Record<string, ShortWord>;
   filteredExistingBySounds?: Record<string, ShortWord>;
   filteredExistingByRadicals?: Record<string, ShortWord>;
@@ -65,9 +64,8 @@ export default function SearchResults({
   fromLang,
   setDictOnly,
   setShowRelated,
-  setCards,
-  setMessage,
   handleDeleteRecent,
+  onPractice,
 }: Props) {
   const translate = useTranslate();
   const dispatch = useAppDispatch();
@@ -77,55 +75,15 @@ export default function SearchResults({
     {} as Record<string, number>,
   );
 
-  async function handleCardFrontUpdate(card: CardType) {
-    await proxy.sendMessagePromise({
-      source: DATA_SOURCE,
-      type: "updateCard",
-      value: card,
-    });
-    const updatedCards = await proxy.sendMessagePromise<CardType[]>({
-      source: DATA_SOURCE,
-      type: "getByIds",
-      value: {
-        collection: "cards",
-        ids: Array.from($enum(CARD_TYPES).getValues()).map((ctype) => getCardId(getWordId(card), ctype)),
-      },
-    });
-
-    setCards(updatedCards);
-  }
-
-  async function addOrUpdateCards(wordId: string, grade: number): Promise<void> {
-    // FIXME: grade should be an enum
-    if (word) {
-      proxy.sendMessagePromise({
-        source: DATA_SOURCE,
-        type: "submitUserEvents",
-        value: {
-          type: "practice_card",
-          data: {
-            target_word: word.graph,
-            grade: grade,
-            source_sentence: "",
-          },
-          source: DATA_SOURCE,
-        },
-      });
-    }
-    const updatedCards = await proxy.sendMessagePromise<CardType[]>({
-      source: DATA_SOURCE,
-      type: "addOrUpdateCardsForWord",
-      value: { wordId: wordId, grade },
-    });
-    setCards(updatedCards);
-    dispatch(setLoading(undefined));
-    setMessage(translate("screens.notrobes.cards_recorded"));
+  async function handleCardFrontUpdate(cardId: string, frontString: string) {
+    await proxy.setCardFront(cardId, frontString);
   }
 
   if (word && Object.entries(word).length > 0 && characters && cards && wordModelStats && lists) {
     return (
       <div>
-        <div>
+        {/* FIXME: rehabilitate this! */}
+        {/* <div>
           <FormControlLabel
             control={
               <Switch
@@ -138,8 +96,9 @@ export default function SearchResults({
             label={translate("screens.notrobes.show_related")}
             labelPlacement="end"
           />
-        </div>
-        {showRelated && query && Object.keys(allWords).length > 0 && Object.keys(allChars).length > 0 && (
+        </div> */}
+
+        {/* {showRelated && query && Object.keys(allWords).length > 0 && Object.keys(allChars).length > 0 && (
           <>
             <div>
               <FormControlLabel
@@ -182,13 +141,13 @@ export default function SearchResults({
               )}
             </div>
           </>
-        )}
-        <Loading
+        )} */}
+        {/* <Loading
           show={showRelated && Object.keys(allWords).length === 0 && Object.keys(allChars).length === 0}
           top="0px"
           position="relative"
           message={translate("screens.notrobes.loading_related")}
-        />
+        /> */}
 
         <Word
           definition={word}
@@ -199,7 +158,7 @@ export default function SearchResults({
           lists={lists}
           translationProviderOrder={translationProviderOrder}
           onDeleteRecent={handleDeleteRecent}
-          onPractice={addOrUpdateCards}
+          onPractice={onPractice}
           onCardFrontUpdate={handleCardFrontUpdate}
         />
       </div>

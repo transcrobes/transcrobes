@@ -1,21 +1,21 @@
-import { Button, Checkbox, FormControlLabel, FormGroup, TextField, Typography, useTheme } from "@mui/material";
-import { makeStyles } from "tss-react/mui";
 import SaveIcon from "@mui/icons-material/Save";
+import { Button, Checkbox, FormControlLabel, FormGroup, TextField, Typography, useTheme } from "@mui/material";
+import Papa from "papaparse";
 import convertPinyinTones from "pinyin-tone-converter";
 import React, { ReactElement, useEffect, useState } from "react";
+import { useTranslate } from "react-admin";
+import { makeStyles } from "tss-react/mui";
 import { Loading } from "../components/Loading";
-import { ServiceWorkerProxy } from "../lib/proxies";
 import {
+  AnyPosType,
+  USER_DEFINITION_SOUND_SEPARATOR,
+  UserDefinitionType,
+  isEnTreebankPOS,
   isSimplePOS,
   isZhTreebankPOS,
-  AnyPosType,
-  UserDefinitionType,
-  USER_DEFINITION_SOUND_SEPARATOR,
-  isEnTreebankPOS,
 } from "../lib/types";
 import CustomList from "./CustomList";
-import Papa from "papaparse";
-import { useTranslate } from "react-admin";
+import { DataManager } from "../data/types";
 
 const useStyles = makeStyles()((theme) => ({
   error: {
@@ -37,7 +37,7 @@ const DATA_SOURCE = "dictionaries/Import.tsx";
 
 interface Props {
   dictionaryId: string;
-  proxy: ServiceWorkerProxy;
+  proxy: DataManager;
 }
 
 function graphRecordsToCharRecords(entries: Record<string, UserDefinitionType>) {
@@ -85,11 +85,7 @@ export default function Import({ dictionaryId, proxy }: Props): ReactElement {
     setLoading(true);
     setLoadingMessage(translate("resources.userdictionaries.saving_dictionary"));
     if (!data) return;
-    await proxy.sendMessagePromise({
-      source: DATA_SOURCE,
-      type: "saveDictionaryEntries",
-      value: { dictionaryId, entries: data },
-    });
+    await proxy.saveDictionaryEntries({ dictionaryId, entries: data });
     const existing = { ...data };
     setExistingData(existing);
     setFilteredExisting(existing);
@@ -119,22 +115,16 @@ export default function Import({ dictionaryId, proxy }: Props): ReactElement {
 
   useEffect(() => {
     setLoading(true);
-    if (proxy.loaded) {
-      setLoadingMessage(translate("resources.userdictionaries.loading_entries"));
-      (async function () {
-        const existing = await proxy.sendMessagePromise<Record<string, UserDefinitionType>>({
-          source: DATA_SOURCE,
-          type: "getDictionaryEntries",
-          value: { dictionaryId: dictionaryId },
-        });
-        setExistingData(existing);
-        setFilteredExisting(existing);
-        setByChar(graphRecordsToCharRecords(existing));
-        setLoadingMessage("");
-        setLoading(false);
-      })();
-    }
-  }, [proxy.loaded]);
+    setLoadingMessage(translate("resources.userdictionaries.loading_entries"));
+    (async function () {
+      const existing = await proxy.getDictionaryEntries({ dictionaryId });
+      setExistingData(existing);
+      setFilteredExisting(existing);
+      setByChar(graphRecordsToCharRecords(existing));
+      setLoadingMessage("");
+      setLoading(false);
+    })();
+  }, []);
 
   useEffect(() => {
     if (columnSeparator) {
@@ -320,22 +310,21 @@ export default function Import({ dictionaryId, proxy }: Props): ReactElement {
           </div>
         </>
       )}
+      <hr />
+      <>
+        <Typography>{translate("resources.userdictionaries.filter")}</Typography>
+        <TextField
+          disabled={saving || loading}
+          style={{ margin: "1em" }}
+          required
+          variant="outlined"
+          label={translate("resources.userdictionaries.graph")}
+          onChange={(event: React.ChangeEvent<HTMLInputElement>) => filterExisting(event.target.value)}
+        />
+      </>
+
       {filteredExisting && (
         <div>
-          <hr />
-          {Object.keys(filteredExisting).length > 0 && (
-            <>
-              <Typography>{translate("resources.userdictionaries.filter")}</Typography>
-              <TextField
-                disabled={saving || loading}
-                style={{ margin: "1em" }}
-                required
-                variant="outlined"
-                label={translate("resources.userdictionaries.graph")}
-                onChange={(event: React.ChangeEvent<HTMLInputElement>) => filterExisting(event.target.value)}
-              />
-            </>
-          )}
           <Typography>{translate("resources.userdictionaries.existing_entries")}</Typography>
           <CustomList data={Object.values(filteredExisting)} itemSeparator={itemSeparator} />
         </div>

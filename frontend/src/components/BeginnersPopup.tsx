@@ -40,10 +40,11 @@ export default function AlertDialog() {
       !state.userData.user.isAdmin &&
       !state.ui.ignoreBeginner &&
       shouldRedirectBeginner(loc.pathname) &&
-      state.knownCards.allCardWordGraphs !== undefined &&
-      Object.keys(state.knownCards.allCardWordGraphs).length < MIN_KNOWN_BEFORE_ADVANCED
+      state.knownWords.knownWordGraphs !== undefined &&
+      Object.keys(state.knownWords.knownWordGraphs).length < MIN_KNOWN_BEFORE_ADVANCED
     );
   });
+
   function handleIgnore() {
     dispatch(setIgnoreBeginner(true));
   }

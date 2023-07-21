@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import base64
+import contextlib
 import datetime
 import gc
 import json  # import orjson as json
@@ -9,29 +10,72 @@ import logging
 import os
 import pathlib
 import shutil
-from tempfile import mkdtemp
+import sqlite3
+import tempfile
 from typing import List
 
+from app import models
+from app.api.api_v1.types import Userdictionaries
+from app.cache import add_word_ids
 from app.core.config import settings
+from app.data.filter import filter_cards, filter_day_model_stats, filter_standard, filter_word_model_stats
 from app.db.session import async_session
-from app.enrich import lang_prefix, latest_character_json_dir_path
+from app.enrich import hanzi_json_local_paths, lang_prefix, latest_character_json_dir_path
 from app.enrich.data import managers
-from app.enrich.models import definitions
+from app.enrich.models import definitions, ensure_cache_preloaded
+from app.enrich.sqlite_definitions import (
+    CARDS_CREATE,
+    CARDS_INDEX_WORD_ID_CARD_TYPE_UPDATED_AT,
+    CARDS_INSERT,
+    CHARACTERS_CREATE,
+    CHARACTERS_INSERT,
+    DAY_MODEL_STATS_CREATE,
+    DAY_MODEL_STATS_INSERT,
+    DEFINITIONS_CREATE,
+    DEFINITIONS_INDEX_ID_GRAPH,
+    DEFINITIONS_INDEX_ID_UPDATED_AT,
+    DEFINITIONS_INSERT,
+    DEFINITIONS_STATUS_CREATE,
+    DEFINITIONS_STATUS_INSERT,
+    IMPORT_WORDS_CREATE,
+    IMPORT_WORDS_INDEX_ID,
+    IMPORT_WORDS_INSERT,
+    IMPORTS_CREATE,
+    IMPORTS_INSERT,
+    LIST_WORDS_CREATE,
+    LIST_WORDS_INSERT,
+    USER_DEFINITIONS_CREATE,
+    USER_DEFINITIONS_INSERT,
+    USERDICTIONARIES_CREATE,
+    USERDICTIONARIES_INSERT,
+    WORD_MODEL_STATS_CREATE,
+    WORD_MODEL_STATS_INSERT,
+    WORDLISTS_CREATE,
+    WORDLISTS_INSERT,
+)
 from app.etypes import LANG_PAIR_SEPARATOR
-from app.models.data import CachedDefinition
 from app.models.lookups import BingApiLookup
-from app.models.user import AuthUser
+from app.models.mixins import ActivatorMixin
+from app.models.user import AuthUser, absolute_resources_path
+from app.ndutils import get_from_lang, get_to_lang
 from github import Github
 from sqlalchemy.ext.asyncio.session import AsyncSession
-from sqlalchemy.future import select
-from sqlalchemy.sql.expression import distinct
+from sqlalchemy.sql.expression import and_, distinct, or_, select
+
+from .lzstring import LZString
 
 logger = logging.getLogger(__name__)
 
+FLUSH_BUFFER_SIZE = 30000
+SQLITE_FILENAME = "tc.db"
+SQLITE_FILENAME_SQL = "tc.sql"
 
-async def all_cached_definitions(db: AsyncSession, from_lang: str, to_lang: str) -> List[CachedDefinition]:
+
+async def all_cached_definitions(db: AsyncSession, from_lang: str, to_lang: str) -> List[models.CachedDefinition]:
     result = await db.execute(
-        select(CachedDefinition).filter_by(from_lang=from_lang, to_lang=to_lang).order_by("cached_date", "word_id")
+        select(models.CachedDefinition)
+        .filter_by(from_lang=from_lang, to_lang=to_lang)
+        .order_by("cached_date", "word_id")
     )
     return result.scalars().all()
 
@@ -92,7 +136,7 @@ async def refresh_cached_definitions(
 ) -> bool:
     manager = managers.get(f"{from_lang}:{to_lang}")  # FIXME: hardcoding!!!
 
-    alldems: List[CachedDefinition] = await all_cached_definitions(db, from_lang, to_lang)
+    alldems: List[models.CachedDefinition] = await all_cached_definitions(db, from_lang, to_lang)
 
     for i, d in enumerate(alldems):
         if print_progress and i % 1000 == 0:
@@ -109,6 +153,535 @@ def chunks(alist, n):
         yield alist[i : i + n]  # noqa: E203
 
 
+def flatten(matrix):
+    flat_list = []
+    for row in matrix:
+        flat_list += row
+    return flat_list
+
+
+async def fill_sqlite_userlists(db: AsyncSession, con, user_id: int, from_lang: str) -> bool:
+    stmt = (
+        select(models.UserListWord, models.UserList)
+        .join(models.UserList)
+        .where(models.UserList.deleted.is_not(True))
+        .where(
+            or_(
+                and_(
+                    models.UserList.created_by_id == user_id,
+                    models.AuthUser.id == user_id,
+                    models.UserList.status == ActivatorMixin.ACTIVE_STATUS,
+                ),
+                and_(
+                    models.UserList.from_lang == from_lang,
+                    models.UserList.status == ActivatorMixin.ACTIVE_STATUS,
+                    models.UserList.shared.is_(True),
+                    models.AuthUser.is_superuser.is_(True),
+                    models.UserList.created_by_id == models.AuthUser.id,
+                ),  # pylint: disable=W0143
+            )
+        )
+    )
+    result = await db.execute(stmt)
+    buffer = []
+    i = 0
+    all_user_lists = {}
+
+    for v in result:
+        if v[1].id not in all_user_lists:
+            all_user_lists[v[1].id] = v[1]
+        buffer.append(
+            (
+                str(v[0].user_list_id),
+                int(v[0].word_id),
+                int(v[0].default_order),
+            )
+        )
+        if i >= FLUSH_BUFFER_SIZE:
+            con.executemany(LIST_WORDS_INSERT, buffer)
+            buffer = []
+            i = 0
+        i += 1
+    if len(buffer) > 0:
+        con.executemany(LIST_WORDS_INSERT, buffer)
+        buffer = []
+
+    for v in all_user_lists.values():
+        buffer.append(
+            (
+                str(v.id),
+                str(v.title),
+                v.is_default,
+                v.updated_at.timestamp(),
+            )
+        )
+    con.executemany(WORDLISTS_INSERT, buffer)
+
+
+async def fill_sqlite_imports(db: AsyncSession, con: sqlite3.Connection, user_id: int, lang_pair: str) -> bool:
+    from_lang = get_from_lang(lang_pair)
+    to_lang = get_to_lang(lang_pair)
+
+    buffer = []
+    stmt = select(models.Import).where(and_(models.Import.created_by_id == user_id))
+    result = await db.execute(stmt)
+    i = 0
+    import_sentences = []
+    for v in result:
+        if v[0].analysis:
+            analysis = json.loads(v[0].analysis)
+            if "sentenceLengths" in analysis:
+                import_sentences.append(
+                    [str(v[0].id), json.dumps(analysis["sentenceLengths"]), v[0].updated_at.timestamp()]
+                )
+            for nb_occurrences, words in analysis["vocabulary"]["buckets"].items():
+                # graph, import_id, nb_occurrences, word_id
+                for word in words:
+                    buffer.append(
+                        [
+                            word,
+                            str(v[0].id),
+                            int(nb_occurrences),
+                        ]
+                    )
+    await ensure_cache_preloaded(db, from_lang, to_lang)
+    with_ids = add_word_ids(buffer, lang_pair, allow_missing=True)
+    buffer = []
+    for v in with_ids:
+        if v[3] is None:
+            logger.error(f"Could not find word_id for {v[0]}")
+            continue
+        buffer.append(v)
+        if i >= FLUSH_BUFFER_SIZE:
+            con.executemany(IMPORT_WORDS_INSERT, buffer)
+            buffer = []
+            i = 0
+        i += 1
+    if len(buffer) > 0:
+        con.executemany(IMPORT_WORDS_INSERT, buffer)
+        buffer = []
+
+    con.executemany(IMPORTS_INSERT, import_sentences)
+
+
+async def fill_sqlite_stats(con: sqlite3.Connection, user_id: int, lang_pair: str) -> bool:
+    buffer = []
+    wstats = []
+    for w in await filter_word_model_stats(user_id, lang_pair, -1):
+        wstats.append(
+            (
+                int(w.id),
+                w.nb_seen,
+                w.nb_seen_since_last_check,
+                w.last_seen,
+                w.nb_checked,
+                w.last_checked,
+                0,
+                0,
+                w.updated_at,
+            )
+        )
+
+    i = 0
+    for v in wstats:
+        buffer.append(v)
+        if i >= FLUSH_BUFFER_SIZE:
+            con.executemany(WORD_MODEL_STATS_INSERT, buffer)
+            buffer = []
+            i = 0
+        i += 1
+    if len(buffer) > 0:
+        con.executemany(WORD_MODEL_STATS_INSERT, buffer)
+        buffer = []
+
+    day_model_stats = await filter_day_model_stats(user_id, 10000000)  # unlimited
+    i = 0
+    for v in day_model_stats:
+        buffer.append(
+            (
+                str(v.id),
+                v.nb_seen,
+                v.nb_checked,
+                v.nb_success,
+                v.nb_failures,
+                v.updated_at,
+            )
+        )
+        if i >= FLUSH_BUFFER_SIZE:
+            con.executemany(DAY_MODEL_STATS_INSERT, buffer)
+            buffer = []
+            i = 0
+        i += 1
+    if len(buffer) > 0:
+        con.executemany(DAY_MODEL_STATS_INSERT, buffer)
+        buffer = []
+
+
+# async def fill_sqlite_surveys(db: AsyncSession, con: sqlite3.Connection, lang_pair: str) -> bool:
+#     from_lang = get_from_lang(lang_pair)
+#     to_lang = get_to_lang(lang_pair)
+#
+#     buffer = []
+#     surveys = await filter_surveys(db, from_lang, to_lang, 10000000)  # unlimited
+#     i = 0
+#     for v in surveys:
+#         buffer.append(
+#             (
+#                 str(v.id),
+#                 json.dumps(v.survey_json),
+#                 v.is_obligatory,
+#                 v.updated_at,
+#             )
+#         )
+#         if i >= FLUSH_BUFFER_SIZE:
+#             con.executemany(SURVEYS_INSERT, buffer)
+#             buffer = []
+#             i = 0
+#         i += 1
+#     if len(buffer) > 0:
+#         con.executemany(SURVEYS_INSERT, buffer)
+
+
+def cards_to_sqlite3(cards):
+    cards_buffer = []
+    defs_updates = {}
+    for v in cards:
+        word_id = int((v.id).split("-")[0])  # word_id
+        if (
+            word_id not in defs_updates
+            or defs_updates[word_id][0] > v.first_success_date
+            or (defs_updates[word_id][1] and not v.known)
+        ):
+            first_success = (
+                min(defs_updates[word_id][0], v.first_success_date) if word_id in defs_updates else v.first_success_date
+            )
+            ignore = defs_updates[word_id][1] and v.known if word_id in defs_updates else v.known
+            defs_updates[word_id] = (
+                first_success,
+                ignore,
+            )
+        cards_buffer.append(
+            (
+                word_id,
+                int(str(v.id).split("-")[1]),  # card_type
+                v.due_date,
+                v.first_revision_date,
+                v.last_revision_date,
+                v.first_success_date,
+                v.suspended,
+                v.known,
+                v.updated_at,
+            )
+        )
+    defstats_buffer = []
+    for k, v in defs_updates.items():
+        defstats_buffer.append(
+            (
+                k,
+                v[0],
+                v[1],
+            )
+        )
+    return cards_buffer, defstats_buffer
+
+
+async def fill_sqlite_cards(db: AsyncSession, con: sqlite3.Connection, user_id: int) -> bool:
+    cards = await filter_cards(db, user_id, 1000000)
+    cards_buffer, defstats_buffer = cards_to_sqlite3(cards)
+    con.executemany(CARDS_INSERT, cards_buffer)
+    con.execute(CARDS_INDEX_WORD_ID_CARD_TYPE_UPDATED_AT)
+    con.executemany(DEFINITIONS_STATUS_INSERT, defstats_buffer)
+
+
+async def fill_sqlite_userdictionaries(db: AsyncSession, user_id: int, con: sqlite3.Connection) -> bool:
+    buffer = []
+    userdictionaries = (
+        await filter_standard(
+            db,
+            user_id,
+            100000,
+            Userdictionaries,
+            models.UserDictionary,
+        )
+    ).documents
+    i = 0
+    x = LZString()
+    udvals = []
+    for ud in userdictionaries:
+        if ud.lz_content is None:
+            logger.warning(f"{ud.id} has no lz_content")
+            continue
+
+        udvals.append(
+            (
+                str(ud.id),
+                ud.updated_at,
+            )
+        )
+
+        decomp = x.decompressFromUTF16(ud.lz_content)
+        if decomp is None:
+            logger.warning(f"{ud.id} has no decompressed lz_content")
+            continue
+        dico = json.loads(decomp)
+        for k, v in dico.items():
+            # lz-string produces surrogates...
+            clean = k.encode("utf-16", "surrogatepass").decode("utf-16")
+            buffer.append(
+                (
+                    clean,
+                    str(ud.id),
+                    json.dumps(v["translations"]),
+                    json.dumps(v["sounds"]) if v.get("sounds") else None,
+                )
+            )
+            if i >= FLUSH_BUFFER_SIZE:
+                con.executemany(USER_DEFINITIONS_INSERT, buffer)
+                buffer = []
+                i = 0
+            i += 1
+    if len(buffer) > 0:
+        con.executemany(USER_DEFINITIONS_INSERT, buffer)
+
+    # now fill userdictionaries table
+    if len(udvals) > 0:
+        con.executemany(USERDICTIONARIES_INSERT, udvals)
+
+
+async def regenerate_personal_db(base_db_path: str, user_id: int, lang_pair: str) -> str:  # pylint: disable=R0914
+    from_lang = get_from_lang(lang_pair)
+    logger.info("Filling sqlite3 db with personal values for %s", user_id)
+    async with async_session() as db:
+        tmpdirpath = tempfile.mkdtemp()
+        tmpsqldb = os.path.join(tmpdirpath, SQLITE_FILENAME)
+        shutil.copyfile(base_db_path, tmpsqldb)
+        con = sqlite3.connect(tmpsqldb)
+
+        await fill_sqlite_userdictionaries(db, user_id, con)
+        await fill_sqlite_userlists(db, con, user_id, from_lang)
+        await fill_sqlite_imports(db, con, user_id, lang_pair)
+        await fill_sqlite_stats(con, user_id, lang_pair)
+        # await fill_sqlite_surveys(db, con, lang_pair)
+        await fill_sqlite_cards(db, con, user_id)
+        # FIXME: missing the student_* tables
+        # FIXME: missing the persons table
+
+        con.execute(IMPORT_WORDS_INDEX_ID)
+        con.commit()
+
+        destdir = absolute_resources_path(user_id, SQLITE_FILENAME)
+        with contextlib.suppress(FileNotFoundError, IsADirectoryError):
+            os.remove(destdir)
+        shutil.rmtree(destdir, ignore_errors=True)
+        pathlib.Path(destdir).mkdir(parents=True, exist_ok=True)
+
+        tmpsqldb_sql = os.path.join(destdir, SQLITE_FILENAME_SQL)
+        with open(tmpsqldb_sql, "w") as f:
+            for line in con.iterdump():
+                f.write("%s\n" % line)
+
+        con.close()
+        await db.close()
+
+        CHUNK_SIZE = 10000000  # this will get compressed over the wire, so isn't really ~10MB
+        file_number = 0
+        with open(tmpsqldb, "rb") as f:
+            chunk = f.read(CHUNK_SIZE)
+            while chunk:
+                with open(
+                    os.path.join(destdir, f"{SQLITE_FILENAME}.{str(file_number).zfill(4)}.part"), "wb"
+                ) as chunk_file:
+                    chunk_file.write(chunk)
+                file_number += 1
+                chunk = f.read(CHUNK_SIZE)
+
+        shutil.rmtree(tmpdirpath, ignore_errors=True)
+    return True
+
+
+def def_dict_to_sqlite3(adef: dict) -> None:
+    fallback_only = True
+    for pt in adef["providerTranslations"]:
+        if pt["provider"] != "fbk" and len(pt["posTranslations"]) > 0:
+            fallback_only = False
+            break
+    return (
+        adef["id"],
+        adef["graph"],
+        json.dumps(adef["sound"]),
+        json.dumps(adef["synonyms"]),
+        json.dumps(adef["providerTranslations"]),
+        float(adef["frequency"]["wcpm"]) if adef["frequency"].get("wcpm", "") != "" else None,
+        float(adef["frequency"]["wcdp"]) if adef["frequency"].get("wcdp", "") != "" else None,
+        adef["frequency"].get("pos", None),
+        adef["frequency"].get("posFreq", None),
+        json.dumps(adef["hsk"]) if adef["hsk"] else None,
+        fallback_only,
+        adef["updatedAt"],
+    )
+
+
+async def fill_sqlite_definitions(
+    db: AsyncSession, con: sqlite3.Connection, providers: list[str], from_lang: str, to_lang: str
+) -> bool:
+    # FIXME: the DefinitionSet DEFINITELY shouldn't be in the graphql module...
+    from app.api.api_v1.graphql import Definitions  # pylint: disable=C0415
+
+    # WARNING Do NOT delete - memory will explode otherwise
+    gc.collect()
+
+    buffer = []
+    stmt = (
+        select(models.CachedDefinition)
+        .filter_by(from_lang=from_lang, to_lang=to_lang)
+        .order_by("cached_date", "word_id")
+    )
+    result = await db.execute(stmt)
+    file_cached_definitions = result.scalars().all()
+
+    export = [Definitions.from_model_asdict(ds, providers) for ds in file_cached_definitions]
+    if len(export) == 0:  # don't create empty files
+        return
+    logger.info("Loaded all definitions for %s, flushing to files", providers)
+
+    last_new_definition = export[-1]
+    ua = last_new_definition["updatedAt"]
+    wid = last_new_definition["id"]
+    provs = "-".join(providers)
+    outfile_dir = f"{lang_prefix(f'{from_lang}{LANG_PAIR_SEPARATOR}{to_lang}')}db-{ua}-{wid}-{provs}_sqlite"
+
+    new_files_dir_path = os.path.join(
+        settings.DB_CACHE_DIR,
+        outfile_dir,
+    )
+
+    buffer = []
+    i = 0
+    for adef in export:
+        buffer.append(def_dict_to_sqlite3(adef))
+        if i >= FLUSH_BUFFER_SIZE:
+            con.executemany(DEFINITIONS_INSERT, buffer)
+            buffer = []
+            i = 0
+        i += 1
+    if len(buffer) > 0:
+        con.executemany(DEFINITIONS_INSERT, buffer)
+
+    con.execute(DEFINITIONS_INDEX_ID_GRAPH)
+    con.execute(DEFINITIONS_INDEX_ID_UPDATED_AT)
+
+    return new_files_dir_path
+
+
+async def fill_sqlite_characters(con: sqlite3.Connection) -> bool:
+    buffer = []
+    last_updated = int(os.path.basename(latest_character_json_dir_path()) or 0)
+    i = 0
+    for hanzi_json in hanzi_json_local_paths():
+        with open(hanzi_json, "r", encoding="utf8") as hzf:
+            hanzis = json.load(hzf)
+            for hanzi in hanzis:
+                # (id, pinyin, decomposition, radical, etymology, structure, updated_at)
+                buffer.append(
+                    (
+                        hanzi["id"],
+                        json.dumps(hanzi["pinyin"]),
+                        json.dumps(hanzi["decomposition"]),
+                        json.dumps(hanzi["radical"]),
+                        json.dumps(hanzi["etymology"]) if hanzi.get("etymology") else None,
+                        json.dumps(hanzi["structure"]) if hanzi.get("structure") else None,
+                        last_updated,
+                    )
+                )
+                if i >= FLUSH_BUFFER_SIZE:
+                    con.executemany(CHARACTERS_INSERT, buffer)
+                    buffer = []
+                    i = 0
+                i += 1
+    if len(buffer) > 0:
+        con.executemany(CHARACTERS_INSERT, buffer)
+
+
+async def regenerate_sqlite(from_lang: str = "zh-Hans", to_lang: str = "en") -> bool:  # pylint: disable=R0914
+    # save a new file for each combination of providers
+    logger.info("Generating definitions and characters sqlite3 db")
+
+    pathlib.Path(settings.DB_CACHE_DIR).mkdir(parents=True, exist_ok=True)
+    async with async_session() as db:
+        result = await db.execute(select(distinct(AuthUser.dictionary_ordering)))
+
+        for tc in result.scalars().all():
+            providers = tc.split(",")
+            tmppath = tempfile.mkdtemp(dir=settings.DB_CACHE_DIR)
+            tmpsqldb = os.path.join(tmppath, SQLITE_FILENAME)
+            con = sqlite3.connect(tmpsqldb)
+
+            con.execute(DEFINITIONS_CREATE)
+            new_files_dir_path = await fill_sqlite_definitions(db, con, providers, from_lang, to_lang)
+
+            con.execute(CHARACTERS_CREATE)
+            if (from_lang, to_lang) == ("zh-Hans", "en"):
+                await fill_sqlite_characters(con)
+
+            con.execute(USER_DEFINITIONS_CREATE)
+            con.execute(USERDICTIONARIES_CREATE)
+            con.execute(WORD_MODEL_STATS_CREATE)
+            con.execute(DAY_MODEL_STATS_CREATE)
+            con.execute(LIST_WORDS_CREATE)
+            con.execute(WORDLISTS_CREATE)
+            con.execute(IMPORT_WORDS_CREATE)
+            con.execute(IMPORTS_CREATE)
+            con.execute(CARDS_CREATE)
+            con.execute(DEFINITIONS_STATUS_CREATE)
+
+            # con.execute(PERSONS_CREATE)
+            # con.execute(STUDENT_WORD_MODEL_STATS_CREATE)
+            # con.execute(STUDENT_DAY_MODEL_STATS_CREATE)
+            # con.execute(SURVEYS_CREATE)
+
+            con.execute(IMPORT_WORDS_INDEX_ID)
+
+            con.commit()
+
+            tmpsqldb_sql = os.path.join(tmppath, SQLITE_FILENAME_SQL)
+            with open(tmpsqldb_sql, "w") as f:
+                for line in con.iterdump():
+                    f.write("%s\n" % line)
+
+            con.close()
+
+            CHUNK_SIZE = 3000000
+            file_number = 0
+            with open(tmpsqldb, "rb") as f:
+                chunk = f.read(CHUNK_SIZE)
+                while chunk:
+                    with open(f"{tmpsqldb}.{str(file_number).zfill(4)}.part", "wb") as chunk_file:
+                        chunk_file.write(chunk)
+                    file_number += 1
+                    chunk = f.read(CHUNK_SIZE)
+
+            CHUNK_SIZE = 3000000
+            file_number = 0
+            with open(tmpsqldb_sql, "r") as f:
+                chunk = f.read(CHUNK_SIZE)
+                while chunk:
+                    with open(f"{tmpsqldb_sql}.{str(file_number).zfill(4)}.part", "w") as chunk_file:
+                        chunk_file.write(chunk)
+                    file_number += 1
+                    chunk = f.read(CHUNK_SIZE)
+
+            shutil.rmtree(new_files_dir_path, ignore_errors=True)
+            shutil.move(tmppath, new_files_dir_path)
+
+            logger.info(
+                "Flushed all definitions for %s to file %s",
+                from_lang,
+                providers,
+            )
+        await db.close()
+    return True
+
+
 async def regenerate_definitions_jsons_multi(  # pylint: disable=R0914
     fakelimit: int = 0, from_lang: str = "zh-Hans", to_lang: str = "en"
 ) -> bool:
@@ -120,7 +693,7 @@ async def regenerate_definitions_jsons_multi(  # pylint: disable=R0914
 
     pathlib.Path(settings.DEFINITIONS_CACHE_DIR).mkdir(parents=True, exist_ok=True)
     async with async_session() as db:
-        result = await db.execute(select(distinct(AuthUser.dictionary_ordering)))
+        result = await db.execute(select(distinct(models.AuthUser.dictionary_ordering)))
 
         for tc in result.scalars().all():
             # WARNING Do NOT delete - we set these values to None and gc.collect, or memory use will explode
@@ -130,7 +703,7 @@ async def regenerate_definitions_jsons_multi(  # pylint: disable=R0914
 
             providers = tc.split(",")
             stmt = (
-                select(CachedDefinition)
+                select(models.CachedDefinition)
                 .filter_by(from_lang=from_lang, to_lang=to_lang)
                 .order_by("cached_date", "word_id")
             )
@@ -150,7 +723,7 @@ async def regenerate_definitions_jsons_multi(  # pylint: disable=R0914
                 settings.DEFINITIONS_CACHE_DIR,
                 f"{lang_prefix(f'{from_lang}{LANG_PAIR_SEPARATOR}{to_lang}')}definitions-{ua}-{wid}-{provs}_json",
             )
-            tmppath = mkdtemp(dir=settings.DEFINITIONS_CACHE_DIR)
+            tmppath = tempfile.mkdtemp(dir=settings.DEFINITIONS_CACHE_DIR)
             for i, block in enumerate(chunks(export, settings.DEFINITIONS_PER_CACHE_FILE)):
                 chunkpath = os.path.join(tmppath, f"{i:03d}.json")
                 logger.info("Saving chunk to file %s", chunkpath)
@@ -158,7 +731,7 @@ async def regenerate_definitions_jsons_multi(  # pylint: disable=R0914
                     json.dump(block, definitions_file)
 
             shutil.rmtree(new_files_dir_path, ignore_errors=True)
-            os.rename(tmppath, new_files_dir_path)
+            shutil.move(tmppath, new_files_dir_path)
 
             logger.info(
                 "Flushed all definitions for %s to file %s",

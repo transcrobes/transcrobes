@@ -8,8 +8,7 @@ import useWindowDimensions from "../hooks/WindowDimensions";
 import { binnedData } from "../lib/funclib";
 import { dateRange } from "../lib/libMethods";
 import { CardType } from "../lib/types";
-
-const DATA_SOURCE = "WaitingRevisions.tsx";
+import { platformHelper } from "../app/createStore";
 
 type ListGraphData = {
   name: string;
@@ -29,11 +28,7 @@ export function WaitingRevisions({ studentId, yIsNumber = true, periodType = "we
   const translate = useTranslate();
   useEffect(() => {
     (async () => {
-      if (!window.componentsConfig.proxy.loaded) return;
-      const revs: CardType[] = await window.componentsConfig.proxy.sendMessagePromise<CardType[]>({
-        source: DATA_SOURCE,
-        type: "getWaitingRevisions",
-      });
+      const revs = await platformHelper.getWaitingRevisions();
       setRevisions(revs);
       if (!revs || revs.length < 1) return;
       const periods: ManipulateType[] = ["month", "week", "day"];
@@ -68,7 +63,7 @@ export function WaitingRevisions({ studentId, yIsNumber = true, periodType = "we
       }
       setData(locData);
     })();
-  }, [window.componentsConfig.proxy.loaded]);
+  }, []);
 
   const theme = useTheme();
   const dims = useWindowDimensions();

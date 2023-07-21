@@ -2,7 +2,6 @@
 import { AnyAction, createSlice, PayloadAction, SliceCaseReducers, ValidateSliceCaseReducers } from "@reduxjs/toolkit";
 import _ from "lodash";
 import { HslColor } from "react-colorful";
-import { AbstractWorkerProxy, platformHelper } from "../../lib/proxies";
 import {
   BOOK_READER_TYPE,
   ContentConfigType,
@@ -17,25 +16,19 @@ import {
   SIMPLE_READER_TYPE,
   VIDEO_READER_TYPE,
 } from "../../lib/types";
+import { DataManager } from "../../data/types";
+import { platformHelper } from "../../app/createStore";
 
-export function handleConfigUpdate<T extends ReaderState>(newConfig: T, id: string, proxy: AbstractWorkerProxy): void {
+export function handleConfigUpdate<T extends ReaderState>(newConfig: T, id: string, proxy: DataManager): void {
   const configToSave: ContentConfigType = {
     id: id,
     configString: JSON.stringify({ readerState: newConfig }),
   };
   // console.debug("Saving config to store", configToSave);
-  proxy.sendMessagePromise({
-    source: "contentSlice.ts",
-    type: "setContentConfigToStore",
-    value: configToSave,
-  });
+  proxy.setContentConfigToStore(configToSave);
   // These are for default values, rather than starting from scratch
   if (["bookReader", "videoReader"].includes(newConfig.readerType)) {
-    proxy.sendMessagePromise({
-      source: "contentSlice.ts",
-      type: "setContentConfigToStore",
-      value: { ...configToSave, id: newConfig.readerType },
-    });
+    proxy.setContentConfigToStore({ ...configToSave, id: newConfig.readerType });
   }
 }
 export type ContentConfigPayload<T> = {
@@ -43,17 +36,13 @@ export type ContentConfigPayload<T> = {
   value: T;
 };
 
-export async function getRawState(proxy: AbstractWorkerProxy, id: string) {
-  const raw = await proxy.sendMessagePromise<ContentConfigType>({
-    source: "ContentConfig.ts",
-    type: "getContentConfigFromStore",
-    value: id,
-  });
+export async function getRawState(proxy: DataManager, id: string) {
+  const raw = await proxy.getContentConfigFromStore(id);
   return raw?.configString ? JSON.parse(raw.configString).readerState : null;
 }
 
 export async function getRefreshedState<T extends ReaderState>(
-  proxy: AbstractWorkerProxy,
+  proxy: DataManager,
   defaultConfig: T,
   id: string,
 ): Promise<T> {
@@ -191,10 +180,6 @@ export const createGenericSlice = <T extends ReaderState, Reducers extends Slice
           );
         },
         (state, action: AnyAction) => {
-          if (!platformHelper.loaded) {
-            console.log("platformhelper not loaded", platformHelper.loaded);
-            return;
-          }
           const id = (action as PayloadAction<ContentConfigPayload<unknown>>).payload.id;
           if (state[id]) {
             handleConfigUpdate(state[id], id, platformHelper);

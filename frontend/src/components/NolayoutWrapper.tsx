@@ -1,13 +1,13 @@
-import CustomUserMenu from "../layout/CustomUserMenu";
-import { AbstractWorkerProxy } from "../lib/proxies";
-import { CustomAppBar } from "./CustomAppBar";
 import { Box } from "@mui/material";
+import { DataManager } from "../data/types";
+import CustomUserMenu from "../layout/CustomUserMenu";
+import { CustomAppBar } from "./CustomAppBar";
 
 type Props = {
   children?: React.ReactNode;
   menuChildren?: React.ReactNode;
   userMenu?: boolean;
-  proxy: AbstractWorkerProxy;
+  proxy: DataManager;
   title?: string;
 };
 

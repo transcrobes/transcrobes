@@ -1,14 +1,10 @@
 import { getStreamerId } from "../lib/libMethods";
-import { BackgroundWorkerProxy } from "../lib/proxies";
-
-const proxy = new BackgroundWorkerProxy();
 
 async function checkForStreamer(url: string) {
   if (getStreamerId(url)) {
     console.log("Checking for auto play", getStreamerId(url));
-    await proxy.sendMessagePromise({
-      source: "streamerAutoPlay",
-      type: "streamerAutoPlay",
+    await chrome.runtime.sendMessage({
+      type: "streamerAutoPlayUrl",
       value: url,
     });
   }

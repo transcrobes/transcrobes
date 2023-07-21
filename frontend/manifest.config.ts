@@ -17,6 +17,9 @@ export default defineManifest((env) => ({
     service_worker: "src/extension/background.ts",
     minimum_chrome_version: "100",
   },
+  content_security_policy: {
+    extension_pages: "script-src 'self' 'wasm-unsafe-eval'; object-src 'self';",
+  },
   icons: {
     "16": "public/static/tc16.png",
     "32": "public/static/tc32.png",
@@ -29,7 +32,7 @@ export default defineManifest((env) => ({
       matches: ["<all_urls>"],
     },
   ],
-  options_page: "src/extension/options.html",
+  options_page: "src/extension/html/options.html",
   action: {
     default_title: "Transcrobe Me!",
   },

@@ -1,15 +1,16 @@
 import { useTheme } from "@mui/system";
 import { useEffect, useState } from "react";
-import { useRecordContext, useTranslate } from "react-admin";
+import { useRecordContext, useStore, useTranslate } from "react-admin";
 import { useAppSelector } from "../app/hooks";
 import { CalculatedContentStats, noop } from "../lib/types";
 import ContentAnalysis from "./ContentAnalysis";
-
-const DATA_SOURCE = "ContentStatsField";
+import { platformHelper } from "../app/createStore";
 
 export function ContentStatsField({ label }: { label?: string }) {
   const record = useRecordContext();
   const translate = useTranslate();
+  const [includeNonDict] = useStore("preferences.includeNonDict", false);
+  const [includeIgnored] = useStore("preferences.includeIgnored", false);
   const fromLang = useAppSelector((state) => state.userData.user.fromLang);
   let importId = "";
   if (Object.hasOwn(record, "theImport")) {
@@ -21,19 +22,17 @@ export function ContentStatsField({ label }: { label?: string }) {
   const [stats, setStats] = useState<CalculatedContentStats | null>();
   const [colour, setColour] = useState(theme.palette.background.default);
   useEffect(() => {
-    if (window.componentsConfig.proxy.loaded) {
-      (async function () {
-        if (!importId) return;
-        const locStats: CalculatedContentStats | null =
-          await window.componentsConfig.proxy.sendMessagePromise<CalculatedContentStats | null>({
-            source: DATA_SOURCE,
-            type: "getContentStatsForImport",
-            value: { importId, fromLang },
-          });
-        setStats(locStats);
-      })();
-    }
-  }, [window.componentsConfig.proxy.loaded]);
+    (async function () {
+      if (!importId) return;
+      const locStats: CalculatedContentStats | null = await platformHelper.getContentStatsForImport({
+        importId,
+        fromLang,
+        includeIgnored,
+        includeNonDict,
+      });
+      setStats(locStats);
+    })();
+  }, []);
   useEffect(() => {
     if (stats) {
       if (

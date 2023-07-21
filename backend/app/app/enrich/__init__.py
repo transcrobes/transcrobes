@@ -29,6 +29,10 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+DB_CACHE_FILE_PREFIX_REGEX = r"db-\d{10}\.\d{1,8}-\d{1,8}-"
+DB_CACHE_FILE_SUFFIX_REGEX = r"\.sqlite"
+DB_CACHE_DIR_SUFFIX_REGEX = r"\_sqlite"
+
 DEFINITIONS_JSON_CACHE_FILE_PREFIX_REGEX = r"definitions-\d{10}\.\d{1,8}-\d{1,8}-"
 DEFINITIONS_JSON_CACHE_FILE_SUFFIX_REGEX = r"\.json"
 DEFINITIONS_JSON_CACHE_DIR_SUFFIX_REGEX = r"\_json"
@@ -75,6 +79,34 @@ def best_deep_def(token, all_token_definitions):
 
 def lang_prefix(lang_pair: str) -> str:
     return f"{lang_pair}{LANG_PAIR_SEPARATOR}"
+
+
+def latest_db_fragments_dir_path(lang_pair: str, translation_providers: list[str]) -> str:
+    # zh-Hans:en:db-1690275091.056539-1303887-mst-ccc-fbk_sqlite
+    find_re = (
+        lang_prefix(f"{lang_pair}")
+        + DB_CACHE_FILE_PREFIX_REGEX
+        + "-".join(translation_providers)
+        + DB_CACHE_DIR_SUFFIX_REGEX
+    )
+    logger.debug(f"Looking for the latest definitions dir using regex: {find_re=}")
+    print(f"Looking for the latest definitions dir using regex: {find_re=}")
+    try:
+        return sorted(
+            [
+                f.path.removeprefix(lang_prefix(lang_pair))
+                for f in os.scandir(settings.DB_CACHE_DIR)
+                if f.is_dir() and re.match(find_re, f.name)
+            ]
+        )[-1]
+    except IndexError:
+        logger.error(
+            "Unable to find a definitions file for user %s using %s with re %s",
+            translation_providers,
+            lang_prefix(lang_pair),
+            find_re,
+        )
+    return ""
 
 
 def latest_definitions_json_dir_path(user: AuthUser) -> str:
@@ -146,6 +178,15 @@ def definitions_path_json_as_string(path: str) -> str:
     json_path = os.path.join(settings.DEFINITIONS_CACHE_DIR, path)
     with open(json_path, encoding="utf8") as fh:
         return fh.read()
+
+
+def hanzi_json_local_paths() -> list:
+    jsons_path = latest_character_json_dir_path()
+    files = sorted(
+        [f.path for f in os.scandir(jsons_path) if f.is_file() and re.match(HANZI_JSON_CACHE_FILE_REGEX, f.name)]
+    )
+    logger.debug("The latest hanzi export local files for are %s", files)
+    return files
 
 
 def hanzi_json_paths(router: APIRouter) -> dict:

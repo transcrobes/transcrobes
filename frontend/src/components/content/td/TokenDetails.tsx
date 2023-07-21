@@ -3,16 +3,23 @@ import { ReactElement, useEffect, useState } from "react";
 import { makeStyles } from "tss-react/mui";
 import useResizeObserver from "use-resize-observer";
 import { useAppSelector } from "../../../app/hooks";
-import { getDefinitions, positionPopup } from "../../../lib/componentMethods";
+import { getDefinitionsForToken, positionPopup } from "../../../lib/componentMethods";
 import { originalSentenceFromTokens } from "../../../lib/funclib";
 import { bestGuess } from "../../../lib/libMethods";
-import { platformHelper } from "../../../lib/proxies";
-import { ExtensionReaderState, IS_EXT, PopupPosition, ReaderState } from "../../../lib/types";
+import {
+  DefinitionState,
+  DefinitionType,
+  ExtensionReaderState,
+  IS_EXT,
+  PopupPosition,
+  ReaderState,
+} from "../../../lib/types";
 import ReaderConfigProvider from "../../ReaderConfigProvider";
 import Container from "./Container";
 import Extras from "./Extras";
 import Header from "./Header";
 import { FullSpecDocument, isFullscreened } from "../../../hooks/useFullscreen";
+import { platformHelper } from "../../../app/createStore";
 
 export type Props = {
   readerConfig: ReaderState;
@@ -124,7 +131,7 @@ export default function TokenDetails({ readerConfig }: Props): ReactElement {
         setGuess(
           bestGuess(
             tokenDetails.token,
-            await getDefinitions(tokenDetails.token, definitions),
+            (await getDefinitionsForToken(tokenDetails.token, definitions)).filter((x) => x) as DefinitionState[],
             fromLang,
             toLang,
             readerConfig,
@@ -143,18 +150,14 @@ export default function TokenDetails({ readerConfig }: Props): ReactElement {
           readerConfig.readerType === "videoReader" && !!isFullscreened(window.parent.document as FullSpecDocument),
         ),
       );
-      platformHelper.sendMessage({
-        source: "TokenDetails",
-        type: "submitUserEvents",
-        value: {
-          type: "bc_word_lookup",
-          data: {
-            target_word: tokenDetails.token.l,
-            target_sentence: originalSentenceFromTokens(tokenDetails.sentence.t),
-          },
-          userStatsMode: readerConfig.glossing,
-          source: "TokenDetails",
+      platformHelper.submitUserEvents({
+        type: "bc_word_lookup",
+        data: {
+          target_word: tokenDetails.token.l,
+          target_sentence: originalSentenceFromTokens(tokenDetails.sentence.t),
         },
+        userStatsMode: readerConfig.glossing,
+        source: "TokenDetails",
       });
     } else {
       setExtrasOpen(false);

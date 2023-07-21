@@ -1,32 +1,30 @@
-import { Box, CardHeader, FormControlLabel, Switch, Typography } from "@mui/material";
-import Button from "@mui/material/Button";
-import Card from "@mui/material/Card";
-import CardContent from "@mui/material/CardContent";
+import { Box, Button, Card, CardContent, CardHeader, FormControlLabel, Switch, Typography } from "@mui/material";
 import { ReactElement, useEffect, useState } from "react";
-import { Title, TopToolbar, useLocaleState, useTranslate } from "react-admin";
+import { Title, TopToolbar, useTranslate } from "react-admin";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
 import HelpButton from "../components/HelpButton";
 import { Loading } from "../components/Loading";
+import type { DataManager } from "../data/types";
 import { clearAuthDatabase } from "../database/authdb";
-import { getDatabaseName } from "../database/Database";
 import { setAndSaveUser } from "../features/user/userSlice";
-import { AbstractWorkerProxy } from "../lib/proxies";
-import { DOCS_DOMAIN, GIT_VERSION, SystemLanguage } from "../lib/types";
 import { fetcher } from "../lib/fetcher";
+import { DOCS_DOMAIN, GIT_VERSION } from "../lib/types";
+import { getDatabaseName } from "../workers/rxdb/Database";
+import ToggleIncludeIgnored from "./ToggleIncludeIgnored";
+import ToggleIncludeNonDict from "./ToggleIncludeNonDict";
 import { NAME_PREFIX } from "../lib/interval/interval-decorator";
 
 const CONNECTION_CHECK_FREQUENCY_MS = 10000;
 
 interface CleanResentSentencesButtonProps {
   onPurged: (message: string) => void;
-  proxy: AbstractWorkerProxy;
+  proxy: DataManager;
 }
-
 function CleanResentSentencesButton({ proxy, onPurged }: CleanResentSentencesButtonProps): ReactElement {
   const translate = useTranslate();
 
   async function handleClick() {
-    const purged = await proxy.sendMessagePromise({ source: "System", type: "purgeInvalidRecentSentences" });
+    const purged = await proxy.purgeInvalidRecentSentences();
     onPurged(JSON.stringify(purged));
   }
   return (
@@ -62,28 +60,27 @@ function RefreshCacheButton({ onCacheEmptied }: RefreshCacheButtonProps): ReactE
   );
 }
 
-interface ReloadDBButtonProps {
-  proxy: AbstractWorkerProxy;
-}
-
-function ReloadDBButton({ proxy }: ReloadDBButtonProps): ReactElement {
-  const translate = useTranslate();
-  const username = useAppSelector((state) => state.userData.username);
-
-  async function handleClick() {
-    if (username) {
-      await proxy.sendMessagePromise({ source: "System", type: "resetDBConnections", value: "" });
-      await proxy.asyncInit({ username });
-    } else {
-      console.error("No username found");
-    }
-  }
-  return (
-    <Button variant="contained" sx={{ margin: "1em" }} color={"primary"} onClick={handleClick}>
-      {translate("screens.system.reload_db")}
-    </Button>
-  );
-}
+// interface ReloadDBButtonProps {
+//   proxy: DataManager;
+// }
+//
+// function ReloadDBButton({ proxy }: ReloadDBButtonProps): ReactElement {
+//   const translate = useTranslate();
+//   const username = useAppSelector((state) => state.userData.username);
+//
+//   async function handleClick() {
+//     if (username) {
+//       await proxy.sendMessagePromise({ source: "System", type: "resetDBConnections", value: "" });
+//     } else {
+//       console.error("No username found");
+//     }
+//   }
+//   return (
+//     <Button variant="contained" sx={{ margin: "1em" }} color={"primary"} onClick={handleClick}>
+//       {translate("screens.system.reload_db")}
+//     </Button>
+//   );
+// }
 
 interface ReinstallDBButtonProps {
   beforeReinstall: () => void;
@@ -122,7 +119,7 @@ function ReinstallDBButton({ beforeReinstall, onDBDeleted }: ReinstallDBButtonPr
 }
 
 interface Props {
-  proxy: AbstractWorkerProxy;
+  proxy: DataManager;
 }
 
 function System({ proxy }: Props): ReactElement {
@@ -143,8 +140,7 @@ function System({ proxy }: Props): ReactElement {
   function handleShowResearchUpdate(show: boolean) {
     return dispatch(setAndSaveUser({ ...user, showResearchDetails: show }));
   }
-
-  useEffect(() => {
+  function serverPing() {
     fetcher
       .fetchPlus<{ exp?: string }>("/api/v1/utils/authed")
       .then((manif) => {
@@ -159,27 +155,10 @@ function System({ proxy }: Props): ReactElement {
         console.log("Server ping error", error);
         setTimedServerAvailableMessage(translate("screens.system.server_unavailable"));
       });
-    const interval = setInterval(
-      () => {
-        fetcher
-          .fetchPlus<{ exp?: string }>("/api/v1/utils/authed")
-          .then((manif) => {
-            if (manif.exp) {
-              console.log("Server ping success", manif, new Date(manif.exp || 0).toLocaleTimeString());
-              setTimedServerAvailableMessage(translate("screens.system.server_available"));
-            } else {
-              throw new Error(JSON.stringify(manif));
-            }
-          })
-          .catch((error) => {
-            console.log("Server ping error", error);
-            setTimedServerAvailableMessage(translate("screens.system.server_unavailable"));
-          });
-      },
-      CONNECTION_CHECK_FREQUENCY_MS,
-      NAME_PREFIX + "connectionCheck",
-    );
-
+  }
+  useEffect(() => {
+    serverPing();
+    const interval = setInterval(serverPing, CONNECTION_CHECK_FREQUENCY_MS, NAME_PREFIX + "connectionCheck");
     return () => clearInterval(interval);
   }, []);
   return (
@@ -195,9 +174,9 @@ function System({ proxy }: Props): ReactElement {
           <div>
             <RefreshCacheButton onCacheEmptied={(message) => setMessage(message)} />
           </div>
-          <div>
+          {/* <div>
             <ReloadDBButton proxy={proxy} />
-          </div>
+          </div> */}
           <div>
             <CleanResentSentencesButton proxy={proxy} onPurged={(message) => setMessage(message)} />
           </div>
@@ -213,11 +192,11 @@ function System({ proxy }: Props): ReactElement {
         </CardContent>
       </Card>
 
-      {user.user.isAdmin && (
-        <>
-          <CardHeader title={translate("screens.system.user_preferences")} />
-          <Card>
-            <Title title={translate("screens.main.configuration")} />
+      <>
+        <CardHeader title={translate("screens.system.user_preferences")} />
+        <Card>
+          <Title title={translate("screens.main.configuration")} />
+          {user.user.isAdmin && (
             <CardContent>
               <FormControlLabel
                 control={
@@ -231,9 +210,16 @@ function System({ proxy }: Props): ReactElement {
                 label="Show research details"
               />
             </CardContent>
-          </Card>
-        </>
-      )}
+          )}
+        </Card>
+        <CardContent>
+          <ToggleIncludeIgnored />
+        </CardContent>
+        <CardContent>
+          <ToggleIncludeNonDict />
+        </CardContent>
+      </>
+
       <CardHeader title={translate("screens.system.system_info")} />
       <Card>
         <CardContent>

@@ -6,17 +6,14 @@ import { ReactElement, useEffect, useState } from "react";
 import { Button, useRecordContext, useTranslate } from "react-admin";
 import { NavigateFunction, useNavigate } from "react-router-dom";
 import { CONTENT_TYPE, Content, Import, PROCESSING } from "../lib/types";
+import { platformHelper } from "../app/createStore";
 
 const DATA_SOURCE = "ActionButton.tsx";
 type Verb = "Watch" | "Read" | "Enrich" | "Resubmit" | "";
 
 function action(content: Content, verb: Verb, navigate: NavigateFunction) {
   if (verb === "Enrich" || verb === "Resubmit") {
-    window.componentsConfig.proxy.sendMessagePromise({
-      source: DATA_SOURCE,
-      type: "submitContentEnrichRequest",
-      value: { contentId: content.id.toString() },
-    });
+    platformHelper.submitContentEnrichRequest({ contentId: content.id.toString() });
     return true;
   } else {
     if (verb == "Watch" && content.sourceUrl) {
@@ -49,13 +46,7 @@ export default function ActionButton({ label }: { label?: string }): ReactElemen
           setIcon(<WatchIcon />);
         }
       } else if (content.processing === PROCESSING.NONE) {
-        const theImport = (
-          await window.componentsConfig.proxy.sendMessagePromise<Import[]>({
-            source: DATA_SOURCE,
-            type: "getByIds",
-            value: { collection: "imports", ids: [content.theImport.toString()] },
-          })
-        )[0];
+        const theImport = platformHelper.getByIds({ collection: "imports", ids: [content.theImport.toString()] })[0];
         if (theImport && theImport.processing === PROCESSING.FINISHED) {
           setVerbLabel(translate("widgets.content_actions.enrich") as Verb);
           setVerb("Enrich");

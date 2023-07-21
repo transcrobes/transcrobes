@@ -4,7 +4,7 @@ import QuestionDefinitionGraph, { GraphSoundQuestionStyle } from "./Common";
 
 interface GraphQuestionProps {
   card: CardType;
-  characters: CharacterType[];
+  characters: (CharacterType | null)[];
   showAnswer: boolean;
   showDiscoverableWord: boolean;
   word?: DefinitionType;

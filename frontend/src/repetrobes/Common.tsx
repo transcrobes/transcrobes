@@ -110,7 +110,7 @@ export interface CommonAnswerProps {
   showRecents: boolean;
   showNormalFont?: boolean;
   translationProviderOrder: Record<string, number>;
-  onCardFrontUpdate: (card: CardType) => void;
+  onCardFrontUpdate: (cardId: string, frontString: string) => void;
 }
 
 const RANDOM_NEXT_WINDOW = 10;

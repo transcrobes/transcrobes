@@ -1,11 +1,13 @@
 [project]
 name = "transcrobes"
-version = "0.29.4"
+version = "0.30.0"
 description = ""
 requires-python = ">=3.11"
 authors = [{ name = "Anton Melser", email = "anton@transcrob.es" }]
 license = { file = "LICENSE" }
 dependencies = [
+  "anyio",
+  "websockets",
   "user-agents",
   "pysubs2",
   "pyjson5",
@@ -43,7 +45,6 @@ dependencies = [
   "aiofiles",
   "pytz",
   "Unidecode",
-  "lzstring",
   "textile",
   "zhon",
   "pinyinsplit",

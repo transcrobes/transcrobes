@@ -1,5 +1,5 @@
 import dayjs from "dayjs";
-import { EFACTOR_DEFAULT, GRADE } from "../database/Schema";
+import { EFACTOR_DEFAULT, GRADE } from "../workers/rxdb/Schema";
 import { CardType } from "./types";
 
 /*
@@ -26,10 +26,10 @@ type SuperMemoGrade = 0 | 1 | 2 | 3 | 4 | 5;
 
 // function supermemo( item: SuperMemoItem, grade: SuperMemoGrade): SuperMemoItem {
 // from https://github.com/Maxvien/supermemo
-export function supermemo(item: CardType, grade: GRADE) {
-  let nextInterval; // let nextInterval: number;
-  let nextRepetition; // let nextRepetition: number;
-  let nextEfactor; // let nextEfactor: number;
+export function supermemo(item: Partial<CardType>, grade: GRADE) {
+  let nextInterval: number;
+  let nextRepetition: number;
+  let nextEfactor: number;
 
   if (grade >= 3) {
     if (!item.repetition) {
@@ -60,11 +60,26 @@ export function supermemo(item: CardType, grade: GRADE) {
   };
 }
 
-export function practice(flashcard: CardType, grade: GRADE, failureSeconds: number): CardType {
-  const { interval, repetition, efactor } = supermemo(flashcard, grade);
+export function practice(card: Partial<CardType>, grade: GRADE, failureSeconds: number): CardType {
+  if (!card?.id) throw new Error("id must be set");
+  const { interval, repetition, efactor } = supermemo(card, grade);
   const known = grade === GRADE.KNOWN;
   const dueDate = interval > 0 ? dayjs().add(interval, "day").unix() : dayjs().add(failureSeconds, "seconds").unix();
 
-  const firstSuccessDate = flashcard.firstSuccessDate || (grade >= GRADE.HARD ? dayjs().unix() : 0);
-  return { ...flashcard, interval, repetition, efactor, dueDate, known, firstSuccessDate };
+  const newDate = dayjs().unix();
+  const firstSuccessDate = card.firstSuccessDate || (grade >= GRADE.HARD ? newDate : 0);
+  return {
+    ...card,
+    id: card.id, // typescript can be dumb...
+    interval,
+    repetition,
+    efactor,
+    dueDate,
+    known,
+    suspended: false,
+    firstSuccessDate,
+    firstRevisionDate: card.firstRevisionDate || newDate,
+    lastRevisionDate: newDate,
+    updatedAt: newDate, // this will get overwritten by the server
+  };
 }

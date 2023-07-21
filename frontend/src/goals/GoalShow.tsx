@@ -2,6 +2,7 @@ import { BooleanField, ReferenceField, Show, SimpleShowLayout, TextField, useTra
 import { HelpShowActions } from "../components/HelpShowActions";
 import { DOCS_DOMAIN } from "../lib/types";
 import { ListProgress } from "../stats/ListProgress";
+import { WordlistField } from "./WordlistField";
 
 export default function GoalShow() {
   const translate = useTranslate();
@@ -11,9 +12,7 @@ export default function GoalShow() {
         <TextField source="id" />
         <TextField source="title" />
         <TextField source="description" />
-        <ReferenceField source="userList" reference="wordlists" link={false}>
-          <TextField source="name" />
-        </ReferenceField>
+        <WordlistField label="List" />
         <ReferenceField source="parent" reference="goals" link="show">
           <TextField source="title" />
         </ReferenceField>

@@ -9,7 +9,7 @@ import * as React from "react";
 import { FunctionComponent, ReactElement } from "react";
 import { useCookies } from "react-cookie";
 import { makeStyles } from "tss-react/mui";
-import { AbstractWorkerProxy } from "../lib/proxies";
+import type { DataManager } from "../data/types";
 
 /*
  * Copy pasted from https://raw.githubusercontent.com/marmelab/react-admin/43c4fafc8bcedebc386c7d3dc3b63cfd56420a17/packages/ra-ui-materialui/src/auth/Logout.tsx
@@ -18,7 +18,7 @@ import { AbstractWorkerProxy } from "../lib/proxies";
  */
 
 interface Props {
-  proxy: AbstractWorkerProxy;
+  proxy: DataManager;
   className?: string;
   redirectTo?: string;
   icon?: ReactElement;
@@ -50,11 +50,8 @@ const LogoutWithRef: FunctionComponent<
   const [_cookies, _setCookie, removeCookie] = useCookies(["refresh", "session"]);
 
   function handleClick() {
-    proxy.sendMessagePromise<string>({ source: "Logout", type: "resetDBConnections", value: "" });
     removeCookie("refresh");
     removeCookie("session");
-
-    // useCallback(() => logout(null, redirectTo, false), [redirectTo, logout]);
     return logout(null, redirectTo, false);
   }
   return (

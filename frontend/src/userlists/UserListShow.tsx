@@ -9,7 +9,7 @@ import {
 } from "react-admin";
 import { HelpShowActions } from "../components/HelpShowActions";
 import { ProcessingField } from "../components/ProcessingField";
-import { GRADE } from "../database/Schema";
+import { GRADE } from "../workers/rxdb/Schema";
 import { DOCS_DOMAIN, ORDER_BY, reverseEnum, USERLISTS_YT_VIDEO } from "../lib/types";
 import { ListProgress } from "../stats/ListProgress";
 

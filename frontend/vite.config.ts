@@ -4,15 +4,22 @@ import react from "@vitejs/plugin-react";
 import { resolve } from "path";
 import rollupNodePolyFill from "rollup-plugin-node-polyfills";
 import { defineConfig } from "vite";
-import type { ManifestOptions, VitePWAOptions } from "vite-plugin-pwa";
+import type { VitePWAOptions } from "vite-plugin-pwa";
 import { VitePWA } from "vite-plugin-pwa";
 import svgr from "vite-plugin-svgr";
+import wasm from "vite-plugin-wasm";
 
 const mode = process.env.NODE_ENV === "development" ? "development" : "production";
 
 const pwaOptions: Partial<VitePWAOptions> = {
+  srcDir: "src/workers",
+  filename: "service-worker.ts",
+  strategies: "injectManifest",
+  scope: "/",
+  registerType: "autoUpdate",
   mode: mode,
   base: "/",
+
   includeAssets: ["static/favicon.ico"],
   injectManifest: {
     maximumFileSizeToCacheInBytes: 20000000,
@@ -81,7 +88,6 @@ const pwaOptions: Partial<VitePWAOptions> = {
   },
   devOptions: {
     enabled: process.env.SW_DEV === "true",
-    /* when using generateSW the PWA plugin will switch to classic */
     type: "module",
     navigateFallback: "index.html",
   },
@@ -94,29 +100,13 @@ const replaceOptions: RollupReplaceOptions = {
   __FAKE_HASH__: fakeHash,
   preventAssignment: true,
 };
-const claims = true; // process.env.CLAIMS === "true";
-const reload = true; // process.env.RELOAD_SW === "true";
 const selfDestroying = process.env.SW_DESTROY === "true";
 
-if (process.env.SW === "true") {
-  pwaOptions.srcDir = "src/sw";
-  pwaOptions.filename = "service-worker.ts";
-  pwaOptions.strategies = "injectManifest";
-  pwaOptions.scope = "/";
-  (pwaOptions.manifest as Partial<ManifestOptions>).name = "Transcrobes";
-  (pwaOptions.manifest as Partial<ManifestOptions>).short_name = "Transcrobes";
-  pwaOptions.mode = mode === "development" ? "development" : "production";
-}
-
-if (claims) pwaOptions.registerType = "autoUpdate";
-
-// unused
-if (reload) {
-  replaceOptions.__RELOAD_SW__ = "true";
-}
+replaceOptions.__RELOAD_SW__ = "true";
 
 if (selfDestroying) pwaOptions.selfDestroying = selfDestroying;
 
+// @ts-ignore
 export default defineConfig({
   build: {
     sourcemap: process.env.SOURCE_MAP === "true",
@@ -172,7 +162,6 @@ export default defineConfig({
     },
   },
   server: {
-    // headers: { "Service-Worker-Allowed": "/", },
     port: 5000,
     host: "0.0.0.0",
   },
@@ -186,12 +175,7 @@ export default defineConfig({
       // @ts-ignore
       plugins: [NodeModulesPolyfillPlugin()],
     },
+    exclude: ["wa-sqlite"],
   },
-  plugins: [
-    svgr(),
-    react(),
-    VitePWA(pwaOptions),
-    // @ts-ignore
-    replace(replaceOptions),
-  ],
+  plugins: [svgr(), react(), wasm(), VitePWA(pwaOptions), replace(replaceOptions)],
 });

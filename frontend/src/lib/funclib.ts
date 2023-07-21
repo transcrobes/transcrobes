@@ -41,6 +41,13 @@ const typeSizes = {
     !item ? 0 : Object.keys(item).reduce((total, key) => sizeOf(key) + sizeOf(item[key]) + total, 0),
 };
 
+export function isUIThread() {
+  return globalThis.window === self && globalThis.document;
+}
+export function isWorker() {
+  return !isUIThread();
+}
+
 export function sizeOf(value: any) {
   return (typeSizes as any)[typeof value](value);
 }
@@ -442,7 +449,7 @@ export function hasTones(lang: InputLanguage): boolean {
   return ["zh-Hans"].includes(lang);
 }
 
-export function hasCharacters(lang: SystemLanguage): boolean {
+export function hasCharacters(lang: InputLanguage): boolean {
   return ["zh-Hans"].includes(lang);
 }
 

@@ -1,6 +1,5 @@
 import dayjs from "dayjs";
 import levenshtein from "js-levenshtein-esm";
-import { platformHelper } from "./proxies";
 import {
   AnyTreebankPosType,
   KeyedModels,
@@ -10,9 +9,10 @@ import {
   ReaderState,
   RecentSentencesType,
   SentenceType,
-  SerialisableDayCardWords,
+  KnownWords,
   USER_STATS_MODE,
 } from "./types";
+import { platformHelper } from "../app/createStore";
 
 const timeouts: { [key: string]: number } = {};
 const NB_RECENT_SENTS_TO_KEEP = 3;
@@ -63,13 +63,7 @@ async function addToRecentSentences(model: ModelType, minTokens = 5, maxTokens =
       }
     }
   }
-  const existingRSents = new Map<string, RecentSentencesType>(
-    await platformHelper.sendMessagePromise<Array<[string, RecentSentencesType]>>({
-      source: DATA_SOURCE,
-      type: "getRecentSentences",
-      value: wordIds,
-    }),
-  );
+  const existingRSents = new Map<string, RecentSentencesType>(await platformHelper.getRecentSentences(wordIds));
   const inserts: RecentSentencesType[] = [];
   const updatedSents: RecentSentencesType[] = [];
   for (const wordId of wordIds) {
@@ -119,23 +113,15 @@ async function addToRecentSentences(model: ModelType, minTokens = 5, maxTokens =
   }
   // TODO: Should we wait here? Almost certainly NOT!
   if (inserts.length > 0) {
-    platformHelper.sendMessagePromise<void>({
-      source: DATA_SOURCE,
-      type: "addRecentSentences",
-      value: inserts,
-    });
+    platformHelper.addRecentSentences(inserts);
   }
   if (updatedSents.length > 0) {
-    platformHelper.sendMessagePromise<void>({
-      source: DATA_SOURCE,
-      type: "updateRecentSentences",
-      value: updatedSents,
-    });
+    platformHelper.updateRecentSentences(updatedSents);
   }
 }
 
 // FIXME: glossing should be an enum
-function vocabCountersFromETF(model: ModelType, glossing: number, knownCards: Partial<SerialisableDayCardWords>) {
+function vocabCountersFromETF(model: ModelType, glossing: number, knownCards: Partial<KnownWords>) {
   const counter: { [key: string]: [number, number] } = {};
 
   for (const sentence of model.s) {
@@ -143,7 +129,7 @@ function vocabCountersFromETF(model: ModelType, glossing: number, knownCards: Pa
       // it needs to have a pos for us to be interested, though maybe "bg" would be better
       if (token.pos) {
         const lemma = token.l;
-        const lookedUp = glossing > USER_STATS_MODE.NO_GLOSS && !(lemma in (knownCards.knownCardWordGraphs || {}));
+        const lookedUp = glossing > USER_STATS_MODE.NO_GLOSS && !(lemma in (knownCards.knownWordGraphs || {}));
         counter[lemma] = counter[lemma]
           ? [counter[lemma][0] + 1, lookedUp ? counter[lemma][1] + 1 : 0]
           : [1, lookedUp ? 1 : 0];
@@ -157,7 +143,7 @@ function vocabCountersFromETF(model: ModelType, glossing: number, knownCards: Pa
 export function observerFunc(
   models: KeyedModels,
   readerConfig: () => ReaderState,
-  knownCards: () => Partial<SerialisableDayCardWords>,
+  knownCards: () => Partial<KnownWords>,
   onScreenModels?: Set<string>,
 ) {
   return function onScreen(entries: IntersectionObserverEntry[]): void {
@@ -189,11 +175,7 @@ export function observerFunc(
                 data: tstats,
                 userStatsMode: readerConfig().glossing,
               };
-              platformHelper.sendMessage({
-                source: "stats",
-                type: "submitUserEvents",
-                value: userEvent,
-              });
+              platformHelper.submitUserEvents(userEvent);
               // We are NOT waiting here, as this is a nice-to-have really, and we don't want it to
               // hold up other, immediately user-visible tasks. Only collect if we are doing that now,
               // which we do by default

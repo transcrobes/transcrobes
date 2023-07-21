@@ -13,7 +13,7 @@ interface EditableDefinitionTranslationsProps {
   definition: DefinitionType;
   card: CardType;
   defaultProvider: string;
-  onUpdate: (card: CardType) => void;
+  onUpdate: (cardId: string, frontString: string) => void;
   onClose: () => void;
 }
 
@@ -39,11 +39,9 @@ export default function EditableDefinitionTranslations({
     setEditing(true);
   }
 
-  function handleSave(updated: string) {
-    // FIXME: this is nasty, right? I should be using state somehow, no?
-    card.front = updated;
-    onUpdate(card);
-    setCurrent(convertFromRaw(JSON.parse(updated)));
+  function handleSave(newFrontString: string) {
+    onUpdate(card.id, newFrontString);
+    setCurrent(convertFromRaw(JSON.parse(newFrontString)));
     setEditing(false);
   }
 

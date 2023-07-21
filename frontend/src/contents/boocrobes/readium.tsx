@@ -9,9 +9,9 @@ import { setLoading, setTokenDetails } from "../../features/ui/uiSlice";
 import { sessionActivityUpdate } from "../../lib/componentMethods";
 import { ensureDefinitionsLoaded } from "../../lib/dictionary";
 import { isScriptioContinuo, missingWordIdsFromModels, tokensInModel } from "../../lib/funclib";
-import { setPlatformHelper } from "../../lib/proxies";
 import { observerFunc } from "../../lib/stats";
 import { ComponentClass, ComponentFunction, KeyedModels } from "../../lib/types";
+import { setPlatformHelper } from "../../app/createStore";
 
 declare global {
   interface Window {
@@ -32,7 +32,7 @@ const currentModels = window.transcrobesModel;
 const definitions = store.getState().definitions;
 
 const getReaderConfig = () => readerConfig;
-const getKnownCards = () => store.getState().knownCards;
+const getKnownCards = () => store.getState().knownWords;
 const user = store.getState().userData.user;
 const readObserver = new IntersectionObserver(
   observerFunc(currentModels, getReaderConfig, getKnownCards, window.parent.onScreenModels),

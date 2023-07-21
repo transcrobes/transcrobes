@@ -1,6 +1,6 @@
 import { Box } from "@mui/material";
 import { ReactElement } from "react";
-import { CARD_TYPES, getCardType } from "../database/Schema";
+import { CARD_TYPES, getCardType } from "../workers/rxdb/Schema";
 import { CardType, DefinitionType, PosSentences } from "../lib/types";
 import GraphAnswer from "./GraphAnswer";
 import MeaningAnswer from "./MeaningAnswer";
@@ -14,7 +14,7 @@ interface AnswerProps {
   showSynonyms: boolean;
   showRecents: boolean;
   translationProviderOrder: Record<string, number>;
-  onCardFrontUpdate: (card: CardType) => void;
+  onCardFrontUpdate: (cardId: string, frontString: string) => void;
 }
 
 export default function Answer({

@@ -19,6 +19,7 @@ import {
   AnyTreebankPosType,
   BOOK_READER_TYPE,
   DEFINITION_LOADING,
+  DefinitionState,
   DefinitionType,
   EXTENSION_READER_TYPE,
   FontColourType,
@@ -29,7 +30,7 @@ import {
   MultipleChildren,
   ReaderState,
   SentenceType,
-  SerialisableDayCardWords,
+  KnownWords,
   SIMPLE_READER_TYPE,
   TokenType,
   UNSURE_ATTRIBUTE,
@@ -81,7 +82,7 @@ function sameCoordinates(element: Element, current: DOMRectangle) {
 
 function doesNeedGloss(
   lexeme: string,
-  knownCards: Partial<SerialisableDayCardWords>,
+  knownWords: Partial<KnownWords>,
   readerConfig: ReaderState,
   pos?: AnyTreebankPosType,
   word?: string,
@@ -90,10 +91,10 @@ function doesNeedGloss(
   if (!pos || readerConfig.glossing <= USER_STATS_MODE.NO_GLOSS) return false;
 
   const nonOptimisticKnows =
-    lexeme in (knownCards.knownCardWordGraphs || {}) || (word || "") in (knownCards.knownCardWordGraphs || {});
+    lexeme in (knownWords.knownWordGraphs || {}) || (word || "") in (knownWords.knownWordGraphs || {});
   const optimisticKnows =
-    lexeme.toLowerCase() in (knownCards.knownCardWordGraphs || {}) ||
-    (word || "").toLowerCase() in (knownCards.knownCardWordGraphs || {}) ||
+    lexeme.toLowerCase() in (knownWords.knownWordGraphs || {}) ||
+    (word || "").toLowerCase() in (knownWords.knownWordGraphs || {}) ||
     nonOptimisticKnows;
 
   return !optimisticKnows && (GLOSS_NUMBER_NOUNS || !isNumberToken(pos));
@@ -157,16 +158,23 @@ class Entry extends Component<StatedEntryProps, LocalEntryState> {
 
   async updates(readerConfig: ReaderState): Promise<void> {
     const rootState: RootState = this.context.store.getState();
-    const knownCards = rootState.knownCards;
+    const knownWords = rootState.knownWords;
     const definitions = rootState.definitions;
     const tokenDetails = rootState.ui.tokenDetails;
-    const { fromLang, toLang } = rootState.userData.user;
+    const {
+      baseUrl,
+      user: { fromLang, toLang },
+    } = rootState.userData;
+
     const token = this.props.token;
     let localGloss = "";
     let needsGloss = false;
     let unsure = false;
 
-    let def = token.id ? definitions[token.id] : { ...(await getWord(token.l)), glossToggled: false };
+    // FIXME: horrible!!!
+    let def = token.id
+      ? definitions[token.id]
+      : ({ ...(await getWord(token.l)), glossToggled: false } as DefinitionState);
     if (def) {
       let betterGuess: DefinitionType = def;
       let cleanGraph = affixCleaned(def.graph);
@@ -177,19 +185,19 @@ class Entry extends Component<StatedEntryProps, LocalEntryState> {
       }
 
       if (cleanGraph !== def.graph) {
-        betterGuess = await guessBetter(def, fromLang, knownCards?.knownCardWordGraphs || {});
+        betterGuess = await guessBetter(def, fromLang, knownWords?.knownWordGraphs || {});
       }
       if (betterGuess.graph === def.graph) {
-        needsGloss = doesNeedGloss(token.l, knownCards, readerConfig, token.pos, token.w);
+        needsGloss = doesNeedGloss(token.l, knownWords, readerConfig, token.pos, token.w);
         if ((needsGloss && (!def || !def.glossToggled)) || (!needsGloss && def && def.glossToggled)) {
-          localGloss = await getNormalGloss(token, readerConfig, knownCards, definitions, fromLang, toLang);
+          localGloss = await getNormalGloss(token, readerConfig, knownWords, definitions, fromLang, toLang);
         } else {
           localGloss = "";
         }
         if (localGloss && this.props.token.id) {
           if (isUnsure(def)) {
             unsure = true;
-            betterGuess = await guessBetter(def, fromLang, knownCards?.knownCardWordGraphs || {});
+            betterGuess = await guessBetter(def, fromLang, knownWords?.knownWordGraphs || {});
           }
         }
       }
@@ -200,10 +208,10 @@ class Entry extends Component<StatedEntryProps, LocalEntryState> {
           this.context.store.dispatch(addDefinitions([{ ...betterGuess, glossToggled: false }]));
         }
         // fake POS - we don't know what the real one might be...
-        needsGloss = doesNeedGloss(betterGuess.graph, knownCards, readerConfig, "NN");
+        needsGloss = doesNeedGloss(betterGuess.graph, knownWords, readerConfig, "NN");
         if (needsGloss) {
           const betterToken: TokenType = { l: betterGuess.graph, pos: "NN", w: betterGuess.graph, id: betterGuess.id };
-          localGloss = await getNormalGloss(betterToken, readerConfig, knownCards, definitions, fromLang, toLang);
+          localGloss = await getNormalGloss(betterToken, readerConfig, knownWords, definitions, fromLang, toLang);
         } else {
           localGloss = "";
         }
@@ -218,7 +226,7 @@ class Entry extends Component<StatedEntryProps, LocalEntryState> {
       this.context.store.dispatch(setTokenDetails({ ...tokenDetails, gloss: !!localGloss }));
     }
     if (localGloss.startsWith(DEFINITION_LOADING)) {
-      syncDefs();
+      syncDefs(baseUrl);
       window.setTimeout(this.lookForDefinitionUpdate, RETRY_DEFINITION_MS, {
         readerConfig: readerConfig,
         attemptsRemaining: RETRY_DEFINITION_MAX_TRIES,
@@ -235,18 +243,21 @@ class Entry extends Component<StatedEntryProps, LocalEntryState> {
   }): void {
     const token = this.props.token;
     console.debug("Looking for definition update for", token.l);
+
     const {
-      knownCards,
+      knownWords,
       definitions,
       userData: {
+        baseUrl,
         user: { fromLang, toLang },
       },
     } = this.context.store.getState() as RootState;
+
     if (attemptsRemaining < 0) {
       this.setState({ gloss: " [Error loading gloss]" });
       return;
     }
-    let promise: Promise<DefinitionType> | null;
+    let promise: Promise<DefinitionState | null> | null;
     if (token.id && token.id.toString() in definitions) {
       promise = Promise.resolve(definitions[token.id.toString()]);
     } else {
@@ -254,14 +265,14 @@ class Entry extends Component<StatedEntryProps, LocalEntryState> {
     }
     promise.then((def) => {
       if (!def) {
-        syncDefs();
+        syncDefs(baseUrl);
         window.setTimeout(this.lookForDefinitionUpdate, RETRY_DEFINITION_MS, {
           glossing: (readerConfig || this.props.readerConfig).glossing,
           attemptsRemaining: attemptsRemaining - 1,
         });
       } else {
         this.context.store.dispatch(addDefinitions([{ ...def, glossToggled: false }]));
-        getNormalGloss(token, readerConfig || this.props.readerConfig, knownCards, definitions, fromLang, toLang).then(
+        getNormalGloss(token, readerConfig || this.props.readerConfig, knownWords, definitions, fromLang, toLang).then(
           (gloss) => {
             // FIXME: how on earth does this happen??? Somehow this is getting called twice (even in prod mode)
             // and the second time the definition is undefined. I don't know why.
@@ -440,7 +451,7 @@ function mapStateToProps(state: RootState, props: EntryProps) {
   }
   return {
     glossToggled: props.token.id ? state.definitions[props.token.id]?.glossToggled : undefined,
-    isKnown: props.token.l in (state.knownCards.knownCardWordGraphs || {}),
+    isKnown: props.token.l in (state.knownWords.knownWordGraphs || {}),
     glossing: readerConfig.glossing,
     mouseover: readerConfig.mouseover,
     translationProviderOrder: readerConfig.translationProviderOrder,

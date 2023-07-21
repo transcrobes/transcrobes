@@ -16,7 +16,7 @@ interface MeaningProps {
   card: CardType;
   translationProviderOrder: Record<string, number>;
   showAnswer?: boolean;
-  onCardFrontUpdate: (card: CardType) => void;
+  onCardFrontUpdate: (cardId: string, frontString: string) => void;
 }
 
 export default function Meaning({
@@ -161,7 +161,7 @@ export default function Meaning({
             definition={definition}
             card={card}
             defaultProvider={defaultProvider}
-            onUpdate={(card: CardType) => onCardFrontUpdate(card)}
+            onUpdate={onCardFrontUpdate}
           />
         </Popover>
       </div>

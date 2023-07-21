@@ -4,24 +4,12 @@ import "survey-react/survey.css";
 import { Show, useRecordContext } from "react-admin";
 import { useTheme } from "@mui/material";
 import { Survey } from "../lib/types";
+import { platformHelper } from "../app/createStore";
 
-const DATA_SOURCE = "surveyshow.tsx";
-
-function saveData(surveyData: string, surveyId: string) {
-  // FIXME: how do I get rid of window.componentsConfig here?
-  window.componentsConfig.proxy.sendMessage(
-    {
-      source: DATA_SOURCE,
-      type: "saveSurvey",
-      value: { dataValue: JSON.stringify(surveyData), surveyId: surveyId },
-    },
-    (response) => {
-      console.debug(`got response back from saveSurvey SurveyShow.tsx:`, response);
-      return "success";
-    },
-  );
-
-  return true;
+async function saveData(surveyData: string, surveyId: string) {
+  const response = await platformHelper.saveSurvey({ dataValue: JSON.stringify(surveyData), surveyId: surveyId });
+  console.debug(`got response back from saveSurvey SurveyShow.tsx:`, response);
+  return "success";
 }
 
 function TheSurvey(): ReactElement {

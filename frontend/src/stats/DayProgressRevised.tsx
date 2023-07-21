@@ -9,6 +9,7 @@ import useWindowDimensions from "../hooks/WindowDimensions";
 import { binnedDayData } from "../lib/funclib";
 import { dateRange } from "../lib/libMethods";
 import { DayModelStatsType } from "../lib/types";
+import { platformHelper } from "../app/createStore";
 
 dayjs.extend(customParseFormat);
 
@@ -44,12 +45,7 @@ export function DayProgressRevised({ nbPeriods = 8, periodType = 2, studentId }:
 
   useEffect(() => {
     (async function () {
-      if (!window.componentsConfig.proxy.loaded) return;
-      const locStats = await window.componentsConfig.proxy.sendMessagePromise<DayModelStatsType[]>({
-        source: DATA_SOURCE,
-        type: "getDayStats",
-        value: { studentId },
-      });
+      const locStats = await platformHelper.getDayStats({ studentId });
       setStats(locStats);
       if (!locStats || locStats.length < 1) return;
 
@@ -106,7 +102,7 @@ export function DayProgressRevised({ nbPeriods = 8, periodType = 2, studentId }:
       }
       setData(locData);
     })();
-  }, [window.componentsConfig.proxy.loaded, studentId]);
+  }, [studentId]);
 
   const theme = useTheme();
   const dims = useWindowDimensions();

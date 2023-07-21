@@ -1,16 +1,15 @@
 import { Identifier, RaRecord, ThemeType, UserIdentity } from "react-admin";
 import { HslColor } from "react-colorful";
 
-import { CardDocument, CharacterDocument, DefinitionDocument, WordModelStatsDocument } from "../database/Schema";
-import type { AbstractWorkerProxy, ProgressCallbackMessage } from "./proxies";
 import type Polyglot from "node-polyglot";
 import { Locator } from "../r2d2bc";
+import type { DataManager, GenericMessage } from "../data/types";
 
 export const SUBS_DATA_SUFFIX = ".data.json";
 
 export const ONE_YEAR_IN_SECS = 365 * 24 * 60 * 60; // default is only a week
 export const WEBPUB_CACHE_NAME = "webpub-cache";
-export const PRECACHE_PUBLICATIONS = "PRECACHE_PUBLICATIONS";
+export const PRECACHE_PUBLICATIONS = "precachePublications";
 export const IS_DEV = import.meta.env.DEV;
 export const IS_EXT = import.meta.env.PLATFORM === "extension";
 export const DOCS_DOMAIN = import.meta.env.VITE_DOCS_DOMAIN || "tc.tck:1313";
@@ -453,6 +452,13 @@ export const ZHHANS_EN_DICT_PROVIDERS = {
 // export type EnZHHansDictProvider = keyof typeof EN_ZHHANS_DICT_PROVIDERS;
 // export type DictProvider = ZHHansEnDictProvider | EnZHHansDictProvider;
 
+export type DBParameters = {
+  url: URL;
+  username: string;
+};
+
+export const TCDB_FILENAME = "tcdb";
+
 export const GLOSS_NUMBER_NOUNS = false;
 export type GlossPosition = "row" | "column-reverse" | "column" | "row-reverse";
 
@@ -810,7 +816,7 @@ export type ContentParams = {
 };
 
 export type ContentProps = {
-  proxy: AbstractWorkerProxy;
+  proxy: DataManager;
 };
 
 function capitalise(str: string) {
@@ -912,7 +918,6 @@ export interface Import extends CommonRecord {
   processType: number;
   processing: number;
   importFile: string;
-  analysis?: string;
   shared: boolean;
   sourceUrl?: string;
   extraData?: string;
@@ -938,8 +943,10 @@ export interface UserDictionary extends CommonRecord {
 }
 
 export type PracticeDetailsType = {
-  wordInfo: DefinitionType;
+  wordId: string;
   grade: number;
+  cardType?: number;
+  badReviewWaitSecs?: number;
 };
 
 export type ContentConfigType = {
@@ -953,17 +960,27 @@ export interface SuperMemoType {
   efactor: number;
 }
 
-export interface CardType extends SuperMemoType {
-  id: string;
+export interface CardBaseType {
   dueDate: number;
-  front?: string;
-  back?: string;
-  suspended: boolean;
-  known: boolean;
   firstRevisionDate: number;
   lastRevisionDate: number;
   firstSuccessDate: number;
   updatedAt: number;
+}
+
+export interface CardCacheType extends Partial<CardBaseType> {
+  cardType: number;
+  wordId: number;
+  suspended: 0 | 1;
+  known: 0 | 1;
+}
+
+export interface CardType extends SuperMemoType, CardBaseType {
+  id: string;
+  front?: string;
+  back?: string;
+  suspended: boolean;
+  known: boolean;
 }
 
 export type ExportDetails = {
@@ -989,6 +1006,7 @@ export const DefaultExportDetails: ExportDetails = {
   nbSeen: 0,
   nbSeenSinceLastCheck: 0,
 };
+
 export const EMPTY_CARD: CardType = {
   id: "",
   interval: 0,
@@ -1027,11 +1045,20 @@ export type ProviderTranslationType = {
 
 export type DefinitionState = DefinitionType & {
   glossToggled: boolean;
+  ignore?: boolean;
+  firstSuccessDate?: number;
 };
 
 export interface DefinitionsState {
   [key: string]: DefinitionState;
 }
+
+export type RawUserDefinitionType = {
+  id: string;
+  dictionaryId: string;
+  translations: string;
+  sounds?: string;
+};
 
 export type UserDefinitionType = {
   id: string; // this is the graph, we use this so it is compatible with react-admin infra
@@ -1044,8 +1071,25 @@ export type FrequencyType = {
   wcpm: string;
   wcdp: string;
   pos: string;
-  pos_freq: string;
+  posFreq: string;
 };
+
+export type RawDefinitionType = {
+  id: string;
+  graph: string;
+  updatedAt: number;
+  sound: string;
+  synonyms: string;
+  providerTranslations: string;
+  wcpm: number;
+  wcdp: number;
+  pos: string;
+  posFreq: string;
+  hsk: string;
+  fallbackOnly: boolean;
+};
+
+export type RichDefinitionType = DefinitionState;
 
 export type DefinitionType = {
   id: string;
@@ -1056,14 +1100,27 @@ export type DefinitionType = {
   providerTranslations: ProviderTranslationType[];
   frequency: FrequencyType;
   hsk: { levels: number[] };
+  fallbackOnly: boolean;
 };
 
 export type WordlistType = {
   id: string;
   name: string;
-  default: boolean;
-  wordIds: string[];
+  is_default: boolean;
   updatedAt: number;
+};
+
+export type ShortWord = { id: string; sounds: string[]; isDict: boolean };
+export type ShortChar = { id: string; radical: string };
+
+export type RawCharacterType = {
+  id: string;
+  updatedAt: number;
+  pinyin: string;
+  decomposition: string;
+  radical: string;
+  etymology?: string;
+  structure: string;
 };
 
 export type HanziWriterStructure = {
@@ -1071,9 +1128,6 @@ export type HanziWriterStructure = {
   radStrokes: number[];
   strokes: string[];
 };
-
-export type ShortWord = { id: string; sounds: string[]; isDict: boolean };
-export type ShortChar = { id: string; radical: string };
 
 export type CharacterType = {
   id: string;
@@ -1090,21 +1144,28 @@ export type CharacterType = {
   structure: HanziWriterStructure;
 };
 
-// FIXME: these types should never be seen outside data.ts...
-export type WordDetailsRxType = {
-  word: DefinitionDocument | null;
-  cards: Map<string, CardDocument>;
-  characters: Map<string, CharacterDocument>;
-  recentPosSentences: PosSentences | null;
-  wordModelStats: WordModelStatsDocument | null;
+export type ProgressCallbackMessage = {
+  source: string;
+  isFinished: boolean;
+  message: PolyglotMessage;
 };
 
-export type WordDetailsType = {
+export type WordDetailsTypeOrig = {
   word: DefinitionType | null;
   cards: CardType[];
   characters: (CharacterType | null)[];
   wordModelStats: WordModelStatsType | null;
   recentPosSentences: PosSentences | null;
+};
+
+export type WordDetailsType = {
+  wordlists: SortableListElementType[];
+  word: DefinitionType | null;
+  cards: CardCacheType[];
+  characters: (CharacterType | null)[];
+  wordModelStats: WordModelStatsType | null;
+  recentPosSentences: PosSentences | null;
+  userDefinitions: [string, UserDefinitionType][] | null;
 };
 
 export type WordListNamesType = {
@@ -1146,7 +1207,7 @@ export type RepetrobesActivityConfigType = {
   newCardOrdering: WordOrdering;
   dayStartsHour: number;
   systemWordSelection: boolean;
-  wordLists?: SelectableListElementType[];
+  wordLists: SelectableListElementType[];
   todayStarts: number;
   onlySelectedWordListRevisions: boolean;
   showProgress: boolean;
@@ -1155,7 +1216,7 @@ export type RepetrobesActivityConfigType = {
   showNormalFont: boolean;
   showL2LengthHint: boolean;
   filterUnsure: boolean;
-  activeCardTypes?: SelectableListElementType[];
+  activeCardTypes: SelectableListElementType[];
   translationProviderOrder?: Record<string, number>;
 };
 
@@ -1223,17 +1284,12 @@ export type StudentWordModelStatsType = WordModelStatsType & {
   studentId: string;
 };
 
-export type EventData = {
-  source: string;
-  type: string;
-  value?: any;
-};
 export type PolyglotMessage = {
   phrase: string;
   options?: Polyglot.InterpolationOptions;
 };
 
-export type ExtendedEventData = EventData & {
+export type ExtendedEventData = GenericMessage & {
   progress?: (message: ProgressCallbackMessage) => string;
 };
 
@@ -1249,11 +1305,15 @@ export type SerialisableStringSet = {
   [key: string]: null;
 };
 
-export type SerialisableDayCardWords = {
-  knownCardWordGraphs: SerialisableStringSet;
-  knownCardWordChars?: SerialisableStringSet;
-  allCardWordGraphs: SerialisableStringSet;
-  knownWordIdsCounter: PythonCounter;
+export type StringCounter = PythonCounter;
+
+export type KnownWords = {
+  knownWordGraphs: SerialisableStringSet;
+};
+
+export type CacheRefresh = {
+  name: string;
+  values?: any;
 };
 
 export type AnalysisAccuracy = {
@@ -1299,7 +1359,7 @@ export interface ContentStats {
 export type GradesType = {
   id: string;
   content: string;
-  icon: JSX.Element;
+  icon?: JSX.Element;
 };
 
 export type TokenType = {
@@ -1433,6 +1493,13 @@ export type ImportAnalysis = {
   grammar_rules?: { [key: string]: number };
 };
 
+export type ImportWordType = {
+  wordId: number;
+  importId: string;
+  nbOccurrences: number;
+  graph: string;
+};
+
 export type FirstSuccess = { firstSuccess: number; nbOccurrences: number };
 export type DayStat = { day: number; nbOccurrences: number };
 
@@ -1468,60 +1535,34 @@ export type GraderConfig = {
   fromLang: InputLanguage;
 };
 
-export type RawVocabReview = {
-  id: string;
-  graph: string;
-  sound: string[];
-  meaning: string;
-  clicks: number;
-  lookedUp: boolean;
-};
-
 export type VocabReview = {
   id: string;
   graph: string;
   sound: string[];
-  meaning: string;
+  providerTranslations: ProviderTranslationType[];
   clicks: number;
   lookedUp: boolean;
 };
 
-export type DailyReviewables = {
-  allReviewableDefinitions: Map<string, DefinitionType>;
-  potentialCardsMap: Map<string, Set<string>>;
-  existingCards: Map<string, CardType>;
-  allPotentialCharacters: Map<string, CharacterType>;
-  recentSentences: Map<string, RecentSentencesStoredType>;
+export type CurrentCardFullInfo = {
+  card: CardType;
+  definition: DefinitionType;
+  characters?: (CharacterType | null)[];
+  recentSentences?: RecentSentencesType;
 };
 
-export type ReviewablesInfoType = DailyReviewables & {
-  definition: DefinitionType | null;
-  currentCard: CardType | null;
-  characters: CharacterType[] | null;
-  newToday: number;
-  completedNewToday: number;
-  availableNewToday: number;
-  revisionsToday: number;
-  completedRevisionsToday: number;
-  possibleRevisionsToday: number;
+export type CurrentCardInfo = {
+  card: CardCacheType;
+  definition: DefinitionType;
+  characters?: (CharacterType | null)[];
+  recentSentences?: RecentSentencesType;
 };
 
-export type ReviewInfosType = {
-  definition: DefinitionType | null;
-  currentCard: CardType | null;
-  characters: CharacterType[] | null;
-  newToday: number;
-  completedNewToday: number;
-  availableNewToday: number;
-  revisionsToday: number;
-  completedRevisionsToday: number;
-  possibleRevisionsToday: number;
-  curNewWordIndex: number;
-  todaysWordIds: Set<string>;
-  existingWords: Map<string, DefinitionType>;
-  recentSentences: Map<string, RecentSentencesStoredType>;
-  existingCards: Map<string, CardType>;
-  allNonReviewedWordsMap: Map<string, DefinitionType>;
-  potentialWords: DefinitionType[];
-  allPotentialCharacters: Map<string, CharacterType>;
+export type SrsStatusData = {
+  nbNewDone: number;
+  nbNewToRepeat: number;
+  nbAvailableNew: number;
+  nbRevisionsDone: number;
+  nbRevisionsToRepeat: number;
+  nbAvailableRevisions: number;
 };

@@ -51,7 +51,6 @@ export default function VideoPlayerScreen({ proxy }: ContentProps): ReactElement
   }
 
   useEffect(() => {
-    if (!proxy.loaded) return;
     (async () => {
       const def = (await getRawState(proxy, VIDEO_READER_TYPE)) || {};
       const defConfig = {
@@ -67,7 +66,7 @@ export default function VideoPlayerScreen({ proxy }: ContentProps): ReactElement
       const uniqueIds = missingWordIdsFromModels(currentModels, definitions);
       ensureDefinitionsLoaded(proxy, [...uniqueIds], store);
     })();
-  }, [proxy.loaded]);
+  }, []);
 
   const helpUrl = `//${DOCS_DOMAIN}/page/software/learn/moocrobes/`;
   const vpHandle = useRef<VideoPlayerHandle>(null);

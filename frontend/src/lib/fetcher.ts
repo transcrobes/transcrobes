@@ -3,11 +3,14 @@ import { AdminStore, store } from "../app/createStore";
 import { throttledRefreshToken } from "../features/user/userSlice";
 import { DEFAULT_RETRIES } from "./types";
 
+export type OutputType = "json" | "text" | "blob" | "arrayBuffer" | "formData";
+
 export class Fetcher {
   #fetch;
   store: AdminStore;
   retries: number;
 
+  // constructor(store: AdminStore, retries = DEFAULT_RETRIES) {
   constructor(store: AdminStore, retries = DEFAULT_RETRIES) {
     this.fetchPlus = this.fetchPlus.bind(this);
     this.retries = retries;
@@ -45,17 +48,18 @@ export class Fetcher {
     body?: BodyInit,
     retries?: number,
     forcePost = false,
-    expectJson = true,
+    fileType: OutputType = "json",
   ): Promise<T> {
-    const fetched = await this.fetchPlusResponse(url, body, retries, forcePost, expectJson);
-    return await (expectJson ? fetched.json() : fetched.text());
+    const fetched = await this.fetchPlusResponse(url, body, retries, forcePost, fileType);
+    if (!fetched.ok) throw new Error("Fetch failed: " + fetched.statusText);
+    return await fetched[fileType]();
   }
   public async fetchPlusResponse(
     url: string | URL,
     body?: BodyInit,
     retries?: number,
     forcePost = false,
-    expectJson = true,
+    fileType: OutputType = "json",
   ): Promise<Response> {
     const lurl = typeof url === "string" ? url : url.href;
     // TODO: properly determine whether the retries here actually works...
@@ -68,8 +72,10 @@ export class Fetcher {
     opts.headers = {
       Authorization: "Bearer " + this.store.getState().userData.user.accessToken,
     };
-    if (expectJson) {
+    if (fileType === "json") {
       opts.headers["Accept"] = "application/json";
+    } else if (fileType === "arrayBuffer" || fileType === "blob") {
+      opts.headers["Accept"] = "application/octet-stream";
     }
     if (!(body instanceof FormData)) {
       opts.headers["Content-Type"] = "application/json";

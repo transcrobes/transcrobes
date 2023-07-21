@@ -22,6 +22,7 @@ services:
       - .env
     environment:
       - PGDATA=/var/lib/postgresql/data/pgdata
+    command: postgres -c max_stack_depth=6MB
   statsdb:
     platform: linux/amd64
     image: postgres:15
@@ -35,6 +36,7 @@ services:
       - POSTGRES_PASSWORD=${STATS_POSTGRES_PASSWORD?Variable not set}
       - POSTGRES_DB=${STATS_POSTGRES_DB?Variable not set}
       - POSTGRES_PORT=${STATS_POSTGRES_PORT?Variable not set}
+    command: postgres -c max_stack_depth=6MB
 
   corenlpzh:
     platform: linux/amd64
@@ -50,11 +52,10 @@ services:
 
   kafka:
     platform: linux/amd64
-    image: docker.io/bitnami/kafka:3.4
+    image: docker.io/bitnami/kafka:3.5.1-debian-11-r18
     volumes:
       - "app-kafka_data:/bitnami"
     environment:
-      - KAFKA_ENABLE_KRAFT=yes
       - KAFKA_BROKER_ID=1
       - ALLOW_PLAINTEXT_LISTENER=yes
       - KAFKA_CFG_NODE_ID=1

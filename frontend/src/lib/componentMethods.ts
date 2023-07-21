@@ -1,7 +1,9 @@
 import _ from "lodash";
+import { platformHelper } from "../app/createStore";
+import { DataManager } from "../data/types";
+import type { BackgroundWorkerManager } from "../extension/backgroundfn";
 import { soundWithSeparators, UUID } from "./funclib";
 import { affixCleaned, bestGuess, cleanedSound, filterKnown, isFakeL1, toSimplePos } from "./libMethods";
-import { AbstractWorkerProxy, platformHelper } from "./proxies";
 import {
   ACTIVITY_DEBOUNCE,
   ActivitySource,
@@ -14,7 +16,7 @@ import {
   DefinitionType,
   EventCoordinates,
   InputLanguage,
-  NetflixDetails,
+  KnownWords,
   PopupPosition,
   ReaderState,
   RecentSentencesType,
@@ -22,7 +24,6 @@ import {
   REMOVABLE_NOUN_SUFFIXES,
   REMOVABLE_VERB_COMPLEMENTS,
   SentenceType,
-  SerialisableDayCardWords,
   SerialisableStringSet,
   StreamDetails,
   STREAMER_DETAILS,
@@ -37,7 +38,7 @@ import {
 const DATA_SOURCE = "componentMethods.ts";
 const NUMBER_POS = new Set<AnyTreebankPosType>(["OD", "NT", "CD"]);
 
-export async function getNetflixData(proxy: AbstractWorkerProxy, fromLang: InputLanguage, url: string) {
+export async function getNetflixData(proxy: BackgroundWorkerManager, fromLang: InputLanguage, url: string) {
   const urlMatch = url.match(STREAMER_DETAILS.netflix.ui);
   const streamerId = parseInt(urlMatch?.[2] || "");
   const canonicalUrl = "https://" + urlMatch?.[1]!;
@@ -51,10 +52,7 @@ export async function getNetflixData(proxy: AbstractWorkerProxy, fromLang: Input
   }
 
   const netflix = await dataResp.json();
-  const { data: nfData } = await proxy.sendMessagePromise<{ data: NetflixDetails }>({
-    source: DATA_SOURCE,
-    type: "getNetflixData",
-  });
+  const { data: nfData } = await proxy.getNetflixData();
   if (!nfData.subs?.[streamerId]) {
     console.warn("Bad subsUrl", nfData);
     return { error: "screens.extension.streamer.no_available_subs" };
@@ -121,19 +119,12 @@ export async function getNetflixData(proxy: AbstractWorkerProxy, fromLang: Input
   return { data: streamDets };
 }
 
-export async function getWord(lemma: string): Promise<DefinitionType> {
-  return platformHelper.sendMessagePromise<DefinitionType>({
-    source: DATA_SOURCE,
-    type: "getWordFromDBs",
-    value: lemma,
-  });
+export async function getWord(lemma: string): Promise<DefinitionState | null> {
+  return await platformHelper.getWordFromDBs(lemma);
 }
 
-export async function syncDefs(): Promise<void> {
-  platformHelper.sendMessagePromise({
-    source: DATA_SOURCE,
-    type: "forceDefinitionsSync",
-  });
+export async function syncDefs(baseUrl: string): Promise<void> {
+  platformHelper.forceDefinitionsSync(baseUrl);
 }
 
 export function getStreamerVideoElement(document: Document, streamer: SupportedStreamer) {
@@ -153,9 +144,9 @@ export function getStreamerVideoElement(document: Document, streamer: SupportedS
   return undefined;
 }
 
-export async function getDefinitions(token: TokenType, definitions: DefinitionsState) {
+export async function getDefinitionsForToken(token: TokenType, definitions: DefinitionsState) {
   let defIds: string[] = [];
-  let defs: DefinitionType[] = [];
+  let defs: DefinitionState[] = [];
   if (token.id) {
     defIds.push(token.id);
   }
@@ -194,7 +185,7 @@ export async function getL1(
     return defaultL1;
   }
   let gloss = defaultL1;
-  const defs = await getDefinitions(token, definitions);
+  const defs = (await getDefinitionsForToken(token, definitions)).filter((x) => x) as DefinitionState[];
   if (defs[0] && defs[0].providerTranslations) {
     gloss = bestGuess(token, defs, fromLang, toLang, readerConfig);
   } else {
@@ -213,14 +204,15 @@ export async function getSound(
   if (token.id && definitions[token.id]) {
     return cleanedSound(definitions[token.id], fromLang);
   } else {
-    return cleanedSound(await getWord(token.l), fromLang);
+    const w = await getWord(token.l);
+    return w ? cleanedSound(w, fromLang) : [];
   }
 }
 
 export async function getNormalGloss(
   token: TokenType,
   readerConfig: ReaderState,
-  uCardWords: Partial<SerialisableDayCardWords>,
+  uCardWords: Partial<KnownWords>,
   definitions: DefinitionsState,
   fromLang: InputLanguage,
   toLang: SystemLanguage,
@@ -245,11 +237,7 @@ export async function getNormalGloss(
 }
 
 export async function getTranslation(input: SentenceType): Promise<string> {
-  return await platformHelper.sendMessagePromise<string>({
-    source: DATA_SOURCE,
-    type: "sentenceTranslation",
-    value: originalSentenceFromTokens(input.t),
-  });
+  return await platformHelper.sentenceTranslation(originalSentenceFromTokens(input.t));
 }
 
 export async function getRecentSentences(
@@ -257,13 +245,7 @@ export async function getRecentSentences(
   definition: DefinitionType,
 ): Promise<RecentSentencesType | null> {
   if (!token.pos || !token.id) return null;
-  const existingRSents = new Map<string, RecentSentencesType>(
-    await platformHelper.sendMessagePromise<Array<[string, RecentSentencesType]>>({
-      source: DATA_SOURCE,
-      type: "getRecentSentences",
-      value: [definition.id],
-    }),
-  );
+  const existingRSents = new Map<string, RecentSentencesType>(await platformHelper.getRecentSentences([definition.id]));
   const recents = existingRSents.get(definition.id);
   if (!recents) return null; // nothing found
   const posRecents = recents.posSentences[token.pos];
@@ -288,7 +270,7 @@ function originalSentenceFromTokens(tokens: TokenType[]): string {
 export async function getL2Simplified(
   token: TokenType,
   previousGloss: string,
-  uCardWords: Partial<SerialisableDayCardWords>,
+  uCardWords: Partial<KnownWords>,
   definitions: DefinitionsState,
   fromLang: InputLanguage,
   toLang: SystemLanguage,
@@ -300,18 +282,14 @@ export async function getL2Simplified(
     gloss = token.us[0];
   } else {
     // try and get a local user known synonym
-    const defs = await getDefinitions(token, definitions);
+    const defs = (await getDefinitionsForToken(token, definitions)).filter((x) => x) as DefinitionState[];
     if (!defs[0]) return DEFINITION_LOADING;
     // FIXME: should I just be using the first here? why? why not?
     const syns = defs[0].synonyms.filter((x) => toSimplePos(x.posTag, fromLang) === toSimplePos(token.pos!, fromLang));
 
     let innerGloss: string | undefined;
     if (syns && syns.length > 0) {
-      const userSynonyms = filterKnown(
-        uCardWords.knownWordIdsCounter || {},
-        uCardWords.knownCardWordGraphs || {},
-        syns[0].values,
-      );
+      const userSynonyms = filterKnown(uCardWords.knownWordGraphs || {}, syns[0].values);
       if (userSynonyms.length > 0) {
         innerGloss = userSynonyms[0];
       }
@@ -343,40 +321,32 @@ function getActivityUrl(url: string): string {
 }
 
 export async function submitActivity(
-  proxy: AbstractWorkerProxy,
+  proxy: DataManager,
   activityType: ActivityType,
   activitySource: ActivitySource,
   url: string,
   sessionId: string,
   getTimestamp: () => number,
 ) {
-  const timestamp = getTimestamp();
-  if (!timestamp) throw new Error("No timestamp");
-
-  const activity = {
-    id: UUID().toString(),
-    asessionId: sessionId,
-    activityType,
-    activitySource,
-    url: getActivityUrl(url),
-    timestamp,
-  } as UserActivityType;
-  await proxy.sendMessagePromise<boolean>({
-    source: activitySource,
-    type: "submitActivityEvent",
-    value: activity,
-  });
+  // FIXME: currently disabled
+  // const timestamp = getTimestamp();
+  // if (!timestamp) throw new Error("No timestamp");
+  // const activity = {
+  //   id: UUID().toString(),
+  //   asessionId: sessionId,
+  //   activityType,
+  //   activitySource,
+  //   url: getActivityUrl(url),
+  //   timestamp,
+  // } as UserActivityType;
+  // await proxy.submitActivityEvent(activity);
 }
 
-export function sessionActivityUpdate(proxy: AbstractWorkerProxy, sessionId: string) {
+export function sessionActivityUpdate(proxy: DataManager, sessionId: string) {
   function updateSessionActivity() {
-    proxy.sendMessagePromise<boolean>({
-      source: DATA_SOURCE,
-      type: "refreshSession",
-      value: {
-        id: sessionId,
-        timestamp: Date.now().toString(),
-      },
+    proxy.refreshSession({
+      id: sessionId,
+      timestamp: Date.now(),
     });
   }
   let events = ["load", "mousedown", "mousemove", "keydown", "scroll", "touchstart"];
@@ -444,7 +414,7 @@ export async function guessBetter(
     case "en":
       return defin;
     case "zh-Hans":
-      let newDefinition: DefinitionType | undefined;
+      let newDefinition: DefinitionType | null = null;
       let cleanGraph = affixCleaned(defin.graph);
       if (cleanGraph !== defin.graph) {
         newDefinition = await getWord(cleanGraph);

@@ -8,6 +8,7 @@ import {
   SimpleShowLayout,
   TextField,
   useGetOne,
+  useStore,
   useTranslate,
 } from "react-admin";
 import { useParams } from "react-router-dom";
@@ -20,29 +21,28 @@ import { CONTENT_TYPE, Content, DOCS_DOMAIN, ImportFirstSuccessStats, reverseEnu
 import ActionButton from "./ActionButton";
 import CacheSwitch from "./CacheSwitch";
 import { ContentGoalSelector } from "./ContentGoalSelector";
-
-const DATA_SOURCE = "ContentShow.tsx";
+import { platformHelper } from "../app/createStore";
 
 export default function ContentShow() {
   const { id = "" } = useParams();
   const { data: content, isLoading } = useGetOne<Content>("contents", { id });
   const [stats, setStats] = useState<ImportFirstSuccessStats | null>();
   const fromLang = useAppSelector((state) => state.userData.user.fromLang);
+  const [includeIgnored] = useStore("preferences.includeIgnored", false);
+  const [includeNonDict] = useStore("preferences.includeNonDict", false);
   const translate = useTranslate();
   useEffect(() => {
-    if (window.componentsConfig.proxy.loaded) {
-      (async function () {
-        if (isLoading || !content?.theImport) return;
-        const locStats: ImportFirstSuccessStats | null =
-          await window.componentsConfig.proxy.sendMessagePromise<ImportFirstSuccessStats | null>({
-            source: DATA_SOURCE,
-            type: "getFirstSuccessStatsForImport",
-            value: { importId: content.theImport, fromLang },
-          });
-        setStats(locStats);
-      })();
-    }
-  }, [content, window.componentsConfig.proxy.loaded]);
+    (async function () {
+      if (isLoading || !content?.theImport) return;
+      const locStats: ImportFirstSuccessStats | null = await platformHelper.getFirstSuccessStatsForImport({
+        importId: content.theImport,
+        fromLang,
+        includeIgnored,
+        includeNonDict,
+      });
+      setStats(locStats);
+    })();
+  }, [content]);
 
   return (
     <Box>

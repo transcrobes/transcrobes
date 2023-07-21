@@ -1,8 +1,6 @@
-import { DataProvider } from "react-admin";
-import { ServiceWorkerProxy } from "./proxies";
+import { WebDataManager } from "../data/types";
 
 export type ComponentsConfig = {
-  dataProvider: DataProvider;
-  proxy: ServiceWorkerProxy;
+  proxy: WebDataManager;
   url: URL;
 };

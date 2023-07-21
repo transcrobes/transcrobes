@@ -9,6 +9,7 @@ import useWindowDimensions from "../hooks/WindowDimensions";
 import { binnedDayData } from "../lib/funclib";
 import { dateRange } from "../lib/libMethods";
 import { DayModelStatsType } from "../lib/types";
+import { platformHelper } from "../app/createStore";
 
 dayjs.extend(customParseFormat);
 
@@ -44,15 +45,11 @@ export function DayProgressRead({ nbPeriods = 8, periodType = 2, studentId }: Pr
 
   useEffect(() => {
     (async function () {
-      if (!window.componentsConfig.proxy.loaded) return;
-      const locStats = await window.componentsConfig.proxy.sendMessagePromise<DayModelStatsType[]>({
-        source: DATA_SOURCE,
-        type: "getDayStats",
-        value: { studentId },
-      });
+      const locStats = await platformHelper.getDayStats({ studentId });
       setStats(locStats);
       if (!locStats || locStats.length < 1) return;
-      locStats.sort((a, b) => parseInt(a.id) - parseInt(b.id));
+      // already sorted by id
+      // locStats.sort();
       const t = { nbSeen: 0, nbChecked: 0 };
       for (const stat of locStats) {
         t.nbSeen += stat.nbSeen || 0;
@@ -68,9 +65,9 @@ export function DayProgressRead({ nbPeriods = 8, periodType = 2, studentId }: Pr
       const end = dayjs().add(1, "day");
       const start = Math.max(
         end.add(-nbPeriods, PERIODS[currentPeriod]).unix(),
-        dayjs(firstDay, "YYYYMMDD", true).unix(),
+        dayjs(firstDay.toString(), "YYYYMMDD", true).unix(),
       );
-
+      console.log("first and last", firstDay, end, start);
       let thresholds: number[] = [];
       while (thresholds.length < 3 && currentPeriod < PERIODS.length) {
         thresholds = dateRange(start, end.unix(), PERIODS[currentPeriod], true) as number[];
@@ -104,7 +101,7 @@ export function DayProgressRead({ nbPeriods = 8, periodType = 2, studentId }: Pr
       }
       setData(locData);
     })();
-  }, [window.componentsConfig.proxy.loaded, studentId]);
+  }, [studentId]);
 
   const theme = useTheme();
   const dims = useWindowDimensions();

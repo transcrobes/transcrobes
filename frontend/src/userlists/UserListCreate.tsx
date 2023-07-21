@@ -11,7 +11,7 @@ import {
   useTranslate,
 } from "react-admin";
 import { HelpCreateActions } from "../components/HelpCreateActions";
-import { GRADE, KNOWLEDGE_UNSET } from "../database/Schema";
+import { GRADE, KNOWLEDGE_UNSET } from "../workers/rxdb/Schema";
 import { DOCS_DOMAIN, PROCESSING, STATUS, USERLISTS_YT_VIDEO } from "../lib/types";
 import { regexfilterQuery } from "../ra-data-rxdb";
 

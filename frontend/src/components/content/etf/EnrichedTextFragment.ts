@@ -60,7 +60,7 @@ export function enrichETFElements(
     observerFunc(
       models,
       () => readerConfig,
-      () => store.getState().knownCards,
+      () => store.getState().knownWords,
     ),
     {
       threshold: [0, 1.0],

@@ -1,9 +1,11 @@
 import { Box, useTheme } from "@mui/system";
-import { ReactElement } from "react";
+import { ReactElement, useEffect, useState } from "react";
 import { useTranslate } from "react-admin";
 import { makeStyles } from "tss-react/mui";
-import { GradesType, VocabReview } from "../lib/types";
+import { GradesType, ProviderTranslationType, SystemLanguage, VocabReview } from "../lib/types";
 import { getColour } from "./funclib";
+import { toPosLabels } from "../lib/libMethods";
+import { useAppSelector } from "../app/hooks";
 
 const useStyles = makeStyles<void, "descriptionText">()((theme, _params, classes) => ({
   tipText: {
@@ -46,13 +48,28 @@ function RowItem({ item, gradeOrder }: { item: VocabReview; gradeOrder: GradesTy
 function MeaningTooltip({ item }: { item: VocabReview }) {
   const { classes } = useStyles();
   const translate = useTranslate();
+  const toLang = useAppSelector((state) => state.userData.user.toLang);
+  const [meaning, setMeaning] = useState("");
+
+  useEffect(() => {
+    for (const provTranslation of item.providerTranslations) {
+      if (provTranslation.posTranslations.length > 0) {
+        let mean = "";
+        for (const posTranslation of provTranslation.posTranslations) {
+          mean += `${translate(toPosLabels(posTranslation.posTag, toLang))}: ${posTranslation.values.join(", ")}; `;
+        }
+        setMeaning(mean);
+      }
+    }
+  }, []);
+
   return (
     <div className={classes.descriptionText}>
       <div>
         {translate("screens.listrobes.vocab_item_sound")} {item.sound.join(" ")}
       </div>
       <div>
-        {translate("screens.listrobes.vocab_item_meaning")} {item.meaning}
+        {translate("screens.listrobes.vocab_item_meaning")} {meaning}
       </div>
     </div>
   );

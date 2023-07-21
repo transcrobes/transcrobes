@@ -8,7 +8,7 @@ import QuestionDefinitionGraph, { CentredFlex, GraphSoundQuestionStyle } from ".
 interface SoundQuestionProps {
   card: CardType;
   definition: DefinitionType;
-  characters: CharacterType[];
+  characters: (CharacterType | null)[];
   showAnswer: boolean;
   word?: DefinitionType;
 }

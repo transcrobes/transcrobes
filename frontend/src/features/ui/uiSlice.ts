@@ -28,6 +28,8 @@ type UIState = {
   loading: boolean | undefined;
   loadingMessage: string | undefined;
   ignoreBeginner: boolean | undefined;
+  rxdbInited: boolean;
+  sqliteInited: boolean;
 };
 
 const initialState = {
@@ -36,6 +38,8 @@ const initialState = {
   loading: undefined,
   loadingMessage: undefined,
   ignoreBeginner: undefined,
+  rxdbInited: false,
+  sqliteInited: false,
 } as UIState;
 
 const uiSlice = createSlice({
@@ -57,8 +61,22 @@ const uiSlice = createSlice({
     setIgnoreBeginner(state, action: PayloadAction<boolean | undefined>) {
       state.ignoreBeginner = action.payload;
     },
+    setRxdbInited(state, action: PayloadAction<boolean>) {
+      state.rxdbInited = action.payload;
+    },
+    setSqliteInited(state, action: PayloadAction<boolean>) {
+      state.sqliteInited = action.payload;
+    },
   },
 });
 
-export const { setTokenDetails, setMouseover, setLoading, setLoadingMessage, setIgnoreBeginner } = uiSlice.actions;
+export const {
+  setTokenDetails,
+  setMouseover,
+  setLoading,
+  setLoadingMessage,
+  setIgnoreBeginner,
+  setRxdbInited,
+  setSqliteInited,
+} = uiSlice.actions;
 export default uiSlice.reducer;

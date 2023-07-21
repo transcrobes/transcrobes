@@ -3,26 +3,24 @@ import { useTheme } from "@mui/material/styles";
 import useEventListener from "@use-it/event-listener";
 import { ReactElement, forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
 import ReactPlayer from "react-player";
+import useStateRef from "react-usestateref";
 import { Cue } from "webvtt-parser";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
+import Loading from "../../components/Loading";
 import Mouseover from "../../components/content/td/Mouseover";
 import TokenDetails from "../../components/content/td/TokenDetails";
-import TranscrobesLayerPlayer from "../../extension/TranscrobesLayerPlayer";
 import { videoReaderActions } from "../../features/content/videoReaderSlice";
 import useWindowDimensions from "../../hooks/WindowDimensions";
 import useFullscreen from "../../hooks/useFullscreen";
 import { overrideTextTrackListeners } from "../../lib/eventlisteners";
+import { getStreamerId } from "../../lib/libMethods";
 import { DEFAULT_VIDEO_READER_CONFIG_STATE, KeyedModels } from "../../lib/types";
 import PrettoSlider, { ValueLabelComponent } from "./PrettoSlider";
 import SubtitleControl from "./SubtitleControl";
 import VideoBottomControls from "./VideoBottomControls";
 import VideoCentralControls from "./VideoCentralControls";
 import VideoHeaderControls from "./VideoHeaderControls";
-import useStateRef from "react-usestateref";
-import Loading from "../../components/Loading";
-import { getStreamerId } from "../../lib/libMethods";
 
-ReactPlayer.addCustomPlayer(TranscrobesLayerPlayer as any); // FIXME: the upstream typing is wrong here
 overrideTextTrackListeners();
 
 let count = 0;

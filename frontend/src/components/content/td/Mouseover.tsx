@@ -5,7 +5,6 @@ import { useAppSelector } from "../../../app/hooks";
 import { getL1, getL2Simplified, getSound, positionPopup } from "../../../lib/componentMethods";
 import { originalSentenceFromTokens, say, soundWithSeparators } from "../../../lib/funclib";
 import { complexPosToSimplePosLabels } from "../../../lib/libMethods";
-import { platformHelper } from "../../../lib/proxies";
 import {
   DEFINITION_LOADING,
   DefinitionsState,
@@ -14,16 +13,17 @@ import {
   POPOVER_MIN_LOOKED_AT_SOUND_DURATION,
   PopupPosition,
   ReaderState,
-  SerialisableDayCardWords,
+  KnownWords,
   SystemLanguage,
   TokenType,
 } from "../../../lib/types";
 import SoundBox from "../../SoundBox";
 import { Translate, useTranslate } from "react-admin";
+import { platformHelper } from "../../../app/createStore";
 
 export async function getPopoverTextNode(
   token: TokenType,
-  uCardWords: Partial<SerialisableDayCardWords>,
+  uCardWords: Partial<KnownWords>,
   definitions: DefinitionsState,
   fromLang: InputLanguage,
   systemLang: SystemLanguage,
@@ -66,7 +66,7 @@ export default function Mouseover({ readerConfig }: Props): ReactElement {
   } as PopupPosition;
   const [styles, setStyles] = useState<PopupPosition>(invisible);
   const translate = useTranslate();
-  const knownWords = useAppSelector((state) => state.knownCards);
+  const knownWords = useAppSelector((state) => state.knownWords);
   const definitions = useAppSelector((state) => state.definitions);
   const mouseover = useAppSelector((state) => state.ui.mouseover);
   const { fromLang, toLang } = useAppSelector((state) => state.userData.user);
@@ -93,18 +93,14 @@ export default function Mouseover({ readerConfig }: Props): ReactElement {
           setTextNode(node);
           setTimeoutId(
             window.setTimeout(() => {
-              platformHelper.sendMessage({
-                source: "Mouseover",
-                type: "submitUserEvents",
-                value: {
-                  type: "bc_word_lookup",
-                  data: {
-                    target_word: mouseover.token.l,
-                    target_sentence: originalSentenceFromTokens(mouseover.sentence.t),
-                  },
-                  userStatsMode: readerConfig.glossing,
-                  source: "Mouseover",
+              platformHelper.submitUserEvents({
+                type: "bc_word_lookup",
+                data: {
+                  target_word: mouseover.token.l,
+                  target_sentence: originalSentenceFromTokens(mouseover.sentence.t),
                 },
+                userStatsMode: readerConfig.glossing,
+                source: "Mouseover",
               });
               setTimeoutId(0);
             }, POPOVER_MIN_LOOKED_AT_EVENT_DURATION),

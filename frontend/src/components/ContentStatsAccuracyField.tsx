@@ -3,8 +3,7 @@ import { useRecordContext } from "react-admin";
 import { useAppSelector } from "../app/hooks";
 import { AnalysisAccuracy } from "../lib/types";
 import ContentAnalysisAccuracy from "./ContentAnalysisAccuracy";
-
-const DATA_SOURCE = "ContentStatsField";
+import { platformHelper } from "../app/createStore";
 
 export function ContentStatsAccuracyField({ label }: { label?: string }) {
   const record = useRecordContext();
@@ -18,18 +17,15 @@ export function ContentStatsAccuracyField({ label }: { label?: string }) {
   const [accuracy, setAccuracy] = useState<AnalysisAccuracy | null>();
 
   useEffect(() => {
-    if (window.componentsConfig.proxy.loaded) {
-      (async function () {
-        if (!importId) return;
-        const locStats: AnalysisAccuracy | null =
-          await window.componentsConfig.proxy.sendMessagePromise<AnalysisAccuracy | null>({
-            source: DATA_SOURCE,
-            type: "getContentAccuracyStatsForImport",
-            value: { importId, fromLang },
-          });
-        setAccuracy(locStats);
-      })();
-    }
-  }, [window.componentsConfig.proxy.loaded]);
-  return accuracy ? <ContentAnalysisAccuracy accuracy={accuracy} proxy={window.componentsConfig.proxy} /> : <></>;
+    (async function () {
+      if (!importId) return;
+      // @ts-ignore FIXME:
+      const locStats: AnalysisAccuracy | null = await platformHelper.getContentAccuracyStatsForImport({
+        importId,
+        fromLang,
+      });
+      setAccuracy(locStats);
+    });
+  }, []);
+  return accuracy ? <ContentAnalysisAccuracy accuracy={accuracy} proxy={platformHelper} /> : <></>;
 }

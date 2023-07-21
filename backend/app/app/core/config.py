@@ -7,7 +7,7 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    TRANSCROBES_LOG_LEVEL: str = "INFO"
+    TRANSCROBES_LOG_LEVEL: str = "DEBUG"
     TRANSCROBES_DATA_LOG_LEVEL: str = "ERROR"
     TRANSCROBES_ENRICH_LOG_LEVEL: str = "ERROR"
     TRANSCROBES_ENRICHERS_LOG_LEVEL: str = "ERROR"
@@ -178,6 +178,10 @@ class Settings(BaseSettings):
     FAUST_HOST: str = "faustworker"
     FAUST_PRODUCER_MAX_REQUEST_SIZE: int = 10000000  # default is 1MB, which is small for us
     CONSUMER_MAX_FETCH_SIZE: int = 10000000  # default is 1MB, which is small for us
+
+    @property
+    def DB_CACHE_DIR(self) -> str:
+        return os.path.join(self.MEDIA_ROOT, "db_cache")
 
     @property
     def DEFINITIONS_CACHE_DIR(self) -> str:

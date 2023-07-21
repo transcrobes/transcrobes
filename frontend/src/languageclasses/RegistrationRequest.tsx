@@ -4,6 +4,7 @@ import _ from "lodash";
 import { Button, useNotify, useRecordContext, useTranslate } from "react-admin";
 import { FormContainer, TextFieldElement, useForm } from "react-hook-form-mui";
 import { ClassRegistrationRequest } from "../lib/types";
+import { platformHelper } from "../app/createStore";
 
 export default function RegistrationRequest({ tipe }: { tipe: "student" | "teacher" }) {
   const translate = useTranslate();
@@ -23,11 +24,7 @@ export default function RegistrationRequest({ tipe }: { tipe: "student" | "teach
         is_teacher: tipe === "teacher",
       },
     ] as ClassRegistrationRequest[];
-    await window.componentsConfig.proxy.sendMessagePromise({
-      source: "RegistrationRequest",
-      type: "enqueueRegistrations",
-      value: { registrations },
-    });
+    await platformHelper.enqueueRegistrations({ registrations });
     formContext.reset();
     notify(`widgets.class_registration.request_sent`, { type: "info", messageArgs: { tipe: _.capitalize(tipe) } });
   }

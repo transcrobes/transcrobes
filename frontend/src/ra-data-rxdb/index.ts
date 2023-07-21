@@ -1,39 +1,35 @@
 import dayjs from "dayjs";
-import { CreateParams, DataProvider, GetListParams, GetManyParams, GetOneParams } from "ra-core";
-import { DeleteManyParams, DeleteParams, GetManyReferenceParams, UpdateManyParams, UpdateParams } from "react-admin";
+import {
+  CreateParams,
+  DataProvider,
+  DeleteManyParams,
+  DeleteParams,
+  GetListParams,
+  GetManyParams,
+  GetManyReferenceParams,
+  GetOneParams,
+  UpdateManyParams,
+  UpdateParams,
+} from "ra-core";
 import { v4 as uuidv4 } from "uuid";
-import { getDb } from "../database/Database";
-import { TranscrobesCollectionsKeys, TranscrobesDatabase } from "../database/Schema";
-import { getNamedFileStorage } from "../lib/data";
+import { TranscrobesDatabase } from "../workers/rxdb/Schema";
+import { getImportFileStorage } from "../workers/common-db";
 
-type DbDataProvider = DataProvider & { db: () => Promise<TranscrobesDatabase> };
+export interface RxDBDataProviderParams {
+  db: TranscrobesDatabase;
+}
 
 export function regexfilterQuery(field: string, searchText: string) {
   return { [field]: { $regex: `.*${searchText}.*` } };
 }
-
-export default function RxDBProvider(params: RxDBDataProviderParams): DbDataProvider {
-  const parameters = params;
-  let dbPromise: Promise<TranscrobesDatabase>;
-  function dbProm() {
-    if (!dbPromise) {
-      dbPromise = getDb(
-        params,
-        () => {
-          return;
-        },
-        undefined,
-        false,
-      );
-    }
-    return dbPromise;
-  }
+export default function RxDBProvider(params: RxDBDataProviderParams): DataProvider {
+  const db = params.db;
+  db.internalStore;
 
   return {
-    getList: async (resource: TranscrobesCollectionsKeys, params: GetListParams) => {
+    getList: async (resource: string, params: GetListParams) => {
       // pagination: { page: 1, perPage: 5 }, sort: { field: 'title', order: 'ASC' }, filter: { author_id: 12 },
       const finder: any = {};
-
       if (params.filter) {
         finder["selector"] = {};
         for (let i = 0; i < Object.keys(params.filter).length; i++) {
@@ -56,7 +52,6 @@ export default function RxDBProvider(params: RxDBDataProviderParams): DbDataProv
         finder["skip"] = params.pagination.perPage * (params.pagination.page - 1);
       }
 
-      const db = await dbProm();
       const res = [...(await db[resource].find(finder).exec())];
       let resTot = res.length;
       if (!params.meta || !params.meta?.filteredAsAll) {
@@ -65,8 +60,8 @@ export default function RxDBProvider(params: RxDBDataProviderParams): DbDataProv
       const resArr = res.map((val) => val.toJSON());
       return { data: resArr, total: resTot };
     },
-    getOne: async (resource: TranscrobesCollectionsKeys, params: GetOneParams) => {
-      const db = await dbProm();
+    getOne: async (resource: string, params: GetOneParams) => {
+      // const db = await dbProm();
       // @ts-ignore TS2590: Expression produces a union type that is too complex to represent.
       const res = await db[resource].findOne({ selector: { id: { $eq: params.id.toString() } } }).exec();
       const data = res?.toJSON();
@@ -84,14 +79,12 @@ export default function RxDBProvider(params: RxDBDataProviderParams): DbDataProv
       }
       return { data: data };
     },
-    getMany: async (resource: TranscrobesCollectionsKeys, params: GetManyParams) => {
-      const db = await dbProm();
+    getMany: async (resource: string, params: GetManyParams) => {
       const res = await db[resource].findByIds(params.ids.map((id) => id.toString())).exec();
       const resArr = [...res.values()].map((val) => val.toJSON());
       return { data: resArr };
     },
-    getManyReference: async (resource: TranscrobesCollectionsKeys, params: GetManyReferenceParams) => {
-      const db = await dbProm();
+    getManyReference: async (resource: string, params: GetManyReferenceParams) => {
       // const res = await db[resource].find().where(params.target).eq(params.id).exec();
       const res = await db[resource]
         .find({
@@ -101,8 +94,7 @@ export default function RxDBProvider(params: RxDBDataProviderParams): DbDataProv
       const resArr = [...res.values()].map((val) => val.toJSON());
       return { data: resArr, total: resArr.length };
     },
-    create: async (resource: TranscrobesCollectionsKeys, params: CreateParams) => {
-      const db = await dbProm();
+    create: async (resource: string, params: CreateParams) => {
       const insert = params.data;
       if (!("id" in insert) || !insert.id) {
         insert.id = uuidv4();
@@ -119,9 +111,10 @@ export default function RxDBProvider(params: RxDBDataProviderParams): DbDataProv
         const obj = insert[key];
         if (typeof obj === "object" && obj != null && "rawFile" in obj) {
           if (obj.rawFile instanceof File) {
-            const importFileStore = await getNamedFileStorage(parameters);
+            const importFileStore = await getImportFileStorage();
             const localFileName = `${insert.id}_${obj.title}`;
             importFileStore.put(localFileName, obj.rawFile);
+            console.log("got a file", obj.rawFile, "with name", localFileName);
             insert[key] = localFileName;
           }
         }
@@ -130,8 +123,7 @@ export default function RxDBProvider(params: RxDBDataProviderParams): DbDataProv
       const res = await db[resource].insert(insert);
       return { data: res.toJSON() };
     },
-    update: async (resource: TranscrobesCollectionsKeys, params: UpdateParams) => {
-      const db = await dbProm();
+    update: async (resource: string, params: UpdateParams) => {
       // @ts-ignore
       const one = await db[resource].findOne({ selector: { id: { $eq: params.id.toString() } } }).exec();
       if (one) {
@@ -150,8 +142,7 @@ export default function RxDBProvider(params: RxDBDataProviderParams): DbDataProv
         return { data: null };
       }
     },
-    updateMany: async (resource: TranscrobesCollectionsKeys, params: UpdateManyParams) => {
-      const db = await dbProm();
+    updateMany: async (resource: string, params: UpdateManyParams) => {
       const many = [...(await db[resource].findByIds(params.ids.map((id) => id.toString())).exec()).values()];
       const updates: string[] = [];
       for (const upper of many) {
@@ -160,28 +151,15 @@ export default function RxDBProvider(params: RxDBDataProviderParams): DbDataProv
       }
       return { data: updates };
     },
-    delete: async (resource: TranscrobesCollectionsKeys, params: DeleteParams) => {
-      const db = await dbProm();
+    delete: async (resource: string, params: DeleteParams) => {
       const one = db[resource].findOne({ selector: { id: { $eq: params.id.toString() } } });
       const res = await one.remove();
       return { data: res?.toJSON() };
     },
-    deleteMany: async (resource: TranscrobesCollectionsKeys, params: DeleteManyParams) => {
-      const db = await dbProm();
+    deleteMany: async (resource: string, params: DeleteManyParams) => {
+      // const db = await dbProm();
       const { success } = await db[resource].bulkRemove(params.ids.map((id) => id.toString()));
       return { data: success.map((doc) => doc.id) };
     },
-    db: () => {
-      return dbProm();
-    },
-  } as DbDataProvider;
+  };
 }
-
-export interface DBParameters {
-  test?: boolean;
-  url: URL;
-  username: string;
-  loggingEnabled?: boolean;
-}
-
-export interface RxDBDataProviderParams extends DBParameters {}

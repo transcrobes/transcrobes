@@ -14,12 +14,12 @@ export const muiCache = createCache({
 });
 
 createRoot(document.getElementById("root")!).render(
-  <StrictMode>
-    <Provider store={store}>
-      <CssBaseline />
-      <CacheProvider value={muiCache}>
-        <App config={window.componentsConfig} />
-      </CacheProvider>
-    </Provider>
-  </StrictMode>,
+  // <StrictMode>
+  <Provider store={store}>
+    <CssBaseline />
+    <CacheProvider value={muiCache}>
+      <App config={window.componentsConfig} />
+    </CacheProvider>
+  </Provider>,
+  // </StrictMode>,
 );

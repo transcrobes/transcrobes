@@ -8,11 +8,11 @@ interface MeaningQuestionProps {
   definition: DefinitionType;
   showSynonyms: boolean;
   showL2LengthHint: boolean;
-  characters: CharacterType[];
+  characters: (CharacterType | null)[];
   showAnswer: boolean;
   word?: DefinitionType;
   translationProviderOrder: Record<string, number>;
-  onCardFrontUpdate: (card: CardType) => void;
+  onCardFrontUpdate: (cardId: string, frontString: string) => void;
 }
 
 export default function MeaningQuestion({

@@ -4,17 +4,9 @@ import { useRecordContext } from "react-admin";
 import { ExpirationPlugin } from "workbox-expiration";
 import { registerRoute } from "workbox-routing";
 import { CacheFirst } from "workbox-strategies";
+import { platformHelper } from "../app/createStore";
 import { getContentBaseURL, getManifestURL, getSubsURL, handleBadResponse } from "../lib/funclib";
-import {
-  Content,
-  CONTENT_TYPE,
-  ONE_YEAR_IN_SECS,
-  PRECACHE_PUBLICATIONS,
-  PROCESSING,
-  SUBS_DATA_SUFFIX,
-  WEBPUB_CACHE_NAME,
-} from "../lib/types";
-import { PrecachePublicationsMessage } from "./common/types";
+import { CONTENT_TYPE, Content, ONE_YEAR_IN_SECS, PROCESSING, SUBS_DATA_SUFFIX, WEBPUB_CACHE_NAME } from "../lib/types";
 
 const cacheFirst = new CacheFirst({
   cacheName: WEBPUB_CACHE_NAME,
@@ -50,15 +42,11 @@ export default function CacheSwitch({ label }: { label?: string }): ReactElement
     if (initialised) {
       if (cached) {
         if (content.contentType === CONTENT_TYPE.BOOK) {
-          const message: PrecachePublicationsMessage = {
-            type: PRECACHE_PUBLICATIONS,
-            publications: [{ manifestUrl: url.href }],
-          };
-          navigator.serviceWorker.controller?.postMessage(message);
+          platformHelper.precachePublications([{ manifestUrl: url.href }]);
         } else if (content.contentType === CONTENT_TYPE.VIDEO) {
           (async () => {
+            // FIXME: move this to the SW?
             const cache = await caches.open(WEBPUB_CACHE_NAME);
-
             // route it so that workbox knows to respond.
             registerRoute(url.href, cacheFirst);
             registerRoute(url.href + SUBS_DATA_SUFFIX, cacheFirst);

@@ -1,5 +1,5 @@
-import { Create, required, SimpleForm, TextInput, useNotify, useRedirect, useRefresh, useTranslate } from "react-admin";
-import { store } from "../app/createStore";
+import { Create, required, SimpleForm, TextInput, useNotify, useRedirect, useRefresh } from "react-admin";
+import { platformHelper, store } from "../app/createStore";
 import { useAppSelector } from "../app/hooks";
 import { HelpCreateActions } from "../components/HelpCreateActions";
 import { refreshDictionaries } from "../lib/dictionary";
@@ -9,7 +9,6 @@ export default function ACreate() {
   const notify = useNotify();
   const refresh = useRefresh();
   const redirect = useRedirect();
-  const translate = useTranslate();
   const fromLang = useAppSelector((state) => state.userData.user.fromLang);
 
   function onSuccess({ data }: { data: UserDictionary }) {
@@ -17,7 +16,7 @@ export default function ACreate() {
     notify("resources.userdictionaries.changes_saved", { type: "success", messageArgs: { title: data.title } });
     redirect("/userdictionaries");
     refresh();
-    refreshDictionaries(store, window.componentsConfig.proxy, fromLang);
+    refreshDictionaries(store, platformHelper, fromLang);
   }
   return (
     <Create

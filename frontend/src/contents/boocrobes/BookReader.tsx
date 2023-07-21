@@ -207,7 +207,7 @@ export default function BookReader({ proxy }: ContentProps): ReactElement {
   );
 
   useEffect(() => {
-    if (!proxy.loaded || !manifest) {
+    if (!manifest) {
       return;
     }
     (async () => {
@@ -272,7 +272,7 @@ export default function BookReader({ proxy }: ContentProps): ReactElement {
       window.elementIds = undefined;
       reader?.stop();
     };
-  }, [proxy.loaded, manifest]);
+  }, [manifest]);
 
   useEffect(() => {
     if (

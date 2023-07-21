@@ -6,7 +6,7 @@ import CheckIcon from "@mui/icons-material/Check";
 import SentimentSatisfiedIcon from "@mui/icons-material/SentimentSatisfied";
 import SentimentVeryDissatisfiedIcon from "@mui/icons-material/SentimentVeryDissatisfied";
 import SentimentVerySatisfiedIcon from "@mui/icons-material/SentimentVerySatisfied";
-import { GRADE } from "../database/Schema";
+import { GRADE } from "../workers/rxdb/Schema";
 import { GradesType } from "../lib/types";
 
 export const DEFAULT_FONT_COLOUR = { h: 0, s: 0, l: 0 };

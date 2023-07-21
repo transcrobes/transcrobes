@@ -19,7 +19,7 @@ import QuestionDefinitionGraph from "./Common";
 
 interface Props {
   recentSentences: PosSentences | null;
-  characters: CharacterType[];
+  characters: (CharacterType | null)[];
   showAnswer: boolean;
   word?: DefinitionType;
 }

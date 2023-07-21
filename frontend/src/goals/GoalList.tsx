@@ -15,6 +15,7 @@ import {
 import HelpButton from "../components/HelpButton";
 import { ListEmpty } from "../components/ListEmpty";
 import { DOCS_DOMAIN, PROCESSING } from "../lib/types";
+import { WordlistField } from "./WordlistField";
 
 function ListActions({ empty, createDisabled }: { empty?: boolean; createDisabled?: boolean }) {
   return (
@@ -60,9 +61,7 @@ export default function GoalList() {
     <List empty={<EmtpyList />} actions={<ListActions />} sort={{ field: "createdAt", order: "DESC" }}>
       <Datagrid rowClick="show">
         <TextField source="title" />
-        <ReferenceField source="userList" reference="wordlists" link={false}>
-          <TextField source="name" />
-        </ReferenceField>
+        <WordlistField label="List" />
         <ReferenceField source="parent" reference="goals" sortable={false} link="show">
           <TextField source="title" />
         </ReferenceField>

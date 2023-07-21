@@ -1,16 +1,9 @@
+import GoalIcon from "@mui/icons-material/TrackChanges";
 import { Box, Button, Grid, LinearProgress, Link } from "@mui/material";
 import { ReactElement, useEffect, useState } from "react";
-import { GoalDocument } from "../database/Schema";
-import { ComponentsConfig } from "../lib/complexTypes";
-import { SerialisableDayCardWords, STATUS, WordlistType } from "../lib/types";
-import GoalIcon from "@mui/icons-material/TrackChanges";
-import { useTranslate } from "react-admin";
-
-interface Props {
-  config: ComponentsConfig;
-  inited: boolean;
-}
-const DATA_SOURCE = "GoalsWidget.tsx";
+import { useStore, useTranslate } from "react-admin";
+import { platformHelper } from "../app/createStore";
+import { Goal, STATUS } from "../lib/types";
 
 type GoalPercent = {
   name: string;
@@ -19,48 +12,30 @@ type GoalPercent = {
   percent: number;
 };
 
-export default function GoalsWidget({ config, inited }: Props): ReactElement {
-  const [goals, setGoals] = useState<GoalPercent[]>([]);
+export default function GoalsWidget(): ReactElement {
+  const [goals, setGoals] = useState<GoalPercent[]>();
   const translate = useTranslate();
+  const [includeNonDict] = useStore("preferences.includeNonDict", false);
+  const [includeIgnored] = useStore("preferences.includeIgnored", false);
   useEffect(() => {
     (async function () {
-      if (!inited) return;
-      const userWords = await config.proxy.sendMessagePromise<SerialisableDayCardWords>({
-        source: DATA_SOURCE,
-        type: "getSerialisableCardWords",
-        value: {},
-      });
-      const locgoals: GoalDocument[] = await config.proxy.sendMessagePromise<GoalDocument[]>({
-        source: DATA_SOURCE,
-        type: "getAllFromDB",
-        value: {
-          collection: "goals",
-          queryObj: {
-            selector: { status: { $eq: STATUS.ACTIVE } },
-          },
+      const locgoals: Goal[] = await platformHelper.getAllFromDB({
+        collection: "goals",
+        queryObj: {
+          selector: { status: { $eq: STATUS.ACTIVE } },
         },
       });
-      const lists: WordlistType[] = await config.proxy.sendMessagePromise<WordlistType[]>({
-        source: DATA_SOURCE,
-        type: "getAllFromDB",
-        value: {
-          collection: "wordlists",
-        },
-      });
-
-      const mylists = new Map<string, string[]>(lists.map((x) => [x.id, x.wordIds]));
-      const knownWordIds = new Set<string>(Object.keys(userWords.knownWordIdsCounter));
+      const listIds = locgoals.map((x) => x.userList.toString());
+      const listInfos = await platformHelper.getListKnownPercentages({ listIds, includeNonDict, includeIgnored });
       const goalPercents: GoalPercent[] = [];
-
       for (const goal of locgoals) {
-        const all = mylists.get(goal.userList.toString());
+        const all = listInfos[goal.userList.toString()];
         if (all) {
-          const goalKnown = all.filter((x) => knownWordIds.has(x));
           goalPercents.push({
             name: goal.title,
             goalId: goal.id.toString(),
             listId: goal.userList.toString(),
-            percent: (goalKnown.length / all.length) * 100,
+            percent: (all.known / all.total) * 100,
           });
         }
       }
@@ -116,15 +91,16 @@ export default function GoalsWidget({ config, inited }: Props): ReactElement {
         justifyContent="flex-start"
         sx={{ padding: { xs: "4px", md: "12px" } }}
       >
-        {goals.map((x) => (
+        {goals?.map((x) => (
           <FormRow key={x.goalId} name={x.name} goalId={x.goalId} percent={x.percent} />
         ))}
       </Grid>
-      {goals.length === 0 && (
+      {goals?.length === 0 && (
         <Link href={`#/goals`} sx={{ textDecoration: "none" }}>
           <Button startIcon={<GoalIcon />}>{translate("resources.goals.create_goals_now")}</Button>
         </Link>
       )}
+      {!goals && <Box>{translate("resources.goals.percents_loading")}</Box>}
     </Box>
   );
 }

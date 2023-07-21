@@ -1,11 +1,9 @@
 import { configureStore } from "@reduxjs/toolkit";
-import { createHashHistory, History } from "history";
 import { fetchUtils } from "ra-core";
-import { AuthProvider, DataProvider, ThemeType } from "react-admin";
+import { AuthProvider } from "react-admin";
 import { combineReducers } from "redux";
-import { Workbox } from "workbox-window";
+import { OnlineDataManager } from "../data/types";
 import { getUserDexie, isInitialisedAsync } from "../database/authdb";
-import knownCardsReducer from "../features/card/knownCardsSlice";
 import bookReaderReducer from "../features/content/bookReaderSlice";
 import extensionReaderReducer from "../features/content/extensionReaderSlice";
 import simpleReaderReducer from "../features/content/simpleReaderSlice";
@@ -13,13 +11,10 @@ import videoReaderReducer from "../features/content/videoReaderSlice";
 import definitionsReducer from "../features/definition/definitionsSlice";
 import dictionaryReducer from "../features/dictionary/dictionarySlice";
 import statsReducer from "../features/stats/statsSlice";
-// import themeReducer from "../features/themes/themeReducer";
 import uiReducer from "../features/ui/uiSlice";
 import userSliceReducer, { doLogin, setAndSaveUser, throttledLogout } from "../features/user/userSlice";
+import knownWordsReducer from "../features/word/knownWordsSlice";
 import { ComponentsConfig } from "../lib/complexTypes";
-import { ServiceWorkerProxy, setPlatformHelper } from "../lib/proxies";
-// import { ThemeName } from "../lib/types";
-import SWDataProvider from "../ra-data-sw";
 // import trackerRedux from "@openreplay/tracker-redux";
 
 declare global {
@@ -49,43 +44,12 @@ declare global {
 export const ACCESS_TOKEN_PATH = "/api/v1/login/access-token";
 export const REFRESH_TOKEN_PATH = "/api/v1/refresh";
 
-export let authProvider: AuthProvider | undefined;
-export let dataProvider: DataProvider | undefined;
-export let history: History | undefined;
-
-let theme: ThemeType = "light";
-
-if (typeof window !== "undefined") {
-  if (!(window.chrome && chrome.runtime && chrome.runtime.id)) {
-    let wb: Workbox;
-    if (import.meta.env.DEV) {
-      wb = new Workbox("/dev-sw.js?dev-sw", { scope: "/", type: "module" });
-    } else {
-      wb = new Workbox("/service-worker.js");
-    }
-    wb.register({ immediate: true });
-    history = createHashHistory();
-    authProvider = jwtTokenAuthProvider();
-    dataProvider = SWDataProvider({ wb: wb });
-    // theme = (localStorage.getItem("mode") as ThemeName) || "light";
-    window.componentsConfig = {
-      dataProvider: dataProvider,
-      proxy: new ServiceWorkerProxy(wb),
-      url: new URL(window.location.href),
-    };
-    setPlatformHelper(window.componentsConfig.proxy);
-  }
-}
-
-// const preloadedState = { theme };
-const preloadedState = {};
 const reducer = combineReducers({
   videoReader: videoReaderReducer,
   bookReader: bookReaderReducer,
   extensionReader: extensionReaderReducer,
   simpleReader: simpleReaderReducer,
-  // theme: themeReducer,
-  knownCards: knownCardsReducer,
+  knownWords: knownWordsReducer,
   definitions: definitionsReducer,
   ui: uiReducer,
   stats: statsReducer,
@@ -93,7 +57,7 @@ const reducer = combineReducers({
   userData: userSliceReducer,
 });
 
-function jwtTokenAuthProvider(): AuthProvider {
+export function jwtTokenAuthProvider(): AuthProvider {
   return {
     getIdentity: async () => {
       return store.getState().userData.user || (await getUserDexie()).user;
@@ -211,3 +175,8 @@ export const store = configureStore({
 export type AdminStore = typeof store;
 export type AppDispatch = typeof store.dispatch;
 export type RootState = ReturnType<typeof reducer>;
+
+export let platformHelper: OnlineDataManager;
+export function setPlatformHelper(value: OnlineDataManager): void {
+  platformHelper = value;
+}

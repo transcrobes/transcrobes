@@ -1,51 +1,59 @@
 import {
+  TextField,
   Box,
   Button,
   Container,
-  createTheme,
   CssBaseline,
   FormGroup,
   FormLabel,
   ThemeProvider,
   Typography,
+  createTheme,
   useMediaQuery,
-  Theme,
 } from "@mui/material";
 import { ReactElement, useEffect, useState } from "react";
 import { ThemeType, useLocaleState, useTheme, useTranslate } from "react-admin";
 import { FormContainer, TextFieldElement } from "react-hook-form-mui";
 import { makeStyles } from "tss-react/mui";
-import { store } from "../app/createStore";
+import { setPlatformHelper, store } from "../app/createStore";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
 import HelpButton from "../components/HelpButton";
 import Loading from "../components/Loading";
 import NolayoutWrapper from "../components/NolayoutWrapper";
 import WatchDemo from "../components/WatchDemo";
 import { getUserDexie, isInitialisedAsync, setInitialisedAsync } from "../database/authdb";
-import { getDb } from "../database/Database";
-import { TranscrobesDatabase } from "../database/Schema";
 import { getRefreshedState } from "../features/content/contentSlice";
 import { extensionReaderActions } from "../features/content/extensionReaderSlice";
 import { setLoading } from "../features/ui/uiSlice";
 import { setUser, throttledLogin, updateBaseUrl, updatePassword, updateUsername } from "../features/user/userSlice";
 import { refreshDictionaries } from "../lib/dictionary";
 import { getDefaultLanguageDictionaries } from "../lib/libMethods";
-import { BackgroundWorkerProxy, setPlatformHelper } from "../lib/proxies";
 import {
   BROCROBES_YT_VIDEO,
+  DBParameters,
   DEFAULT_EXTENSION_READER_CONFIG_STATE,
   DEFAULT_SERVER_URL,
   DOCS_DOMAIN,
   EXTENSION_READER_ID,
   ExtensionReaderState,
-  PolyglotMessage,
+  ProgressCallbackMessage,
   SystemLanguage,
+  UserState,
   translationProviderOrder,
 } from "../lib/types";
-import { RxDBDataProviderParams } from "../ra-data-rxdb";
+import { DatabaseService as RxDatabaseService } from "../workers/rxdb/DatabaseService";
+import { TranscrobesDatabase } from "../workers/rxdb/Schema";
+import { rxdbDataManager } from "../workers/rxdb/rxdata";
+import { DatabaseService as SqlDatabaseService } from "../workers/sqlite/DatabaseService";
+import { sqliteDataManager } from "../workers/sqlite/sqldata";
+import { backgroundWorkerManager } from "./backgroundfn";
+import ExtensionConfig from "./components/ExtensionConfig";
 import Initialisation from "./components/Initialisation";
 import Intro from "./components/Intro";
-import ExtensionConfig from "./ExtensionConfig";
+import { getRxdbService, getSqliteService, installRxdb, installSqlite } from "./lib/dbs";
+
+let rxDatabaseService: RxDatabaseService;
+let sqlDatabaseService: SqlDatabaseService;
 
 type FormProps = {
   username: string;
@@ -54,10 +62,12 @@ type FormProps = {
 };
 declare global {
   interface Window {
-    tcb: TranscrobesDatabase;
+    tcb: TranscrobesDatabase | null;
   }
 }
-const proxy = new BackgroundWorkerProxy();
+
+// THIS IS A FAKE PROXY!!! WE ARE DOING STUFF DIRECTLY HERE!!!
+const proxy = { ...backgroundWorkerManager, ...sqliteDataManager, ...rxdbDataManager };
 setPlatformHelper(proxy);
 
 const useStyles = makeStyles()((theme) => ({
@@ -108,6 +118,15 @@ function Header(): ReactElement {
   );
 }
 
+async function initDbsIfNecessary(userData: UserState) {
+  if (!rxDatabaseService) {
+    rxDatabaseService = await getRxdbService();
+  }
+  if (!sqlDatabaseService) {
+    sqlDatabaseService = await getSqliteService();
+  }
+}
+
 export default function Options(): ReactElement {
   const [inited, setInited] = useState<boolean | null>(null);
   const [running, setRunning] = useState<boolean | null>(null);
@@ -116,6 +135,7 @@ export default function Options(): ReactElement {
   const [password, setPassword] = useState("");
   const [baseUrl, setBaseUrl] = useState(DEFAULT_SERVER_URL);
   const [loaded, setLoaded] = useState(false);
+  const [sql, setSql] = useState("");
   const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
   const [themeName, setTheme] = useTheme(prefersDarkMode ? "dark" : "light");
   const theme = createTheme({
@@ -133,32 +153,36 @@ export default function Options(): ReactElement {
   const { classes } = useStyles();
 
   useEffect(() => {
-    dispatch(setLoading(true));
     (async () => {
-      dispatch(setUser(await getUserDexie()));
-      const userData = store.getState().userData;
-      setPassword(userData.password);
-      setUsername(userData.username);
-      setBaseUrl(userData.baseUrl || DEFAULT_SERVER_URL);
-      const linit = await isInitialisedAsync(userData.username);
-      setInited(linit);
-      let conf: ExtensionReaderState = {
-        ...DEFAULT_EXTENSION_READER_CONFIG_STATE,
-        translationProviderOrder: translationProviderOrder(getDefaultLanguageDictionaries(userData.user.fromLang)),
-      };
+      const userData = await getUserDexie();
+      if (userData.user.username && userData.user.accessToken) {
+        dispatch(setLoading(true));
+        dispatch(setUser(userData));
+        setPassword(userData.password);
+        setUsername(userData.username);
+        setBaseUrl(userData.baseUrl || DEFAULT_SERVER_URL);
+        const linit = await isInitialisedAsync(userData.username);
+        setInited(linit);
+        let conf: ExtensionReaderState = {
+          ...DEFAULT_EXTENSION_READER_CONFIG_STATE,
+          translationProviderOrder: translationProviderOrder(getDefaultLanguageDictionaries(userData.user.fromLang)),
+        };
 
-      if (userData.username && linit) {
-        await proxy.asyncInit({ username: userData.username });
-        await refreshDictionaries(store, proxy, userData.user.fromLang);
-        conf = await getRefreshedState<ExtensionReaderState>(proxy, conf, id);
-      }
-      if (userData.username) {
+        if (userData.username && linit) {
+          // FIXME: a bit nasty = here these have a side effect of setting up the proxy services
+          // I could probably just manually set them. Or is there some obvious clean way I'm missing?
+          await initDbsIfNecessary(userData);
+          await refreshDictionaries(store, proxy, userData.user.fromLang);
+          conf = await getRefreshedState<ExtensionReaderState>(proxy, conf, id);
+          dispatch(extensionReaderActions.setState({ id, value: conf }));
+        }
         setLocale(conf.locale);
         setTheme(conf.themeName);
+        setLoaded(true);
+        dispatch(setLoading(false));
+      } else {
+        setLoaded(true);
       }
-      dispatch(extensionReaderActions.setState({ id, value: conf }));
-      setLoaded(true);
-      dispatch(setLoading(false));
     })();
   }, []);
   useEffect(() => {
@@ -170,10 +194,12 @@ export default function Options(): ReactElement {
     }
   }, [userData.error]);
   useEffect(() => {
-    dispatch(extensionReaderActions.setLocale({ id, value: locale }));
+    if (userData.user.username && userData.user.accessToken) {
+      dispatch(extensionReaderActions.setLocale({ id, value: locale }));
+    }
   }, [locale]);
   useEffect(() => {
-    if (loaded) {
+    if (loaded && !running && userData.user.accessToken) {
       (async () => {
         const userData = store.getState().userData;
         setRunning(true);
@@ -183,17 +209,23 @@ export default function Options(): ReactElement {
           console.error("Something bad happened, couldnt get an accessToken to start a syncDB()");
         } else {
           setMessage("");
-          const dbConfig: RxDBDataProviderParams = {
+          const dbConfig: DBParameters = {
             url: new URL(userData.baseUrl),
             username: userData.username,
           };
-          const db = await getDb(
-            dbConfig,
-            (message: PolyglotMessage) => setMessage(translate(message.phrase, message.options)),
-            undefined,
-          );
+          console.log("Looks like I'm executing ", dbConfig);
+          if (!inited && !running) {
+            await Promise.all([
+              installRxdb(dbConfig, (progress: ProgressCallbackMessage) =>
+                setMessage(translate(progress.message.phrase, progress.message.options)),
+              ),
+              installSqlite(dbConfig.url.origin, (progress: ProgressCallbackMessage) =>
+                setMessage(translate(progress.message.phrase, progress.message.options)),
+              ),
+            ]);
+          }
+
           try {
-            window.tcb = db;
             const action = !inited ? "init" : "update";
             setMessage(translate(`screens.extension.${action}_complete`));
             setRunning(false);
@@ -358,6 +390,21 @@ export default function Options(): ReactElement {
           </FormContainer>
         ) : (
           <Loading disableShrink message={translate("screens.extension.save_warning")} />
+        )}
+        {new URL(location.href).searchParams.get("sql") === "1" && (
+          <Box sx={{ height: 500 }}>
+            <TextField minRows={5} multiline label="SQL" value={sql} onChange={(val) => setSql(val.target.value)} />
+            <Button
+              variant="contained"
+              onClick={async () => {
+                console.log("before execute", sql);
+                let defstats = await sqlDatabaseService.proxy.executeSql(sql);
+                console.log("after execute", defstats, defstats[0]?.rows?.[0]?.[0]);
+              }}
+            >
+              clickme
+            </Button>
+          </Box>
         )}
       </Container>
     </ThemeProvider>

@@ -5,8 +5,7 @@ import utc from "dayjs/plugin/utc";
 import { ReactElement, useEffect, useState } from "react";
 import { useTranslate } from "react-admin";
 import PracticerInput from "../components/PracticerInput";
-import { getWordId } from "../database/Schema";
-import { ServiceWorkerProxy } from "../lib/proxies";
+import { getWordId } from "../workers/rxdb/Schema";
 import {
   CardType,
   CharacterType,
@@ -17,21 +16,22 @@ import {
 import Answer from "./Answer";
 import { CentredFlex } from "./Common";
 import Question from "./Question";
+import type { DataManager } from "../data/types";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
 interface Props {
-  proxy: ServiceWorkerProxy;
+  proxy: DataManager;
   theme: Theme;
   showAnswer: boolean;
   loading: boolean;
   currentCard: CardType | null;
   definition: DefinitionType | null;
-  characters: CharacterType[] | null;
-  recentPosSentences: RecentSentencesType | null;
+  characters?: (CharacterType | null)[];
+  recentPosSentences?: RecentSentencesType;
   activityConfig: RepetrobesActivityConfigType;
-  onCardFrontUpdate: (card: CardType) => void;
+  onCardFrontUpdate: (cardId: string, frontString: string) => void;
   onPractice: (wordId: string, grade: number) => void;
   onShowAnswer: () => void;
 }
@@ -66,12 +66,14 @@ export function VocabRevisor({
   console.debug(
     "prematurity",
     premature,
+    loading,
     currentCard,
     definition,
     currentCard?.dueDate,
     currentCard?.updatedAt,
     dayjs().unix(),
   );
+
   if (recentPosSentences && definition) {
     Object.entries(recentPosSentences.posSentences).forEach(([pos, s]) => {
       const lemma = definition.graph;

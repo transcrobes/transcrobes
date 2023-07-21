@@ -7,7 +7,7 @@ import logging
 from app.core.config import settings
 from app.data.importer.common import process_content, process_import, process_list
 from app.enrich import data
-from app.enrich.cache import regenerate_character_jsons_multi, regenerate_definitions_jsons_multi
+from app.enrich.cache import regenerate_character_jsons_multi, regenerate_definitions_jsons_multi, regenerate_sqlite
 from app.schemas.cache import DataType, RegenerationType
 from app.schemas.msg import Msg
 from app.worker.faustus import app, content_process_topic, import_process_topic, list_process_topic
@@ -47,6 +47,18 @@ async def list_process(lists):
 @app.crontab("0 0 * * *")
 async def regenerate_all():
     await regenerate(RegenerationType(data_type=DataType.all))
+
+
+async def regenerate_dbs() -> Msg:
+    logger.info("Attempting to regenerate sqlite dbs")
+    logger.info("Starting regen for en to zh-Hans")
+    await regenerate_sqlite(from_lang="en", to_lang="zh-Hans")
+    logger.info("Starting regen for zh-Hans to en")
+    await regenerate_sqlite(from_lang="zh-Hans", to_lang="en")
+
+    logger.info("Finished regenerating caches")
+
+    return {"msg": "success"}
 
 
 async def regenerate(regen_type: RegenerationType) -> Msg:

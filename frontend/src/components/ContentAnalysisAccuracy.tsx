@@ -21,8 +21,8 @@ import { store } from "../app/createStore";
 import { useAppSelector } from "../app/hooks";
 import { ensureDefinitionsLoaded } from "../lib/dictionary";
 import { bestGuess, sumValues } from "../lib/libMethods";
-import { AbstractWorkerProxy } from "../lib/proxies";
 import { AnalysisAccuracy, DEFAULT_READER_CONFIG_STATE } from "../lib/types";
+import type { DataManager } from "../data/types";
 
 const Transition = React.forwardRef(function Transition(
   props: TransitionProps & {
@@ -51,7 +51,7 @@ export default function ContentAnalysisAccuracy({
   proxy,
 }: {
   accuracy: AnalysisAccuracy;
-  proxy: AbstractWorkerProxy;
+  proxy: DataManager;
 }) {
   const [open, setOpen] = React.useState(false);
   const [allWords, setAllWords] = React.useState(0);

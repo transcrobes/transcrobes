@@ -4,11 +4,12 @@ import polyglotI18nProvider from "ra-i18n-polyglot";
 import unidecode from "unidecode";
 import englishMessages from "../i18n/en";
 import chineseMessages from "../i18n/zh";
-import { fetcher } from "./fetcher";
+import { OutputType, fetcher } from "./fetcher";
 import { toEnrich } from "./funclib";
 import {
   AnyPosType,
   AnyTreebankPosType,
+  DefinitionState,
   DefinitionType,
   EN_TB_POS_TO_SIMPLE_POS,
   EN_ZHHANS_DICT_PROVIDERS,
@@ -93,10 +94,9 @@ export function toPosLabels(pos: AnyPosType, toLang: SystemLanguage): string {
 }
 
 export function filterKnown(
-  knownNoteBases: PythonCounter,
   knownNotes: SerialisableStringSet,
   words: string[],
-  minMorphemeKnownCount = 2,
+  // minMorphemeKnownCount = 2,
   preferWholeKnownWords = true,
 ): string[] {
   if (words.length === 0) {
@@ -112,17 +112,17 @@ export function filterKnown(
       } else {
         known.push(word);
       }
-    } else if (minMorphemeKnownCount > 0) {
-      let good = true;
-      for (const character of Array.from(word)) {
-        if (!(character in knownNoteBases) || knownNoteBases[character] < minMorphemeKnownCount) {
-          good = false;
-          break;
-        }
-      }
-      if (good) {
-        known.push(word);
-      }
+      // } else if (minMorphemeKnownCount > 0) {
+      //   let good = true;
+      //   for (const character of Array.from(word)) {
+      //     if (!(character in knownNoteBases) || knownNoteBases[character] < minMorphemeKnownCount) {
+      //       good = false;
+      //       break;
+      //     }
+      //   }
+      //   if (good) {
+      //     known.push(word);
+      //   }
     }
   }
   return wholeKnownWords.concat(known);
@@ -163,7 +163,7 @@ function getFilteredBestGuess(
 
 export function bestGuess(
   token: TokenType,
-  definitions: DefinitionType[],
+  definitions: DefinitionState[],
   fromLang: InputLanguage,
   toLang: SystemLanguage,
   readerConfig: ReaderState,
@@ -179,7 +179,7 @@ export function bestGuess(
 
 export function bestGuessEnToZhHans(
   token: TokenType,
-  definitions: DefinitionType[],
+  definitions: DefinitionState[],
   readerConfig: ReaderState,
 ): string {
   // FIXME: this is a EN -> ZH-HANS only hack, and needs to be architected eventually
@@ -190,7 +190,7 @@ export function bestGuessEnToZhHans(
   const allDefs: PosTranslationsType[] = [];
 
   // FIXME: this is really nasty... but it's a hack for now
-  let definition: DefinitionType | null = null;
+  let definition: DefinitionState | null = null;
 
   for (const tmpDef of definitions) {
     if (tmpDef.graph.toLowerCase() === token.l.toLowerCase()) {
@@ -496,9 +496,9 @@ export async function fetchPlusResponse(
   body?: BodyInit,
   retries?: number,
   forcePost = false,
-  expectJson = true,
+  fileType: OutputType = "json",
 ): Promise<Response> {
-  return fetcher.fetchPlusResponse(url, body, retries, forcePost, expectJson);
+  return fetcher.fetchPlusResponse(url, body, retries, forcePost, fileType);
 }
 
 export async function fetchPlus(
@@ -506,9 +506,9 @@ export async function fetchPlus(
   body?: BodyInit,
   retries?: number,
   forcePost = false,
-  expectJson = true,
+  fileType: OutputType = "json",
 ): Promise<any> {
-  return fetcher.fetchPlus(url, body, retries, forcePost, expectJson);
+  return fetcher.fetchPlus(url, body, retries, forcePost, fileType);
 }
 
 export function orderTranslations(translations: ProviderTranslationType[], orders: Record<string, number>) {

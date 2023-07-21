@@ -2,16 +2,18 @@ import { crx } from "@crxjs/vite-plugin";
 import replace, { RollupReplaceOptions } from "@rollup/plugin-replace";
 import react from "@vitejs/plugin-react";
 import { resolve } from "path";
-import rollupNodePolyFill from "rollup-plugin-node-polyfills";
 import { defineConfig } from "vite";
 import svgr from "vite-plugin-svgr";
+import wasm from "vite-plugin-wasm";
 import manifest from "./manifest.config";
 
 const mode = process.env.NODE_ENV === "development" ? "development" : "production";
 
 const replaceOptions: RollupReplaceOptions = {
-  __DATE__: new Date().toISOString(),
   preventAssignment: true,
+  values: {
+    __DATE__: new Date().toISOString(),
+  },
 };
 
 export default defineConfig({
@@ -21,10 +23,7 @@ export default defineConfig({
     outDir: resolve(__dirname, "extbuild"),
     sourcemap: process.env.SOURCE_MAP === "true",
     rollupOptions: {
-      plugins: [
-        // @ts-ignore
-        rollupNodePolyFill(),
-      ],
+      maxParallelFileOps: 500,
     },
   },
   resolve: {
@@ -67,6 +66,8 @@ export default defineConfig({
         global: "globalThis",
       },
     },
+    include: ["webextension-polyfill"],
+    exclude: ["wa-sqlite"],
   },
   server: {
     host: "0.0.0.0",
@@ -80,5 +81,6 @@ export default defineConfig({
     // @ts-ignore
     replace(replaceOptions),
     crx({ manifest }),
+    wasm(),
   ],
 });

@@ -6,6 +6,8 @@ import json
 import logging
 import os
 import pathlib
+import re
+import shutil
 import uuid
 from collections import ChainMap
 from typing import Any
@@ -17,14 +19,20 @@ from app.api.api_v1.graphql import Definitions
 from app.cache import cached_definitions
 from app.core.config import settings
 from app.data.importer.common import process
-from app.enrich import TokenPhoneType, definitions_json_paths, enrich_html_fragment, hanzi_json_paths
-from app.enrich.cache import ensure_cached_definitions
+from app.enrich import (
+    TokenPhoneType,
+    definitions_json_paths,
+    enrich_html_fragment,
+    hanzi_json_paths,
+    latest_db_fragments_dir_path,
+)
+from app.enrich.cache import SQLITE_FILENAME, ensure_cached_definitions, regenerate_personal_db
 from app.enrich.data import EnrichmentManager, managers
 from app.enrich.models import definitions, reload_definitions_cache
-from app.fworker import import_process_topic, regenerate
+from app.fworker import import_process_topic, regenerate, regenerate_dbs
 from app.models import CachedDefinition, Import
 from app.models.data import Content
-from app.models.user import absolute_imports_dir_path, absolute_imports_path
+from app.models.user import absolute_imports_dir_path, absolute_imports_path, absolute_resources_path
 from app.ndutils import gather_with_concurrency
 from app.schemas.cache import DataType, RegenerationType
 from app.schemas.files import ProcessData
@@ -35,7 +43,7 @@ from fastapi.param_functions import Form
 from fastapi.params import File
 from pydantic.main import BaseModel
 from sqlalchemy.ext.asyncio.session import AsyncSession
-from sqlalchemy.future import select
+from sqlalchemy.sql.expression import select
 from starlette.responses import FileResponse
 
 logger = logging.getLogger(__name__)
@@ -81,6 +89,12 @@ router = APIRouter()
 
 
 # PROD API
+@router.get("/regenerate_dbs")
+async def api_regenerate_dbs(_current_user: models.AuthUser = Depends(deps.get_current_active_superuser)):
+    await regenerate_dbs()
+    return {"result": "success"}
+
+
 @router.get("/regenerate_all")
 async def api_regenerate_all(_current_user: models.AuthUser = Depends(deps.get_current_active_superuser)):
     await regenerate(RegenerationType(data_type=DataType.all))
@@ -110,6 +124,66 @@ async def load_definitions_cache(db: AsyncSession = Depends(deps.get_db), force_
     return {"result": "success"}
 
 
+@router.get("/dbexports.json", name="dbexports_part_urls")
+async def db_export_urls(
+    # current_user: models.AuthUser = Depends(deps.get_current_good_user),
+    current_user: schemas.TokenPayload = Depends(deps.get_current_good_tokenpayload),
+):
+    dbs_path = latest_db_fragments_dir_path(current_user.lang_pair, current_user.translation_providers)
+    base_db_path = os.path.join(dbs_path, f"{SQLITE_FILENAME}")
+    await regenerate_personal_db(base_db_path, current_user.id, current_user.lang_pair)
+    find_re = r"tc\.db\.\d{4}\.part"
+    dbs_path = absolute_resources_path(current_user.id, SQLITE_FILENAME)
+    files = sorted(
+        [os.path.basename(f.path) for f in os.scandir(dbs_path) if f.is_file() and re.match(find_re, f.name)]
+    )
+
+    if files:
+        return files
+
+    raise HTTPException(
+        status_code=status.HTTP_501_NOT_IMPLEMENTED,
+        detail=f"Server does not support user dictionaries for {current_user}",
+    )
+
+
+@router.get("/decache", name="decache")
+async def db_decache(
+    current_user: schemas.TokenPayload = Depends(deps.get_current_good_tokenpayload),
+):
+    destination = absolute_resources_path(current_user.id, SQLITE_FILENAME)
+    shutil.rmtree(destination, ignore_errors=True)
+    return {"result": "success"}
+
+
+@router.get("/dbexports/tc.sql", name="dbexport")
+async def db_export_sql(
+    current_user: schemas.TokenPayload = Depends(deps.get_current_good_tokenpayload),
+):
+    dbs_path = latest_db_fragments_dir_path(current_user.lang_pair, current_user.translation_providers)
+    base_db_path = os.path.join(dbs_path, SQLITE_FILENAME)
+    _, personal_sql_path = await regenerate_personal_db(base_db_path, current_user.id, current_user.lang_pair)
+
+    return FileResponse(personal_sql_path, media_type="text/plain")
+
+
+@router.get("/dbexports/{resource_path:path}", name="dbexports_part")
+def db_export_part(
+    resource_path: str,
+    current_user: schemas.TokenPayload = Depends(deps.get_current_good_tokenpayload),
+):
+    # FIXME: better perms checking for providers
+    destination = absolute_resources_path(current_user.id, SQLITE_FILENAME)
+    abspath = os.path.join(destination, resource_path)
+    if abspath != os.path.normpath(abspath) or not os.path.isfile(abspath):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid request",
+        )
+
+    return FileResponse(abspath, media_type="application/vnd.tcdb.part")
+
+
 @router.get("/exports.json", name="exports_json_urls")
 def definitions_export_urls(
     current_user: models.AuthUser = Depends(deps.get_current_good_user),
@@ -127,8 +201,7 @@ def definitions_export_urls(
 @router.get("/exports/{resource_path:path}", name="exports_json")
 def definitions_export_json(
     resource_path: str,
-    # current_user: models.AuthUser = Depends(deps.get_current_good_user),
-    current_user: schemas.TokenPayload = Depends(deps.get_current_good_tokenpayload),
+    _current_user: schemas.TokenPayload = Depends(deps.get_current_good_tokenpayload),
 ):
     # FIXME: better perms checking for providers
     abspath = os.path.join(settings.DEFINITIONS_CACHE_DIR, resource_path)

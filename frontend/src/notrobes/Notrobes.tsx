@@ -10,12 +10,12 @@ import { useAppDispatch, useAppSelector } from "../app/hooks";
 import HelpButton from "../components/HelpButton";
 import GlobalLoading from "../components/Loading";
 import WatchDemo from "../components/WatchDemo";
+import { WebDataManager } from "../data/types";
 import { setLoading } from "../features/ui/uiSlice";
 import { simpOnly } from "../lib/libMethods";
-import { ServiceWorkerProxy } from "../lib/proxies";
 import {
   AnyTreebankPosType,
-  CardType,
+  CardCacheType,
   CharacterType,
   DOCS_DOMAIN,
   DefinitionType,
@@ -27,11 +27,9 @@ import {
   ShortWord,
   SortableListElementType,
   USER_STATS_MODE,
-  UserListWordType,
-  WordDetailsType,
-  WordListNamesType,
   WordModelStatsType,
 } from "../lib/types";
+import { practiceCardsForWords } from "../workers/common-db";
 import SearchResults from "./SearchResults";
 
 let timeoutId: number;
@@ -41,7 +39,7 @@ const EN_MAX_ALLOWED_CHARACTERS = 47; // FIXME: obviously only somewhat sensible
 const DATA_SOURCE = "Notrobes";
 
 interface Props {
-  proxy: ServiceWorkerProxy;
+  proxy: WebDataManager;
   url: URL;
 }
 
@@ -93,82 +91,66 @@ function Notrobes({ proxy, url }: Props): ReactElement {
   const translate = useTranslate();
   const converter = useRef<ConvertText>(Converter({ from: "t", to: "cn" }));
   const [query, setQuery] = useState<string>(currentQueryParam.get("q") || "");
-  const [wordListNames, setWordListNames] = useState<WordListNamesType>({});
-  const [userListWords, setUserListWords] = useState<UserListWordType | null>(null);
   const [word, setWord] = useState<DefinitionType | null>(null);
-  const [initialised, setInitialised] = useState<boolean>(false);
   const [message, setMessage] = useState<string>("");
   const [recentPosSentences, setRecentPosSentences] = useState<PosSentences | null>(null);
-  const [allWords, setAllWords] = useState<Record<string, ShortWord>>({});
-  const [allChars, setAllChars] = useState<Record<string, ShortChar>>({});
-  const [userDictWords, setUserDictWords] = useState<Record<string, null>>({});
-  const [byChar, setByChar] = useState<Record<string, Set<ShortWord>>>({});
-  const [bySound, setBySound] = useState<Record<string, Set<ShortWord>>>({});
-  const [byRadical, setByRadical] = useState<Record<string, Set<ShortWord>>>({});
+  // const [allWords, setAllWords] = useState<Record<string, ShortWord>>({});
+  // const [allChars, setAllChars] = useState<Record<string, ShortChar>>({});
+  // const [userDictWords, setUserDictWords] = useState<Record<string, null>>({});
+  // const [byChar, setByChar] = useState<Record<string, Set<ShortWord>>>({});
+  // const [bySound, setBySound] = useState<Record<string, Set<ShortWord>>>({});
+  // const [byRadical, setByRadical] = useState<Record<string, Set<ShortWord>>>({});
   const fromLang = useAppSelector((state) => state.userData.user.fromLang);
   const dispatch = useAppDispatch();
   const { classes } = useStyles();
   const theme = useTheme();
   let cancel: CancelTokenSource;
 
-  const [showRelated, setShowRelated] = useState<boolean>(false);
-  const [dictOnly, setDictOnly] = useState<boolean>(true);
+  // const [dictOnly, setDictOnly] = useState<boolean>(true);
   const [characters, setCharacters] = useState<(CharacterType | null)[] | null>(null);
-  const [cards, setCards] = useState<CardType[] | null>(null);
+  // const [cards, setCards] = useState<CardType[] | null>(null);
+  const [cards, setCards] = useState<CardCacheType[] | null>(null);
+
   const [wordModelStats, setWordModelStats] = useState<WordModelStatsType | null>(null);
   const [lists, setLists] = useState<SortableListElementType[] | null>(null);
-  const [filteredExistingByChars, setFilteredExistingByChars] = useState<Record<string, ShortWord>>();
-  const [filteredExistingBySounds, setFilteredExistingBySounds] = useState<Record<string, ShortWord>>();
-  const [filteredExistingByRadicals, setFilteredExistingByRadicals] = useState<Record<string, ShortWord>>();
-  const dictionaries = useAppSelector((state) => state.dictionary);
+  // const [showRelated, setShowRelated] = useState<boolean>(false);
+  // const [filteredExistingByChars, setFilteredExistingByChars] = useState<Record<string, ShortWord>>();
+  // const [filteredExistingBySounds, setFilteredExistingBySounds] = useState<Record<string, ShortWord>>();
+  // const [filteredExistingByRadicals, setFilteredExistingByRadicals] = useState<Record<string, ShortWord>>();
+  // const dictionaries = useAppSelector((state) => state.dictionary);
 
-  useEffect(() => {
-    if (!proxy.loaded) return;
-    (async function () {
-      const ulws = await proxy.sendMessagePromise<{
-        userListWords: UserListWordType;
-        wordListNames: WordListNamesType;
-      }>({
-        source: DATA_SOURCE,
-        type: "getUserListWords",
-      });
-      setWordListNames(ulws.wordListNames);
-      setUserListWords(ulws.userListWords);
-      setInitialised(true);
-    })();
-  }, [proxy.loaded]);
-
-  useEffect(() => {
-    (async () => {
-      if (showRelated) {
-        if (Object.keys(allWords).length === 0) {
-          const userWords = await proxy.sendMessagePromise<Record<string, null>>({
-            source: DATA_SOURCE,
-            type: "getAllUserDictionaryEntries",
-          });
-          const words = await proxy.sendMessagePromise<Record<string, ShortWord>>({
-            source: DATA_SOURCE,
-            type: "getAllShortWords",
-            value: fromLang,
-          });
-          const chars = await proxy.sendMessagePromise<Record<string, ShortChar>>({
-            source: DATA_SOURCE,
-            type: "getAllShortChars",
-          });
-          const [newByChar, newBySound, newByRadical] = graphRecordsToCharRecords(words, chars);
-          setByChar(newByChar);
-          setBySound(newBySound);
-          setByRadical(newByRadical);
-          await filterExistingWords(query, chars, words, newByChar, newBySound, newByRadical, userWords);
-          setUserDictWords(userWords);
-          setAllChars(chars);
-          setAllWords(words);
-        } else {
-          await filterExistingWords(query);
-        }
-      }
-    })();
-  }, [showRelated, dictOnly]);
+  // FIXME: do this!!!
+  // useEffect(() => {
+  //   (async () => {
+  //     if (showRelated) {
+  //       if (Object.keys(allWords).length === 0) {
+  //         const userWords = await proxy.sendMessagePromise<Record<string, null>>({
+  //           source: DATA_SOURCE,
+  //           type: "getAllUserDictionaryEntries",
+  //         });
+  //         const words = await proxy.sendMessagePromise<Record<string, ShortWord>>({
+  //           source: DATA_SOURCE,
+  //           type: "getAllShortWords",
+  //           value: fromLang,
+  //         });
+  //         const chars = await proxy.sendMessagePromise<Record<string, ShortChar>>({
+  //           source: DATA_SOURCE,
+  //           type: "getAllShortChars",
+  //         });
+  //         const [newByChar, newBySound, newByRadical] = graphRecordsToCharRecords(words, chars);
+  //         setByChar(newByChar);
+  //         setBySound(newBySound);
+  //         setByRadical(newByRadical);
+  //         await filterExistingWords(query, chars, words, newByChar, newBySound, newByRadical, userWords);
+  //         setUserDictWords(userWords);
+  //         setAllChars(chars);
+  //         setAllWords(words);
+  //       } else {
+  //         await filterExistingWords(query);
+  //       }
+  //     }
+  //   })();
+  // }, [showRelated, dictOnly]);
 
   useEffect(() => {
     const q = currentQueryParam.get("q") || "";
@@ -177,80 +159,70 @@ function Notrobes({ proxy, url }: Props): ReactElement {
     }
   }, [currentQueryParam]);
 
-  useEffect(() => {
-    if (userListWords && !!query) {
-      runSearch(query);
-    }
-  }, [userListWords]);
-
-  async function filterExistingWords(
-    graph: string,
-    chars: Record<string, ShortChar> = allChars,
-    words: Record<string, ShortWord> = allWords,
-    lByChar: Record<string, Set<ShortWord>> = byChar,
-    lBySound: Record<string, Set<ShortWord>> = bySound,
-    lByRadical: Record<string, Set<ShortWord>> = byRadical,
-    userWords: Record<string, null> = userDictWords,
-  ) {
-    if (!graph) {
-      return;
-    }
-    const newFilteredByChars: Record<string, ShortWord> = {};
-    for (const char of graph.split("")) {
-      if (lByChar[char]) {
-        for (const val of lByChar[char]) {
-          if (val.id.includes(graph) && (!dictOnly || val.isDict || val.id in userWords)) {
-            newFilteredByChars[val.id] = val;
-          }
-        }
-      }
-    }
-    const newFilteredByRadicals: Record<string, ShortWord> = {};
-    const radicals = graph
-      .split("")
-      .map((c) => chars[c]?.radical || "")
-      .join(" ");
-    for (const char of graph.split("")) {
-      if (lByRadical[chars[char]?.radical]) {
-        for (const val of lByRadical[chars[char].radical]) {
-          if (
-            val.id
-              .split("")
-              .map((c) => chars[c]?.radical || "")
-              .join(" ") === radicals &&
-            (!dictOnly || val.isDict || val.id in userWords)
-          ) {
-            newFilteredByRadicals[val.id] = val;
-          }
-        }
-      }
-    }
-    const newFilteredBySounds: Record<string, ShortWord> = {};
-    const sounds = words[graph]?.sounds.join(" ");
-    for (const sound of words[graph]?.sounds || []) {
-      if (lBySound[sound]) {
-        for (const val of lBySound[sound]) {
-          if (val.sounds?.join(" ").includes(sounds) && (!dictOnly || val.isDict || val.id in userWords)) {
-            newFilteredBySounds[val.id] = val;
-          }
-        }
-      }
-    }
-    setFilteredExistingByChars(newFilteredByChars);
-    setFilteredExistingBySounds(newFilteredBySounds);
-    if (fromLang === "zh-Hans") {
-      setFilteredExistingByRadicals(newFilteredByRadicals);
-    }
-  }
+  // async function filterExistingWords(
+  //   graph: string,
+  //   chars: Record<string, ShortChar> = allChars,
+  //   words: Record<string, ShortWord> = allWords,
+  //   lByChar: Record<string, Set<ShortWord>> = byChar,
+  //   lBySound: Record<string, Set<ShortWord>> = bySound,
+  //   lByRadical: Record<string, Set<ShortWord>> = byRadical,
+  //   userWords: Record<string, null> = userDictWords,
+  // ) {
+  //   if (!graph) {
+  //     return;
+  //   }
+  //   const newFilteredByChars: Record<string, ShortWord> = {};
+  //   for (const char of graph.split("")) {
+  //     if (lByChar[char]) {
+  //       for (const val of lByChar[char]) {
+  //         if (val.id.includes(graph) && (!dictOnly || val.isDict || val.id in userWords)) {
+  //           newFilteredByChars[val.id] = val;
+  //         }
+  //       }
+  //     }
+  //   }
+  //   const newFilteredByRadicals: Record<string, ShortWord> = {};
+  //   const radicals = graph
+  //     .split("")
+  //     .map((c) => chars[c]?.radical || "")
+  //     .join(" ");
+  //   for (const char of graph.split("")) {
+  //     if (lByRadical[chars[char]?.radical]) {
+  //       for (const val of lByRadical[chars[char].radical]) {
+  //         if (
+  //           val.id
+  //             .split("")
+  //             .map((c) => chars[c]?.radical || "")
+  //             .join(" ") === radicals &&
+  //           (!dictOnly || val.isDict || val.id in userWords)
+  //         ) {
+  //           newFilteredByRadicals[val.id] = val;
+  //         }
+  //       }
+  //     }
+  //   }
+  //   const newFilteredBySounds: Record<string, ShortWord> = {};
+  //   const sounds = words[graph]?.sounds.join(" ");
+  //   for (const sound of words[graph]?.sounds || []) {
+  //     if (lBySound[sound]) {
+  //       for (const val of lBySound[sound]) {
+  //         if (val.sounds?.join(" ").includes(sounds) && (!dictOnly || val.isDict || val.id in userWords)) {
+  //           newFilteredBySounds[val.id] = val;
+  //         }
+  //       }
+  //     }
+  //   }
+  //   // setFilteredExistingByChars(newFilteredByChars);
+  //   // setFilteredExistingBySounds(newFilteredBySounds);
+  //   // if (fromLang === "zh-Hans") {
+  //   //   setFilteredExistingByRadicals(newFilteredByRadicals);
+  //   // }
+  // }
 
   async function submitLookupEvents(lookupEvents: any[], userStatsMode: number) {
     // FIXME: userStatsMode should be an enum
     // lookup events should NOT be any
-    await proxy.sendMessagePromise({
-      source: DATA_SOURCE,
-      type: "submitLookupEvents",
-      value: { lemmaAndContexts: lookupEvents, userStatsMode, source: DATA_SOURCE },
-    });
+    await proxy.submitLookupEvents({ lemmaAndContexts: lookupEvents, userStatsMode, source: DATA_SOURCE });
   }
 
   async function handleDeleteRecent(modelId: number | bigint) {
@@ -268,21 +240,32 @@ function Notrobes({ proxy, url }: Props): ReactElement {
           }
         }
       }
-      await proxy.sendMessagePromise({
-        source: DATA_SOURCE,
-        type: "updateRecentSentences",
-        value: [newRecents],
-      });
+      await proxy.updateRecentSentences([newRecents]);
       setRecentPosSentences(newRecents.posSentences);
     }
+  }
+
+  async function addOrUpdateCards(wordId: string, grade: number): Promise<void> {
+    await practiceCardsForWords(proxy, [{ wordId, grade }]);
+    if (word) {
+      proxy.submitUserEvents({
+        type: "practice_card",
+        data: {
+          target_word: word.graph,
+          grade: grade,
+          source_sentence: "",
+        },
+        source: DATA_SOURCE,
+      });
+      await fetchSearchResults(word.graph);
+    }
+    dispatch(setLoading(undefined));
+    setMessage(translate("screens.notrobes.cards_recorded"));
   }
 
   /**
    * Fetch the search results and update the state with the result.
    * Also cancels the previous query before making the new one.
-   *
-   * @param {String} query Search Query.
-   *
    */
   async function fetchSearchResults(query: string): Promise<void> {
     if (cancel) {
@@ -291,15 +274,11 @@ function Notrobes({ proxy, url }: Props): ReactElement {
 
     query = query.toLowerCase().trim();
     cancel = axios.CancelToken.source();
-    const details = await proxy.sendMessagePromise<WordDetailsType>({
-      source: DATA_SOURCE,
-      type: "getWordDetails",
-      value: { dictionaryIds: Object.keys(dictionaries), graph: query },
-    });
+    const details = await proxy.getWordDetails({ graph: query });
 
     if (!!details.word && !!details.word.id) {
       setWord(details.word);
-      setCards(details.cards ? Array.from(details.cards.values()) : []);
+      setCards(details.cards || []);
       setCharacters(details.characters ? Array.from(details.characters.values()) : []);
       setWordModelStats(details.wordModelStats || { id: details.word.graph, updatedAt: 0 });
       const lemma = details.word.graph;
@@ -321,13 +300,7 @@ function Notrobes({ proxy, url }: Props): ReactElement {
       setRecentPosSentences(details.recentPosSentences);
       setMessage("");
       dispatch(setLoading(undefined));
-      setLists(
-        ((userListWords && userListWords[details.word.id]) || []).map((x) => ({
-          listId: x.listId,
-          name: wordListNames[x.listId],
-          position: x.position,
-        })),
-      );
+      setLists(details.wordlists || []);
       if (!timeoutId) {
         const lookupEvent = { target_word: details.word.graph, target_sentence: "" };
         timeoutId = window.setTimeout(() => {
@@ -351,11 +324,7 @@ function Notrobes({ proxy, url }: Props): ReactElement {
           setCharacters(null);
           return;
         }
-        const chars = await proxy.sendMessagePromise<CharacterType[]>({
-          source: DATA_SOURCE,
-          type: "getCharacterDetails",
-          value: query.split(""),
-        });
+        const chars = await proxy.getCharacterDetails(query.split(""));
         setCharacters(chars);
         const definition: DefinitionType = res.data.definition;
         setWord(definition);
@@ -407,13 +376,11 @@ function Notrobes({ proxy, url }: Props): ReactElement {
     setRecentPosSentences(null);
     setLists(null);
     dispatch(setLoading(undefined));
-    if (showRelated && q) {
-      filterExistingWords(q);
-    }
 
     if (!q) {
       setMessage("");
-    } else if (q && !simpOnly(q, fromLang) && !(q in allWords)) {
+      // } else if (q && !simpOnly(q, fromLang) && !(q in allWords)) {
+    } else if (q && !simpOnly(q, fromLang)) {
       console.debug("Query has illegal chars", q);
       setMessage(translate("screens.notrobes.only_simplified_chars"));
     } else if (q && converter && converter.current(q) !== q) {
@@ -446,7 +413,6 @@ function Notrobes({ proxy, url }: Props): ReactElement {
           <form className={classes.root} noValidate>
             <TextField
               value={query}
-              disabled={!initialised}
               id="outlined-basic"
               label={translate("ra.action.search")}
               variant="outlined"
@@ -458,27 +424,28 @@ function Notrobes({ proxy, url }: Props): ReactElement {
         <GlobalLoading />
         {message && <Typography className={classes.message}>{message}</Typography>}
         <SearchResults
-          allChars={allChars}
-          allWords={allWords}
+          // allChars={allChars}
+          // allWords={allWords}
           query={query}
           proxy={proxy}
-          showRelated={showRelated}
-          setShowRelated={setShowRelated}
-          setDictOnly={setDictOnly}
+          // setDictOnly={setDictOnly}
           word={word}
           wordModelStats={wordModelStats}
           recentPosSentences={recentPosSentences}
           characters={characters}
           cards={cards}
-          dictOnly={dictOnly}
+          // dictOnly={dictOnly}
           fromLang={fromLang}
           lists={lists}
-          filteredExistingByRadicals={filteredExistingByRadicals}
-          filteredExistingBySounds={filteredExistingBySounds}
-          filteredExistingByChars={filteredExistingByChars}
+          // filteredExistingByRadicals={filteredExistingByRadicals}
+          // filteredExistingBySounds={filteredExistingBySounds}
+          // filteredExistingByChars={filteredExistingByChars}
+          // showRelated={showRelated}
+          // setShowRelated={setShowRelated}
           handleDeleteRecent={handleDeleteRecent}
-          setMessage={setMessage}
-          setCards={setCards}
+          // setMessage={setMessage}
+          onPractice={addOrUpdateCards}
+          // setCards={setCards}
         />
       </Container>
     </>

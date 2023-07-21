@@ -2,6 +2,7 @@ import createCache from "@emotion/cache";
 import { CacheProvider } from "@emotion/react";
 import { EmotionCache } from "@emotion/utils";
 import { ScopedCssBaseline, ThemeProvider, createTheme } from "@mui/material";
+import * as Comlink from "comlink";
 import { createComponentVNode, render } from "inferno";
 import { Provider as InfernoProvider } from "inferno-redux";
 import jss from "jss";
@@ -10,15 +11,18 @@ import _ from "lodash";
 import rangy from "rangy";
 import { I18nContextProvider } from "react-admin";
 import { createRoot } from "react-dom/client";
+import ReactPlayer from "react-player";
 import { QueryClient, QueryClientProvider } from "react-query";
 import { Provider } from "react-redux";
-import { AdminStore, store } from "../app/createStore";
+import { Runtime } from "webextension-polyfill";
+import { AdminStore, setPlatformHelper, store } from "../app/createStore";
 import { ETFStyles, ETFStylesProps } from "../components/Common";
 import Loading from "../components/Loading";
 import EnrichedTextFragment from "../components/content/etf/EnrichedTextFragment";
 import Mouseover from "../components/content/td/Mouseover";
 import TokenDetails from "../components/content/td/TokenDetails";
-import { setCardWordsState } from "../features/card/knownCardsSlice";
+import { DataManager } from "../data/types";
+import { setKnownWordsState } from "../features/word/knownWordsSlice";
 import { getRefreshedState } from "../features/content/contentSlice";
 import { extensionReaderActions } from "../features/content/extensionReaderSlice";
 import { addModelsToState } from "../features/stats/statsSlice";
@@ -28,7 +32,6 @@ import { popupDarkTheme, popupLightTheme } from "../layout/themes";
 import { sessionActivityUpdate, submitActivity } from "../lib/componentMethods";
 import { ensureDefinitionsLoaded, refreshDictionaries } from "../lib/dictionary";
 import { UUID, getLanguageFromPreferred, isScriptioContinuo, missingWordIdsFromModels, toEnrich } from "../lib/funclib";
-import { NAME_PREFIX } from "../lib/interval/interval-decorator";
 import {
   enrichNodes,
   getDefaultLanguageDictionaries,
@@ -36,7 +39,6 @@ import {
   streamingSite,
   textNodes,
 } from "../lib/libMethods";
-import { AbstractWorkerProxy, BackgroundWorkerProxy, setPlatformHelper } from "../lib/proxies";
 import { observerFunc } from "../lib/stats";
 import {
   ComponentClass,
@@ -46,28 +48,33 @@ import {
   EXTENSION_READER_ID,
   ExtensionReaderState,
   KeyedModels,
-  ModelType,
-  SerialisableDayCardWords,
   SerialisableStringSet,
-  UserState,
   translationProviderOrder,
 } from "../lib/types";
-import ContentAnalysisAccuracyBrocrobes from "./ContentAnalysisAccuracyBrocrobes";
-import ContentAnalysisBrocrobes from "./ContentAnalysisBrocrobes";
-import VideoPlayerScreen from "./VideoPlayerScreen";
-import { fontHack } from "./fontHack";
-import { streamOverrides } from "./streaming";
+import ContentAnalysisAccuracyBrocrobes from "./components/ContentAnalysisAccuracyBrocrobes";
+import ContentAnalysisBrocrobes from "./components/ContentAnalysisBrocrobes";
+import TranscrobesLayerPlayer from "./components/TranscrobesLayerPlayer";
+import VideoPlayerScreen from "./components/VideoPlayerScreen";
+import { createEndpoint } from "./lib/adapter";
+import { fontHack } from "./lib/fontHack";
+import { streamOverrides } from "./lib/streaming";
+import type { BackgroundWorkerDataManager } from "./backgroundfn";
 
-const DATA_SOURCE = "content.ts";
+store.dispatch(setLoading(true));
+
 const KEEPALIVE_QUERY_FREQUENCY_MS = 5000;
 const id = EXTENSION_READER_ID;
+
 const knownWords: SerialisableStringSet = {};
 const knownChars: SerialisableStringSet = {};
-const proxy = new BackgroundWorkerProxy();
+
 const models: KeyedModels = {};
 const queryClient = new QueryClient();
 const streamingSiteName = streamingSite(location.href);
 const sessionId = UUID().toString();
+if (streamingSiteName) {
+  ReactPlayer.addCustomPlayer(TranscrobesLayerPlayer as any); // FIXME: the upstream typing is wrong here
+}
 
 let classes: ETFStylesProps["classes"] | null = null;
 
@@ -76,11 +83,14 @@ const transcroberObserver: IntersectionObserver = new IntersectionObserver(onEnt
 });
 
 const getReaderConfig = () => readerConfig;
-const getKnownCards = () => store.getState().knownCards;
+const getKnownWords = () => store.getState().knownWords;
 const fromLang = () => store.getState().userData.user.fromLang;
 
+const proxy = Comlink.wrap<BackgroundWorkerDataManager>(createEndpoint(chrome.runtime.connect() as Runtime.Port));
 setPlatformHelper(proxy);
-const userData = await proxy.sendMessagePromise<UserState>({ source: DATA_SOURCE, type: "getUser" });
+const erl = ensureRestLoaded(proxy, store);
+
+const userData = await proxy.getUser();
 if (!userData.username || !userData.password || !userData.baseUrl) {
   // This should never be possible now, as the click on the extension action checks and redirects to the conf page
   store.dispatch(setLoading(undefined));
@@ -90,7 +100,6 @@ if (!userData.username || !userData.password || !userData.baseUrl) {
 
 // FIXME: it is DANGEROUS to use this here, as the async thunks do get and set dexie!!!
 store.dispatch(setUser(userData));
-await proxy.asyncInit({ username: userData.username });
 await ensureConfLoaded(store);
 const readerConfig = store.getState().extensionReader[id];
 const locale = !!userData.username ? readerConfig.locale : getLanguageFromPreferred(navigator.languages);
@@ -142,10 +151,7 @@ createRoot(loadingRoot).render(
   </Provider>,
 );
 
-store.dispatch(setLoading(true));
-await ensureRestLoaded(proxy, store);
-
-const readObserver = new IntersectionObserver(observerFunc(models, getReaderConfig, getKnownCards, new Set<string>()), {
+const readObserver = new IntersectionObserver(observerFunc(models, getReaderConfig, getKnownWords, new Set<string>()), {
   threshold: [1.0],
 });
 
@@ -173,13 +179,10 @@ async function ensureConfLoaded(store: AdminStore) {
   store.dispatch(extensionReaderActions.setState({ id, value: conf }));
 }
 
-async function ensureRestLoaded(platformHelper: AbstractWorkerProxy, store: AdminStore) {
-  const value = await platformHelper.sendMessagePromise<SerialisableDayCardWords>({
-    source: DATA_SOURCE,
-    type: "getSerialisableCardWords",
-  });
-  store.dispatch(setCardWordsState(value));
-  for (const word of Object.keys(value.knownCardWordGraphs)) {
+async function ensureRestLoaded(platformHelper: DataManager, store: AdminStore) {
+  const kws = await platformHelper.getKnownWords();
+  store.dispatch(setKnownWordsState(kws));
+  for (const word of Object.keys(kws.knownWordGraphs)) {
     if (toEnrich(word, fromLang())) {
       knownWords[word] = null;
     }
@@ -277,16 +280,16 @@ submitActivity(proxy, "start", "extension", window.location.href, sessionId, win
 
 // This ensures that when the transcrobed tab has focus, the background script will
 // be active or reactivated if unloaded (which happens regularly)
-setInterval(
-  () => {
-    if (document.visibilityState === "visible") {
-      proxy.sendMessagePromise({ source: DATA_SOURCE, type: "getWordFromDBs", value: "的" });
-      submitActivity(proxy, "continue", "extension", window.location.href, sessionId, window.getTimestamp);
-    }
-  },
-  KEEPALIVE_QUERY_FREQUENCY_MS,
-  NAME_PREFIX + "contentKeepAlive",
-);
+// FIXME: probably no longer needed?
+// setInterval(
+//   () => {
+//     if (document.visibilityState === "visible") {
+//       submitActivity(proxy, "continue", "extension", window.location.href, sessionId, window.getTimestamp);
+//     }
+//   },
+//   KEEPALIVE_QUERY_FREQUENCY_MS,
+//   NAME_PREFIX + "contentKeepAlive",
+// );
 
 window.addEventListener("beforeunload", () => {
   submitActivity(proxy, "end", "extension", window.location.href, sessionId, window.getTimestamp);
@@ -302,12 +305,9 @@ export function onEntryId(entries: IntersectionObserverEntry[]): void {
     if (element.dataset && element.dataset.tced) return;
     change.target.childNodes.forEach(async (item) => {
       if (item.nodeType === 3 && item.nodeValue?.trim() && toEnrich(item.nodeValue, fromLang())) {
-        const [data] = await proxy.sendMessagePromise<[ModelType, string]>({
-          source: DATA_SOURCE,
-          type: "enrichText",
-          value: item.nodeValue,
-        });
-        if (!data.id) {
+        const wtf = await proxy.enrichText(item.nodeValue);
+        const [data] = wtf;
+        if (!data?.id) {
           return;
         }
         models[data.id.toString()] = data;
@@ -386,18 +386,19 @@ function runEnrich() {
     }
   }
 }
-
 if (!streamingSiteName) {
   // FIXME: this is a failed attempt to get rangy to work properly ;-(
   // it appears to have missing methods before the load event happens, and for some pages that never fires
   // (when a resource never times out or loads...)
-  if (document.readyState === "complete" || typeof rangy?.getSelection === "function") {
-    runEnrich();
-  } else {
-    document.addEventListener("readystatechange", () => {
-      if (document.readyState === "complete") {
-        runEnrich();
-      }
-    });
-  }
+  erl.then(() => {
+    if (document.readyState === "complete" || typeof rangy?.getSelection === "function") {
+      runEnrich();
+    } else {
+      document.addEventListener("readystatechange", () => {
+        if (document.readyState === "complete") {
+          runEnrich();
+        }
+      });
+    }
+  });
 }

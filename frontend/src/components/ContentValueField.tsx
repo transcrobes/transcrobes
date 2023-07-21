@@ -3,6 +3,7 @@ import { useRecordContext, useTranslate } from "react-admin";
 import { useAppSelector } from "../app/hooks";
 import { CalculatedContentValueStats } from "../lib/types";
 import ContentValue from "./ContentValue";
+import { platformHelper } from "../app/createStore";
 
 const DATA_SOURCE = "ContentValueField";
 
@@ -24,19 +25,21 @@ export default function ContentStatsField({
   const [stats, setStats] = useState<CalculatedContentValueStats | null>();
 
   useEffect(() => {
-    if (window.componentsConfig.proxy.loaded && userlistId) {
+    if (userlistId) {
       (async function () {
         if (!limportId) return;
-        const locStats: CalculatedContentValueStats | null =
-          await window.componentsConfig.proxy.sendMessagePromise<CalculatedContentValueStats | null>({
-            source: DATA_SOURCE,
-            type: "getImportUtilityStatsForList",
-            value: { importId: limportId, userlistId, fromLang },
-          });
+
+        // @ts-ignore FIXME:
+        const locStats: CalculatedContentValueStats | null = await platformHelper.getImportUtilityStatsForList({
+          importId: limportId,
+          userlistId,
+          fromLang,
+        });
+
         setStats(locStats);
       })();
     }
-  }, [window.componentsConfig.proxy.loaded, userlistId]);
+  }, [userlistId]);
 
   return stats ? (
     <ContentValue

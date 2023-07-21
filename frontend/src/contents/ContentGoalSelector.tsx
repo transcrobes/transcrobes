@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useTranslate } from "react-admin";
 import ContentValueField from "../components/ContentValueField";
 import { Goal } from "../lib/types";
+import { platformHelper } from "../app/createStore";
 
 export function ContentGoalSelector({
   showResult,
@@ -24,19 +25,13 @@ export function ContentGoalSelector({
   }
 
   useEffect(() => {
-    if (window.componentsConfig.proxy.loaded) {
-      (async function () {
-        const existing = await window.componentsConfig.proxy.sendMessagePromise<Goal[] | null>({
-          source: "ContentValue",
-          type: "getAllFromDB",
-          value: { collection: "goals" },
-        });
-        if (existing && existing.length > 0) {
-          setGoals(existing);
-        }
-      })();
-    }
-  }, [window.componentsConfig.proxy.loaded]);
+    (async function () {
+      const existing = await platformHelper.getAllFromDB({ collection: "goals" });
+      if (existing && existing.length > 0) {
+        setGoals(existing);
+      }
+    })();
+  }, []);
 
   return (
     <Box sx={{ display: "flex", alignItems: "center" }}>

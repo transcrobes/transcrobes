@@ -2,15 +2,14 @@ import { Grid, useTheme } from "@mui/material";
 import { bin } from "d3-array";
 import dayjs, { ManipulateType } from "dayjs";
 import { useEffect, useState } from "react";
-import { useRecordContext, useTranslate } from "react-admin";
+import { useRecordContext, useStore, useTranslate } from "react-admin";
 import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
 import { useAppSelector } from "../app/hooks";
 import useWindowDimensions from "../hooks/WindowDimensions";
 import { binnedData } from "../lib/funclib";
 import { dateRange } from "../lib/libMethods";
 import { ListFirstSuccessStats } from "../lib/types";
-
-const DATA_SOURCE = "ListProgress.tsx";
+import { platformHelper } from "../app/createStore";
 
 type ListGraphData = {
   name: string;
@@ -32,15 +31,12 @@ export function ListProgress({ studentId, yIsNumber = false, nbPeriods = 8, peri
   const translate = useTranslate();
   const fromLang = useAppSelector((state) => state.userData.user.fromLang);
   const listId = obj ? ("userList" in obj ? obj.userList : obj.id) : "";
+  const [includeNonDict] = useStore("preferences.includeNonDict", false);
+  const [includeIgnored] = useStore("preferences.includeIgnored", false);
+
   useEffect(() => {
     (async () => {
-      if (!window.componentsConfig.proxy.loaded) return;
-      const locStats: ListFirstSuccessStats | null =
-        await window.componentsConfig.proxy.sendMessagePromise<ListFirstSuccessStats | null>({
-          source: DATA_SOURCE,
-          type: "getFirstSuccessStatsForList",
-          value: listId,
-        });
+      const locStats = await platformHelper.getFirstSuccessStatsForList({ listId, includeNonDict, includeIgnored });
       setStats(locStats);
       if (!locStats?.successWords[0]) return;
       const periods: ManipulateType[] = ["month", "week", "day"];
@@ -72,7 +68,7 @@ export function ListProgress({ studentId, yIsNumber = false, nbPeriods = 8, peri
       }
       setData(locData);
     })();
-  }, [window.componentsConfig.proxy.loaded]);
+  }, []);
 
   const theme = useTheme();
   const dims = useWindowDimensions();

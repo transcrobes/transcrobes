@@ -1,4 +1,4 @@
-import { GRADE } from "../database/Schema";
+import { GRADE } from "../workers/rxdb/Schema";
 import { GradesType } from "../lib/types";
 
 export function getColour(grade: GradesType, palette: Record<string, any>) {

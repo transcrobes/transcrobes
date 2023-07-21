@@ -1,4 +1,9 @@
+import logging
 from collections import defaultdict
+
+from app.ndutils import get_from_lang, within_char_limit
+
+logger = logging.getLogger(__name__)
 
 cache_loading = {}
 
@@ -18,3 +23,30 @@ caches: dict[SimpleCache] = {
     "bing_translate": SimpleCache(),
     "bing_transliterate": SimpleCache(),
 }
+
+
+class MissingCacheValueException(Exception):
+    pass
+
+
+def add_word_ids(user_words: list, lang_pair: str, allow_missing: bool = False, id_format_fn=str) -> list:
+    filtered_words = []
+    for x in user_words:
+        if not within_char_limit(x[0], get_from_lang(lang_pair)):
+            # logger.error("Trying to find an invalid word")
+            # logger.error(x)
+            continue
+        filtered_words.append(x)
+    for uw in filtered_words:
+        val = (cached_definitions[lang_pair].get(uw[0].lower()) or [None, {}])[1].get(uw[0])
+        if not val:
+            if not allow_missing:
+                logger.error(uw)
+                raise MissingCacheValueException(
+                    f"Unable to find entry in cache for {uw[0]}, this should not be possible..."
+                )
+            else:
+                uw.append(None)
+        else:
+            uw.append(id_format_fn(val[2]))
+    return filtered_words

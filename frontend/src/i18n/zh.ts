@@ -453,6 +453,7 @@ const customChineseMessages: TranslationMessages = {
       no_goals_message_d: "创建一个列表",
       no_goals_message_e: "，然后回到这里。",
       create_goals_now: "现在创建目标",
+      percents_loading: "计算目标完成统计数据",
     },
     imports: {
       name: "导入",

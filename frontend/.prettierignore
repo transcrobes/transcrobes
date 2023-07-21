@@ -1,3 +1,4 @@
 build/
 builddev*
 node_modules
+dist/

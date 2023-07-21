@@ -3,7 +3,7 @@ import React from "react";
 import { useTranslate } from "react-admin";
 import { useAppSelector } from "../app/hooks";
 import { BASIC_GRADES } from "../components/Common";
-import { GRADE } from "../database/Schema";
+import { GRADE } from "../workers/rxdb/Schema";
 import { convertArrayToObject } from "../lib/funclib";
 import { GraderConfig, GradesType, MIN_KNOWN_BEFORE_ADVANCED } from "../lib/types";
 import { getColour } from "./funclib";
@@ -24,7 +24,7 @@ export default function BasicGradeChooser({ graderConfig, setGraderConfig }: Pro
   const translate = useTranslate();
   const message = useAppSelector((state) => {
     const completed = Math.min(
-      Object.keys(state.knownCards.allCardWordGraphs || {}).length / MIN_KNOWN_BEFORE_ADVANCED,
+      Object.keys(state.knownWords.knownWordGraphs || {}).length / MIN_KNOWN_BEFORE_ADVANCED,
       1,
     );
     if (completed === 1) {

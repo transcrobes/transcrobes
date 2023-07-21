@@ -1,6 +1,6 @@
 import { Box } from "@mui/material";
 import { ReactElement } from "react";
-import { CARD_TYPES, getCardType } from "../database/Schema";
+import { CARD_TYPES, getCardType } from "../workers/rxdb/Schema";
 import { CardType, CharacterType, DefinitionType, PosSentences } from "../lib/types";
 import GraphQuestion from "./GraphQuestion";
 import MeaningQuestion from "./MeaningQuestion";
@@ -10,7 +10,7 @@ import SoundQuestion from "./SoundQuestion";
 interface QuestionProps {
   card: CardType;
   definition: DefinitionType;
-  characters: CharacterType[];
+  characters: (CharacterType | null)[];
   recentSentences: PosSentences | null;
   showSynonyms: boolean;
   showL2LengthHint: boolean;
@@ -18,7 +18,7 @@ interface QuestionProps {
   showAnswer: boolean;
   premature: boolean;
   translationProviderOrder: Record<string, number>;
-  onCardFrontUpdate: (card: CardType) => void;
+  onCardFrontUpdate: (cardId: string, frontString: string) => void;
 }
 
 export default function Question({

@@ -3,15 +3,15 @@ import FlashOnIcon from "@mui/icons-material/FlashOn";
 import { Box, IconButton, useTheme } from "@mui/material";
 import { ReactElement, useEffect, useState } from "react";
 import { useTranslate } from "react-admin";
+import { platformHelper } from "../../../app/createStore";
 import { useAppDispatch } from "../../../app/hooks";
-import { addKnownCards } from "../../../features/card/knownCardsSlice";
 import { updateDefinition } from "../../../features/definition/definitionsSlice";
 import { TokenDetailsState, setTokenDetails } from "../../../features/ui/uiSlice";
 import { originalSentenceFromTokens } from "../../../lib/funclib";
-import { platformHelper } from "../../../lib/proxies";
-import { CardType, DefinitionState, USER_STATS_MODE } from "../../../lib/types";
+import { DefinitionState } from "../../../lib/types";
 import { Loading } from "../../Loading";
 import PracticerInput from "../../PracticerInput";
+import { practiceCardsForWords } from "../../../workers/common-db";
 
 type Props = {
   definition: DefinitionState;
@@ -35,28 +35,16 @@ export default function Actions({ className, tokenDetails, definition }: Props):
   async function addOrUpdateCards(wordId: string, grade: number): Promise<void> {
     setSaving(true);
     // FIXME: grade should be an enum
-    platformHelper.sendMessagePromise({
-      source: DATA_SOURCE,
-      type: "submitUserEvents",
-      value: {
-        type: "practice_card",
-        data: {
-          target_word: tokenDetails.token.l,
-          grade: grade,
-          source_sentence: originalSentenceFromTokens(tokenDetails.sentence.t),
-        },
-        source: DATA_SOURCE,
+    platformHelper.submitUserEvents({
+      type: "practice_card",
+      data: {
+        target_word: tokenDetails.token.l,
+        grade: grade,
+        source_sentence: originalSentenceFromTokens(tokenDetails.sentence.t),
       },
-    });
-
-    await platformHelper.sendMessagePromise<CardType[]>({
       source: DATA_SOURCE,
-      type: "addOrUpdateCardsForWord",
-      value: { wordId: wordId, grade },
     });
-    if (grade > USER_STATS_MODE.NO_GLOSS) {
-      dispatch(addKnownCards({ [tokenDetails.token.l]: null }));
-    }
+    await practiceCardsForWords(platformHelper, [{ wordId, grade }]);
     setMessage("Cards saved");
     setSaving(false);
   }

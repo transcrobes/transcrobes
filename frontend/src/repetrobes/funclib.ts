@@ -1,9 +1,9 @@
 import dayjs from "dayjs";
 import { $enum } from "ts-enum-util";
-import { CARD_TYPES } from "../database/Schema";
+import { CARD_TYPES } from "../workers/rxdb/Schema";
 import { getSettingsValue, setSettingsValue } from "../lib/appSettings";
-import { ServiceWorkerProxy } from "../lib/proxies";
 import { RepetrobesActivityConfigType, SelectableListElementType, WordOrdering } from "../lib/types";
+import { DataManager } from "../data/types";
 
 const DATA_SOURCE = "repetrobes/funclib.ts";
 
@@ -15,19 +15,19 @@ export const EMPTY_ACTIVITY: RepetrobesActivityConfigType = {
   newCardOrdering: "Personal",
   onlySelectedWordListRevisions: false,
   dayStartsHour: 0,
-  wordLists: undefined,
+  wordLists: [],
   showProgress: true,
   showSynonyms: false,
   showRecents: false,
   showL2LengthHint: false,
   filterUnsure: true,
   showNormalFont: false,
-  activeCardTypes: undefined,
+  activeCardTypes: [],
   todayStarts: 0,
   translationProviderOrder: undefined,
 };
 
-export async function getUserConfig(proxy: ServiceWorkerProxy): Promise<RepetrobesActivityConfigType> {
+export async function getUserConfig(proxy: DataManager): Promise<RepetrobesActivityConfigType> {
   const savedConf = await getSettingsValue("repetrobes", "config");
   let conf: RepetrobesActivityConfigType;
   if (savedConf) {
@@ -35,11 +35,7 @@ export async function getUserConfig(proxy: ServiceWorkerProxy): Promise<Repetrob
     // wordlists may have been added or removed since, therefore we get the current wordlists
     // and replace with the existing ones where they still exist (because they might have been selected)
     const wordListMap = new Map<string, SelectableListElementType>();
-    const wordLists = await proxy.sendMessagePromise<SelectableListElementType[]>({
-      source: DATA_SOURCE,
-      type: "getDefaultWordLists",
-      value: {},
-    });
+    const wordLists = await proxy.getDefaultWordLists();
     conf.wordLists?.map((wl) => wordListMap.set(wl.label, wl));
     conf.wordLists = wordLists.map((wl) => wordListMap.get(wl.label) || wl);
     conf.activeCardTypes = Array.from($enum(CARD_TYPES).entries())
@@ -66,11 +62,7 @@ export async function getUserConfig(proxy: ServiceWorkerProxy): Promise<Repetrob
         .map(([label, value]) => {
           return { label: `widgets.card_type.${label.toLowerCase()}`, value: value.toString(), selected: true };
         }),
-      wordLists: await proxy.sendMessagePromise<SelectableListElementType[]>({
-        source: DATA_SOURCE,
-        type: "getDefaultWordLists",
-        value: {},
-      }),
+      wordLists: await proxy.getDefaultWordLists(),
       todayStarts: (new Date().getHours() < EMPTY_ACTIVITY.dayStartsHour
         ? dayjs().startOf("day").subtract(1, "day")
         : dayjs().startOf("day")

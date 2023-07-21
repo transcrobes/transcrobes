@@ -10,13 +10,13 @@ import Options from "./Options";
 
 const container = document.getElementById("root");
 createRoot(container!).render(
-  <StrictMode>
-    <Provider store={store}>
-      <I18nContextProvider value={getI18nProvider(getLanguageFromPreferred(navigator.languages))}>
-        <StyledEngineProvider injectFirst>
-          <Options />
-        </StyledEngineProvider>
-      </I18nContextProvider>
-    </Provider>
-  </StrictMode>,
+  // <StrictMode>
+  <Provider store={store}>
+    <I18nContextProvider value={getI18nProvider(getLanguageFromPreferred(navigator.languages))}>
+      <StyledEngineProvider injectFirst>
+        <Options />
+      </StyledEngineProvider>
+    </I18nContextProvider>
+  </Provider>,
+  // </StrictMode>,
 );

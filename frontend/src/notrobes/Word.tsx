@@ -1,6 +1,6 @@
 import { Box, Divider, Table, TableBody, TableHead, Typography } from "@mui/material";
 import dayjs from "dayjs";
-import React, { ReactElement } from "react";
+import React, { ReactElement, useEffect } from "react";
 import { useTranslate } from "react-admin";
 import { $enum } from "ts-enum-util";
 import { useAppSelector } from "../app/hooks";
@@ -16,10 +16,11 @@ import RecentSentencesElement from "../components/RecentSentencesElement";
 import SayIt from "../components/SayIt";
 import Sound from "../components/Sound";
 import SoundBox from "../components/SoundBox";
-import { CARD_TYPES, getCardId, getCardType } from "../database/Schema";
+import { CARD_TYPES, getCardId, getCardType } from "../workers/rxdb/Schema";
 import useDecomposition from "../hooks/useDecomposition";
 import { cleanedSound, shortProviderTranslations } from "../lib/libMethods";
 import {
+  CardCacheType,
   CardType,
   CharacterType,
   DefinitionType,
@@ -37,8 +38,8 @@ const infoBox = {
 interface WordInfoProps {
   definition: DefinitionType;
   characters: (CharacterType | null)[];
-  meaningCard: CardType;
-  onCardFrontUpdate: (card: CardType) => void;
+  meaningCard: CardType | CardCacheType;
+  onCardFrontUpdate: (cardId: string, frontString: string) => void;
 }
 
 function WordInfo({ definition, characters, meaningCard, onCardFrontUpdate }: WordInfoProps): ReactElement {
@@ -108,17 +109,15 @@ function Practicer({ wordId, onPractice }: PracticerProps): ReactElement {
   );
 }
 
-function ExistingCards({ cards }: { cards: CardType[] }): ReactElement {
+function ExistingCards({ cards }: { cards: CardCacheType[] }): ReactElement {
   const cardsArray = [...cards.values()];
   const translate = useTranslate();
   const toLang = useAppSelector((state) => state.userData.user.toLang);
   const cardsRows = cardsArray.map((card) => {
     return (
       card && (
-        <tr key={card.id}>
-          <td style={{ textTransform: "capitalize" }}>
-            {$enum(CARD_TYPES).getKeyOrThrow(parseInt(getCardType(card)))}
-          </td>
+        <tr key={card.wordId.toString() + card.cardType.toString()}>
+          <td style={{ textTransform: "capitalize" }}>{$enum(CARD_TYPES).getKeyOrThrow(card.cardType)}</td>
           <td>
             {/* FIXME: don't hardcode the localeString!!! */}
             {dayjs
@@ -378,7 +377,7 @@ function WordMetadata({ definition }: { definition: DefinitionType }): ReactElem
 
 interface WordProps {
   definition: DefinitionType;
-  cards: CardType[];
+  cards: CardCacheType[];
   wordModelStats: WordModelStatsType;
   recentPosSentences: PosSentences | null;
   lists: SortableListElementType[];
@@ -386,7 +385,7 @@ interface WordProps {
   translationProviderOrder: Record<string, number>;
   onPractice: (wordId: string, grade: number) => void;
   onDeleteRecent: (modelId: number | bigint) => void;
-  onCardFrontUpdate: (card: CardType) => void;
+  onCardFrontUpdate: (cardId: string, frontString: string) => void;
 }
 
 function Word({
@@ -409,7 +408,7 @@ function Word({
           definition={definition}
           characters={characters}
           meaningCard={
-            (cards && cards.filter((c) => getCardType(c) === CARD_TYPES.MEANING.toString())[0]) || {
+            (cards && cards.filter((c) => c.cardType === CARD_TYPES.MEANING)[0]) || {
               ...EMPTY_CARD,
               id: getCardId(definition.id, CARD_TYPES.MEANING.toString()),
             }

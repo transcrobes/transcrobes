@@ -7,7 +7,7 @@ import * as CSS from "csstype";
 import { ReactElement } from "react";
 import { useTranslate } from "react-admin";
 import { makeStyles } from "tss-react/mui";
-import { GRADE } from "../database/Schema";
+import { GRADE } from "../workers/rxdb/Schema";
 
 interface IconProps {
   iconPadding?: string;

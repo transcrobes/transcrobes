@@ -7,27 +7,26 @@ import { HelpShowActions } from "../components/HelpShowActions";
 import { ProcessingField } from "../components/ProcessingField";
 import UnixFieldAsDate from "../components/UnixFieldAsDate";
 import { DOCS_DOMAIN, ImportFirstSuccessStats, IMPORTS_YT_VIDEO, PROCESS_TYPE } from "../lib/types";
+import { platformHelper } from "../app/createStore";
 
 const DATA_SOURCE = "ImportShow.tsx";
 
 export default function ImportShow() {
-  const [stats, setStats] = useState<ImportFirstSuccessStats>();
+  const [stats, setStats] = useState<ImportFirstSuccessStats | null>();
   const fromLang = useAppSelector((state) => state.userData.user.fromLang);
   const { id } = useParams();
   const translate = useTranslate();
   useEffect(() => {
-    if (window.componentsConfig.proxy.loaded) {
+    if (id) {
       (async function () {
-        const locStats: ImportFirstSuccessStats =
-          await window.componentsConfig.proxy.sendMessagePromise<ImportFirstSuccessStats>({
-            source: DATA_SOURCE,
-            type: "getFirstSuccessStatsForImport",
-            value: { importId: id, fromLang },
-          });
+        const locStats: ImportFirstSuccessStats | null = await platformHelper.getFirstSuccessStatsForImport({
+          importId: id,
+          fromLang,
+        });
         setStats(locStats);
       })();
     }
-  }, [window.componentsConfig.proxy.loaded]);
+  }, []);
   return (
     <Show
       actions={

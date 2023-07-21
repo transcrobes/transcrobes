@@ -29,9 +29,7 @@ export default function CharacterGraph({
   onAnimateFinished,
 }: CharacterGraphProps): ReactElement {
   const [hanzi, setHanzi] = useState<HanziWriter>();
-
   const prevAnimateRef = useRef<number>();
-
   useEffect(() => {
     prevAnimateRef.current = animate;
   });
@@ -70,7 +68,6 @@ export default function CharacterGraph({
         radicalColor: "#337ab7", // blue
         charDataLoader: () => structure,
       };
-
       const hz = HanziWriter.create(`${id}-${index}`, id, options);
       if (!showAnswer) {
         hz.quiz({

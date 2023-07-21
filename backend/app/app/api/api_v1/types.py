@@ -153,6 +153,23 @@ class Characters:
         return characters
 
 
+def asdict_inner(obj, dict_factory=dict):
+    # copied from python 3.9.2 with addition of to_camel_case, and made to pass pylint!
+    if hasattr(type(obj), "__dataclass_fields__"):
+        result = []
+        for f in dataclasses.fields(obj):
+            value = asdict_inner(getattr(obj, f.name), dict_factory)
+            result.append((to_camel_case(f.name), value))
+        return dict_factory(result)
+    if isinstance(obj, tuple) and hasattr(obj, "_fields"):
+        return type(obj)(*[asdict_inner(v, dict_factory) for v in obj])
+    if isinstance(obj, (list, tuple)):
+        return type(obj)(asdict_inner(v, dict_factory) for v in obj)
+    if isinstance(obj, dict):
+        return type(obj)((asdict_inner(k, dict_factory), asdict_inner(v, dict_factory)) for k, v in obj.items())
+    return copy.deepcopy(obj)
+
+
 @strawberry.type
 class Definitions:
     id: str
@@ -167,26 +184,8 @@ class Definitions:
 
     @staticmethod
     def from_model_asdict(definition: models.CachedDefinition, providers: list[str]):
-        # copied from python 3.9.2 with addition of to_camel_case, and made to pass pylint!
-        def _asdict_inner(obj, dict_factory=dict):
-            if hasattr(type(obj), "__dataclass_fields__"):
-                result = []
-                for f in dataclasses.fields(obj):
-                    value = _asdict_inner(getattr(obj, f.name), dict_factory)
-                    result.append((to_camel_case(f.name), value))
-                return dict_factory(result)
-            if isinstance(obj, tuple) and hasattr(obj, "_fields"):
-                return type(obj)(*[_asdict_inner(v, dict_factory) for v in obj])
-            if isinstance(obj, (list, tuple)):
-                return type(obj)(_asdict_inner(v, dict_factory) for v in obj)
-            if isinstance(obj, dict):
-                return type(obj)(
-                    (_asdict_inner(k, dict_factory), _asdict_inner(v, dict_factory)) for k, v in obj.items()
-                )
-            return copy.deepcopy(obj)
-
         obj = Definitions.from_model(definition, providers)
-        dict_obj = _asdict_inner(obj)  # this doesn't work dict_obj = asdict(obj)
+        dict_obj = asdict_inner(obj)  # this doesn't work dict_obj = asdict(obj)
         del dict_obj["deleted"]
         return dict_obj
 
@@ -498,7 +497,6 @@ class Imports(CommonType):
     processing: Optional[int] = 0
     process_type: Optional[int] = 0
     import_file: Optional[str] = ""
-    analysis: Optional[str] = ""
     shared: Optional[bool] = False
     source_url: Optional[str] = ""
     extra_data: Optional[str] = ""
@@ -509,7 +507,6 @@ class Imports(CommonType):
         out.processing = obj.processing
         out.process_type = obj.process_type
         out.import_file = obj.import_file
-        out.analysis = obj.analysis
         out.shared = obj.shared
         out.source_url = obj.source_url
         out.extra_data = obj.extra_data

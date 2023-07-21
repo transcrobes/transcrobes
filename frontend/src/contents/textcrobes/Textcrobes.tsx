@@ -1,47 +1,45 @@
-import { createTheme, Theme, StyledEngineProvider, ThemeProvider, useMediaQuery } from "@mui/material";
+import { StyledEngineProvider, Theme, ThemeProvider, createTheme, useMediaQuery } from "@mui/material";
 import { EditorState } from "draft-js";
 import { stateToHTML } from "draft-js-export-html";
 import "draft-js/dist/Draft.css";
-import MUIRichTextEditor from "../../components/mui-rte/MUIRichTextEditor";
 import { ReactElement, useEffect, useRef, useState } from "react";
-import { ThemeType, TopToolbar, useTheme, useTranslate } from "react-admin";
+import { ThemeType, TopToolbar, useStore, useTheme, useTranslate } from "react-admin";
 import { makeStyles } from "tss-react/mui";
 import { store } from "../../app/createStore";
 import { useAppDispatch, useAppSelector, useJssStyles } from "../../app/hooks";
 import Conftainer from "../../components/Conftainer";
-import { enrichETFElements } from "../../components/content/etf/EnrichedTextFragment";
-import Mouseover from "../../components/content/td/Mouseover";
-import TokenDetails from "../../components/content/td/TokenDetails";
 import { DocumentProgress } from "../../components/DocumentProgress";
 import HelpButton from "../../components/HelpButton";
 import Loading from "../../components/Loading";
 import WatchDemo from "../../components/WatchDemo";
+import { enrichETFElements } from "../../components/content/etf/EnrichedTextFragment";
+import Mouseover from "../../components/content/td/Mouseover";
+import TokenDetails from "../../components/content/td/TokenDetails";
+import MUIRichTextEditor from "../../components/mui-rte/MUIRichTextEditor";
+import type { WebDataManager } from "../../data/types";
 import { getRefreshedState } from "../../features/content/contentSlice";
 import { simpleReaderActions } from "../../features/content/simpleReaderSlice";
 import { setLoading } from "../../features/ui/uiSlice";
 import { ensureDefinitionsLoaded } from "../../lib/dictionary";
 import { isScriptioContinuo, wordIdsFromModels } from "../../lib/funclib";
-import { ServiceWorkerProxy } from "../../lib/proxies";
+import { fetchPlus, getDefaultLanguageDictionaries } from "../../lib/libMethods";
 import {
   DEFAULT_TEXT_READER_CONFIG_STATE,
   DOCS_DOMAIN,
-  EnrichedHtmlModels,
   ImportFirstSuccessStats,
   KeyedModels,
-  noop,
   SimpleReaderState,
   TEXTCROBES_YT_VIDEO,
   TEXT_READER_ID,
+  noop,
   translationProviderOrder,
 } from "../../lib/types";
 import ContentConfigLauncherDrawer from "./TextReaderConfigLauncher";
-import { getDefaultLanguageDictionaries } from "../../lib/libMethods";
 
 type Props = {
-  proxy: ServiceWorkerProxy;
+  proxy: WebDataManager;
 };
 const MAX_TEXT_LENGTH = 30000;
-const DATA_SOURCE = "Textcrobes.tsx";
 const useStyles = makeStyles()({
   error: {
     color: "red",
@@ -58,8 +56,10 @@ export default function Textcrobes({ proxy }: Props): ReactElement {
   const [editorState, setEditorState] = useState(() => EditorState.createEmpty());
   const [html, setHtml] = useState("");
   const [models, setModels] = useState<KeyedModels | null>(null);
-  const [stats, setStats] = useState<ImportFirstSuccessStats>();
+  const [stats, setStats] = useState<ImportFirstSuccessStats | null>();
   const [error, setError] = useState("");
+  const [includeIgnored] = useStore("preferences.includeIgnored", false);
+  const [includeNonDict] = useStore("preferences.includeNonDict", false);
   const translate = useTranslate();
 
   const divRef = useRef<HTMLDivElement>(null);
@@ -96,19 +96,17 @@ export default function Textcrobes({ proxy }: Props): ReactElement {
 
   useEffect(() => {
     (async () => {
-      if (proxy.loaded) {
-        const conf = await getRefreshedState<SimpleReaderState>(
-          proxy,
-          {
-            ...DEFAULT_TEXT_READER_CONFIG_STATE,
-            translationProviderOrder: translationProviderOrder(getDefaultLanguageDictionaries(fromLang)),
-          },
-          id,
-        );
-        dispatch(simpleReaderActions.setState({ id, value: conf }));
-      }
+      const conf = await getRefreshedState<SimpleReaderState>(
+        proxy,
+        {
+          ...DEFAULT_TEXT_READER_CONFIG_STATE,
+          translationProviderOrder: translationProviderOrder(getDefaultLanguageDictionaries(fromLang)),
+        },
+        id,
+      );
+      dispatch(simpleReaderActions.setState({ id, value: conf }));
     })();
-  }, [proxy.loaded]);
+  }, []);
 
   useEffect(() => {
     setHtml("");
@@ -119,33 +117,23 @@ export default function Textcrobes({ proxy }: Props): ReactElement {
       dispatch(setLoading(undefined));
       return;
     }
-    if (!proxy.loaded) return;
     dispatch(setLoading(true));
-    proxy
-      .sendMessagePromise<EnrichedHtmlModels>({
-        source: DATA_SOURCE,
-        type: "enrichHtmlText",
-        value: text,
-      })
-      .then((value) => {
-        if (!value.models) {
-          setError(translate("screens.textcrobes.enrich_error"));
-          console.error("There was an error while enriching the text.", value);
-        }
-        setModels(value.models);
-        const uniqueIds = wordIdsFromModels(value.models);
-        ensureDefinitionsLoaded(proxy, [...uniqueIds], store).then(() => {
-          setHtml(value.html);
-          dispatch(setLoading(undefined));
-        });
-        proxy
-          .sendMessagePromise<ImportFirstSuccessStats>({
-            source: DATA_SOURCE,
-            type: "getFirstSuccessStatsForImport",
-            value: { analysisString: value.analysis, fromLang },
-          })
-          .then((locStats) => setStats(locStats));
+    fetchPlus("api/v1/enrich/enrich_html_to_json", JSON.stringify({ data: text })).then((value) => {
+      if (!value.models) {
+        setError(translate("screens.textcrobes.enrich_error"));
+        console.error("There was an error while enriching the text.", value);
+      }
+      setModels(value.models);
+      const uniqueIds = wordIdsFromModels(value.models);
+      ensureDefinitionsLoaded(proxy, [...uniqueIds], store).then(() => {
+        setHtml(value.html);
+        dispatch(setLoading(undefined));
       });
+      console.log("got back a value", value);
+      proxy
+        .getStatsFromAnalysis({ analysisString: value.analysis, fromLang, includeIgnored, includeNonDict })
+        .then((value) => setStats(value));
+    });
   }, [editorState.getCurrentContent()]);
 
   useEffect(() => {
