@@ -19,13 +19,7 @@ from app.api.api_v1.graphql import Definitions
 from app.cache import cached_definitions
 from app.core.config import settings
 from app.data.importer.common import process
-from app.enrich import (
-    TokenPhoneType,
-    definitions_json_paths,
-    enrich_html_fragment,
-    hanzi_json_paths,
-    latest_db_fragments_dir_path,
-)
+from app.enrich import TokenPhoneType, enrich_html_fragment, latest_db_fragments_dir_path
 from app.enrich.cache import SQLITE_FILENAME, ensure_cached_definitions, regenerate_personal_db
 from app.enrich.data import EnrichmentManager, managers
 from app.enrich.models import definitions, reload_definitions_cache
@@ -126,7 +120,6 @@ async def load_definitions_cache(db: AsyncSession = Depends(deps.get_db), force_
 
 @router.get("/dbexports.json", name="dbexports_part_urls")
 async def db_export_urls(
-    # current_user: models.AuthUser = Depends(deps.get_current_good_user),
     current_user: schemas.TokenPayload = Depends(deps.get_current_good_tokenpayload),
 ):
     dbs_path = latest_db_fragments_dir_path(current_user.lang_pair, current_user.translation_providers)
@@ -156,17 +149,6 @@ async def db_decache(
     return {"result": "success"}
 
 
-@router.get("/dbexports/tc.sql", name="dbexport")
-async def db_export_sql(
-    current_user: schemas.TokenPayload = Depends(deps.get_current_good_tokenpayload),
-):
-    dbs_path = latest_db_fragments_dir_path(current_user.lang_pair, current_user.translation_providers)
-    base_db_path = os.path.join(dbs_path, SQLITE_FILENAME)
-    _, personal_sql_path = await regenerate_personal_db(base_db_path, current_user.id, current_user.lang_pair)
-
-    return FileResponse(personal_sql_path, media_type="text/plain")
-
-
 @router.get("/dbexports/{resource_path:path}", name="dbexports_part")
 def db_export_part(
     resource_path: str,
@@ -182,65 +164,6 @@ def db_export_part(
         )
 
     return FileResponse(abspath, media_type="application/vnd.tcdb.part")
-
-
-@router.get("/exports.json", name="exports_json_urls")
-def definitions_export_urls(
-    current_user: models.AuthUser = Depends(deps.get_current_good_user),
-):
-    inmem_file = definitions_json_paths(current_user, router)
-    if inmem_file:
-        return inmem_file
-
-    raise HTTPException(
-        status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        detail=f"Server does not support user dictionaries for {current_user}",
-    )
-
-
-@router.get("/exports/{resource_path:path}", name="exports_json")
-def definitions_export_json(
-    resource_path: str,
-    _current_user: schemas.TokenPayload = Depends(deps.get_current_good_tokenpayload),
-):
-    # FIXME: better perms checking for providers
-    abspath = os.path.join(settings.DEFINITIONS_CACHE_DIR, resource_path)
-    if abspath != os.path.normpath(abspath) or not os.path.isfile(abspath):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid request",
-        )
-
-    return FileResponse(abspath)
-
-
-@router.get("/hzexports.json", name="hzexports_json_urls")
-def hanzi_export_urls(
-    current_user: schemas.TokenPayload = Depends(deps.get_current_good_tokenpayload),
-):
-    inmem_file = hanzi_json_paths(router)
-    if inmem_file:
-        return inmem_file
-
-    raise HTTPException(
-        status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        detail=f"Server does not support hanzi for {current_user}",
-    )
-
-
-@router.get("/hzexports/{resource_path:path}", name="hzexports_json")
-def hanzi_export_json(
-    resource_path: str,
-    _current_user: schemas.TokenPayload = Depends(deps.get_current_good_tokenpayload),
-):
-    abspath = os.path.join(settings.HANZI_CACHE_DIR, resource_path)
-    if not abspath == os.path.normpath(abspath) or not os.path.isfile(abspath):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid request",
-        )
-
-    return FileResponse(abspath)
 
 
 @router.post("/lemma_test", response_model=Any, name="lemma_test")

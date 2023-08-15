@@ -169,8 +169,6 @@ export async function syncUserDictionaryUpdates(latestUpdates: { id: string; upd
       string,
       UserDefinitionType
     >;
-    let toto: RawUserDefinitionType[] = [];
-
     await refreshDictionaryWords(
       Object.values(dictEntries).map((d) => ({
         id: d.id,
@@ -196,7 +194,6 @@ export async function syncImportUpdates(latestUpdates: { id: string; updated_at:
         }
       }
       const wordIds = await getDefinitionIdsFromGraphs(Object.keys(wordss));
-      // for (const word of Object.keys(wordss)) {
       for (const { wordId, graph } of wordIds) {
         importWords.push({ graph, importId: id, nbOccurrences: wordss[graph], wordId });
       }

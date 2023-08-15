@@ -77,10 +77,10 @@ export class DatabaseService extends DataService<SqliteDataManager> {
       PRAGMA journal_mode=truncate;
       `);
     } else {
-      console.log("Setting locking mode to exclusive and cache size to -15000");
+      // PRAGMA cache_size=-15000;
+      console.log("Setting locking mode to exclusive");
       this.query(`
       PRAGMA locking_mode=exclusive;
-      PRAGMA cache_size=-15000;
       `);
     }
 

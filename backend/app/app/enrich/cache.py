@@ -475,15 +475,15 @@ async def regenerate_personal_db(base_db_path: str, user_id: int, lang_pair: str
         shutil.rmtree(destdir, ignore_errors=True)
         pathlib.Path(destdir).mkdir(parents=True, exist_ok=True)
 
-        tmpsqldb_sql = os.path.join(destdir, SQLITE_FILENAME_SQL)
-        with open(tmpsqldb_sql, "w") as f:
-            for line in con.iterdump():
-                f.write("%s\n" % line)
+        # tmpsqldb_sql = os.path.join(destdir, SQLITE_FILENAME_SQL)
+        # with open(tmpsqldb_sql, "w") as f:
+        #     for line in con.iterdump():
+        #         f.write("%s\n" % line)
 
         con.close()
         await db.close()
 
-        CHUNK_SIZE = 10_485_760  # 65536*160, 32768*320 this will get compressed over the wire, so isn't really ~10MB
+        CHUNK_SIZE = 10_485_760  # 32768*320 this will get compressed over the wire, so isn't really ~10MB
         file_number = 0
         with open(tmpsqldb, "rb") as f:
             chunk = f.read(CHUNK_SIZE)
@@ -494,7 +494,7 @@ async def regenerate_personal_db(base_db_path: str, user_id: int, lang_pair: str
                     chunk_file.write(chunk)
                 file_number += 1
                 chunk = f.read(CHUNK_SIZE)
-
+        # shutil.move(tmpsqldb, os.path.join(destdir, SQLITE_FILENAME))
         shutil.rmtree(tmpdirpath, ignore_errors=True)
     return True
 

@@ -1,11 +1,11 @@
 import {
-  TextField,
   Box,
   Button,
   Container,
   CssBaseline,
   FormGroup,
   FormLabel,
+  TextField,
   ThemeProvider,
   Typography,
   createTheme,
@@ -50,7 +50,7 @@ import { backgroundWorkerManager } from "./backgroundfn";
 import ExtensionConfig from "./components/ExtensionConfig";
 import Initialisation from "./components/Initialisation";
 import Intro from "./components/Intro";
-import { getRxdbService, getSqliteService, installRxdb, installSqlite } from "./lib/dbs";
+import { getRxdbService, getSqliteService, installDbFromParts, installRxdb } from "./lib/dbs";
 
 let rxDatabaseService: RxDatabaseService;
 let sqlDatabaseService: SqlDatabaseService;
@@ -219,7 +219,7 @@ export default function Options(): ReactElement {
               installRxdb(dbConfig, (progress: ProgressCallbackMessage) =>
                 setMessage(translate(progress.message.phrase, progress.message.options)),
               ),
-              installSqlite(dbConfig.url.origin, (progress: ProgressCallbackMessage) =>
+              installDbFromParts(userData, (progress: ProgressCallbackMessage) =>
                 setMessage(translate(progress.message.phrase, progress.message.options)),
               ),
             ]);

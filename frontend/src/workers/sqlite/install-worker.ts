@@ -35,8 +35,7 @@ async function installDbFromParts(userData: UserState) {
     const partNo = parseInt(partName.replace("tc.db.", "").replace(".part", ""));
     return vfs.xWrite(
       FILE_ID,
-      // @ts-ignore
-      new DataView(
+      new Uint8Array(
         await fetchPlus(
           new URL(`/api/v1/enrich/dbexports/${partName}`, userData.baseUrl),
           undefined,

@@ -1,12 +1,12 @@
+import * as SQLite from "wa-sqlite";
 import { fetchPlus } from "../../lib/libMethods";
-import { DBParameters } from "../../lib/types";
+import { DBParameters, TCDB_FILENAME, UserState } from "../../lib/types";
+import { asyncPoolAllBuffers } from "../../workers/common-db";
 import { getDb } from "../../workers/rxdb/Database";
 import { DatabaseService as RxDatabaseService } from "../../workers/rxdb/DatabaseService";
-import { DatabaseService, DatabaseService as SqlDatabaseService } from "../../workers/sqlite/DatabaseService";
-
-import * as SQLite from "wa-sqlite";
-
-import { ASYNC_SQLITE } from "../../workers/sqlite/DatabaseService";
+import { ASYNC_SQLITE, DatabaseService as SqlDatabaseService } from "../../workers/sqlite/DatabaseService";
+import { IDBBatchAtomicVFS } from "../../workers/sqlite/IDBBatchAtomicVFS";
+import * as VFS from "../../workers/sqlite/sqlite-constants.js";
 
 const DATA_SOURCE = "EXT_INSTALL";
 export const sqlite3Ready = ASYNC_SQLITE.esmFactory().then((module) => {
@@ -17,51 +17,63 @@ export async function installRxdb(dbConfig: DBParameters, progressCallback: (pro
   return await getDb(dbConfig, progressCallback, () => {}, true);
   // await unloadDatabaseFromMemory();
 }
-const MAX_INSERTS = 50000;
+const BLOCK_SIZE = 10_485_760;
+const PAGE_SIZE = 32768;
+const FILE_ID = 0xdeadbeef;
 
-export async function installSqlite(origin: string, progressCallback: (progress: any) => void) {
-  const databaseService = new DatabaseService(sqlite3Ready, () => {}, ASYNC_SQLITE.vfs);
-  progressCallback({
-    source: DATA_SOURCE,
-    isFinished: false,
-    message: { phrase: "sqlite.backgroundworker.downloading" },
-  });
-  const text: string = await fetchPlus(new URL("/api/v1/enrich/dbexports/tc.sql", origin), undefined, 0, false, "text");
-  console.log("got the file, starting to import", text.slice(0, 500));
-  progressCallback({
-    source: DATA_SOURCE,
-    isFinished: false,
-    message: { phrase: "sqlite.backgroundworker.installing" },
-  });
+export async function installDbFromParts(userData: UserState, progressCallback: (progress: any) => void) {
+  const entryBlock = async (partName: string) => {
+    const ab = await fetchPlus(
+      new URL(`/api/v1/enrich/dbexports/${partName}`, userData.baseUrl),
+      undefined,
+      3,
+      false,
+      "arrayBuffer",
+    );
+    progressCallback({
+      source: DATA_SOURCE,
+      isFinished: false,
+      message: { phrase: "database.datafile", options: { datafile: partName } },
+    });
+    const partNo = parseInt(partName.replace("tc.db.", "").replace(".part", ""));
+    return {
+      partNo,
+      ab,
+    };
+  };
 
-  await databaseService.query(`PRAGMA page_size=65536;VACUUM;`);
+  const data = await fetchPlus(new URL("/api/v1/enrich/dbexports.json", userData.baseUrl), undefined, 3, false, "json");
+  const vfs = new IDBBatchAtomicVFS(`/${TCDB_FILENAME}`);
+  await vfs.isReady;
+  const filename = TCDB_FILENAME;
+  // FIXME: nastiness!!! You MUST open a few SECONDS before starting to write... this is because
+  // the VFS is "temperamental"...
+  let result = await vfs.xOpen(
+    filename,
+    FILE_ID,
+    VFS.SQLITE_OPEN_CREATE | VFS.SQLITE_OPEN_READWRITE | VFS.SQLITE_OPEN_MAIN_DB,
+    new DataView(new ArrayBuffer(8)),
+  );
 
-  let sql = "";
-  let i = 0;
-  for (const line of text.split("\n")) {
-    if (line.startsWith("PRAGMA") || line.startsWith("BEGIN TRANSACTION") || line.startsWith("COMMIT")) {
-      continue;
+  try {
+    const allBuffers = await asyncPoolAllBuffers(2, data, entryBlock);
+    allBuffers.sort((a, b) => a.partNo - b.partNo);
+    for (const { partNo, ab } of allBuffers) {
+      if (ab.byteLength % PAGE_SIZE !== 0) throw new Error("The little file is not a multiple of the page size");
+      const blockStart = partNo * BLOCK_SIZE;
+      console.log("Importing the buffer", partNo, ab.byteLength, blockStart);
+      for (let i = 0; i < ab.byteLength; i += PAGE_SIZE) {
+        result += await vfs.xWrite(FILE_ID, new Uint8Array(ab.slice(i, i + PAGE_SIZE)), blockStart + i);
+      }
     }
-    sql += line + "\n";
-    i++;
-    // I guess there is still a chance that there are text fields with a ; in them followed by a newline... but I'm not going to worry about that :-)
-    if (i > MAX_INSERTS && line.endsWith(";")) {
-      console.log(`Inserting ~${MAX_INSERTS} rows`, sql.slice(0, 500));
-      await databaseService.query(`BEGIN TRANSACTION;${sql};COMMIT;`);
-      sql = "";
-      i = 0;
-    }
+    console.log("xsync", await vfs.xSync(FILE_ID, 0));
+    console.log("xclose", await vfs.xClose(FILE_ID));
+    console.log("close", await vfs.close());
+    await fetchPlus(new URL("/api/v1/enrich/decache", userData.baseUrl), undefined, 3, false, "json");
+  } catch (err) {
+    console.error("Error processing the datafiles");
+    throw err;
   }
-  if (sql) {
-    // there's some leftovers
-    await databaseService.query(`BEGIN TRANSACTION;${sql};COMMIT;`);
-    sql = "";
-  }
-  progressCallback({
-    source: DATA_SOURCE,
-    isFinished: true,
-    message: { phrase: "sqlite.backgroundworker.installed" },
-  });
 }
 
 export function getRxdbService() {

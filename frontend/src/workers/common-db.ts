@@ -15,6 +15,18 @@ export function getImportFileStorage(): Promise<IDBFileStorage> {
   return getFileStorage(IMPORT_FILE_STORAGE);
 }
 
+export async function asyncPoolAllBuffers(
+  poolLimit: number,
+  array: string[],
+  iteratorFn: (generator: string) => Promise<{ partNo: number; ab: ArrayBuffer }>,
+) {
+  const results: any[] = [];
+  for await (const result of asyncPool(poolLimit, array, iteratorFn)) {
+    results.push(result);
+  }
+  return results;
+}
+
 export async function asyncPoolAll(
   poolLimit: number,
   array: string[],

@@ -20,7 +20,6 @@ from app.etypes import LANG_PAIR_SEPARATOR, AnyToken, Sentence
 from app.models import AuthUser
 from app.ndutils import lemma, orig_text, to_enrich
 from bs4 import BeautifulSoup
-from fastapi.routing import APIRouter
 from jinja2 import Template
 from sqlalchemy.ext.asyncio.session import AsyncSession
 
@@ -151,29 +150,6 @@ def latest_character_json_dir_path() -> str:
     return ""
 
 
-def definitions_json_paths(user: AuthUser, router: APIRouter) -> dict:
-    jsons_path = latest_definitions_json_dir_path(user)
-    find_re = r"\d{1,8}\.json"
-
-    # FIXME: this shouldn't be hard-coded...
-    exports_base = (
-        settings.API_V1_STR
-        + "/enrich"
-        + router.url_path_for("exports_json", resource_path=os.path.basename(jsons_path))
-    )
-    logger.debug(f"Getting list of export files in dir: {exports_base=}")
-    files = sorted(
-        [
-            os.path.join(exports_base, os.path.basename(f.path))
-            for f in os.scandir(jsons_path)
-            if f.is_file() and re.match(find_re, f.name)
-        ]
-    )
-    logger.debug("The latest export files for user %s are %s", user, files)
-
-    return files
-
-
 def definitions_path_json_as_string(path: str) -> str:
     json_path = os.path.join(settings.DEFINITIONS_CACHE_DIR, path)
     with open(json_path, encoding="utf8") as fh:
@@ -186,25 +162,6 @@ def hanzi_json_local_paths() -> list:
         [f.path for f in os.scandir(jsons_path) if f.is_file() and re.match(HANZI_JSON_CACHE_FILE_REGEX, f.name)]
     )
     logger.debug("The latest hanzi export local files for are %s", files)
-    return files
-
-
-def hanzi_json_paths(router: APIRouter) -> dict:
-    jsons_path = latest_character_json_dir_path()
-    exports_base = (
-        settings.API_V1_STR
-        + "/enrich"
-        + router.url_path_for("hzexports_json", resource_path=os.path.basename(jsons_path))
-    )
-    files = sorted(
-        [
-            os.path.join(exports_base, os.path.basename(f.path))
-            for f in os.scandir(jsons_path)
-            if f.is_file() and re.match(HANZI_JSON_CACHE_FILE_REGEX, f.name)
-        ]
-    )
-    logger.debug("The latest hanzi export files for are %s", files)
-
     return files
 
 
