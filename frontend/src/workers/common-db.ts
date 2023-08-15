@@ -1,17 +1,30 @@
 import _ from "lodash";
+import asyncPool from "tiny-async-pool";
 import { $enum } from "ts-enum-util";
 import { store } from "../app/createStore";
 import { DataManager } from "../data/types";
 import { addKnownWords } from "../features/word/knownWordsSlice";
+import { IDBFileStorage, getFileStorage } from "../lib/IDBFileStorage";
 import { practice } from "../lib/review";
 import { CardType, PracticeDetailsType } from "../lib/types";
 import { CARD_TYPES, GRADE, getCardId, getCardType, getWordId } from "./rxdb/Schema";
 import { SQLiteResults } from "./sqlite/tag";
-import { IDBFileStorage, getFileStorage } from "../lib/IDBFileStorage";
 
 const IMPORT_FILE_STORAGE = "import_file_storage";
 export function getImportFileStorage(): Promise<IDBFileStorage> {
   return getFileStorage(IMPORT_FILE_STORAGE);
+}
+
+export async function asyncPoolAll(
+  poolLimit: number,
+  array: string[],
+  iteratorFn: (generator: string) => Promise<number>,
+) {
+  const results: any[] = [];
+  for await (const result of asyncPool(poolLimit, array, iteratorFn)) {
+    results.push(result);
+  }
+  return results;
 }
 
 export function rowToResult(columns: string[], rows: SQLiteCompatibleType[]) {

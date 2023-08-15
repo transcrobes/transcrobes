@@ -1,25 +1,17 @@
 /// <reference lib="webworker" />
 
-import asyncPool from "tiny-async-pool";
 import { store } from "../../app/createStore";
 import { setUser } from "../../features/user/userSlice";
 import { fetchPlus } from "../../lib/libMethods";
 import { TCDB_FILENAME, type UserState } from "../../lib/types";
+import { asyncPoolAll } from "../common-db";
 import { progressCallback } from "../common-worker";
 import { AccessHandlePoolVFS } from "./AccessHandlePoolVFS";
 import * as VFS from "./sqlite-constants.js";
 
-async function asyncPoolAll(poolLimit: number, array: string[], iteratorFn: (generator: string) => Promise<number>) {
-  const results: any[] = [];
-  for await (const result of asyncPool(poolLimit, array, iteratorFn)) {
-    results.push(result);
-  }
-  return results;
-}
-
 export const DATA_SOURCE = "SQLITE_INSTALL_WORKER";
 
-const BLOCK_SIZE = 10_000_000;
+const BLOCK_SIZE = 10_485_760;
 const FILE_ID = 0xdeadbeef;
 
 async function installDbFromParts(userData: UserState) {
@@ -27,7 +19,7 @@ async function installDbFromParts(userData: UserState) {
   const vfs = new AccessHandlePoolVFS(`/${TCDB_FILENAME}`);
   await vfs.isReady;
   const filename = TCDB_FILENAME;
-  let result = vfs.xOpen(
+  vfs.xOpen(
     filename,
     FILE_ID,
     VFS.SQLITE_OPEN_CREATE | VFS.SQLITE_OPEN_READWRITE | VFS.SQLITE_OPEN_MAIN_DB,

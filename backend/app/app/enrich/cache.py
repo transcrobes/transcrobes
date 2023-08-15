@@ -483,7 +483,7 @@ async def regenerate_personal_db(base_db_path: str, user_id: int, lang_pair: str
         con.close()
         await db.close()
 
-        CHUNK_SIZE = 10000000  # this will get compressed over the wire, so isn't really ~10MB
+        CHUNK_SIZE = 10_485_760  # 65536*160, 32768*320 this will get compressed over the wire, so isn't really ~10MB
         file_number = 0
         with open(tmpsqldb, "rb") as f:
             chunk = f.read(CHUNK_SIZE)
@@ -615,7 +615,9 @@ async def regenerate_sqlite(from_lang: str = "zh-Hans", to_lang: str = "en") -> 
             tmppath = tempfile.mkdtemp(dir=settings.DB_CACHE_DIR)
             tmpsqldb = os.path.join(tmppath, SQLITE_FILENAME)
             con = sqlite3.connect(tmpsqldb)
-
+            con.execute("PRAGMA page_size=32768;")
+            con.execute("VACUUM;")
+            con.commit()
             con.execute(DEFINITIONS_CREATE)
             new_files_dir_path = await fill_sqlite_definitions(db, con, providers, from_lang, to_lang)
 
