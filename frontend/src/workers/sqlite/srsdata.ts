@@ -181,8 +181,7 @@ async function newCardFromConfig(
       ${!ac.systemWordSelection && ac.newCardOrdering === "Natural" ? "lw.default_order" : ""}
     limit 1`;
   const out = await execute(sql, selectedWLIds ? [selectedWLIds] : undefined);
-
-  if ((out?.length || 0) === 0) return null;
+  if ((out[0]?.rows[0]?.length || 0) === 0) return null;
 
   const inds = out[0].rows[0].slice(1).flatMap((t, i) => (t === 0 ? i : []));
   const ind = inds[Math.floor(Math.random() * inds.length)];
