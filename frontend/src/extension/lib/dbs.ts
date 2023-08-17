@@ -7,6 +7,7 @@ import { DatabaseService as RxDatabaseService } from "../../workers/rxdb/Databas
 import { ASYNC_SQLITE, DatabaseService as SqlDatabaseService } from "../../workers/sqlite/DatabaseService";
 import { IDBBatchAtomicVFS } from "../../workers/sqlite/IDBBatchAtomicVFS";
 import * as VFS from "../../workers/sqlite/sqlite-constants.js";
+import { MAX_TRANSACTION_LIFETIME_MILLIS } from "../../workers/sqlite/IDBContext";
 
 const DATA_SOURCE = "EXT_INSTALL";
 export const sqlite3Ready = ASYNC_SQLITE.esmFactory().then((module) => {
@@ -42,12 +43,13 @@ export async function installDbFromParts(userData: UserState, progressCallback: 
     };
   };
 
-  const data = await fetchPlus(new URL("/api/v1/enrich/dbexports.json", userData.baseUrl), undefined, 3, false, "json");
+  // FIXME: nastiness!!! You MUST open a few at least MAX_TRANSACTION_LIFETIME_MILLIS before starting to write...
+  // this is because the VFS is "temperamental"...
+  const start = performance.now();
+
   const vfs = new IDBBatchAtomicVFS(`/${TCDB_FILENAME}`);
   await vfs.isReady;
   const filename = TCDB_FILENAME;
-  // FIXME: nastiness!!! You MUST open a few SECONDS before starting to write... this is because
-  // the VFS is "temperamental"...
   let result = await vfs.xOpen(
     filename,
     FILE_ID,
@@ -55,9 +57,13 @@ export async function installDbFromParts(userData: UserState, progressCallback: 
     new DataView(new ArrayBuffer(8)),
   );
 
+  const data = await fetchPlus(new URL("/api/v1/enrich/dbexports.json", userData.baseUrl), undefined, 3, false, "json");
   try {
     const allBuffers = await asyncPoolAllBuffers(2, data, entryBlock);
     allBuffers.sort((a, b) => a.partNo - b.partNo);
+
+    await new Promise((resolve) => setTimeout(resolve, MAX_TRANSACTION_LIFETIME_MILLIS - (performance.now() - start)));
+
     for (const { partNo, ab } of allBuffers) {
       if (ab.byteLength % PAGE_SIZE !== 0) throw new Error("The little file is not a multiple of the page size");
       const blockStart = partNo * BLOCK_SIZE;

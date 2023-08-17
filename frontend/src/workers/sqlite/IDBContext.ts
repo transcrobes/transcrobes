@@ -1,7 +1,7 @@
 // Copyright 2022 Roy T. Hashimoto. All Rights Reserved.
 
 // IndexedDB transactions older than this will be replaced.
-const MAX_TRANSACTION_LIFETIME_MILLIS = 5_000;
+export const MAX_TRANSACTION_LIFETIME_MILLIS = 5_000;
 
 // For debugging.
 let nextTxId = 0;
