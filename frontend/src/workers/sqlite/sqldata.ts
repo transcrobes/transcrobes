@@ -110,7 +110,6 @@ export async function getTableLastUpdate(tableName: ManagedTable): Promise<{ id:
   );
   const id = lastUpdate[0].rows[0][0] as string;
   const date = lastUpdate[0].rows[0][1] as number;
-  // here we just get all the cards for the same most recently updated word
   return { id, date };
 }
 
@@ -141,7 +140,7 @@ export async function forceDefinitionsSync(baseUrl: string) {
   const defUpdates = (await getLatestUpdates(baseUrl, "Definitions", await getTableLastUpdate("Definitions")))[
     "Definitions"
   ];
-  if (defUpdates.length > 0) {
+  if (defUpdates?.length > 0) {
     await genericTableUpsert("Definitions", defUpdates, ["id"]);
   } else {
     console.warn("No updates for Definitions");
@@ -183,7 +182,6 @@ export async function syncUserDictionaryUpdates(latestUpdates: { id: string; upd
 // FIXME: updated_at horribleness!!!
 export async function syncImportUpdates(latestUpdates: { id: string; updated_at: number; analysis: string }[]) {
   for (const { id, updated_at, analysis } of latestUpdates) {
-    // const importDetails = { id, updatedAt };
     if (analysis && Object.keys(analysis).length > 0) {
       const parsed = JSON.parse(analysis) as ImportAnalysis;
       const importWords: ImportWordType[] = [];
@@ -211,7 +209,6 @@ export async function syncImportUpdates(latestUpdates: { id: string; updated_at:
 // FIXME: this is a temp hack that can leave the db in an inconsistent state
 // it would be better to manage the tag function with the ability to manually manage transactions
 // which would mean that we don't get failed transactions that leave the db in a bad state
-
 async function genericTableUpsert(tableName: string, values: any[], pkColumns: string[] = ["id"]) {
   if (!values.length) return;
 

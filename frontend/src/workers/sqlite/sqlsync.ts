@@ -79,7 +79,7 @@ async function syncTable(baseUrl: string, tableName: ManagedTable) {
       break;
     case "word_model_stats":
       latestUpdates = await getLatestUpdates(baseUrl, tableName, await getTableLastUpdate(tableName));
-      if (latestUpdates[tableName]?.length || 0 > 0) {
+      if (latestUpdates?.[tableName]?.length || 0 > 0) {
         for (const obj of latestUpdates[tableName]) delete obj["deleted"];
         await syncWordModelStats(latestUpdates[tableName]);
       } else {
@@ -88,7 +88,7 @@ async function syncTable(baseUrl: string, tableName: ManagedTable) {
       break;
     case "day_model_stats":
       latestUpdates = await getLatestUpdates(baseUrl, tableName, await getTableLastUpdate(tableName));
-      if (latestUpdates[tableName]?.length || 0 > 0) {
+      if (latestUpdates?.[tableName]?.length || 0 > 0) {
         for (const obj of latestUpdates[tableName]) delete obj["deleted"];
         await syncDayModelStats(latestUpdates[tableName]);
       } else {
@@ -97,7 +97,7 @@ async function syncTable(baseUrl: string, tableName: ManagedTable) {
       break;
     case "Cards":
       latestUpdates = await getLatestUpdates(baseUrl, tableName, await getCardTableLastUpdate());
-      if (latestUpdates[tableName]?.length || 0 > 0) {
+      if (latestUpdates?.[tableName]?.length || 0 > 0) {
         // FIXME: do something with the deleteds..s
         for (const card of latestUpdates[tableName]) delete card["deleted"];
         await syncCardUpdates(latestUpdates[tableName]);
@@ -112,7 +112,7 @@ async function syncTable(baseUrl: string, tableName: ManagedTable) {
       break;
     case "Userdictionaries":
       latestUpdates = await getLatestUpdates(baseUrl, tableName, await getTableLastUpdate(tableName));
-      if (latestUpdates[tableName]?.length || 0 > 0) {
+      if (latestUpdates?.[tableName]?.length || 0 > 0) {
         for (const obj of latestUpdates[tableName]) delete obj["deleted"];
         await syncUserDictionaryUpdates(latestUpdates[tableName]);
       } else {
@@ -121,7 +121,7 @@ async function syncTable(baseUrl: string, tableName: ManagedTable) {
       break;
     case "Imports":
       latestUpdates = await getLatestUpdates(baseUrl, tableName, await getTableLastUpdate(tableName));
-      if (latestUpdates[tableName]?.length || 0 > 0) {
+      if (latestUpdates?.[tableName]?.length || 0 > 0) {
         for (const obj of latestUpdates[tableName]) delete obj["deleted"];
         await syncImportUpdates(latestUpdates[tableName]);
       } else {
@@ -130,7 +130,7 @@ async function syncTable(baseUrl: string, tableName: ManagedTable) {
       break;
     case "Wordlists":
       latestUpdates = await getLatestUpdates(baseUrl, tableName, await getTableLastUpdate(tableName));
-      if (latestUpdates["Wordlists"]?.length || 0 > 0) {
+      if (latestUpdates?.["Wordlists"]?.length || 0 > 0) {
         for (const obj of latestUpdates[tableName]) {
           obj["is_default"] = obj["default"] ? 1 : 0;
           delete obj["default"];
