@@ -35,13 +35,12 @@ from app.enrich.sqlite_definitions import (
     DEFINITIONS_INDEX_ID_GRAPH,
     DEFINITIONS_INDEX_ID_UPDATED_AT,
     DEFINITIONS_INSERT,
-    DEFINITIONS_STATUS_CREATE,
-    DEFINITIONS_STATUS_INSERT,
     IMPORT_WORDS_CREATE,
     IMPORT_WORDS_INDEX_ID,
     IMPORT_WORDS_INSERT,
     IMPORTS_CREATE,
     IMPORTS_INSERT,
+    KNOWN_WORDS_VIEW_CREATE,
     LIST_WORDS_CREATE,
     LIST_WORDS_INSERT,
     USER_DEFINITIONS_CREATE,
@@ -344,22 +343,8 @@ async def fill_sqlite_stats(con: sqlite3.Connection, user_id: int, lang_pair: st
 
 def cards_to_sqlite3(cards):
     cards_buffer = []
-    defs_updates = {}
     for v in cards:
         word_id = int((v.id).split("-")[0])  # word_id
-        if (
-            word_id not in defs_updates
-            or defs_updates[word_id][0] > v.first_success_date
-            or (defs_updates[word_id][1] and not v.known)
-        ):
-            first_success = (
-                min(defs_updates[word_id][0], v.first_success_date) if word_id in defs_updates else v.first_success_date
-            )
-            ignore = defs_updates[word_id][1] and v.known if word_id in defs_updates else v.known
-            defs_updates[word_id] = (
-                first_success,
-                ignore,
-            )
         cards_buffer.append(
             (
                 word_id,
@@ -373,24 +358,14 @@ def cards_to_sqlite3(cards):
                 v.updated_at,
             )
         )
-    defstats_buffer = []
-    for k, v in defs_updates.items():
-        defstats_buffer.append(
-            (
-                k,
-                v[0],
-                v[1],
-            )
-        )
-    return cards_buffer, defstats_buffer
+    return cards_buffer
 
 
 async def fill_sqlite_cards(db: AsyncSession, con: sqlite3.Connection, user_id: int) -> bool:
     cards = await filter_cards(db, user_id, 1000000)
-    cards_buffer, defstats_buffer = cards_to_sqlite3(cards)
+    cards_buffer = cards_to_sqlite3(cards)
     con.executemany(CARDS_INSERT, cards_buffer)
     con.execute(CARDS_INDEX_WORD_ID_CARD_TYPE_UPDATED_AT)
-    con.executemany(DEFINITIONS_STATUS_INSERT, defstats_buffer)
 
 
 async def fill_sqlite_userdictionaries(db: AsyncSession, user_id: int, con: sqlite3.Connection) -> bool:
@@ -634,7 +609,6 @@ async def regenerate_sqlite(from_lang: str = "zh-Hans", to_lang: str = "en") -> 
             con.execute(IMPORT_WORDS_CREATE)
             con.execute(IMPORTS_CREATE)
             con.execute(CARDS_CREATE)
-            con.execute(DEFINITIONS_STATUS_CREATE)
 
             # con.execute(PERSONS_CREATE)
             # con.execute(STUDENT_WORD_MODEL_STATS_CREATE)
@@ -642,36 +616,10 @@ async def regenerate_sqlite(from_lang: str = "zh-Hans", to_lang: str = "en") -> 
             # con.execute(SURVEYS_CREATE)
 
             con.execute(IMPORT_WORDS_INDEX_ID)
+            con.execute(KNOWN_WORDS_VIEW_CREATE)
 
             con.commit()
-
-            tmpsqldb_sql = os.path.join(tmppath, SQLITE_FILENAME_SQL)
-            with open(tmpsqldb_sql, "w") as f:
-                for line in con.iterdump():
-                    f.write("%s\n" % line)
-
             con.close()
-
-            CHUNK_SIZE = 3000000
-            file_number = 0
-            with open(tmpsqldb, "rb") as f:
-                chunk = f.read(CHUNK_SIZE)
-                while chunk:
-                    with open(f"{tmpsqldb}.{str(file_number).zfill(4)}.part", "wb") as chunk_file:
-                        chunk_file.write(chunk)
-                    file_number += 1
-                    chunk = f.read(CHUNK_SIZE)
-
-            CHUNK_SIZE = 3000000
-            file_number = 0
-            with open(tmpsqldb_sql, "r") as f:
-                chunk = f.read(CHUNK_SIZE)
-                while chunk:
-                    with open(f"{tmpsqldb_sql}.{str(file_number).zfill(4)}.part", "w") as chunk_file:
-                        chunk_file.write(chunk)
-                    file_number += 1
-                    chunk = f.read(CHUNK_SIZE)
-
             shutil.rmtree(new_files_dir_path, ignore_errors=True)
             shutil.move(tmppath, new_files_dir_path)
 

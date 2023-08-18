@@ -4,7 +4,6 @@ All active tables:
 - characters
 - definitions
 - user_definitions
-- definitions_status
 - cards
 - word_model_stats
 - day_model_stats
@@ -249,9 +248,22 @@ INSERT INTO cards
 VALUES
     (?, ?, ?, ?, ?, ?, ?, ?, ?);
 """
-
 CARDS_INDEX_WORD_ID_CARD_TYPE_UPDATED_AT = """CREATE UNIQUE INDEX IF NOT EXISTS idx_cards_word_id_card_type_updated_at ON cards(word_id, card_type, updated_at);"""
 CARDS_INDEX_WORD_ID_CARD_TYPE_UPDATED_AT_DROP = """DROP INDEX IF EXISTS idx_cards_word_id_card_type_updated_at;"""
+
+KNOWN_WORDS_VIEW_CREATE = """
+CREATE VIEW known_words (id, first_success_date, ignore) as
+SELECT car.word_id as id,
+    min(CASE WHEN car.first_success_date > 0 THEN car.first_success_date ELSE null END) as first_success_date,
+    sum(car.known) = count(car.known) as ignore
+FROM cards car
+GROUP BY car.word_id
+HAVING
+    min(CASE WHEN car.first_success_date > 0 THEN car.first_success_date ELSE null END) > 0
+    OR sum(car.known) = count(car.known)
+"""
+KNOWN_WORDS_VIEW_DROP = """DROP VIEW IF EXISTS known_words;"""
+
 
 # FIXME: nasty, hybrid type... and should have a foreign key to userlist
 WORDLISTS_CREATE = """
@@ -268,22 +280,6 @@ INSERT INTO wordlists
     (id, name, is_default, updated_at)
 VALUES
     (?, ?, ?, ?);
-"""
-
-# FIXME: add as foreign key? should I have an updated_at?
-DEFINITIONS_STATUS_CREATE = """
-CREATE TABLE IF NOT EXISTS definitions_status
-(
-  id INTEGER PRIMARY KEY,
-  first_success_date REAL,
-  ignore INTEGER
-) STRICT;
-"""
-DEFINITIONS_STATUS_INSERT = """
-INSERT INTO definitions_status
-    (id, first_success_date, ignore)
-VALUES
-    (?, ?, ?)
 """
 
 USER_DEFINITIONS_CREATE = """

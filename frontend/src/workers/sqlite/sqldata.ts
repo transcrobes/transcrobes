@@ -150,7 +150,9 @@ export async function forceDefinitionsSync(baseUrl: string) {
 export async function getKnownWords(): Promise<KnownWords> {
   const out = await execute(`
     SELECT def.graph
-    FROM definitions def inner join definitions_status ds on def.id = ds.id`);
+    FROM definitions def INDEXED BY idx_definitions_id_graph
+    inner join known_words kw on kw.id = def.id
+    `);
   if (!out[0]?.rows?.length) return { knownWordGraphs: {} };
 
   const knownWordGraphs: SerialisableStringSet = {};
@@ -261,21 +263,6 @@ export async function syncCardUpdates(inCards: CardType[] | CardCacheType[]) {
     }
   }
   await genericTableUpsert("cards", cards, ["wordId", "cardType"]);
-  const updatedIds = cards.map((card) => card.wordId);
-
-  const dsSql2 = `
-    UPDATE definitions_status
-    SET ignore = ccard.to_ignore
-    FROM (
-        SELECT
-          sum(cc1.known) = count(cc1.known) AS to_ignore, cc1.word_id,
-          min(case when first_success_date > 0 then first_success_date else null end)
-        FROM cards cc1 group by cc1.word_id
-      ) AS ccard
-    WHERE definitions_status.id = ccard.word_id
-    and ccard.word_id in (${updatedIds.map(() => "?").join(",")})
-  `;
-  await execute(dsSql2, [updatedIds]);
 }
 
 // FIXME: camel vs snake horribleness
@@ -396,9 +383,9 @@ export async function getDefinitions({
     console.log("No values provided", column, values);
     throw new Error("No values provided");
   }
-  let sql = `select def.*, ds.ignore, ds.first_success_date, uds.*
+  let sql = `select def.*, kw.ignore, kw.first_success_date, uds.*
    from definitions def
-   left join definitions_status ds on def.id = ds.id
+   left join known_words kw on def.id = kw.id
    left join user_definitions uds on def.graph = uds.id
   `;
   if (column && values && values.length > 0) {
@@ -573,8 +560,9 @@ async function getContentAccuracyStatsForImport({
 
 async function getKnownWordCount(includeIgnored?: boolean): Promise<number> {
   const out = await execute(`
-    select count(0) from definitions_status
-    ${!includeIgnored ? " WHERE not ignore " : ""} `);
+    select count(0) from known_words
+    ${!includeIgnored ? " WHERE not ignore " : ""}
+    `);
   return out[0].rows[0][0] as number;
 }
 
@@ -617,8 +605,8 @@ async function getStatsFromAnalysis({
   sql = `SELECT iw.graph, iw.nb_occurrences, ds2.first_success_date
     from ${tableName} iw
     ${!includeNonDict ? " inner join definitions def on iw.graph = def.graph and not def.fallback_only " : ""}
-    ${!includeIgnored ? " left join definitions_status ds1 on def.id = ds1.id and ds1.ignore " : ""}
-    left join definitions_status ds2 on def.id = ds2.id and ds2.first_success_date > 0
+    ${!includeIgnored ? " left join known_words ds1 on def.id = ds1.id and ds1.ignore " : ""}
+    left join known_words ds2 on def.id = ds2.id and ds2.first_success_date > 0
     ${!includeIgnored ? " and ds1.id is null " : ""};
     `;
   const outData = (await execute(sql))[0].rows as [string, number, number][];
@@ -641,8 +629,8 @@ async function getImportStats({
   const sql = `SELECT iw.graph, iw.nb_occurrences, ds2.first_success_date
     from import_words iw
     ${!includeNonDict ? " inner join definitions def on iw.word_id = def.id and not def.fallback_only " : ""}
-    ${!includeIgnored ? " left join definitions_status ds1 on iw.word_id = ds1.id and ds1.ignore " : ""}
-    left join definitions_status ds2 on iw.word_id = ds2.id and ds2.first_success_date > 0
+    ${!includeIgnored ? " left join known_words ds1 on iw.word_id = ds1.id and ds1.ignore " : ""}
+    left join known_words ds2 on iw.word_id = ds2.id and ds2.first_success_date > 0
     ${!includeIgnored ? " and ds1.id is null " : ""}
     WHERE iw.import_id = ?`;
   return (await execute(sql, [[importId]]))[0].rows as [string, number, number][];
@@ -784,7 +772,7 @@ async function getFirstSuccessStatsForList({
     select def.graph, ds2.first_success_date
     from definitions def
     ${listId ? "inner join list_words lw on lw.word_id = def.id and lw.list_id = ?" : ""}
-    ${listId ? "left" : "inner"} join definitions_status ds2 on def.id = ds2.id and ds2.first_success_date > 0
+    ${listId ? "left" : "inner"} join known_words ds2 on def.id = ds2.id and ds2.first_success_date > 0
     ${!includeNonDict ? "and not def.fallback_only" : ""}
     ${!includeIgnored ? "and not ds2.ignore" : ""}
   `;
@@ -978,7 +966,7 @@ async function getWordFromDBs(graph: string): Promise<DefinitionState | null> {
   const sql = `
   SELECT def.*, ds.ignore, ds.first_success_date
   FROM definitions def
-  LEFT JOIN definitions_status ds ON ds.id = def.id
+  LEFT JOIN known_words ds ON ds.id = def.id
   WHERE def.graph = ?`;
   const out = await execute(sql, [[graph]]);
   return out[0]?.rows[0] ? rowToDefinitionState(out[0].rows[0]) : null;
@@ -1001,8 +989,8 @@ async function getListKnownPercentages({
     `SELECT lw.list_id, count(lw.word_id), count(ds2.id)
     from list_words lw
     ${!includeNonDict ? " inner join definitions def on lw.word_id = def.id and not def.fallback_only " : ""}
-    ${!includeIgnored ? " left join definitions_status ds1 on lw.word_id = ds1.id and ds1.ignore " : ""}
-    left join definitions_status ds2 on lw.word_id = ds2.id and ds2.first_success_date > 0
+    ${!includeIgnored ? " left join known_words ds1 on lw.word_id = ds1.id and ds1.ignore " : ""}
+    left join known_words ds2 on lw.word_id = ds2.id and ds2.first_success_date > 0
     WHERE lw.list_id IN (${listIds.map(() => "?").join(", ")})
     ${!includeIgnored ? " and ds1.id is null " : ""}
     group by lw.list_id;`,
@@ -1044,8 +1032,8 @@ async function getVocabReviews({
   const sql = `select distinct def.* from list_words lw
       inner join definitions def on lw.word_id = def.id
       ${!includeNonDict ? " and not def.fallback_only " : ""}
-      ${includeIgnored ? " left join definitions_status ds1 on lw.word_id = ds1.id and ds1.ignore " : ""}
-      left join definitions_status ds2 on lw.word_id = ds2.id and ds2.first_success_date > 0
+      ${includeIgnored ? " left join known_words ds1 on lw.word_id = ds1.id and ds1.ignore " : ""}
+      left join known_words ds2 on lw.word_id = ds2.id and ds2.first_success_date > 0
       ${wmsJoin}
       where lw.list_id in (${listIds.map(() => "?").join(", ")}) and ds2.id is null
       ${includeIgnored ? " and ds1.id is null " : ""}
