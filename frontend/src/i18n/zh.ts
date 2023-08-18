@@ -912,6 +912,8 @@ const customChineseMessages: TranslationMessages = {
       server_unavailable: "服务器不可用",
       waiting_for_server: "等待联系服务器",
       system_info: "系统信息",
+      include_ignored: "包括被忽略的单词",
+      include_non_dict: "包括非词典单词",
     },
     textcrobes: {
       name: "Textcrobes",

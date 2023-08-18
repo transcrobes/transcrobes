@@ -7,7 +7,7 @@ export default function ToggleIncludeIgnored() {
   return (
     <FormControlLabel
       control={<Switch size="medium" checked={includeIgnored} onChange={() => setIncludeIgnored(!includeIgnored)} />}
-      label={translate("screens.system.includeIgnored")}
+      label={translate("screens.system.include_ignored")}
       labelPlacement="end"
     />
   );

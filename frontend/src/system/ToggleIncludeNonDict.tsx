@@ -7,7 +7,7 @@ export default function ToggleIncludeNonDict() {
   return (
     <FormControlLabel
       control={<Switch size="medium" checked={includeNonDict} onChange={() => setIncludeNonDict(!includeNonDict)} />}
-      label={translate("screens.system.includeNonDict")}
+      label={translate("screens.system.include_non_dict")}
       labelPlacement="end"
     />
   );

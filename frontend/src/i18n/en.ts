@@ -948,6 +948,8 @@ const customEnglishMessages: TranslationMessages = {
       server_unavailable: "Server not available at ",
       waiting_for_server: "Waiting to contact server",
       system_info: "System Information",
+      include_ignored: "Include ignored words",
+      include_non_dict: "Include non-dictionary words",
     },
     textcrobes: {
       name: "Textcrobes",
