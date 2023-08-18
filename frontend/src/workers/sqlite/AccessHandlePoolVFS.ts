@@ -66,29 +66,6 @@ export class AccessHandlePoolVFS extends VFS.Base {
       }
     });
   }
-  async initFromServer(url: URL, dbFileName: string): Promise<number> {
-    // const directoryHandle = this.#root ?? (await this.#rootReady);
-    // // @ts-ignore
-    // // for await (const f of directoryHandle.values()) {
-    // //   if (f.kind === "file" && f.name === dbFileName) {
-    // //     const accessHandle = await f.createSyncAccessHandle();
-    // //     if (accessHandle.getSize() > 0) {
-    // //       console.log("the file is ok!!!");
-    // //       //should be ok...
-    // //       return VFS.SQLITE_OK;
-    // //     }
-    // //   }
-    // // }
-    // // const response: Blob = await fetchPlusResponse(url, undefined, 0, false, "text");
-    // const response = await fetchPlusResponse(url, undefined, 0, false, "text");
-    // const fileHandle = await directoryHandle.getFileHandle(dbFileName, { create: true });
-    // const file = await fileHandle.createSyncAccessHandle();
-    // file.write(new DataView(await response.arrayBuffer()));
-    // file.flush();
-    // file.close();
-
-    return VFS.SQLITE_OK;
-  }
 
   get name() {
     return "AccessHandlePool";

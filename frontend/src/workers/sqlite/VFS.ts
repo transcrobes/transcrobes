@@ -19,10 +19,6 @@ export async function asyncPoolAll(
 export class Base {
   mxPathName = 64;
 
-  async initFromServer(url: URL, username: string): Promise<number> {
-    return Promise.resolve(VFS.SQLITE_OK);
-  }
-
   xClose(fileId: number): number {
     return VFS.SQLITE_IOERR;
   }

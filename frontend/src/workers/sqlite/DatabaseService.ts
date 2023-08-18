@@ -1,6 +1,6 @@
 import AsyncSQLiteESMFactory from "wa-sqlite/dist/wa-sqlite-async.mjs";
 import SQLiteESMFactory from "wa-sqlite/dist/wa-sqlite.mjs";
-import { CacheRefresh, ProgressCallbackMessage, TCDB_FILENAME } from "../../lib/types";
+import { ProgressCallbackMessage, TCDB_FILENAME } from "../../lib/types";
 import { DataService } from "../DataService";
 import { AccessHandlePoolVFS } from "./AccessHandlePoolVFS";
 import { IDBBatchAtomicVFS } from "./IDBBatchAtomicVFS";
@@ -51,15 +51,11 @@ export class DatabaseService extends DataService<SqliteDataManager> {
     return await result;
   }
   async #initialize(progressCallback: (progress: ProgressCallbackMessage) => void) {
-    // Create the database.
-
-    // Use this here for the sync
-    // const userData = await getUserDexie();
-
     const sqlite3 = await this.#sqlite3Ready;
     console.log("Initialising sqlite storage with", this.#StorageClass, sqlite3);
 
-    let vfs = new this.#StorageClass(`/${TCDB_FILENAME}`);
+    // Create the database.
+    const vfs = new this.#StorageClass(`/${TCDB_FILENAME}`);
     await vfs.isReady;
 
     console.log("Registering the vfs", vfs, sqlite3);

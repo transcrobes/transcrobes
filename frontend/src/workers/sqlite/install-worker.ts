@@ -19,6 +19,10 @@ async function installDbFromParts(userData: UserState) {
   const vfs = new AccessHandlePoolVFS(`/${TCDB_FILENAME}`);
   await vfs.isReady;
   const filename = TCDB_FILENAME;
+
+  let result = await vfs.xDelete(filename, 0);
+
+  console.log("Delete result is", result);
   vfs.xOpen(
     filename,
     FILE_ID,

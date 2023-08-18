@@ -83,11 +83,12 @@ function RefreshCacheButton({ onCacheEmptied }: RefreshCacheButtonProps): ReactE
 // }
 
 interface ReinstallDBButtonProps {
+  proxy: DataManager;
   beforeReinstall: () => void;
   onDBDeleted: (message: string) => void;
 }
 
-function ReinstallDBButton({ beforeReinstall, onDBDeleted }: ReinstallDBButtonProps): ReactElement {
+function ReinstallDBButton({ beforeReinstall, onDBDeleted, proxy }: ReinstallDBButtonProps): ReactElement {
   const translate = useTranslate();
   const username = useAppSelector((state) => state.userData.username);
 
@@ -105,6 +106,7 @@ function ReinstallDBButton({ beforeReinstall, onDBDeleted }: ReinstallDBButtonPr
           indexedDB.deleteDatabase(db.name);
         }
       }
+      await proxy.close();
       const message = `Removed the database ${dbName}`;
       onDBDeleted(message);
       console.log(message);
@@ -182,6 +184,7 @@ function System({ proxy }: Props): ReactElement {
           </div>
           <div>
             <ReinstallDBButton
+              proxy={proxy}
               beforeReinstall={() => setLoading(true)}
               onDBDeleted={(message) => {
                 setMessage(message);

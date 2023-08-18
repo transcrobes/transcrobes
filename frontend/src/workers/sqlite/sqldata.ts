@@ -1205,6 +1205,7 @@ export const sqliteDataManager = {
   getContentStatsForImport,
   getImportUtilityStatsForList,
   forceDefinitionsSync,
+  close: async () => (isWorker() ? close() : null),
 };
 
 export type SqliteDataManager = typeof sqliteDataManager;
