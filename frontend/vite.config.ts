@@ -23,6 +23,7 @@ const pwaOptions: Partial<VitePWAOptions> = {
   includeAssets: ["static/favicon.ico"],
   injectManifest: {
     maximumFileSizeToCacheInBytes: 20000000,
+    globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2,woff,ttf,eot,otf,wasm,mjs}"],
   },
   manifest: {
     short_name: "Transcrobes",
