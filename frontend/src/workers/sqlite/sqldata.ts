@@ -261,17 +261,18 @@ export async function syncCardUpdates(inCards: CardType[] | CardCacheType[]) {
     }
   }
   await genericTableUpsert("cards", cards, ["wordId", "cardType"]);
-  await genericTableUpsert(
-    "definitions_status",
-    cards.map((card) => ({ id: card.wordId, firstSuccessDate: card.firstSuccessDate || 0 })),
-    ["id"],
-  );
   const updatedIds = cards.map((card) => card.wordId);
+
   const dsSql2 = `
     UPDATE definitions_status
     SET ignore = ccard.to_ignore
-    FROM (SELECT sum(cc1.known) = count(cc1.known) AS to_ignore, cc1.word_id FROM cards cc1 group by cc1.word_id) AS ccard
-    WHERE definitions_status.id = ccard.word_id;
+    FROM (
+        SELECT
+          sum(cc1.known) = count(cc1.known) AS to_ignore, cc1.word_id,
+          min(case when first_success_date > 0 then first_success_date else null end)
+        FROM cards cc1 group by cc1.word_id
+      ) AS ccard
+    WHERE definitions_status.id = ccard.word_id
     and ccard.word_id in (${updatedIds.map(() => "?").join(",")})
   `;
   await execute(dsSql2, [updatedIds]);
