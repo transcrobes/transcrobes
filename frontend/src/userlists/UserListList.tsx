@@ -58,7 +58,7 @@ export default function UserListList() {
   const translate = useTranslate();
   return (
     <List
-      queryOptions={{ refetchInterval: 5000 }}
+      queryOptions={{ refetchInterval: 5000, cacheTime: 0 }}
       empty={<EmtpyList />}
       actions={<ListActions />}
       sort={{ field: "createdAt", order: "DESC" }}

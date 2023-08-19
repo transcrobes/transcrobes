@@ -23,7 +23,11 @@ export function ListActions() {
 
 export default function SurveyList() {
   return (
-    <List actions={<ListActions />} filter={{ status: STATUS.ACTIVE }}>
+    <List
+      actions={<ListActions />}
+      filter={{ status: STATUS.ACTIVE }}
+      queryOptions={{ refetchInterval: 5000, cacheTime: 0 }}
+    >
       <Datagrid rowClick="show">
         <TextField source="title" />
         <ShowButton />

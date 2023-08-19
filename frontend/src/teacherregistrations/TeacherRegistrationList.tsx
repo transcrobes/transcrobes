@@ -43,7 +43,7 @@ export default function TeacherRegistrationList() {
   return (
     <List
       hasCreate={false}
-      queryOptions={{ meta: { filteredAsAll: true } }}
+      queryOptions={{ meta: { filteredAsAll: true }, refetchInterval: 5000, cacheTime: 0 }}
       empty={<EmptyList />}
       actions={<ListActions />}
       sort={{ field: "createdAt", order: "DESC" }}

@@ -15,7 +15,7 @@ import { ListEmpty } from "../components/ListEmpty";
 import { ProcessingField } from "../components/ProcessingField";
 import UnixFieldAsDate from "../components/UnixFieldAsDate";
 import WatchDemo from "../components/WatchDemo";
-import { DOCS_DOMAIN, IMPORTS_YT_VIDEO, PROCESS_TYPE, reverseEnum } from "../lib/types";
+import { DOCS_DOMAIN, IMPORTS_YT_VIDEO, PROCESS_TYPE } from "../lib/types";
 
 function ListActions({ empty }: { empty?: boolean }) {
   return (
@@ -32,7 +32,7 @@ export default function ImportList() {
   const translate = useTranslate();
   return (
     <List
-      queryOptions={{ refetchInterval: 5000 }}
+      queryOptions={{ refetchInterval: 5000, cacheTime: 0 }}
       empty={<ListEmpty actions={<ListActions empty />} />}
       actions={<ListActions />}
       sort={{ field: "createdAt", order: "DESC" }}

@@ -19,6 +19,7 @@ export default function List() {
       empty={<ListEmpty actions={<ListActions empty />} />}
       actions={<ListActions />}
       sort={{ field: "updatedAt", order: "DESC" }}
+      queryOptions={{ refetchInterval: 5000, cacheTime: 0 }}
     >
       <Datagrid rowClick="show">
         <TextField source="title" />

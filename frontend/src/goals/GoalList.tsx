@@ -58,7 +58,12 @@ function EmtpyList() {
 
 export default function GoalList() {
   return (
-    <List empty={<EmtpyList />} actions={<ListActions />} sort={{ field: "createdAt", order: "DESC" }}>
+    <List
+      empty={<EmtpyList />}
+      actions={<ListActions />}
+      sort={{ field: "createdAt", order: "DESC" }}
+      queryOptions={{ refetchInterval: 5000, cacheTime: 0 }}
+    >
       <Datagrid rowClick="show">
         <TextField source="title" />
         <WordlistField label="List" />

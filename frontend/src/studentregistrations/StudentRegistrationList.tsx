@@ -45,7 +45,7 @@ export default function StudentRegistrationList() {
   return (
     <List
       hasCreate={false}
-      queryOptions={{ meta: { filteredAsAll: true } }}
+      queryOptions={{ meta: { filteredAsAll: true }, refetchInterval: 5000, cacheTime: 0 }}
       empty={<EmptyList />}
       actions={<ListActions />}
       filter={{ userId }}

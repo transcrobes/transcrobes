@@ -67,7 +67,7 @@ export default function ContentList() {
   }
   return (
     <List
-      queryOptions={{ refetchInterval: 5000 }}
+      queryOptions={{ refetchInterval: 5000, cacheTime: 0 }}
       empty={<EmptyList />}
       actions={<ListActions onGoalChange={onGoalChange} />}
       sort={{ field: "createdAt", order: "DESC" }}

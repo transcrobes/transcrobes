@@ -114,13 +114,11 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
           );
           setLoading(true);
         } else {
-          console.log("before finding rcids");
           const rcIds = stateActivityConfig.activeCardTypes.find(
             (x) => x.selected && parseInt(x.value) === CARD_TYPES.PHRASE,
           )
             ? await proxy.getAvailableRecentSentenceIds()
             : [];
-          console.log("found these rcids", rcIds);
           await proxy.refreshTempRecentSentenceIds(rcIds);
           const [nc, srsStatusData] = (await nextPractice(stateActivityConfig)) || [];
           if (nc) setCurrentCardInfo(nc);
