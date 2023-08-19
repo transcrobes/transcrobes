@@ -59,6 +59,7 @@ import { createEndpoint } from "./lib/adapter";
 import { fontHack } from "./lib/fontHack";
 import { streamOverrides } from "./lib/streaming";
 import type { BackgroundWorkerDataManager } from "./backgroundfn";
+import { NAME_PREFIX } from "../lib/interval/interval-decorator";
 
 store.dispatch(setLoading(true));
 
@@ -290,6 +291,16 @@ submitActivity(proxy, "start", "extension", window.location.href, sessionId, win
 //   KEEPALIVE_QUERY_FREQUENCY_MS,
 //   NAME_PREFIX + "contentKeepAlive",
 // );
+
+setInterval(
+  () => {
+    // this is only necessary because the background script is unloaded when the tab is not active
+    // and comlink wasn't designed for this. Sigh.
+    proxy.keepalive();
+  },
+  KEEPALIVE_QUERY_FREQUENCY_MS,
+  NAME_PREFIX + "contentKeepAlive",
+);
 
 window.addEventListener("beforeunload", () => {
   submitActivity(proxy, "end", "extension", window.location.href, sessionId, window.getTimestamp);

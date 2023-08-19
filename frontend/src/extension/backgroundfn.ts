@@ -325,6 +325,11 @@ async function showOptions() {
   chrome.runtime.openOptionsPage(() => console.debug("Show options"));
 }
 
+async function keepalive() {
+  // Keepalive, because otherwise the background worker will die, and comlink can't handle that
+  console.log("Keepalive");
+}
+
 export const backgroundWorkerManager = {
   precachePublications,
   sentenceTranslation,
@@ -338,6 +343,7 @@ export const backgroundWorkerManager = {
   serverGet,
   enrichText,
   streamingTitleSearch,
+  keepalive,
 };
 
 export const backgroundWorkerTabManager = {
