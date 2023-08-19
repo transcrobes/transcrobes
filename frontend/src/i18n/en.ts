@@ -900,6 +900,7 @@ const customEnglishMessages: TranslationMessages = {
         "Remember the word and draw it here with a mouse or touchscreen, or even better use a pen and paper!",
       settings_incomplete: "Settings incomplete, please configure",
       personalising_cards: "Calculating Personalised Cards",
+      no_remaining_cards: "No cards remaining with the current configuration",
       show_answer: "Show Answer",
       progress_new: `New: (%{completedNewToday}) %{newToday} / %{maxNew} (%{availableNewToday} available)`,
       progress_revisions: `Rev: (%{completedRevisionsToday}) %{revisionsToday} / %{maxRevisions} (%{allRevisionsToday} available)`,

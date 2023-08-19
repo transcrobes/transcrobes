@@ -121,9 +121,11 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
             : [];
           await proxy.refreshTempRecentSentenceIds(rcIds);
           const [nc, srsStatusData] = (await nextPractice(stateActivityConfig)) || [];
-          if (nc) setCurrentCardInfo(nc);
+          setCurrentCardInfo(nc);
           if (srsStatusData) setTodaysReviewsInfo(tmpConvert(srsStatusData));
-          setLoadingMessage(translate("screens.repetrobes.personalising_cards"));
+          if (srsStatusData?.nbAvailableNew === 0 && srsStatusData?.nbAvailableRevisions === 0) {
+            setLoadingMessage(translate("screens.repetrobes.no_remaining_cards"));
+          }
           setLoading(!(!!nc?.card && !!nc.definition));
         }
       })();
