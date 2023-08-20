@@ -120,13 +120,7 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
             ? await proxy.getAvailableRecentSentenceIds()
             : [];
           await proxy.refreshTempRecentSentenceIds(rcIds);
-          const [nc, srsStatusData] = (await nextPractice(stateActivityConfig)) || [];
-          setCurrentCardInfo(nc);
-          if (srsStatusData) setTodaysReviewsInfo(tmpConvert(srsStatusData));
-          if (srsStatusData?.nbAvailableNew === 0 && srsStatusData?.nbAvailableRevisions === 0) {
-            setLoadingMessage(translate("screens.repetrobes.no_remaining_cards"));
-          }
-          setLoading(!(!!nc?.card && !!nc.definition));
+          fillCardInfo();
         }
       })();
     }
@@ -135,6 +129,20 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
   // FIXME: seriously consider typing lookupEvents
   async function submitLookupEvents(lookupEvents: any[], userStatsMode: number) {
     proxy.submitLookupEvents({ lemmaAndContexts: lookupEvents, userStatsMode, source: DATA_SOURCE });
+  }
+
+  async function fillCardInfo() {
+    if (!stateActivityConfig) throw new Error("Invalid state, no stateActivityConfig");
+    setShowAnswer(false);
+    const [nc, srsStatusData] = (await nextPractice(stateActivityConfig)) || [];
+    setCurrentCardInfo(nc);
+    setTodaysReviewsInfo(tmpConvert(srsStatusData));
+    if (srsStatusData?.nbAvailableNew === 0 && srsStatusData?.nbAvailableRevisions === 0) {
+      setLoadingMessage(translate("screens.repetrobes.no_remaining_cards"));
+    } else {
+      setLoadingMessage("");
+    }
+    setLoading(!(!!nc?.card && !!nc.definition));
   }
 
   async function handleCardFrontUpdate(cardId: string, frontString: string) {
@@ -212,13 +220,8 @@ function Repetrobes({ proxy }: RepetrobesProps): ReactElement {
         badReviewWaitSecs,
       },
     ]);
-    const [nc, srsStatusData] = (await nextPractice(stateActivityConfig)) || [];
-    if (nc) setCurrentCardInfo(nc);
-    if (srsStatusData) setTodaysReviewsInfo(tmpConvert(srsStatusData));
-
     setShowAnswer(false);
-    setLoadingMessage("");
-    setLoading(false);
+    fillCardInfo();
   }
   const theme = useTheme();
   const helpUrl = `//${DOCS_DOMAIN}/page/software/learn/repetrobes/`;

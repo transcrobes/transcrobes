@@ -279,14 +279,10 @@ export async function getPracticeCard(
   ac: RepetrobesActivityConfigType,
   fromLang: InputLanguage,
 ): Promise<[CurrentCardInfo | null, SrsStatusData]> {
-  // select cc1.word_id, cc1.card_type, datetime(cc1.due_date, 'unixepoch') as due_date, datetime(cc1.first_revision_date, 'unixepoch') as first_revision_date, datetime(cc1.last_revision_date, 'unixepoch') as last_revision_date, datetime(cc1.first_success_date, 'unixepoch') as first_success_date, cc1.suspended, cc1.known, datetime(cc1.updated_at, 'unixepoch') as updated_at
   const [selectedWLIds, selectedCardTypes] = getActiveIds({ activityConfig: ac });
-  const activeIds = [
-    ...((ac.onlySelectedWordListRevisions && !ac.systemWordSelection && selectedWLIds) || []),
-    ...selectedCardTypes,
-  ];
   const srsStatusData = await srsStatus(ac, selectedCardTypes, selectedWLIds);
   const srsStatusDataAvailable = await srsStatusAvailable(ac, selectedCardTypes, selectedWLIds);
+  const srsStatusReturn = { ...srsStatusData, ...srsStatusDataAvailable };
   const totalRevs = srsStatusData.nbRevisionsDone + srsStatusData.nbRevisionsToRepeat;
   const totalNew = srsStatusData.nbNewDone + srsStatusData.nbNewToRepeat;
 
@@ -305,18 +301,25 @@ export async function getPracticeCard(
     card?.lastRevisionDate >= dayjs().add(-ac.badReviewWaitSecs, "seconds").unix()
   ) {
     let noMoreNew = false;
+    let newCard: CardCacheType | null = null;
     if (getNew) {
-      card = await newCardFromConfig(ac, selectedCardTypes, selectedWLIds);
-      if (!card) noMoreNew = true;
+      newCard = await newCardFromConfig(ac, selectedCardTypes, selectedWLIds);
+      if (!newCard) {
+        noMoreNew = true;
+      } else {
+        card = newCard;
+      }
     }
     if (!getNew || !card) {
-      card = await getRevisionCardSql(ac, selectedCardTypes, selectedWLIds);
+      newCard = await getRevisionCardSql(ac, selectedCardTypes, selectedWLIds);
+      if (newCard) card = newCard;
     }
     if (!card && !noMoreNew) {
-      card = await newCardFromConfig(ac, selectedCardTypes, selectedWLIds);
+      newCard = await newCardFromConfig(ac, selectedCardTypes, selectedWLIds);
+      if (newCard) card = newCard;
     }
   }
-  if (!card) return [null, srsStatusData];
+  if (!card) return [null, srsStatusReturn];
 
   const defs = await getDefinitions({ column: "id", values: [card.wordId.toString()] });
   const definition = defs[0] as DefinitionType;
@@ -331,6 +334,6 @@ export async function getPracticeCard(
       definition,
       characters,
     },
-    { ...srsStatusData, ...srsStatusDataAvailable },
+    srsStatusReturn,
   ];
 }
