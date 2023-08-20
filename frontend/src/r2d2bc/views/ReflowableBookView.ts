@@ -25,6 +25,8 @@ import BookView from "./BookView";
 import { IFrameAttributes, IFrameNavigator } from "../navigator/IFrameNavigator";
 import { debounce } from "debounce";
 
+const BUFFER_HEIGHT = 10;
+
 export default class ReflowableBookView implements BookView {
   layout = "reflowable";
 
@@ -66,7 +68,7 @@ export default class ReflowableBookView implements BookView {
       this.setSize();
       this.setIframeHeight(this.iframe);
     } else {
-      this.height = BrowserUtilities.getHeight() - 40 - this.attributes.margin;
+      this.height = BrowserUtilities.getHeight() - BUFFER_HEIGHT - this.attributes.margin;
       this.name = "readium-scroll-off";
       this.label = "Paginated";
       // any is necessary because CSSStyleDeclaration type does not include
@@ -291,7 +293,7 @@ export default class ReflowableBookView implements BookView {
 
     if (this.scrollMode) {
       const leftHeight = wrapper.scrollTop;
-      const height = this.getScreenHeight() - 40;
+      const height = this.getScreenHeight() - BUFFER_HEIGHT;
       const offset = leftHeight - height;
       if (offset >= 0) {
         wrapper.scrollTop = offset;
@@ -319,7 +321,7 @@ export default class ReflowableBookView implements BookView {
 
     if (this.scrollMode) {
       const leftHeight = wrapper.scrollTop;
-      const height = this.getScreenHeight() - 40;
+      const height = this.getScreenHeight() - BUFFER_HEIGHT;
       const scrollHeight = this.scrollingElement.scrollHeight;
       const offset = leftHeight + height;
       if (offset < scrollHeight) {
