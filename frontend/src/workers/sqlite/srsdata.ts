@@ -168,11 +168,6 @@ async function newCardFromConfig(
   selectedCardTypes: number[],
   selectedWLIds?: string[],
 ) {
-  const activeIds = [
-    ...((ac.onlySelectedWordListRevisions && !ac.systemWordSelection && selectedWLIds) || []),
-    ...selectedCardTypes,
-  ];
-
   const baseSql = getNewCardBaseSql(ac, selectedCardTypes, selectedWLIds);
   const sql = `${baseSql}
     order by
@@ -210,7 +205,6 @@ async function srsStatusAvailable(
   ac: RepetrobesActivityConfigType,
   selectedCardTypes: number[],
   selectedWLIds?: string[],
-  includeNonDict = false,
 ) {
   const activeIdsForTotals = [...((!ac.systemWordSelection && selectedWLIds) || []), ...selectedCardTypes];
 
