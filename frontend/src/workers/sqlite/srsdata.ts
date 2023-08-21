@@ -295,22 +295,22 @@ export async function getPracticeCard(
     card?.lastRevisionDate >= dayjs().add(-ac.badReviewWaitSecs, "seconds").unix()
   ) {
     let noMoreNew = false;
-    let newCard: CardCacheType | null = null;
+    let betterCard: CardCacheType | null = null;
     if (getNew) {
-      newCard = await newCardFromConfig(ac, selectedCardTypes, selectedWLIds);
-      if (!newCard) {
+      betterCard = await newCardFromConfig(ac, selectedCardTypes, selectedWLIds);
+      if (!betterCard) {
         noMoreNew = true;
       } else {
-        card = newCard;
+        card = betterCard;
       }
     }
-    if (!getNew || !card) {
-      newCard = await getRevisionCardSql(ac, selectedCardTypes, selectedWLIds);
-      if (newCard) card = newCard;
+    if (!getNew || !betterCard) {
+      betterCard = await getRevisionCardSql(ac, selectedCardTypes, selectedWLIds);
+      if (betterCard) card = betterCard;
     }
-    if (!card && !noMoreNew) {
-      newCard = await newCardFromConfig(ac, selectedCardTypes, selectedWLIds);
-      if (newCard) card = newCard;
+    if (!betterCard && !noMoreNew) {
+      betterCard = await newCardFromConfig(ac, selectedCardTypes, selectedWLIds);
+      if (betterCard) card = betterCard;
     }
   }
   if (!card) return [null, srsStatusReturn];
