@@ -52,7 +52,7 @@ services:
 
   kafka:
     platform: linux/amd64
-    image: docker.io/bitnami/kafka:3.5.1-debian-11-r18
+    image: docker.io/bitnami/kafka:3.5
     volumes:
       - "app-kafka_data:/bitnami"
     environment:
