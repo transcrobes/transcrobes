@@ -1033,9 +1033,9 @@ async function getVocabReviews({
       inner join definitions def on lw.word_id = def.id
       ${!includeNonDict ? " and not def.fallback_only " : ""}
       ${includeIgnored ? " left join known_words ds1 on lw.word_id = ds1.id and ds1.ignore " : ""}
-      left join known_words ds2 on lw.word_id = ds2.id and ds2.first_success_date > 0
+      left join (select distinct word_id from cards where first_revision_date > 0) as ds2 on lw.word_id = ds2.word_id
       ${wmsJoin}
-      where lw.list_id in (${listIds.map(() => "?").join(", ")}) and ds2.id is null
+      where lw.list_id in (${listIds.map(() => "?").join(", ")}) and ds2.word_id is null
       ${includeIgnored ? " and ds1.id is null " : ""}
       order by
       ${orderBy}

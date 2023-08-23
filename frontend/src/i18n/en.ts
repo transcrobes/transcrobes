@@ -176,7 +176,7 @@ const customEnglishMessages: TranslationMessages = {
     synchronising: "Synchronising %{collection}",
     install_error:
       "There was an error installing the database. Please completely close your browser and try again in a few minutes and if you get this message again, contact Transcrobes support: ERROR!",
-    datafile: "Retrieved data file: %{datafile}",
+    datafile: "Retrieving data file: %{datafile}",
     reinstalling: "Reinstalling database",
     init_structure: "Initialising database structure",
     installing: "Installing database",
