@@ -104,34 +104,34 @@ async function executeSql(sql: string, values?: SQLiteCompatibleType[][]): Promi
   return output;
 }
 
-export async function getTableLastUpdate(tableName: ManagedTable): Promise<{ id: string; date: number }> {
+export async function getTableLastUpdate(tableName: ManagedTable): Promise<{ id?: string; date?: number }> {
   const lastUpdate = await execute(
     `SELECT id, max(updated_at) FROM ${tableName} GROUP BY id ORDER BY updated_at DESC, id DESC LIMIT 1;`,
   );
-  const id = lastUpdate[0].rows[0][0] as string;
-  const date = lastUpdate[0].rows[0][1] as number;
+  const id = lastUpdate[0].rows?.[0]?.[0] as string;
+  const date = lastUpdate[0].rows?.[0]?.[1] as number;
   return { id, date };
 }
 
-export async function getCardTableLastUpdate(): Promise<{ id: string; date: number }> {
+export async function getCardTableLastUpdate(): Promise<{ id?: string; date: number }> {
   const lastUpdate = await execute(
     `SELECT word_id, card_type, max(updated_at) FROM cards GROUP BY word_id, card_type ORDER BY updated_at DESC, word_id DESC, card_type DESC LIMIT 1;`,
   );
-  const wordId = lastUpdate[0].rows[0][0] as string;
-  const cardType = lastUpdate[0].rows[0][1] as number;
-  const date = lastUpdate[0].rows[0][2] as number;
+  const wordId = lastUpdate[0].rows?.[0]?.[0] as string;
+  const cardType = lastUpdate[0].rows?.[0]?.[1] as number;
+  const date = lastUpdate[0].rows?.[0]?.[2] as number;
   // here we just get all the cards for the same most recently updated word
-  return { id: getCardId(wordId, cardType), date };
+  return { id: wordId && cardType ? getCardId(wordId, cardType) : undefined, date };
 }
 
 export async function getLatestUpdates(
   baseUrl: string,
   tableName: ManagedTable,
-  { id, date }: { id: string; date: number },
+  { id, date }: { id?: string; date?: number },
 ) {
   const siteOrigin = new URL(baseUrl).origin;
   if (!baseUrl || !siteOrigin) throw new Error("No baseUrl");
-  const res = await fetchPlusResponse(`${siteOrigin}/api/v1/tables/${tableName}/${id}/${date}`);
+  const res = await fetchPlusResponse(`${siteOrigin}/api/v1/tables/${tableName}/${id ?? "null"}/${date ?? -1}`);
   const data = await res.json();
   return data;
 }

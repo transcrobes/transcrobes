@@ -6,6 +6,7 @@ import { TranslationMessages } from "ra-core";
 const chineseMessages: TranslationMessages = {
   ra: {
     action: {
+      update_application: "更新",
       add_filter: "增加检索",
       add: "增加",
       back: "回退",
@@ -144,7 +145,7 @@ const chineseMessages: TranslationMessages = {
       data_provider_error: "dataProvider错误. 请检查console的详细信息.",
       i18n_error: "无法加载指定语言包",
       logged_out: "会话失效, 请重连.",
-
+      application_update_available: "有新版本可用. 请刷新页面以更新.",
       not_authorized: "您没有权限执行该操作",
     },
     validation: {

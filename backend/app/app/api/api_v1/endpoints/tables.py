@@ -55,6 +55,7 @@ async def dbupdates(
     db: AsyncSession = Depends(deps.get_db),
     current_user: schemas.TokenPayload = Depends(deps.get_current_good_tokenpayload),
 ):
+    row_id = row_id if row_id != "null" else ""
     LIMIT = 100000
     from_lang = get_from_lang(current_user.lang_pair)
     data = {}
