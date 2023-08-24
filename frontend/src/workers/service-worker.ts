@@ -20,6 +20,7 @@ import { store } from "../app/createStore";
 clientsClaim();
 
 declare const self: ServiceWorkerGlobalScope;
+self.__WB_DISABLE_DEV_LOGS = true;
 console.debug("INITIALIZING");
 self.addEventListener("install", (event) => {
   console.debug("INSTALLING");

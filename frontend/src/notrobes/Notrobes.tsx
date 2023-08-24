@@ -86,7 +86,7 @@ function useQuery() {
 }
 
 function Notrobes({ proxy, url }: Props): ReactElement {
-  const currentQueryParam = useQuery();
+  const currentQueryParam = useQuery(); // this is probably not the best way to do this
   const navigate = useNavigate();
   const translate = useTranslate();
   const converter = useRef<ConvertText>(Converter({ from: "t", to: "cn" }));
@@ -113,6 +113,8 @@ function Notrobes({ proxy, url }: Props): ReactElement {
 
   const [wordModelStats, setWordModelStats] = useState<WordModelStatsType | null>(null);
   const [lists, setLists] = useState<SortableListElementType[] | null>(null);
+  const inited = useAppSelector((state) => state.ui.sqliteInited);
+
   // const [showRelated, setShowRelated] = useState<boolean>(false);
   // const [filteredExistingByChars, setFilteredExistingByChars] = useState<Record<string, ShortWord>>();
   // const [filteredExistingBySounds, setFilteredExistingBySounds] = useState<Record<string, ShortWord>>();
@@ -152,12 +154,16 @@ function Notrobes({ proxy, url }: Props): ReactElement {
   //   })();
   // }, [showRelated, dictOnly]);
 
-  useEffect(() => {
+  function initSearch() {
     const q = currentQueryParam.get("q") || "";
-    if (query !== q) {
+    if (!!q && (query !== q || !word)) {
       runSearch(q);
     }
-  }, [currentQueryParam]);
+  }
+
+  useEffect(() => {
+    initSearch();
+  }, [inited]);
 
   // async function filterExistingWords(
   //   graph: string,
