@@ -5,6 +5,7 @@ import { setUser } from "../../features/user/userSlice";
 import { createSharedServicePort } from "../SharedService";
 import { ACTIVE_SQLITE, DatabaseService } from "./DatabaseService";
 import { setupWebSockets } from "./sqlsync";
+import { initInfo } from "./sqldata";
 
 let databaseService: DatabaseService;
 
@@ -27,9 +28,12 @@ addEventListener(
             console.log("progressmessage", progress);
             if (progress.isFinished) {
               setupWebSockets(dexieUser).then(() => {
-                postMessage({
-                  source: "SQLITE_WEB_WORKER",
-                  type: "loaded",
+                initInfo().then((value) => {
+                  postMessage({
+                    source: "SQLITE_WEB_WORKER",
+                    type: "loaded",
+                    value,
+                  });
                 });
               });
             }

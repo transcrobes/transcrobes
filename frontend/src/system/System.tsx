@@ -226,6 +226,7 @@ function System({ proxy }: Props): ReactElement {
       <CardHeader title={translate("screens.system.system_info")} />
       <Card>
         <CardContent>
+          <Box>{user.username}</Box>
           <Box>V: {GIT_VERSION}</Box>
           <Box>{serverAvailableMessage}</Box>
         </CardContent>

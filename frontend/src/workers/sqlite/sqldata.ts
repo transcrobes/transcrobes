@@ -162,6 +162,12 @@ export async function getKnownWords(): Promise<KnownWords> {
   return { knownWordGraphs };
 }
 
+export async function initInfo(): Promise<{ knownWords: KnownWords; reviewedWordCount: number }> {
+  const knownWords = await getKnownWords();
+  const reviewedWordCount = await getReviewedWordCount();
+  return { knownWords, reviewedWordCount };
+}
+
 export async function syncUserDictionaryUpdates(latestUpdates: { id: string; updatedAt: number; lzContent: string }[]) {
   for (const { id, updatedAt, lzContent } of latestUpdates) {
     genericTableUpsert("userdictionaries", [{ id, updatedAt }], ["id"]);
@@ -556,6 +562,15 @@ async function getContentAccuracyStatsForImport({
   //   }
   // }
   // return { allWords, foundWords, notFoundWords, knownFoundWords, knownNotFoundWords };
+}
+
+async function getReviewedWordCount(): Promise<number> {
+  const out = await execute(`
+    select count(distinct word_id)
+    from cards
+    where first_revision_date > 0 or first_success_date > 0 or known
+    `);
+  return out[0].rows[0][0] as number;
 }
 
 async function getKnownWordCount(includeIgnored?: boolean): Promise<number> {
@@ -1033,7 +1048,11 @@ async function getVocabReviews({
       inner join definitions def on lw.word_id = def.id
       ${!includeNonDict ? " and not def.fallback_only " : ""}
       ${includeIgnored ? " left join known_words ds1 on lw.word_id = ds1.id and ds1.ignore " : ""}
-      left join (select distinct word_id from cards where first_revision_date > 0) as ds2 on lw.word_id = ds2.word_id
+      left join (
+        select distinct car.word_id
+        from cards car
+        where car.first_revision_date > 0 or car.first_success_date > 0 or car.known
+      ) as ds2 on lw.word_id = ds2.word_id
       ${wmsJoin}
       where lw.list_id in (${listIds.map(() => "?").join(", ")}) and ds2.word_id is null
       ${includeIgnored ? " and ds1.id is null " : ""}

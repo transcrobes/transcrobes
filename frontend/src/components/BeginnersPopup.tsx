@@ -40,11 +40,9 @@ export default function AlertDialog() {
       !state.userData.user.isAdmin &&
       !state.ui.ignoreBeginner &&
       shouldRedirectBeginner(loc.pathname) &&
-      state.knownWords.knownWordGraphs !== undefined &&
-      Object.keys(state.knownWords.knownWordGraphs).length < MIN_KNOWN_BEFORE_ADVANCED
+      !!state.ui.needsBeginner
     );
   });
-
   function handleIgnore() {
     dispatch(setIgnoreBeginner(true));
   }

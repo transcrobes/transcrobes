@@ -18,7 +18,7 @@ import { getUserDexie, isInitialisedAsync } from "./database/authdb";
 import dictionaries from "./dictionaries";
 import { setKnownWordsState } from "./features/word/knownWordsSlice";
 import { addDictionaryProviders } from "./features/dictionary/dictionarySlice";
-import { setMouseover, setRxdbInited, setSqliteInited, setTokenDetails } from "./features/ui/uiSlice";
+import { setMouseover, setNeedsBeginner, setRxdbInited, setSqliteInited, setTokenDetails } from "./features/ui/uiSlice";
 import { setUser } from "./features/user/userSlice";
 import goals from "./goals";
 import Help from "./help/Help";
@@ -66,6 +66,7 @@ import {
   ACTIVITY_TIMEOUT,
   CacheRefresh,
   GLOBAL_TIMER_DURATION_MS,
+  MIN_KNOWN_BEFORE_ADVANCED,
 } from "./lib/types";
 import { useIdleTimer } from "react-idle-timer";
 import { NAME_PREFIX } from "./lib/interval/interval-decorator";
@@ -123,6 +124,8 @@ let sharedSqliteService = new SharedService<SqliteDataManager>("sqlite", () =>
     (event) => {
       if (event.data.source === "SQLITE_WEB_WORKER") {
         console.log("Sqlite worker loaded", event);
+        store.dispatch(setKnownWordsState(event.data.value.knownWords));
+        store.dispatch(setNeedsBeginner(event.data.value.reviewedWordCount < MIN_KNOWN_BEFORE_ADVANCED));
         store.dispatch(setSqliteInited(true));
       } else {
         console.error("Sqlite worker sent invalid loaded event", event);
@@ -224,6 +227,7 @@ const sessionId = (window.asessionId = UUID().toString());
 
 function App({ config }: Props): ReactElement {
   const dispatch = useAppDispatch();
+  const inited = useAppSelector((state) => state.ui.rxdbInited && state.ui.sqliteInited);
   useIdleTimer({
     onAction: () => {
       if (inited) {
@@ -243,11 +247,9 @@ function App({ config }: Props): ReactElement {
     debounce: ACTIVITY_DEBOUNCE,
     eventsThrottle: ACTIVITY_EVENTS_THROTTLE,
   });
-  const inited = useAppSelector((state) => state.ui.rxdbInited && state.ui.sqliteInited);
   useEffect(() => {
     if (inited) {
       (async () => {
-        store.dispatch(setKnownWordsState(await platformHelper.getKnownWords()));
         await refreshDictionaries(store, platformHelper, fromLang);
       })();
     }
