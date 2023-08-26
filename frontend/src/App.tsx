@@ -79,6 +79,9 @@ declare global {
     lastTimestamp: number;
   }
 }
+navigator.storage?.persist?.().then((persisted) => {
+  console.log("Persisted storage", persisted);
+});
 
 let wb: Workbox;
 if (import.meta.env.DEV) {
@@ -92,6 +95,7 @@ async function portProvider(
   worker: Worker,
   loadedCallback: (event) => void,
   decacheCallback?: (refresh: CacheRefresh) => void,
+  refreshedCallback?: (event) => void,
 ) {
   const providerPort = await new Promise<MessagePort | Promise<MessagePort>>((resolve) => {
     worker.addEventListener(
@@ -110,6 +114,8 @@ async function portProvider(
       decacheCallback?.(event.data.value);
     } else if (event.data.type == "loaded") {
       loadedCallback(event);
+    } else if (event.data.type == "loaded") {
+      refreshedCallback?.(event);
     }
   });
 
@@ -123,7 +129,7 @@ let sharedSqliteService = new SharedService<SqliteDataManager>("sqlite", () =>
     }),
     (event) => {
       if (event.data.source === "SQLITE_WEB_WORKER") {
-        console.log("Sqlite worker loaded", event);
+        console.log("Sqlite worker loaded", event.data.value);
         store.dispatch(setKnownWordsState(event.data.value.knownWords));
         store.dispatch(setNeedsBeginner(event.data.value.reviewedWordCount < MIN_KNOWN_BEFORE_ADVANCED));
         store.dispatch(setSqliteInited(true));
@@ -136,6 +142,15 @@ let sharedSqliteService = new SharedService<SqliteDataManager>("sqlite", () =>
         store.dispatch(setKnownWordsState(refresh.values));
       } else {
         console.error("Unknown cache refresh", refresh);
+      }
+    },
+    (event) => {
+      if (event.data.source === "SQLITE_WEB_WORKER") {
+        console.log("Sqlite worker refreshed", event.data.value);
+        store.dispatch(setKnownWordsState(event.data.value.knownWords));
+        store.dispatch(setNeedsBeginner(event.data.value.reviewedWordCount < MIN_KNOWN_BEFORE_ADVANCED));
+      } else {
+        console.error("Sqlite worker sent invalid loaded event", event);
       }
     },
   ),

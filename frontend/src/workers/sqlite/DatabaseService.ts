@@ -4,7 +4,7 @@ import { ProgressCallbackMessage, TCDB_FILENAME } from "../../lib/types";
 import { DataService } from "../DataService";
 import { AccessHandlePoolVFS } from "./AccessHandlePoolVFS";
 import { IDBBatchAtomicVFS } from "./IDBBatchAtomicVFS";
-import { SqliteDataManager, setTagfunction, sqliteDataManager } from "./sqldata";
+import { SqliteDataManager, execute, setTagfunction, sqliteDataManager } from "./sqldata";
 import type { SQLiteResults, TagFunction } from "./tag";
 import { createTag } from "./tag";
 export type SupportedVFS = typeof AccessHandlePoolVFS | typeof IDBBatchAtomicVFS;
@@ -37,19 +37,6 @@ export class DatabaseService extends DataService<SqliteDataManager> {
     this.#StorageClass = StorageClass;
   }
 
-  async query(sql: string, values?: SQLiteCompatibleType[][]): Promise<SQLiteResults[]> {
-    const result = this.chain.then(async () => {
-      if (this.#isTransactionPending()) {
-        console.log("In a trans, rolling back for", sql.slice(0, 1000), values);
-        await this.#tag("ROLLBACK").catch(() => {});
-      }
-      return this.#tag(sql, values);
-    });
-    this.chain = result.catch((e) => {
-      console.warn("Error in query", sql, values, e);
-    });
-    return await result;
-  }
   async #initialize(progressCallback: (progress: ProgressCallbackMessage) => void) {
     const sqlite3 = await this.#sqlite3Ready;
     console.log("Initialising sqlite storage with", this.#StorageClass, sqlite3);
@@ -68,15 +55,13 @@ export class DatabaseService extends DataService<SqliteDataManager> {
     this.#isTransactionPending = () => !sqlite3.get_autocommit(db);
 
     if (this.#StorageClass === SYNC_SQLITE.vfs) {
-      this.query(`
-      PRAGMA locking_mode=exclusive;
-      PRAGMA journal_mode=truncate;
+      await execute(`
+        PRAGMA locking_mode=exclusive;
+        PRAGMA journal_mode=truncate;
       `);
     } else {
-      // PRAGMA cache_size=-15000;
-      console.log("Setting locking mode to exclusive");
-      this.query(`
-      PRAGMA locking_mode=exclusive;
+      await execute(`
+        PRAGMA locking_mode=exclusive;
       `);
     }
 

@@ -95,6 +95,8 @@ function refreshTokenIfRequired(
       store.dispatch(throttledRefreshToken() as any);
       // FIXME: this will set rubbish until the refresh actually happens - is this worth trying to improve upon?
       replicationState.setHeaders(getHeaders(store.getState().userData.user.accessToken));
+    } else if (expiredMessage?.includes("Failed to fetch")) {
+      console.log("Looks like we're offline", expiredMessage);
     } else {
       console.log("There was an error but apparently not an expiration", expiredMessage, error);
       console.error(error);

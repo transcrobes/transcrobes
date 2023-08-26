@@ -1,6 +1,6 @@
 {
   "name": "transcrobes",
-  "version": "0.30.3",
+  "version": "0.30.5",
   "private": true,
   "type": "module",
   "prettier": {

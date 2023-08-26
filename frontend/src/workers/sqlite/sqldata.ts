@@ -153,6 +153,7 @@ export async function getKnownWords(): Promise<KnownWords> {
     FROM definitions def INDEXED BY idx_definitions_id_graph
     inner join known_words kw on kw.id = def.id
     `);
+
   if (!out[0]?.rows?.length) return { knownWordGraphs: {} };
 
   const knownWordGraphs: SerialisableStringSet = {};

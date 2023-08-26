@@ -27,11 +27,19 @@ addEventListener(
           (progress) => {
             console.log("progressmessage", progress);
             if (progress.isFinished) {
+              initInfo().then((value) => {
+                postMessage({
+                  source: "SQLITE_WEB_WORKER",
+                  type: "loaded",
+                  value,
+                });
+              });
+              // After synching with the server, inform the frontend with fresh values
               setupWebSockets(dexieUser).then(() => {
                 initInfo().then((value) => {
                   postMessage({
                     source: "SQLITE_WEB_WORKER",
-                    type: "loaded",
+                    type: "refreshed",
                     value,
                   });
                 });
