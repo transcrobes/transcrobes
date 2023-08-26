@@ -454,9 +454,9 @@ emails==0.6 \
     --hash=sha256:72c1e3198075709cc35f67e1b49e2da1a2bc087e9b444073db61a379adfb7f3c \
     --hash=sha256:a4c2d67ea8b8831967a750d8edc6e77040d7693143fe280e6d2a367d9c36ff88
     # via transcrobes (pyproject.toml)
-fastapi==0.101.1 \
-    --hash=sha256:7b32000d14ca9992f7461117b81e4ef9ff0c07936af641b4fe40e67d5f9d63cb \
-    --hash=sha256:aef5f8676eb1b8389952e1fe734abe20f04b71f6936afcc53b320ba79b686a4b
+fastapi==0.102.0 \
+    --hash=sha256:34db27d0af54ee0d92c540e83c6ee6a11de93f63bbdf73fda54fff9a10c52569 \
+    --hash=sha256:e3652cb9bdf4df1dedda4fce9454e9f75a8c969b5cdd3faf1bd5c6f5d2daab08
     # via transcrobes (pyproject.toml)
 faust-streaming==0.10.16 \
     --hash=sha256:0772a47c6e2fd8270b3e601a4b446d9b6f93e40d7f5e4e312b5a1f0084a86af0 \
