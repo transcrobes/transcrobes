@@ -556,9 +556,9 @@ emails==0.6 \
     --hash=sha256:72c1e3198075709cc35f67e1b49e2da1a2bc087e9b444073db61a379adfb7f3c \
     --hash=sha256:a4c2d67ea8b8831967a750d8edc6e77040d7693143fe280e6d2a367d9c36ff88
     # via transcrobes (pyproject.toml)
-fastapi==0.101.1 \
-    --hash=sha256:7b32000d14ca9992f7461117b81e4ef9ff0c07936af641b4fe40e67d5f9d63cb \
-    --hash=sha256:aef5f8676eb1b8389952e1fe734abe20f04b71f6936afcc53b320ba79b686a4b
+fastapi==0.103.0 \
+    --hash=sha256:4166732f5ddf61c33e9fa4664f73780872511e0598d4d5434b1816dc1e6d9421 \
+    --hash=sha256:61ab72c6c281205dd0cbaccf503e829a37e0be108d965ac223779a8479243665
     # via transcrobes (pyproject.toml)
 faust-streaming==0.10.16 \
     --hash=sha256:0772a47c6e2fd8270b3e601a4b446d9b6f93e40d7f5e4e312b5a1f0084a86af0 \
@@ -1268,9 +1268,9 @@ platformdirs==3.10.0 \
     --hash=sha256:b45696dab2d7cc691a3226759c0d3b00c47c8b6e293d96f6436f733303f77f6d \
     --hash=sha256:d7c24979f292f916dc9cbf8648319032f551ea8c49a4c9bf2fb556a02070ec1d
     # via black, pylint, virtualenv
-pluggy==1.2.0 \
-    --hash=sha256:c2fd55a7d7a3863cba1a013e4e2414658b1d07b6bc57b3919e0c63c9abb99849 \
-    --hash=sha256:d12f0c4b579b15f5e054301bb226ee85eeeba08ffec228092f8defbaa3a4c4b3
+pluggy==1.3.0 \
+    --hash=sha256:cf61ae8f126ac6f7c451172cf30e3e43d3ca77615509771b3a984a0730651e12 \
+    --hash=sha256:d89c696a773f8bd377d18e5ecda92b7a3793cbe66c87060a6fb58c7b6e1061f7
     # via pytest
 pre-commit==3.3.3 \
     --hash=sha256:10badb65d6a38caff29703362271d7dca483d01da88f9d7e05d0b97171c136cb \
