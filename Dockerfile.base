@@ -22,8 +22,6 @@ COPY ./backend/app/pyproject.toml ./backend/app/requirements.txt ./backend/app/d
 
 # Allow installing dev dependencies to run tests
 ARG INSTALL_DEV=false
-# RUN bash -c "if [ $INSTALL_DEV == 'true' ] ; then pip install -r dev-requirements.txt ; else pip install -r requirements.txt ; fi"
-# RUN --mount=type=cache,target=.cache/pip
 RUN --mount=type=cache,mode=0755,target=/root/.cache/pip bash -c "if [ $INSTALL_DEV == 'true' ] ; then pip install -r dev-requirements.txt ; else pip install -r requirements.txt ; fi"
 
 RUN apt-get remove -y --purge \
