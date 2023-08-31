@@ -93,8 +93,8 @@ async def access_from_refresh(token: TcToken, expires_delta: timedelta = None) -
         "is_teacher": bool(token_data.is_teacher),
         "lang_pair": token_data.lang_pair,
         "translation_providers": token_data.translation_providers,
-        "tracking_key": settings.TRACKING_KEY,
-        "tracking_endpoint": settings.TRACKING_ENDPOINT,
+        "tracking_key": str(settings.TRACKING_KEY),
+        "tracking_endpoint": str(settings.TRACKING_ENDPOINT),
         "jti": uuid.uuid4().hex,
     }
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=ALGORITHM)

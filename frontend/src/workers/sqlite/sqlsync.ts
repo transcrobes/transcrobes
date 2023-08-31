@@ -1,4 +1,4 @@
-import { ConstantBackoff, Websocket, WebsocketBuilder } from "websocket-ts";
+import { ConstantBackoff, Websocket, WebsocketBuilder } from "../../websocket-ts";
 import { doLogin } from "../../features/user/userSlice";
 import { UserState } from "../../lib/types";
 import {
@@ -9,8 +9,11 @@ import {
   getLatestUpdates,
   getTableLastUpdate,
   syncCardUpdates,
+  syncContentQuestions,
   syncDayModelStats,
+  syncFreeQuestions,
   syncImportUpdates,
+  syncQuestions,
   syncUserDictionaryUpdates,
   syncWordModelStats,
   syncWordlistUpdates,
@@ -27,6 +30,9 @@ export async function syncAllTables(baseUrl: string) {
   syncTable(baseUrl, "word_model_stats");
   syncTable(baseUrl, "day_model_stats");
   syncTable(baseUrl, "Definitions");
+  syncTable(baseUrl, "FreeQuestions");
+  syncTable(baseUrl, "ContentQuestions");
+  syncTable(baseUrl, "Questions");
 }
 
 export async function setupWebSockets(userData: UserState) {
@@ -139,6 +145,30 @@ async function syncTable(baseUrl: string, tableName: ManagedTable) {
         for (const wordlist of latestUpdates["Wordlists"]) {
           await syncWordlistUpdates(wordlist);
         }
+      } else {
+        console.warn(`No ${tableName} valid updates received`);
+      }
+      break;
+    case "FreeQuestions":
+      latestUpdates = await getLatestUpdates(baseUrl, tableName, await getTableLastUpdate(tableName));
+      if (latestUpdates?.[tableName]?.length || 0 > 0) {
+        await syncFreeQuestions(latestUpdates[tableName]);
+      } else {
+        console.warn(`No ${tableName} valid updates received`);
+      }
+      break;
+    case "ContentQuestions":
+      latestUpdates = await getLatestUpdates(baseUrl, tableName, await getTableLastUpdate(tableName));
+      if (latestUpdates?.[tableName]?.length || 0 > 0) {
+        await syncContentQuestions(latestUpdates[tableName]);
+      } else {
+        console.warn(`No ${tableName} valid updates received`);
+      }
+      break;
+    case "Questions":
+      latestUpdates = await getLatestUpdates(baseUrl, tableName, await getTableLastUpdate(tableName));
+      if (latestUpdates?.[tableName]?.length || 0 > 0) {
+        await syncQuestions(latestUpdates[tableName]);
       } else {
         console.warn(`No ${tableName} valid updates received`);
       }

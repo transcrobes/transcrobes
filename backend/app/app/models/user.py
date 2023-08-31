@@ -37,6 +37,7 @@ def absolute_resources_path(user_id: int, filename: str) -> str:
 
 
 def user_imports_path(user_id: int, filename) -> str:
+    # this is a URL path, not a filesystem path, so use / not os.path.join
     return f"{user_imports_dir_path(user_id)}/{filename}"
 
 

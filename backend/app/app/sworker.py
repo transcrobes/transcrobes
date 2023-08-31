@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import logging.config
+import os
 import time
 import traceback
 from datetime import datetime
@@ -9,11 +10,20 @@ import orjson
 from aiokafka import AIOKafkaConsumer
 from app.api.api_v1 import types
 from app.core.config import settings
+from app.data.importer.common import MCQ_QAG_OUTFILE_SUFFIX
 from app.data.models import ActivityTypes
 from app.data.stats import push_user_stats_update_to_clients
 from app.db.session import async_stats_session
-from app.models.stats import UserActivity, UserDay, UserWord
-from app.stats import ACTION_EVENT_TOPIC_NAME, ACTIVITY_EVENT_TOPIC_NAME, CARD_EVENT_TOPIC_NAME, VOCAB_EVENT_TOPIC_NAME
+from app.models.stats import ContentModelRead, UserActivity, UserDay, UserWord
+from app.schemas.files import ProcessData
+from app.stats import (
+    ACTION_EVENT_TOPIC_NAME,
+    ACTIVITY_EVENT_TOPIC_NAME,
+    CARD_EVENT_TOPIC_NAME,
+    READ_EVENT_TOPIC_NAME,
+    VOCAB_EVENT_TOPIC_NAME,
+)
+from app.worker.faustus import qag_process_topic
 from sqlalchemy import case
 from sqlalchemy.dialects import postgresql
 
@@ -26,6 +36,7 @@ STATS_TOPICS_TO_CONSUME = [
     VOCAB_EVENT_TOPIC_NAME,
     ACTION_EVENT_TOPIC_NAME,
     CARD_EVENT_TOPIC_NAME,
+    READ_EVENT_TOPIC_NAME,
     ACTIVITY_EVENT_TOPIC_NAME,
 ]
 
@@ -151,7 +162,9 @@ async def action_event(events, tstamp):
             day_updates[day_key] = {"user_id": user_id, "day": today, "nb_seen": 0, "nb_checked": 0, "updated_at": now}
         day = day_updates[day_key]
 
-        target_word = event["target_word"]
+        target_word_original = event["target_word"]
+        target_word = target_word_original.lower()
+
         word_key = f"{user_id}_{target_word}"
         if word_key not in word_updates:
             word_updates[word_key] = {
@@ -234,7 +247,8 @@ async def vocab_event(events, tstamp):
         if day_key not in day_updates:
             day_updates[day_key] = {"user_id": user_id, "day": today, "nb_seen": 0, "nb_checked": 0, "updated_at": now}
         day = day_updates[day_key]
-        for k, v in event["data"].items():
+        for k_original, v in event["data"].items():
+            k = k_original.lower()
             word_key = f"{user_id}_{k}"
             if word_key not in word_updates:
                 word_updates[word_key] = {
@@ -289,7 +303,9 @@ async def card_event(events, tstamp):
             }
         day = day_updates[day_key]
 
-        target_word = event["target_word"]
+        target_word_original = event["target_word"]
+        target_word = target_word_original.lower()
+
         word_key = f"{user_id}_{target_word}"
         if word_key not in word_updates:
             word_updates[word_key] = {
@@ -318,6 +334,75 @@ async def card_event(events, tstamp):
 
     await send_updates(word_updates, day_updates, list(update_ids), True)
     logger.info(f"Card events sent to statsdb for user_ids {list(update_ids)}")
+
+
+async def run_qag(id):
+    file_event = ProcessData(type="mcq", id=id)
+    logger.log(f"{id} should now be sent to kafka")
+    await qag_process_topic.send(value=file_event)
+
+
+def model_strings(chapter_path: str) -> set[str]:
+    if not os.path.exists(chapter_path):
+        return None
+    output = set()
+    with open(chapter_path, "r") as f:
+        qags = orjson.loads(f.read())
+        for qag in qags:
+            # FIXME: use a const for the "-"
+            output.add(qag["modelIds"].split("-")[-1])
+    return output
+
+
+async def read_event(events):
+    if not events:
+        logger.warning("Empty read events received")
+        return
+    logger.info(f"{len(events)} Read events received")
+
+    model_reads = []
+    last_read = []
+    for event in events:
+        mr = {
+            "user_id": event["user_id"],
+            "content_id": event["content_id"],
+            "href": event["href"],
+            "model_id": event["model_id"],
+            "read_at": event["read_at"],
+        }
+
+        model_reads.append(mr)
+        if event["read_at"] > time.time() - 60:
+            last_read.append(mr)
+
+    stmt = postgresql.insert(ContentModelRead).values(model_reads)
+    async with async_stats_session() as db:
+        await db.execute(stmt)
+        await db.commit()
+
+    # are there any models that are the last for a given qag and were read within the last minute?
+    # - if so, send them to the qag worker
+    pots = {}
+    to_run = []
+    for event in last_read:
+        mcq_path = os.path.join(
+            settings.MEDIA_ROOT,
+            event["user_id"],
+            "resources",
+            event["content_id"],
+            event["href"] + MCQ_QAG_OUTFILE_SUFFIX,
+        )
+        if os.path.exists(mcq_path):
+            pots[mcq_path] = model_strings(mcq_path)
+        if event["model_id"] in pots[mcq_path]:
+            to_run.append(event)
+    if len(to_run) > 0:
+        newlist = sorted(to_run, key=lambda d: d["read_at"], reverse=True)
+        event = newlist[0]
+        # await run_qag(event["content_id"], event["href"], event["model_id"])
+        await run_qag(f'{event["user_id"]}:{event["content_id"]}/{event["href"]}:{event["model_id"]}')
+
+    logger.info(f"{len(events)} read events saved")
 
 
 async def main():
@@ -353,6 +438,9 @@ async def main():
                 elif msg.topic == CARD_EVENT_TOPIC_NAME:
                     logger.info(f"Received card_event_topic message: {msg.timestamp} ")
                     await card_event(orjson.loads(msg.value), msg.timestamp)
+                elif msg.topic == READ_EVENT_TOPIC_NAME:
+                    logger.info(f"Received read_event_topic message: {msg.timestamp} ")
+                    await read_event(orjson.loads(msg.value))
                 else:
                     logger.warning(f"Received unknown message: {msg.topic=}, {msg.value=}, {msg.timestamp=}")
                     continue

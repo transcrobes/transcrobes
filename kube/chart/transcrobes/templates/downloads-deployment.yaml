@@ -1,0 +1,36 @@
+{{- if .Values.downloads.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "transcrobes.downloads.fullname" . }}
+  labels:
+    {{- include "transcrobes.downloads.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.downloads.replicaCount }}
+  {{- if .Values.downloads.strategy }}
+  strategy:
+{{ toYaml .Values.downloads.strategy | indent 4 }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "transcrobes.downloads.matchLabels" . | nindent 6 }}
+  template:
+    metadata:
+    {{- if .Values.downloads.podAnnotations }}
+      annotations:
+{{ toYaml .Values.downloads.podAnnotations | indent 8 }}
+    {{- end }}
+      labels:
+        {{- include "transcrobes.downloads.labels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: {{ template "transcrobes.name" . }}-{{ .Values.downloads.name }}
+          image: "{{ .Values.downloads.image.repository }}:{{ .Values.downloads.image.tag }}"
+          imagePullPolicy: {{ .Values.downloads.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.downloads.application.listenPort }}
+              protocol: TCP
+      restartPolicy: Always
+status: {}
+{{- end }}

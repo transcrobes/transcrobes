@@ -152,7 +152,7 @@ createRoot(loadingRoot).render(
   </Provider>,
 );
 
-const readObserver = new IntersectionObserver(observerFunc(models, getReaderConfig, getKnownWords, new Set<string>()), {
+const readObserver = new IntersectionObserver(observerFunc(models, getReaderConfig, getKnownWords, "", location.href), {
   threshold: [1.0],
 });
 

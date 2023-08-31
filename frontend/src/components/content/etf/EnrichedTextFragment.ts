@@ -52,6 +52,8 @@ export function enrichETFElements(
   models: KeyedModels,
   store: AdminStore,
   classes: ETFStylesProps["classes"],
+  contentId: string,
+  href: string,
   elementIds?: Set<string>,
 ) {
   element.innerHTML = html;
@@ -61,6 +63,8 @@ export function enrichETFElements(
       models,
       () => readerConfig,
       () => store.getState().knownWords,
+      contentId,
+      href,
     ),
     {
       threshold: [0, 1.0],

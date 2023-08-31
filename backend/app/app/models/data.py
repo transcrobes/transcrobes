@@ -21,6 +21,7 @@ from app.models.mixins import (
     CachedAPIJSONLookupMixin,
     DetailedMixin,
     RevisionableMixin,
+    TimestampMixin,
     utcnow,
 )
 from app.models.user import SHARED_USER_ID, AuthUser, absolute_imports_path, absolute_resources_path
@@ -246,6 +247,59 @@ class Content(DetailedMixin, Base):
 
     def processed_path(self) -> str:
         return absolute_resources_path(SHARED_USER_ID if self.shared else self.created_by.id, self.id)
+
+
+class Question(DetailedMixin, Base):
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    MCQ = 1
+    SHORT = 2
+    QUESTION_TYPE = [
+        (MCQ, "Multiple Choice"),
+        (SHORT, "Short Answer"),
+    ]
+    question = Column(Text)
+    question_type = Column(Integer, nullable=False, default=MCQ)
+    extra_data = Column(Text)
+    shared = Column(Boolean, nullable=False, default=False)
+
+
+class FreeQuestion(TimestampMixin, Base):
+    id = Column(
+        ForeignKey("question.id", deferrable=True, initially="DEFERRED"),
+        primary_key=True,
+    )
+    context = Column(Text)
+    question = relationship("Question")
+
+
+class ContentQuestion(TimestampMixin, Base):
+    id = Column(
+        ForeignKey("question.id", deferrable=True, initially="DEFERRED"),
+        primary_key=True,
+    )
+    content_id = Column(
+        ForeignKey("content.id", deferrable=True, initially="DEFERRED"),
+        nullable=False,
+        index=True,
+    )
+    href = Column(Text)
+    model_ids = Column(Text)
+    content = relationship("Content")
+    question = relationship("Question")
+
+
+class QuestionAnswer(ActivatorTimestampMixin, Base):
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    question_id = Column(
+        ForeignKey("question.id", deferrable=True, initially="DEFERRED"),
+        nullable=False,
+        index=True,
+    )
+    student_answer = Column(Text, nullable=False)
+    feedback = Column(Text, nullable=True)
+    is_correct = Column(Boolean, nullable=False, default=False)
+
+    question = relationship("Question")
 
 
 class UserListDict(TypedDict, total=False):

@@ -15,7 +15,7 @@ import tempfile
 from typing import List
 
 from app import models
-from app.api.api_v1.types import Userdictionaries
+from app.api.api_v1.types import ContentQuestions, FreeQuestions, Questions, Userdictionaries
 from app.cache import add_word_ids
 from app.core.config import settings
 from app.data.filter import filter_cards, filter_day_model_stats, filter_standard, filter_word_model_stats
@@ -29,12 +29,16 @@ from app.enrich.sqlite_definitions import (
     CARDS_INSERT,
     CHARACTERS_CREATE,
     CHARACTERS_INSERT,
+    CONTENT_QUESTIONS_CREATE,
+    CONTENT_QUESTONS_INSERT,
     DAY_MODEL_STATS_CREATE,
     DAY_MODEL_STATS_INSERT,
     DEFINITIONS_CREATE,
     DEFINITIONS_INDEX_ID_GRAPH,
     DEFINITIONS_INDEX_ID_UPDATED_AT,
     DEFINITIONS_INSERT,
+    FREE_QUESTIONS_CREATE,
+    FREE_QUESTONS_INSERT,
     IMPORT_WORDS_CREATE,
     IMPORT_WORDS_INDEX_ID,
     IMPORT_WORDS_INSERT,
@@ -43,6 +47,8 @@ from app.enrich.sqlite_definitions import (
     KNOWN_WORDS_VIEW_CREATE,
     LIST_WORDS_CREATE,
     LIST_WORDS_INSERT,
+    QUESTIONS_CREATE,
+    QUESTONS_INSERT,
     USER_DEFINITIONS_CREATE,
     USER_DEFINITIONS_INSERT,
     USERDICTIONARIES_CREATE,
@@ -361,6 +367,80 @@ def cards_to_sqlite3(cards):
     return cards_buffer
 
 
+async def fill_sqlite_content_questions(db: AsyncSession, con: sqlite3.Connection, user_id: int) -> bool:
+    buffer = []
+    content_questions = (
+        await filter_standard(
+            db,
+            user_id,
+            100000,
+            ContentQuestions,
+            models.ContentQuestion,
+        )
+    ).documents
+    for cq in content_questions:
+        buffer.append(
+            (
+                str(cq.id),
+                cq.content_id,
+                cq.model_ids,
+                cq.href,
+                cq.updated_at,
+            )
+        )
+    if len(buffer) > 0:
+        con.executemany(CONTENT_QUESTONS_INSERT, buffer)
+
+
+async def fill_sqlite_questions(db: AsyncSession, con: sqlite3.Connection, user_id: int) -> bool:
+    buffer = []
+    free_questions = (
+        await filter_standard(
+            db,
+            user_id,
+            100000,
+            Questions,
+            models.Question,
+        )
+    ).documents
+    for cq in free_questions:
+        buffer.append(
+            (
+                str(cq.id),
+                cq.question,
+                cq.question_type,
+                cq.extra_data,
+                cq.shared,
+                cq.updated_at,
+            )
+        )
+    if len(buffer) > 0:
+        con.executemany(QUESTONS_INSERT, buffer)
+
+
+async def fill_sqlite_free_questions(db: AsyncSession, con: sqlite3.Connection, user_id: int) -> bool:
+    buffer = []
+    free_questions = (
+        await filter_standard(
+            db,
+            user_id,
+            100000,
+            FreeQuestions,
+            models.FreeQuestion,
+        )
+    ).documents
+    for cq in free_questions:
+        buffer.append(
+            (
+                str(cq.id),
+                cq.context,
+                cq.updated_at,
+            )
+        )
+    if len(buffer) > 0:
+        con.executemany(FREE_QUESTONS_INSERT, buffer)
+
+
 async def fill_sqlite_cards(db: AsyncSession, con: sqlite3.Connection, user_id: int) -> bool:
     cards = await filter_cards(db, user_id, 1000000)
     cards_buffer = cards_to_sqlite3(cards)
@@ -438,6 +518,9 @@ async def regenerate_personal_db(base_db_path: str, user_id: int, lang_pair: str
         await fill_sqlite_stats(con, user_id, lang_pair)
         # await fill_sqlite_surveys(db, con, lang_pair)
         await fill_sqlite_cards(db, con, user_id)
+        await fill_sqlite_content_questions(db, con, user_id)
+        await fill_sqlite_free_questions(db, con, user_id)
+        await fill_sqlite_questions(db, con, user_id)
         # FIXME: missing the student_* tables
         # FIXME: missing the persons table
 
@@ -609,6 +692,9 @@ async def regenerate_sqlite(from_lang: str = "zh-Hans", to_lang: str = "en") -> 
             con.execute(IMPORT_WORDS_CREATE)
             con.execute(IMPORTS_CREATE)
             con.execute(CARDS_CREATE)
+            con.execute(CONTENT_QUESTIONS_CREATE)
+            con.execute(FREE_QUESTIONS_CREATE)
+            con.execute(QUESTIONS_CREATE)
 
             # con.execute(PERSONS_CREATE)
             # con.execute(STUDENT_WORD_MODEL_STATS_CREATE)

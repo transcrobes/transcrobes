@@ -42,6 +42,9 @@ import { getPracticeCard } from "./srsdata";
 import { SQLiteResults, TagFunction } from "./tag";
 
 export const managedTables = {
+  Questions: null,
+  FreeQuestions: null,
+  ContentQuestions: null,
   Definitions: null,
   word_model_stats: null,
   day_model_stats: null,
@@ -54,20 +57,24 @@ export const managedTables = {
 
 export type ManagedTable = keyof typeof managedTables;
 
-const isUIThread = () => globalThis.window === self && globalThis.document;
-/* Predicate for tests/groups. */
-const isWorker = () => !isUIThread();
+function isUIThread() {
+  return globalThis.window === self && globalThis.document;
+}
 
-const hasOpfs = () => {
-  return (
-    globalThis.FileSystemHandle &&
-    globalThis.FileSystemDirectoryHandle &&
-    globalThis.FileSystemFileHandle &&
-    // @ts-ignore
-    globalThis.FileSystemFileHandle.prototype.createSyncAccessHandle &&
-    navigator?.storage?.getDirectory
-  );
-};
+function isWorker() {
+  return !isUIThread();
+}
+
+// function hasOpfs() {
+//   return (
+//     globalThis.FileSystemHandle &&
+//     globalThis.FileSystemDirectoryHandle &&
+//     globalThis.FileSystemFileHandle &&
+//     // @ts-ignore
+//     globalThis.FileSystemFileHandle.prototype.createSyncAccessHandle &&
+//     navigator?.storage?.getDirectory
+//   );
+// }
 
 let tagFunction: TagFunction;
 export function setTagfunction(executeParam: TagFunction) {
@@ -106,7 +113,7 @@ async function executeSql(sql: string, values?: SQLiteCompatibleType[][]): Promi
 
 export async function getTableLastUpdate(tableName: ManagedTable): Promise<{ id?: string; date?: number }> {
   const lastUpdate = await execute(
-    `SELECT id, max(updated_at) FROM ${tableName} GROUP BY id ORDER BY updated_at DESC, id DESC LIMIT 1;`,
+    `SELECT id, MAX(updated_at) FROM ${tableName} GROUP BY id ORDER BY updated_at DESC, id DESC LIMIT 1;`,
   );
   const id = lastUpdate[0].rows?.[0]?.[0] as string;
   const date = lastUpdate[0].rows?.[0]?.[1] as number;
@@ -114,9 +121,12 @@ export async function getTableLastUpdate(tableName: ManagedTable): Promise<{ id?
 }
 
 export async function getCardTableLastUpdate(): Promise<{ id?: string; date: number }> {
-  const lastUpdate = await execute(
-    `SELECT word_id, card_type, max(updated_at) FROM cards GROUP BY word_id, card_type ORDER BY updated_at DESC, word_id DESC, card_type DESC LIMIT 1;`,
-  );
+  const lastUpdate = await execute(`
+    SELECT word_id, card_type, MAX(updated_at)
+    FROM cards
+    GROUP BY word_id, card_type
+    ORDER BY updated_at DESC, word_id DESC, card_type DESC
+    LIMIT 1;`);
   const wordId = lastUpdate[0].rows?.[0]?.[0] as string;
   const cardType = lastUpdate[0].rows?.[0]?.[1] as number;
   const date = lastUpdate[0].rows?.[0]?.[2] as number;
@@ -151,7 +161,7 @@ export async function getKnownWords(): Promise<KnownWords> {
   const out = await execute(`
     SELECT def.graph
     FROM definitions def INDEXED BY idx_definitions_id_graph
-    inner join known_words kw on kw.id = def.id
+    INNER JOIN known_words kw ON kw.id = def.id
     `);
 
   if (!out[0]?.rows?.length) return { knownWordGraphs: {} };
@@ -186,6 +196,27 @@ export async function syncUserDictionaryUpdates(latestUpdates: { id: string; upd
       })),
     );
   }
+}
+
+// FIXME: any
+export async function syncFreeQuestions(updates: any[]) {
+  await genericTableUpsert("freequestions", updates, ["id"]);
+}
+
+// FIXME: any
+export async function syncContentQuestions(updates: any[]) {
+  await genericTableUpsert("contentquestions", updates, ["id"]);
+}
+
+// FIXME: any
+export async function syncQuestions(updates: any[]) {
+  await genericTableUpsert(
+    "questions",
+    updates.map(({ id, question, question_type, extra_data, shared, updated_at }) => {
+      return { id, question, question_type, extra_data, shared: shared ? 1 : 0, updated_at };
+    }),
+    ["id"],
+  );
 }
 
 // FIXME: updated_at horribleness!!!
@@ -321,7 +352,7 @@ async function refreshWordlistIds(listId: string, wordIds: string[]) {
 }
 
 async function getDefinitionIdsFromGraphs(graphs: string[]) {
-  let sql = `select id, graph from definitions where graph in (${graphs.map(() => "?").join(", ")})`;
+  let sql = `SELECT id, graph FROM definitions WHERE graph IN (${graphs.map(() => "?").join(", ")})`;
   const output = await execute(sql, [graphs]);
   const out: { wordId: number; graph: string }[] = [];
   for (const row of output[0].rows) {
@@ -365,10 +396,10 @@ function rowToDefinitionState(row: SQLiteCompatibleType[]): DefinitionState {
     synonyms: JSON.parse(row[3] as string),
     providerTranslations: JSON.parse(row[4] as string),
     frequency: {
-      pos: row[5] as string,
-      posFreq: row[6] as string,
-      wcdp: (row[7] as string)?.toString(),
-      wcpm: (row[8] as string)?.toString(),
+      wcdp: (row[5] as string)?.toString(),
+      wcpm: (row[6] as string)?.toString(),
+      pos: row[7] as string,
+      posFreq: row[8] as string,
     },
     hsk: row[9] ? JSON.parse(row[9] as string) : undefined,
     fallbackOnly: !!row[10],
@@ -390,10 +421,16 @@ export async function getDefinitions({
     console.log("No values provided", column, values);
     throw new Error("No values provided");
   }
-  let sql = `select def.*, kw.ignore, kw.first_success_date, uds.*
-   from definitions def
-   left join known_words kw on def.id = kw.id
-   left join user_definitions uds on def.graph = uds.id
+  // (def.id, def.graph, def.sound, def.synonyms, def.provider_translations, def.wcpm, def.wcdp, def.pos, def.pos_freq, def.hsk, def.fallback_only, def.updated_at)
+  let sql = `
+    SELECT
+      def.id, def.graph, def.sound, def.synonyms, def.provider_translations, def.wcpm, def.wcdp,
+        def.pos, def.pos_freq, def.hsk, def.fallback_only, def.updated_at,
+      kw.ignore, kw.first_success_date,
+      uds.id, uds.dictionary_id, uds.translations, uds.sounds
+    FROM definitions def
+    LEFT JOIN known_words kw ON def.id = kw.id
+    LEFT JOIN user_definitions uds ON def.graph = uds.id
   `;
   if (column && values && values.length > 0) {
     sql += ` where def.${column} in (${values.map(() => "?").join(", ")})`;
@@ -567,23 +604,23 @@ async function getContentAccuracyStatsForImport({
 
 async function getReviewedWordCount(): Promise<number> {
   const out = await execute(`
-    select count(distinct word_id)
-    from cards
-    where first_revision_date > 0 or first_success_date > 0 or known
+    SELECT COUNT(DISTINCT word_id)
+    FROM cards
+    WHERE first_revision_date > 0 OR first_success_date > 0 OR known
     `);
   return out[0].rows[0][0] as number;
 }
 
 async function getKnownWordCount(includeIgnored?: boolean): Promise<number> {
   const out = await execute(`
-    select count(0) from known_words
-    ${!includeIgnored ? " WHERE not ignore " : ""}
+    SELECT COUNT(0) FROM known_words
+    ${!includeIgnored ? " WHERE NOT ignore " : ""}
     `);
   return out[0].rows[0][0] as number;
 }
 
 async function meanSentenceLengthForImport(importId: string): Promise<number> {
-  const theimport = await execute(`select sentence_lengths from imports where id = ?;`, [[importId]]);
+  const theimport = await execute(`SELECT sentence_lengths FROM imports WHERE id = ?;`, [[importId]]);
   const sentenceLengths = theimport[0]?.rows?.[0]?.[0] as string;
   const meanSentenceLength = sentenceLengths ? _.mean(JSON.parse(sentenceLengths)) : 0;
   return meanSentenceLength;
@@ -619,11 +656,11 @@ async function getStatsFromAnalysis({
     ["graph"],
   );
   sql = `SELECT iw.graph, iw.nb_occurrences, ds2.first_success_date
-    from ${tableName} iw
-    ${!includeNonDict ? " inner join definitions def on iw.graph = def.graph and not def.fallback_only " : ""}
-    ${!includeIgnored ? " left join known_words ds1 on def.id = ds1.id and ds1.ignore " : ""}
-    left join known_words ds2 on def.id = ds2.id and ds2.first_success_date > 0
-    ${!includeIgnored ? " and ds1.id is null " : ""};
+    FROM ${tableName} iw
+    ${!includeNonDict ? " INNER JOIN definitions def ON iw.graph = def.graph AND NOT def.fallback_only " : ""}
+    ${!includeIgnored ? " LEFT JOIN known_words ds1 ON def.id = ds1.id AND ds1.ignore " : ""}
+    LEFT JOIN known_words ds2 ON def.id = ds2.id AND ds2.first_success_date > 0
+    ${!includeIgnored ? " AND ds1.id IS NULL " : ""};
     `;
   const outData = (await execute(sql))[0].rows as [string, number, number][];
   await execute(`DROP TABLE ${tableName};`);
@@ -643,11 +680,11 @@ async function getImportStats({
   includeIgnored?: boolean;
 }): Promise<[string, number, number][]> {
   const sql = `SELECT iw.graph, iw.nb_occurrences, ds2.first_success_date
-    from import_words iw
-    ${!includeNonDict ? " inner join definitions def on iw.word_id = def.id and not def.fallback_only " : ""}
-    ${!includeIgnored ? " left join known_words ds1 on iw.word_id = ds1.id and ds1.ignore " : ""}
-    left join known_words ds2 on iw.word_id = ds2.id and ds2.first_success_date > 0
-    ${!includeIgnored ? " and ds1.id is null " : ""}
+    FROM import_words iw
+    ${!includeNonDict ? " INNER JOIN definitions def ON iw.word_id = def.id AND NOT def.fallback_only " : ""}
+    ${!includeIgnored ? " LEFT JOIN known_words ds1 ON iw.word_id = ds1.id AND ds1.ignore " : ""}
+    LEFT JOIN known_words ds2 ON iw.word_id = ds2.id AND ds2.first_success_date > 0
+    ${!includeIgnored ? " AND ds1.id IS NULL " : ""}
     WHERE iw.import_id = ?`;
   return (await execute(sql, [[importId]]))[0].rows as [string, number, number][];
 }
@@ -655,11 +692,11 @@ async function getImportStats({
 async function getWaitingRevisions(): Promise<CardType[]> {
   const sql = `
   SELECT *
-    from cards cc
+    FROM cards cc
   WHERE cc.first_revision_date > 0
-    and cc.due_date < unixepoch('now')
-    and not cc.known
-    order by cc.due_date asc`;
+    AND cc.due_date < unixepoch('now')
+    AND NOT cc.known
+    ORDER BY cc.due_date asc`;
   return sqlResultsToObjects((await execute(sql))[0]);
 }
 
@@ -785,12 +822,12 @@ async function getFirstSuccessStatsForList({
   includeIgnored?: boolean;
 }): Promise<ListFirstSuccessStats | null> {
   const sql = `
-    select def.graph, ds2.first_success_date
-    from definitions def
-    ${listId ? "inner join list_words lw on lw.word_id = def.id and lw.list_id = ?" : ""}
-    ${listId ? "left" : "inner"} join known_words ds2 on def.id = ds2.id and ds2.first_success_date > 0
-    ${!includeNonDict ? "and not def.fallback_only" : ""}
-    ${!includeIgnored ? "and not ds2.ignore" : ""}
+    SELECT def.graph, ds2.first_success_date
+    FROM definitions def
+    ${listId ? "INNER JOIN list_words lw on lw.word_id = def.id and lw.list_id = ?" : ""}
+    ${listId ? "LEFT" : "INNER"} JOIN known_words ds2 ON def.id = ds2.id AND ds2.first_success_date > 0
+    ${!includeNonDict ? "AND NOT def.fallback_only" : ""}
+    ${!includeIgnored ? "AND NOT ds2.ignore" : ""}
   `;
   const out = await execute(sql, listId ? [[listId]] : undefined);
   if (!out) return null;
@@ -852,11 +889,12 @@ async function getUserDefinitionsForGraph({
   graph: string;
 }): Promise<[string, UserDefinitionType][]> {
   const sql = `
-    SELECT id, dictionary_id, translations, sounds FROM user_definitions
-    where id = ?
+    SELECT id, dictionary_id, translations, sounds
+    FROM user_definitions
+    WHERE id = ?
     ${
       dictionaryIds && dictionaryIds.length > 0
-        ? " and dictionary_id in (" + dictionaryIds.map(() => "?").join(", ") + ")"
+        ? " AND dictionary_id IN (" + dictionaryIds.map(() => "?").join(", ") + ")"
         : ""
     }
   `;
@@ -931,9 +969,9 @@ async function getWordDetails({
 
 async function refreshTempRecentSentenceIds(rcIds: number[]) {
   const sql = `
-  drop table if exists tmp_recent_sentences;
-  create table tmp_recent_sentences (
-    id integer primary key
+  DROP TABLE IF EXISTS tmp_recent_sentences;
+  CREATE TABLE tmp_recent_sentences (
+    id INTEGER PRIMARY KEY
   );
   `;
   await execute(sql);
@@ -980,11 +1018,17 @@ async function getByIds(tableName: string, ids: (string | number)[]) {
 
 async function getWordFromDBs(graph: string): Promise<DefinitionState | null> {
   const sql = `
-  SELECT def.*, ds.ignore, ds.first_success_date
+  SELECT
+    def.id, def.graph, def.sound, def.synonyms, def.provider_translations, def.wcpm, def.wcdp,
+      def.pos, def.pos_freq, def.hsk, def.fallback_only, def.updated_at,
+    ds.ignore, ds.first_success_date
   FROM definitions def
   LEFT JOIN known_words ds ON ds.id = def.id
-  WHERE def.graph = ?`;
-  const out = await execute(sql, [[graph]]);
+  WHERE def.graph = ? or def.graph = ?
+  ORDER BY CASE graph WHEN ? THEN 0 ELSE 1 END
+  LIMIT 1;
+  `;
+  const out = await execute(sql, [[graph, graph.toLocaleLowerCase(), graph]]);
   return out[0]?.rows[0] ? rowToDefinitionState(out[0].rows[0]) : null;
 }
 
@@ -1002,14 +1046,14 @@ async function getListKnownPercentages({
   includeNonDict?: boolean;
 }): Promise<{ [key: string]: { known: number; total: number } }> {
   const counts = await execute(
-    `SELECT lw.list_id, count(lw.word_id), count(ds2.id)
-    from list_words lw
-    ${!includeNonDict ? " inner join definitions def on lw.word_id = def.id and not def.fallback_only " : ""}
-    ${!includeIgnored ? " left join known_words ds1 on lw.word_id = ds1.id and ds1.ignore " : ""}
-    left join known_words ds2 on lw.word_id = ds2.id and ds2.first_success_date > 0
+    `SELECT lw.list_id, COUNT(lw.word_id), COUNT(ds2.id)
+    FROM list_words lw
+    ${!includeNonDict ? " INNER JOIN definitions def ON lw.word_id = def.id AND NOT def.fallback_only " : ""}
+    ${!includeIgnored ? " LEFT JOIN known_words ds1 ON lw.word_id = ds1.id AND ds1.ignore " : ""}
+    LEFT JOIN known_words ds2 ON lw.word_id = ds2.id AND ds2.first_success_date > 0
     WHERE lw.list_id IN (${listIds.map(() => "?").join(", ")})
-    ${!includeIgnored ? " and ds1.id is null " : ""}
-    group by lw.list_id;`,
+    ${!includeIgnored ? " AND ds1.id IS NULL " : ""}
+    GROUP BY lw.list_id;`,
     [listIds],
   );
   const listWords: { [key: string]: { known: number; total: number } } = {};
@@ -1037,29 +1081,34 @@ async function getVocabReviews({
   let orderBy = "";
   let wmsJoin = "";
   if (graderConfig.itemOrdering === "WCPM") {
-    orderBy = "def.wcpm desc";
+    orderBy = "def.wcpm DESC";
   } else if (graderConfig.itemOrdering === "Personal") {
-    orderBy = "wms.nb_seen desc";
-    wmsJoin = "left join word_model_stats wms on lw.word_id = wms.id";
+    orderBy = "wms.nb_seen DESC";
+    wmsJoin = "LEFT JOIN word_model_stats wms ON lw.word_id = wms.id";
   } else {
     orderBy = "lw.list_id, lw.default_order";
   }
 
-  const sql = `select distinct def.* from list_words lw
-      inner join definitions def on lw.word_id = def.id
-      ${!includeNonDict ? " and not def.fallback_only " : ""}
-      ${includeIgnored ? " left join known_words ds1 on lw.word_id = ds1.id and ds1.ignore " : ""}
-      left join (
-        select distinct car.word_id
-        from cards car
-        where car.first_revision_date > 0 or car.first_success_date > 0 or car.known
-      ) as ds2 on lw.word_id = ds2.word_id
+  const sql = `
+    SELECT DISTINCT
+      def.id, def.graph, def.sound, def.synonyms, def.provider_translations, def.wcpm, def.wcdp,
+        def.pos, def.pos_freq, def.hsk, def.fallback_only, def.updated_at,
+      ds.ignore, ds.first_success_date
+    FROM list_words lw
+    INNER JOIN definitions def ON lw.word_id = def.id
+      ${!includeNonDict ? " AND NOT def.fallback_only " : ""}
+      ${includeIgnored ? " LEFT JOIN known_words ds1 ON lw.word_id = ds1.id AND ds1.ignore " : ""}
+    LEFT JOIN (
+        SELECT DISTINCT car.word_id
+        FROM cards car
+        WHERE car.first_revision_date > 0 OR car.first_success_date > 0 OR car.known
+      ) AS ds2 ON lw.word_id = ds2.word_id
       ${wmsJoin}
-      where lw.list_id in (${listIds.map(() => "?").join(", ")}) and ds2.word_id is null
-      ${includeIgnored ? " and ds1.id is null " : ""}
-      order by
+    WHERE lw.list_id IN (${listIds.map(() => "?").join(", ")}) AND ds2.word_id IS NULL
+      ${includeIgnored ? " AND ds1.id IS NULL " : ""}
+    ORDER BY
       ${orderBy}
-      limit ?;`;
+    LIMIT ?;`;
 
   const res = await execute(sql, [[...listIds, graderConfig.itemsPerPage]]);
 
@@ -1083,7 +1132,7 @@ async function getDayStats(val?: { studentId?: number }): Promise<DayModelStatsT
     SELECT *
     FROM ${val?.studentId ? "student_" : ""} day_model_stats dms
     ${val?.studentId ? " WHERE student_id = ? " : ""}
-    ORDER BY id asc`;
+    ORDER BY id ASC`;
   return sqlResultsToObjects((await execute(sql, val?.studentId ? [[val.studentId]] : undefined))[0]);
 }
 

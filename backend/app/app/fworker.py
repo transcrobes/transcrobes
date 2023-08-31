@@ -5,12 +5,12 @@ from __future__ import annotations
 import logging
 
 from app.core.config import settings
-from app.data.importer.common import process_content, process_import, process_list
+from app.data.importer.common import process_content, process_import, process_list, process_qag
 from app.enrich import data
 from app.enrich.cache import regenerate_character_jsons_multi, regenerate_definitions_jsons_multi, regenerate_sqlite
 from app.schemas.cache import DataType, RegenerationType
 from app.schemas.msg import Msg
-from app.worker.faustus import app, content_process_topic, import_process_topic, list_process_topic
+from app.worker.faustus import app, content_process_topic, import_process_topic, list_process_topic, qag_process_topic
 
 logger = logging.getLogger(__name__)
 
@@ -44,6 +44,14 @@ async def list_process(lists):
         await process_list(a_list)
 
 
+# faust -A app.fworker send @qag_process_topic '{"type": "mcq", "id": "4/20ad992c-99b3-41f6-9014-47ef9e47b38b/OEBPS/1.xhtml:1653110581355774992"}'
+@app.agent(qag_process_topic)
+async def qag_process(qags):
+    async for qag in qags:
+        logger.info(f"Processing UserList: {qag=}")
+        await process_qag(qag)
+
+
 @app.crontab("0 0 * * *")
 async def regenerate_all():
     await regenerate(RegenerationType(data_type=DataType.all))
@@ -51,9 +59,11 @@ async def regenerate_all():
 
 async def regenerate_dbs() -> Msg:
     logger.info("Attempting to regenerate sqlite dbs")
-    logger.info("Starting regen for en to zh-Hans")
+
+    logger.info("Starting sqlite regen for en to zh-Hans")
     await regenerate_sqlite(from_lang="en", to_lang="zh-Hans")
-    logger.info("Starting regen for zh-Hans to en")
+
+    logger.info("Starting sqlite regen for zh-Hans to en")
     await regenerate_sqlite(from_lang="zh-Hans", to_lang="en")
 
     logger.info("Finished regenerating caches")
@@ -70,6 +80,9 @@ async def regenerate(regen_type: RegenerationType) -> Msg:
         await regenerate_definitions_jsons_multi(regen_type.fakelimit or 0, from_lang="zh-Hans", to_lang="en")
     if regen_type.data_type in [DataType.all, DataType.characters]:
         regenerate_character_jsons_multi()
+    if regen_type.data_type in [DataType.all, DataType.sqlite]:
+        await regenerate_dbs()
+
     logger.info("Finished regenerating caches")
 
     return {"msg": "success"}

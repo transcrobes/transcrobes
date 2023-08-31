@@ -11,3 +11,8 @@ dist
 docker-compose.override.yml
 *.egg-info
 .venv
+
+kube/k3d-deploy/volumes
+kube/k3d-deploy/local-secrets
+
+kube/chart/transcrobes/charts/*

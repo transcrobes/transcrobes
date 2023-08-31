@@ -1,0 +1,32 @@
+{{- if .Values.corenlpZh.enabled -}}
+apiVersion: v1
+kind: Service
+metadata:
+{{- if .Values.corenlpZh.service.annotations }}
+  annotations:
+{{ toYaml .Values.corenlpZh.service.annotations | indent 4 }}
+{{- end }}
+  labels:
+    {{- include "transcrobes.corenlpZh.labels" . | nindent 4 }}
+{{- if .Values.corenlpZh.service.labels }}
+{{ toYaml .Values.corenlpZh.service.labels | indent 4 }}
+{{- end }}
+  name: {{ template "transcrobes.corenlpZh.fullname" . }}
+spec:
+{{- if .Values.corenlpZh.service.nodePort }}
+  type: NodePort
+{{- end }}
+  ports:
+  - name: http
+    port: {{ .Values.corenlpZh.service.servicePort }}
+    protocol: TCP
+    targetPort: {{ .Values.corenlpZh.application.listenPort }}
+    # TODO: This is only really useful for dev/testing
+  {{- if .Values.corenlpZh.service.nodePort }}
+    nodePort: {{ .Values.corenlpZh.service.nodePort }}
+  {{- end }}
+  selector:
+    {{- include "transcrobes.corenlpZh.matchLabels" . | nindent 4 }}
+status:
+  loadBalancer: {}
+{{- end }}

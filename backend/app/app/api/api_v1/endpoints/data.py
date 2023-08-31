@@ -38,6 +38,7 @@ async def user_events(
 ) -> Any:  # FIXME: Any?
     vocab = []
     card = []
+    read = []
     activities = []
     other = []
     try:
@@ -72,6 +73,19 @@ async def user_events(
                     "source_sentence": e["data"].get("source_sentence"),
                 }
                 card.append(event)
+            elif e["type"] in ["read_event"]:
+                event = {
+                    "type": e["type"],
+                    "source": e["source"],
+                    "user_stats_mode": e.get("user_stats_mode") or stats.USER_STATS_MODE_IGNORE,
+                    "user_id": current_user.id,
+                    "content_id": e["data"]["content_id"],
+                    "href": e["data"]["href"],
+                    # "href": e["data"].get("href"),
+                    "model_id": e["data"]["model_id"],
+                    "read_at": e["data"]["read_at"],
+                }
+                read.append(event)
             else:
                 event = {
                     "type": e["type"],
@@ -88,6 +102,8 @@ async def user_events(
             await aioproducer.send_and_wait(stats.VOCAB_EVENT_TOPIC_NAME, orjson.dumps(vocab))
         if card:
             await aioproducer.send_and_wait(stats.CARD_EVENT_TOPIC_NAME, orjson.dumps(card))
+        if read:
+            await aioproducer.send_and_wait(stats.READ_EVENT_TOPIC_NAME, orjson.dumps(read))
         if other:
             await aioproducer.send_and_wait(stats.ACTION_EVENT_TOPIC_NAME, orjson.dumps(other))
 

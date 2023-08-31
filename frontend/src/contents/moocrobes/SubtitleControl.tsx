@@ -17,7 +17,6 @@ function SubtitleControl({ currentCue, models, id }: Props): ReactElement {
   const ref = useRef<HTMLDivElement>(null);
   const fromLang = useAppSelector((state) => state.userData.user.fromLang);
   const etfClasses = useJssStyles({ ...readerConfig, scriptioContinuo: isScriptioContinuo(fromLang) });
-
   const blurPx = "10px";
   const dims = useWindowDimensions();
   const pseudo = {
@@ -28,7 +27,7 @@ function SubtitleControl({ currentCue, models, id }: Props): ReactElement {
   };
   useEffect(() => {
     if (ref.current && models) {
-      enrichETFElements(ref.current, currentCue, readerConfig, models, store, etfClasses);
+      enrichETFElements(ref.current, currentCue, readerConfig, models, store, etfClasses, id, "/subtitles");
     }
   }, [currentCue]);
   return (

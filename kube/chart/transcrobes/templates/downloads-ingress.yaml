@@ -1,0 +1,38 @@
+{{- if .Values.downloads.enabled -}}
+{{- $fullName := include "transcrobes.downloads.fullname" . -}}
+{{- $servicePort := .Values.downloads.service.servicePort -}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  {{- with .Values.downloads.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  name: {{ $fullName}}
+  labels:
+    {{- include "transcrobes.transcrobes.labels" . | nindent 4 }}
+
+spec:
+  ingressClassName: {{ .Values.downloads.ingress.className }}
+{{- if .Values.downloads.ingress.tls.enabled }}
+  tls:
+    - hosts:
+      {{- range .Values.downloads.hosts }}
+        - {{ . }}
+      {{- end }}
+      secretName: {{ .Values.downloads.ingress.tls.secretName }}
+{{- end }}
+  rules:
+  {{- range .Values.downloads.hosts }}
+    - host: {{ . }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ $fullName }}
+                port:
+                  number: {{ $servicePort }}
+  {{- end }}
+{{- end }}

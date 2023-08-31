@@ -3,6 +3,7 @@ import { AnyAction, createSlice, PayloadAction, SliceCaseReducers, ValidateSlice
 import _ from "lodash";
 import { HslColor } from "react-colorful";
 import {
+  ActiveLearningType,
   BOOK_READER_TYPE,
   ContentConfigType,
   EXTENSION_READER_TYPE,
@@ -151,6 +152,10 @@ export const createGenericSlice = <T extends ReaderState, Reducers extends Slice
       ) {
         state[action.payload.id] = state[action.payload.id] || defaultValue;
         state[action.payload.id].translationProviderOrder = action.payload.value;
+      },
+      setActiveLearning(state: GenericState<T>, action: PayloadAction<ContentConfigPayload<ActiveLearningType>>) {
+        state[action.payload.id] = state[action.payload.id] || defaultValue;
+        state[action.payload.id].activeLearning = action.payload.value;
       },
       setState<T extends ReaderState>(state: GenericState<T>, action: PayloadAction<ContentConfigPayload<T>>) {
         state[action.payload.id] = action.payload.value;

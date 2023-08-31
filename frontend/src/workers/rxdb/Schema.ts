@@ -3,6 +3,7 @@ import {
   CardType,
   Content,
   ContentConfigType,
+  QuestionAnswer,
   EventQueueType,
   Goal,
   Import,
@@ -74,6 +75,27 @@ function getCardType(card: string | CardType): string {
 function getCardId(wordId: string | number, cardType: string | number): string {
   return `${wordId}${CARD_ID_SEPARATOR}${cardType}`;
 }
+
+type QuestionAnswerDocument = RxDocument<QuestionAnswer>;
+type QuestionAnswerCollection = RxCollection<QuestionAnswer>;
+const QUESTION_ANSWER_SCHEMA: RxJsonSchema<QuestionAnswer> = {
+  version: 0,
+  required: ["id"],
+  primaryKey: "id",
+  type: "object",
+  properties: {
+    id: { type: "string", maxLength: 36 },
+    questionId: { type: "string", maxLength: 36 },
+    studentAnswer: { type: "string" },
+    feedback: { type: ["string", "null"] },
+    isCorrect: { type: "boolean", default: false },
+    // @ts-ignore
+    createdAt: TIMESTAMP,
+    // @ts-ignore
+    updatedAt: TIMESTAMP,
+  },
+  indexes: ["questionId", "updatedAt"],
+};
 
 type UserDictionaryDocument = RxDocument<UserDictionary>;
 type UserDictionaryCollection = RxCollection<UserDictionary>;
@@ -495,6 +517,17 @@ const DBTwoWayCollections = {
     checkpointFields: ["id", "updatedAt"],
     headerFields: ["Authorization"],
   },
+  questionanswers: {
+    schema: QUESTION_ANSWER_SCHEMA,
+    feedKeys: ["id", "updatedAt"],
+    deletedField: "deleted",
+    subscription: true,
+    subscriptionParams: {
+      token: "String!",
+    },
+    checkpointFields: ["id", "updatedAt"],
+    headerFields: ["Authorization"],
+  },
   userlists: {
     schema: USERLISTS_SCHEMA,
     feedKeys: ["id", "updatedAt"],
@@ -625,6 +658,7 @@ type TranscrobesCollections = {
   goals: GoalCollection;
   imports: ImportCollection;
   contents: ContentCollection;
+  questionanswers: QuestionAnswerCollection;
   userlists: UserListCollection;
   usersurveys: UserSurveyCollection;
   recentsentences: RecentSentencesCollection;
@@ -644,6 +678,7 @@ type TranscrobesCollectionsKeys = keyof TranscrobesCollections;
 type TranscrobesDatabase = RxDatabase<TranscrobesCollections>;
 
 type TranscrobesDocumentTypes =
+  | QuestionAnswerDocument
   | EventQueueDocument
   | RequestQueueDocument
   | ActivityQueueDocument
@@ -665,7 +700,6 @@ export {
   BATCH_SIZE_PULL,
   BATCH_SIZE_PUSH,
   CACHE_NAME,
-  CARD_TYPES,
   DBCollections,
   DBLocalCollections,
   DBPullCollections,
@@ -674,11 +708,12 @@ export {
   DBTwoWayCollections,
   DEFAULT_BAD_REVIEW_WAIT_SECS,
   EFACTOR_DEFAULT,
-  GRADE,
   INITIALISATION_CACHE_NAME,
   KNOWLEDGE_UNSET,
   LIVE_INTERVAL,
   LIVE_INTERVAL_WITH_SUBSCRIPTION,
+  CARD_TYPES,
+  GRADE,
   getCardId,
   getCardType,
   getCardTypeAsInt,

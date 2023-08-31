@@ -1,0 +1,68 @@
+{{- if .Values.corenlpZh.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "transcrobes.corenlpZh.fullname" . }}
+  labels:
+    {{- include "transcrobes.corenlpZh.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.corenlpZh.replicaCount }}
+  {{- if .Values.corenlpZh.strategy }}
+  strategy:
+{{ toYaml .Values.corenlpZh.strategy | indent 4 }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "transcrobes.corenlpZh.matchLabels" . | nindent 6 }}
+  template:
+    metadata:
+    {{- if .Values.corenlpZh.podAnnotations }}
+      annotations:
+{{ toYaml .Values.corenlpZh.podAnnotations | indent 8 }}
+    {{- end }}
+      labels:
+        {{- include "transcrobes.corenlpZh.labels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: {{ template "transcrobes.name" . }}-{{ .Values.corenlpZh.name }}
+          image: "{{ .Values.corenlpZh.image.repository }}:{{ .Values.corenlpZh.image.tag }}"
+          imagePullPolicy: {{ .Values.corenlpZh.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.corenlpZh.application.listenPort }}
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            timeoutSeconds: {{ .Values.corenlpZh.liveness.timeoutSeconds }}
+            periodSeconds: {{ .Values.corenlpZh.liveness.periodSeconds }}
+            initialDelaySeconds: {{ .Values.corenlpZh.liveness.initialDelaySeconds }}
+          readinessProbe:
+            exec:
+              command:  # FIXME: this needs to be put into values probably to support different languages
+                - wget
+                - '--post-data'
+                - '你好，世界'
+                - 'localhost:9000/?properties={"annotators":"lemma","outputFormat":"json"}'
+                -  '-O'
+                - '-'
+            timeoutSeconds: {{ .Values.corenlpZh.readiness.timeoutSeconds }}
+            periodSeconds: {{ .Values.corenlpZh.readiness.periodSeconds }}
+            initialDelaySeconds: {{ .Values.corenlpZh.readiness.initialDelaySeconds }}
+          env:
+            {{- range $key, $value := .Values.corenlpZh.extraEnv }}
+            - name: {{ $key }}
+              value: {{ $value }}
+            {{- end }}
+            - name: CORENLP_TIMEOUT
+              value: "{{ .Values.corenlpZh.application.queryTimeoutMs }}"
+            - name: CORENLP_JAVA_XMX
+              value: "{{ .Values.corenlpZh.application.javaXmx }}"
+            - name: CORENLP_PORT
+              value: "{{ .Values.corenlpZh.application.listenPort }}"
+            - name: CORENLP_THREADS
+              value: "{{ .Values.corenlpZh.application.coreNlpNbThreads }}"
+      restartPolicy: Always
+status: {}
+{{- end }}

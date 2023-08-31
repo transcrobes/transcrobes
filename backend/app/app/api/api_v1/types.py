@@ -629,6 +629,90 @@ class Userlists(CommonType):
         return out
 
 
+# FIXME: this is not used with strawberry, only the from_model method is used
+@strawberry.type
+class FreeQuestions:
+    id: str | None = ""
+    context: str | None = ""
+    created_by: str | None = ""
+    updated_by: str | None = ""
+    created_at: float | None = 0
+    updated_at: float | None = 0
+    deleted: bool | None = False
+
+    @staticmethod
+    def from_model(obj: models.FreeQuestion):
+        return FreeQuestions(
+            id=obj.id,
+            context=obj.context,
+            created_by=obj.created_by,
+            created_at=obj.created_at.timestamp(),
+            updated_by=obj.updated_by,
+            updated_at=obj.updated_at.timestamp(),
+        )
+
+
+# FIXME: this is not used with strawberry, only the from_model method is used
+@strawberry.type
+class ContentQuestions:
+    id: str | None = ""
+    question_id: str | None = ""
+    model_ids: str | None = ""
+    href: str | None = ""
+    created_by: str | None = ""
+    updated_by: str | None = ""
+    created_at: float | None = 0
+    updated_at: float | None = 0
+    deleted: bool | None = False
+
+    @staticmethod
+    def from_model(obj: models.ContentQuestion):
+        return ContentQuestions(
+            id=obj.id,
+            content_id=obj.content_id,
+            model_ids=obj.model_ids,
+            href=obj.href,
+            created_by=obj.created_by,
+            created_at=obj.created_at.timestamp(),
+            updated_by=obj.updated_by,
+            updated_at=obj.updated_at.timestamp(),
+        )
+
+
+@strawberry.type
+class Questions(CommonType):
+    question: str | None = ""
+    question_type: str | None = ""
+    extra_data: str | None = ""
+    shared: str | None = ""
+
+    @staticmethod
+    def from_model(obj: models.Question):
+        out = CommonType.from_model_base(obj, Questions)
+        out.question = obj.question
+        out.question_type = obj.question_type
+        out.extra_data = obj.extra_data
+        out.shared = obj.shared
+        return out
+
+
+@strawberry.type
+class Questionanswers(CommonType):
+    question_id: str | None = ""
+    student_answer: str | None = ""
+    feedback: str | None = ""
+    is_correct: bool | None = False
+
+    @staticmethod
+    def from_model(obj: models.QuestionAnswer):
+        out = CommonType.from_model_base(obj, Questionanswers)
+        out.question_id = obj.question_id
+        out.student_answer = obj.student_answer
+        out.feedback = obj.feedback
+        out.is_correct = obj.is_correct
+        return out
+
+
 @strawberry.input
 class PushRow(Generic[T]):
     assumedMasterState: Optional[T] = None
@@ -657,6 +741,11 @@ class UserdictionariesInput(Userdictionaries, CommonType):
 
 @strawberry.input
 class ContentsInput(Contents, CommonType):
+    pass
+
+
+@strawberry.input
+class QuestionanswersInput(Questionanswers):
     pass
 
 
@@ -697,8 +786,6 @@ class CollectionChanged:
 
 @strawberry.type
 class Checkpoint:
-    # id: Optional[str] = ("",)
-    # updated_at: Optional[float] = (-1,)
     id: Optional[str] = ""
     updated_at: Optional[float] = -1
 

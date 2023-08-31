@@ -1,0 +1,18 @@
+{{- if and .Values.transcrobes.enabled .Values.transcrobes.backups.enabled -}}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "transcrobes.transcrobes.fullname" . }}-backups
+  annotations:
+    "helm.sh/resource-policy": keep
+  labels:
+    {{- include "transcrobes.transcrobes.labels" . | nindent 4 }}
+spec:
+  accessModes:
+  - {{ .Values.transcrobes.backups.accessMode }}
+  storageClassName: {{ .Values.transcrobes.backups.storageClassName }}
+  resources:
+    requests:
+      storage: {{ .Values.transcrobes.backups.size }}
+status: {}
+{{- end }}

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import datetime
 import json
 import logging
 import os
@@ -15,17 +16,22 @@ from typing import Any
 import aiofiles
 from app import models, schemas
 from app.api import deps
+from app.api.api_v1 import types
 from app.api.api_v1.graphql import Definitions
+from app.api.api_v1.subs import publish_message
 from app.cache import cached_definitions
 from app.core.config import settings
+from app.data.context import get_broadcast
 from app.data.importer.common import process
-from app.enrich import TokenPhoneType, enrich_html_fragment, latest_db_fragments_dir_path
+from app.enrich import TokenPhoneType, enrich_html_fragment, enrich_plain_to_html, latest_db_fragments_dir_path
 from app.enrich.cache import SQLITE_FILENAME, ensure_cached_definitions, regenerate_personal_db
 from app.enrich.data import EnrichmentManager, managers
 from app.enrich.models import definitions, reload_definitions_cache
 from app.fworker import import_process_topic, regenerate, regenerate_dbs
+from app.generative.openai.mcq import get_multiple_choice_qa_chat
 from app.models import CachedDefinition, Import
-from app.models.data import Content
+from app.models.data import Content, FreeQuestion, Question
+from app.models.lookups import OpenAIApiLookup
 from app.models.user import absolute_imports_dir_path, absolute_imports_path, absolute_resources_path
 from app.ndutils import gather_with_concurrency
 from app.schemas.cache import DataType, RegenerationType
@@ -36,6 +42,7 @@ from fastapi.datastructures import UploadFile
 from fastapi.param_functions import Form
 from fastapi.params import File
 from pydantic.main import BaseModel
+from sqlalchemy import and_, func
 from sqlalchemy.ext.asyncio.session import AsyncSession
 from sqlalchemy.sql.expression import select
 from starlette.responses import FileResponse
@@ -302,12 +309,6 @@ async def enrich_json(
 ):
     outdata = {}
     manager = managers.get(current_user.lang_pair)
-    if not manager:
-        raise HTTPException(
-            status_code=status.HTTP_501_NOT_IMPLEMENTED,
-            detail=f"Server does not support language pair {current_user.lang_pair}",
-        )
-
     text = info_request.data
     if not text:
         raise HTTPException(
@@ -335,12 +336,6 @@ async def translate(
 ):
     outdata = {}
     manager = managers.get(current_user.lang_pair)
-    if not manager:
-        raise HTTPException(
-            status_code=status.HTTP_501_NOT_IMPLEMENTED,
-            detail=f"Server does not support language pair {current_user.lang_pair}",
-        )
-
     text = info_request.data
     if not text:
         raise HTTPException(
@@ -359,12 +354,6 @@ async def enrich_json_full(
     outdata = {}
 
     manager = managers.get(current_user.lang_pair)
-    if not manager:
-        raise HTTPException(
-            status_code=status.HTTP_501_NOT_IMPLEMENTED,
-            detail=f"Server does not support language pair {current_user.lang_pair}",
-        )
-
     text = info_request.data
     if not text:
         raise HTTPException(
@@ -384,12 +373,6 @@ async def enrich_html_to_json(
     current_user: schemas.TokenPayload = Depends(deps.get_current_good_tokenpayload),
 ):
     manager = managers.get(current_user.lang_pair)
-    if not manager:
-        raise HTTPException(
-            status_code=status.HTTP_501_NOT_IMPLEMENTED,
-            detail=f"Server does not support language pair {current_user.lang_pair}",
-        )
-
     text = info_request.data
     if not text:
         raise HTTPException(
@@ -427,6 +410,134 @@ async def enrich_html_to_json(
     )
 
     return {"html": html, "models": processed_files_dict, "analysis": analysis}
+
+
+async def monthly_gen_quota_used(db, user_id):
+    current_time = datetime.datetime.now(tz=datetime.timezone.utc)
+    four_weeks_ago = current_time - datetime.timedelta(weeks=4)
+    used_quota = await db.scalar(
+        select(func.count())
+        .select_from(OpenAIApiLookup)
+        .where(and_(OpenAIApiLookup.created_by_id == user_id, OpenAIApiLookup.created_at >= four_weeks_ago))
+    )
+    return used_quota
+
+
+@router.post("/text_to_qa", name="text_to_qa")
+async def text_to_qa(
+    info_request: InfoRequest,
+    current_user: models.AuthUser = Depends(deps.get_current_good_user),
+    db: AsyncSession = Depends(deps.get_db),
+):
+    outdata = {}
+    manager = managers.get(current_user.lang_pair)
+    text = info_request.data
+    if not text:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail='Incorrectly formed query, you must provide a JSON like { "data": "好" }"',
+        )
+
+    try:
+        gen_model: str = json.loads(current_user.config)["genModel"]
+        gen_quota: int = int(json.loads(current_user.config)["genQuota"])
+    except json.decoder.JSONDecodeError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="You have not been authorised to generate question-answers",
+        )
+
+    if not gen_model.startswith("gpt-"):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="You have not been authorised to generate question-answers",
+        )
+    used_quota = await monthly_gen_quota_used(db, current_user.id)
+    if gen_quota <= used_quota:
+        raise HTTPException(
+            status_code=status.HTTP_412_PRECONDITION_FAILED,
+            detail="You have already used your quota for the period",
+        )
+    qa = await get_multiple_choice_qa_chat(db, text[:2000], current_user, settings.OPENAI_PROMPT_VERSION, gen_model)
+    answers = [a["answer"] for a in qa["answers"]]
+    fragment_futures = [enrich_plain_to_html("a", qa_text, manager) for qa_text in answers + [qa["question"]]]
+
+    processed_texts_list = await gather_with_concurrency(
+        settings.IMPORT_MAX_CONCURRENT_PARSER_QUERIES,
+        *(fragment_futures),
+    )
+    models = {}
+    for i in range(4):
+        qa["answers"][i]["answer"] = {
+            "mid": str(list(processed_texts_list[i][2].keys())[0]),
+            "text": qa["answers"][i]["answer"],
+        }
+        models.update(processed_texts_list[i][2])
+
+    qa["question"] = {"mid": str(list(processed_texts_list[4][2].keys())[0]), "text": qa["question"]}
+
+    question = Question(
+        title="",  # FIXME: nasty fake field
+        question=json.dumps(qa["question"]),
+        created_by=current_user,
+        updated_by=current_user,
+        question_type=Question.MCQ,
+        extra_data=json.dumps(qa["answers"]),
+    )
+
+    free_q = FreeQuestion(
+        question=question,
+        context=text,
+        created_by=current_user,
+        updated_by=current_user,
+    )
+
+    db.add(question)
+    db.add(free_q)
+    await db.commit()
+
+    broadcast = await get_broadcast()
+    await publish_message(types.Questions.__name__, None, broadcast, user_id=str(current_user.id))
+    await publish_message(types.FreeQuestions.__name__, None, broadcast, user_id=str(current_user.id))
+
+    models.update(processed_texts_list[4][2])
+    model_futures = [
+        manager.enricher().enrich_parse_to_aids_json(
+            timestamp,
+            model,
+            manager,
+            translate_sentence=False,
+            # best_guess=True,
+            best_guess=False,
+            phone_type=TokenPhoneType.NONE,
+            fill_id=True,
+            available_def_providers=current_user.dictionary_ordering,
+            clean=False,
+        )
+        for timestamp, model in models.items()
+    ]
+    rich_models = await gather_with_concurrency(
+        settings.IMPORT_MAX_CONCURRENT_PARSER_QUERIES,
+        *(model_futures),
+    )
+    for model in rich_models:
+        models.update(model)
+
+    outdata = {
+        "models": models,
+        "questions": [
+            {
+                "id": str(question.id),
+                "created_at": question.created_at,
+                "updated_at": question.updated_at,
+                "question": json.loads(question.question),
+                "question_type": question.question_type,
+                "extra_data": json.loads(question.extra_data),
+                "shared": question.shared,
+            }
+        ],
+    }
+    return outdata
 
 
 @router.post("/import_file", name="import_file")

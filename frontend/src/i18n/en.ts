@@ -197,6 +197,11 @@ const customEnglishMessages: TranslationMessages = {
       meaning: "Meaning",
       phrase: "Phrase",
     },
+    class_registration: {
+      helper: "Enter the %{tipe} email",
+      button: "Send %{tipe} request",
+      request_sent: "%{tipe} registration request sent",
+    },
     content_actions: {
       read: "Read",
       watch: "Watch",
@@ -360,11 +365,16 @@ const customEnglishMessages: TranslationMessages = {
         on: "On",
         off: "Off",
       },
+      active_learning: {
+        title: "Active Learning",
+        none: "None",
+        mcq: "Multi-choice",
+        short: "Sentences",
+        all: "All types",
+      },
     },
-    class_registration: {
-      helper: "Enter the %{tipe} email",
-      button: "Send %{tipe} request",
-      request_sent: "%{tipe} registration request sent",
+    rich_mc_question: {
+      submit: "Submit",
     },
     set_knowledge: {
       dont_set: "Don't set",
@@ -962,6 +972,7 @@ const customEnglishMessages: TranslationMessages = {
         and import using the import system.`,
       type_something_here: "Type something here...",
       input_label: "Text to Transcrobe",
+      generate_mcq: "Generate a multiple choice quiz",
     },
   },
 };

@@ -1,3 +1,4 @@
+import json
 import uuid
 from datetime import datetime, timedelta
 
@@ -17,6 +18,13 @@ def create_token(subject: AuthUser, token_use: str, expires_delta: timedelta = N
         expire = datetime.utcnow() + expires_delta
     else:
         expire = datetime.utcnow() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+
+    model_enabled = False
+    try:
+        model_enabled = bool(json.loads(subject.config)["genModel"])
+    except json.decoder.JSONDecodeError:
+        pass
+
     to_encode = {
         "token_use": token_use,
         "exp": expire,
@@ -26,8 +34,9 @@ def create_token(subject: AuthUser, token_use: str, expires_delta: timedelta = N
         "is_superuser": subject.is_superuser,
         "is_teacher": subject.is_teacher,
         "tracking_key": settings.TRACKING_KEY,
-        "tracking_endpoint": settings.TRACKING_ENDPOINT,
+        "tracking_endpoint": str(settings.TRACKING_ENDPOINT),
         "lang_pair": f"{subject.from_lang}:{subject.to_lang}",
+        "model_enabled": model_enabled,
         "translation_providers": subject.dictionary_ordering.split(","),
         "jti": uuid.uuid4().hex,
     }

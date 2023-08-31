@@ -127,8 +127,9 @@ function vocabCountersFromETF(model: ModelType, glossing: number, knownCards: Pa
   for (const sentence of model.s) {
     for (const token of sentence.t) {
       // it needs to have a pos for us to be interested, though maybe "bg" would be better
-      if (token.pos) {
-        const lemma = token.l;
+      if (token.pos && (token.id || token.bg)) {
+        // TODO: decide whether to do the lowercase here or serverside. Or maybe somewhere else...
+        const lemma = token.l.toLocaleLowerCase();
         const lookedUp = glossing > USER_STATS_MODE.NO_GLOSS && !(lemma in (knownCards.knownWordGraphs || {}));
         counter[lemma] = counter[lemma]
           ? [counter[lemma][0] + 1, lookedUp ? counter[lemma][1] + 1 : 0]
@@ -144,7 +145,10 @@ export function observerFunc(
   models: KeyedModels,
   readerConfig: () => ReaderState,
   knownCards: () => Partial<KnownWords>,
+  contentId: string,
+  href: string,
   onScreenModels?: Set<string>,
+  questionModelCandidates?: Set<string>,
 ) {
   return function onScreen(entries: IntersectionObserverEntry[]): void {
     for (const entry of entries) {
@@ -163,19 +167,41 @@ export function observerFunc(
           timeouts[target.id] = window.setTimeout(() => {
             target.dataset.tcread = "true";
             const tstats = vocabCountersFromETF(models[target.id], readerConfig().glossing, knownCards());
+            questionModelCandidates?.add(target.id);
             if (Object.entries(tstats).length === 0) {
               console.debug("An empty model - how can this happen?", target.id, models[target.id]);
             } else {
               // TODO: WARNING:!!! the tstats consider that if it has been glossed, it has been looked up!!!
               // TODO: WARNING:!!! if you turn off/on glossing for a word temporarily, it considers only the
               // actual known state, not what was onscreen!!!
+              for (const [lemma, [count, lookedUp]] of Object.entries(tstats)) {
+                if (lemma === "Bioluminescence") {
+                  console.log("Bioluminescence", lookedUp, count);
+                  throw new Error("Fuck!");
+                }
+              }
+
               const userEvent = {
                 type: "bulk_vocab",
                 source: DATA_SOURCE,
                 data: tstats,
-                userStatsMode: readerConfig().glossing,
+                user_stats_mode: readerConfig().glossing,
               };
               platformHelper.submitUserEvents(userEvent);
+
+              const readEvent = {
+                type: "read_event",
+                source: DATA_SOURCE,
+                data: {
+                  content_id: contentId,
+                  href,
+                  model_id: target.id,
+                  read_at: dayjs().unix(),
+                },
+                user_stats_mode: readerConfig().glossing,
+              };
+              platformHelper.submitUserEvents(readEvent);
+
               // We are NOT waiting here, as this is a nice-to-have really, and we don't want it to
               // hold up other, immediately user-visible tasks. Only collect if we are doing that now,
               // which we do by default

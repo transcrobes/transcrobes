@@ -1,0 +1,38 @@
+apiVersion: v2
+name: transcrobes
+description: A Kubernetes Helm Chart for installing Transcrobes
+version: 0.0.27
+keywords:
+  - Transcrobes
+  - transcrob.es
+sources:
+  - https://github.com/transcrobes/charts
+home: https://transcrob.es
+icon: https://transcrob.es/img/tc128.png
+dependencies:
+  - name: postgresql-ha
+    version: <13
+    alias: pgha
+    repository: https://charts.bitnami.com/bitnami
+    condition: pgha.enabled
+    tags:
+      - transcrobes-database
+
+  - name: postgresql-ha
+    version: <13
+    alias: statsdb
+    repository: https://charts.bitnami.com/bitnami
+    condition: pgha.enabled
+    tags:
+      - transcrobes-statsdatabase
+
+  - name: kafka
+    version: 25.x.x
+    repository: https://charts.bitnami.com/bitnami
+    condition: kafka.enabled
+    tags:
+      - transcrobes-kafka
+
+  - name: common
+    version: 2.x.x
+    repository: https://charts.bitnami.com/bitnami

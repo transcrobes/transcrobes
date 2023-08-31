@@ -112,6 +112,60 @@ async def dbupdates(
             if not doc.deleted:
                 output.append(doc)
         data[types.Cards.__name__] = output
+    elif table_name == types.FreeQuestions.__name__:
+        output = []
+        stdReturn = await filter_standard(
+            db,
+            current_user.id,
+            LIMIT,
+            types.FreeQuestions,
+            models.FreeQuestion,
+            id=row_id,
+            updated_at=updated_at,
+        )
+        for doc in stdReturn.documents:
+            if not doc.deleted:
+                output.append({"id": doc.id, "updated_at": doc.updated_at, "context": doc.context})
+        data[types.FreeQuestions.__name__] = output
+    elif table_name == types.ContentQuestions.__name__:
+        output = []
+        stdReturn = await filter_standard(
+            db,
+            current_user.id,
+            LIMIT,
+            types.ContentQuestions,
+            models.ContentQuestion,
+            id=row_id,
+            updated_at=updated_at,
+        )
+        for doc in stdReturn.documents:
+            if not doc.deleted:
+                output.append(
+                    {
+                        "id": doc.id,
+                        "content_id": doc.content_id,
+                        "updated_at": doc.updated_at,
+                        "href": doc.href,
+                        "model_ids": doc.model_ids,
+                    }
+                )
+
+        data[types.ContentQuestions.__name__] = output
+    elif table_name == types.Questions.__name__:
+        output = []
+        stdReturn = await filter_standard(
+            db,
+            current_user.id,
+            LIMIT,
+            types.Questions,
+            models.Question,
+            id=row_id,
+            updated_at=updated_at,
+        )
+        for doc in stdReturn.documents:
+            if not doc.deleted:
+                output.append(doc)
+        data[types.Questions.__name__] = output
     elif table_name == types.Userdictionaries.__name__:
         output = []
         stdReturn = await filter_standard(
@@ -189,6 +243,9 @@ async def collections_ws_sender(websocket: WebSocket, user_id: str):
                 types.Cards.__name__,
                 types.Userdictionaries.__name__,
                 types.Imports.__name__,
+                types.FreeQuestions.__name__,
+                types.ContentQuestions.__name__,
+                types.Questions.__name__,
                 types.Wordlists.__name__,
             ]:
                 await websocket.send_text(event.message)

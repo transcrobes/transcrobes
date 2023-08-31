@@ -20,7 +20,7 @@ interface Props {
 export default function CustomList(props: Props) {
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(10);
-  const [sort, setSort] = useState({ field: "id", order: "ASC" });
+  const [sort, setSort] = useState({ field: "id", order: "ASC" as "ASC" | "DESC" });
   const [data, setData] = useState<UserDefinitionType[]>([]);
   const [, setIds] = useState<string[]>([]);
   const translate = useTranslate();

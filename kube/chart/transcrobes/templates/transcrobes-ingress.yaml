@@ -1,0 +1,101 @@
+{{- if .Values.transcrobes.enabled -}}
+{{- $fullName := include "transcrobes.transcrobes.fullname" . -}}
+{{- $servicePort := .Values.transcrobes.service.servicePort -}}
+{{- $frontendPort := .Values.transcrobes.local.frontendPort -}}
+{{- $localPort := and .Values.transcrobes.local.enabled .Values.transcrobes.local.frontendPort -}}
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  {{- with .Values.transcrobes.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  name: {{ include "transcrobes.transcrobes.fullname" . }}
+  labels:
+    {{- include "transcrobes.transcrobes.labels" . | nindent 4 }}
+
+spec:
+  ingressClassName: {{ .Values.transcrobes.ingress.className }}
+{{- if .Values.transcrobes.ingress.tls.enabled }}
+  tls:
+    - hosts:
+        - {{ .Values.transcrobes.haHost }}
+      {{- range .Values.transcrobes.nodeHosts }}
+        - {{ . }}
+      {{- end }}
+      secretName: {{ .Values.transcrobes.ingress.tls.secretName }}
+{{- end }}
+  rules:
+    - host: {{ .Values.transcrobes.haHost }}
+      http:
+        paths:
+        {{- if $localPort }}
+          - path: /docs
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ $fullName }}
+                port:
+                  number: {{ $servicePort }}
+          - path: /api/
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ $fullName }}
+                port:
+                  number: {{ $servicePort }}
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ $fullName }}-local-port
+                port:
+                  number: {{ $frontendPort }}
+        {{ else }}
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ $fullName }}
+                port:
+                  number: {{ $servicePort }}
+        {{- end }}
+  {{- range .Values.transcrobes.nodeHosts }}
+    - host: {{ . }}
+      http:
+        paths:
+        {{- if $localPort }}
+          - path: /docs
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ $fullName }}
+                port:
+                  number: {{ $servicePort }}
+          - path: /api/
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ $fullName }}
+                port:
+                  number: {{ $servicePort }}
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ $fullName }}-local-port
+                port:
+                  number: {{ $frontendPort }}
+        {{ else }}
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ $fullName }}
+                port:
+                  number: {{ $servicePort }}
+        {{- end }}
+
+  {{- end }}
+{{- end }}

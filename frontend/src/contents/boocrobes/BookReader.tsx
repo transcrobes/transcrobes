@@ -41,9 +41,11 @@ declare global {
     r2d2bc: any;
     etfLoaded?: Set<string>; // this could probably be a boolean?
     onScreenModels: Set<string>;
+    questionModelCandidates: Set<string>;
     elementIds?: Set<string>;
     r2d2bcFontSize: number;
     bookId: string;
+    bookChapter: string;
     transcrobesStore: AdminStore;
   }
 }
@@ -123,11 +125,14 @@ function getUserSettings(conf: BookReaderState, themeName: ThemeType) {
   };
 }
 
+function getQuestion(contentId, chapterHref, questionModelCandidates) {}
+
 export default function BookReader({ proxy }: ContentProps): ReactElement {
   useAuthenticated(); // redirects to login if not authenticated, required because shown as RouteWithoutLayout
   const { id = "" } = useParams<ContentParams>();
   const translate = useTranslate();
   window.bookId = id;
+
   const url = new URL(`/api/v1/data/content/${id}/manifest.json`, window.location.href);
   const [manifest, setManifest] = useState<WebpubManifest>();
   const [, setError] = useState<Error | undefined>(undefined);
@@ -262,7 +267,10 @@ export default function BookReader({ proxy }: ContentProps): ReactElement {
       setLoadLocation(curLoc);
       if (curLoc) {
         await lreader.goTo(curLoc);
+        window.bookChapter = curLoc.href;
         await lreader.applyUserSettings({ fontSize: 100 });
+      } else {
+        window.bookChapter = "";
       }
 
       window.elementIds = new Set<string>();
@@ -282,6 +290,7 @@ export default function BookReader({ proxy }: ContentProps): ReactElement {
       loadLocation.locations.progression != reader?.currentLocator?.locations.progression
     ) {
       reader.goTo(loadLocation).then(() => {
+        window.bookChapter = loadLocation.href;
         reader.applyUserSettings({ fontSize: 100 }).then(() => {
           dispatch(setLoadingMessage(""));
           dispatch(setLoading(undefined));
@@ -301,6 +310,7 @@ export default function BookReader({ proxy }: ContentProps): ReactElement {
 
   useEffect(() => {
     if (loaded && reader) {
+      console.log("I am scrolling", readerConfig.isScrolling);
       reader.scroll(readerConfig.isScrolling);
     }
   }, [readerConfig.isScrolling]);
@@ -319,8 +329,9 @@ export default function BookReader({ proxy }: ContentProps): ReactElement {
 
   useEffect(() => {
     if (readerConfig.currentTocUrl && reader) {
-      const toto = { href: readerConfig.currentTocUrl } as any;
-      reader.goTo(toto).then(() => {
+      const loadLocation = { href: readerConfig.currentTocUrl } as any;
+      reader.goTo(loadLocation).then(() => {
+        window.bookChapter = loadLocation.href;
         reader.applyUserSettings({ fontSize: 100 });
       });
     }

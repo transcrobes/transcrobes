@@ -312,3 +312,52 @@ INSERT INTO userdictionaries
 VALUES
     (?, ?)
 """
+
+CONTENT_QUESTIONS_CREATE = """
+CREATE TABLE IF NOT EXISTS contentquestions
+(
+  id TEXT PRIMARY KEY,
+  content_id TEXT,
+  model_ids TEXT,
+  href TEXT,
+  updated_at REAL
+) STRICT;
+"""
+CONTENT_QUESTONS_INSERT = """
+INSERT INTO contentquestions
+    (id, content_id, model_ids, href, updated_at)
+VALUES
+    (?, ?, ?, ?, ?);
+"""
+
+FREE_QUESTIONS_CREATE = """
+CREATE TABLE IF NOT EXISTS freequestions
+(
+  id TEXT PRIMARY KEY,
+  context TEXT,
+  updated_at REAL
+) STRICT;
+"""
+FREE_QUESTONS_INSERT = """
+INSERT INTO freequestions
+    (id, context, updated_at)
+VALUES
+    (?, ?, ?);
+"""
+QUESTIONS_CREATE = """
+CREATE TABLE IF NOT EXISTS questions
+(
+  id TEXT PRIMARY KEY,
+  question TEXT,
+  question_type TEXT,
+  extra_data TEXT,
+  shared INTEGER,
+  updated_at REAL
+) STRICT;
+"""
+QUESTONS_INSERT = """
+INSERT INTO questions
+    (id, question, question_type, extra_data, shared, updated_at)
+VALUES
+    (?, ?, ?, ?, ?, ?);
+"""

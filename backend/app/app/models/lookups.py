@@ -2,7 +2,8 @@
 from __future__ import annotations
 
 from app.db.base_class import Base
-from app.models.mixins import CachedAPIJSONLookupMixin, JSONLookupMixin
+from app.models.mixins import ActivatorTimestampMixin, CachedAPIJSONLookupMixin, JSONLookupMixin
+from sqlalchemy import Column, Integer, String, Text
 
 
 class BingApiLookup(CachedAPIJSONLookupMixin, Base):
@@ -66,3 +67,14 @@ class EnSubtlexLookup(JSONLookupMixin, Base):
 class EnCMULookup(JSONLookupMixin, Base):
     SHORT_NAME = "cmu"
     __table_args__ = (JSONLookupMixin.lower_index("EnCMULookup".lower()),)
+
+
+class OpenAIApiLookup(ActivatorTimestampMixin, CachedAPIJSONLookupMixin, Base):
+    model_name = Column(Text, nullable=False)
+    source_text = Column(String(25000), nullable=False, index=True)
+    prompt_version = Column(Integer, nullable=False)
+    prompt_type = Column(Integer, nullable=False)  # data.ContentQuestion.QUESTION_TYPE
+    __table_args__ = (
+        CachedAPIJSONLookupMixin.unique,
+        CachedAPIJSONLookupMixin.lower_index("OpenAIApiLookup".lower()),
+    )

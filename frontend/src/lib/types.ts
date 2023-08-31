@@ -129,12 +129,15 @@ export const HasTextChildren = 16;
 export const API_PREFIX = "/api/v1";
 export const DEFAULT_RETRIES = 3;
 export const UNSURE_ATTRIBUTE = "data-unsure";
-export const EVENT_QUEUE_PROCESS_FREQ = IS_DEV ? 5000 : 30000; //milliseconds
+// export const EVENT_QUEUE_PROCESS_FREQ = IS_DEV ? 5000 : 30000; //milliseconds
+// FIXME: this was reduced so we can include model reads here, rather than use a separate queue
+// this should be reconsidered
+export const EVENT_QUEUE_PROCESS_FREQ = 5000; //milliseconds
 export const ACTIVITY_QUEUE_PROCESS_FREQ = 30000; // IS_DEV ? 5000 : 30000; //milliseconds
 export const GLOBAL_TIMER_DURATION_MS = 5000; // IS_DEV ? 2000 : 5000;
 export const REQUEST_QUEUE_PROCESS_FREQ = IS_DEV ? 5000 : 30000; //milliseconds
 export const PUSH_FILES_PROCESS_FREQ = IS_DEV ? 5000 : 30000; //milliseconds
-export const ONSCREEN_DELAY_IS_CONSIDERED_READ = 5000; // milliseconds
+export const ONSCREEN_DELAY_IS_CONSIDERED_READ = 15000; // milliseconds
 export const IDEAL_GLOSS_STRING_LENGTH = 5; // pretty random but https://arxiv.org/pdf/1208.6109.pdf
 export const POPOVER_MIN_LOOKED_AT_EVENT_DURATION = 1500; // milliseconds
 export const POPOVER_MIN_LOOKED_AT_SOUND_DURATION = 750; // milliseconds
@@ -563,6 +566,9 @@ export const EXTENSION_READER_ID = "extensionReader";
 
 export type FontColourType = HslColor | null | "tones";
 export type FontShadowType = "black" | "white" | "none";
+export type QuestionType = "mcq" | "short";
+export type ActiveLearningType = "none" | QuestionType;
+
 export interface ReaderState {
   id: string;
   readerType: ReaderType;
@@ -581,6 +587,7 @@ export interface ReaderState {
   mouseover: boolean;
   sayOnMouseover: boolean;
   clickable: boolean;
+  activeLearning: ActiveLearningType;
   translationProviderOrder: Record<string, number>;
   strictProviderOrdering: boolean;
 }
@@ -622,6 +629,7 @@ export const DEFAULT_READER_CONFIG_STATE: ReaderState = {
   mouseover: true,
   sayOnMouseover: false,
   clickable: true,
+  activeLearning: "none",
   translationProviderOrder: translationProviderOrder(BASE_DICT_PROVIDERS),
   strictProviderOrdering: false,
 };
@@ -744,6 +752,7 @@ export interface UserDetails extends UserIdentity {
   fromLang: InputLanguage;
   toLang: InputLanguage;
   isTeacher: boolean;
+  modelEnabled: boolean;
 }
 
 export interface UserState {
@@ -767,6 +776,7 @@ export const DEFAULT_USER: UserDetails = {
   fromLang: "zh-Hans",
   toLang: "en",
   isTeacher: false,
+  modelEnabled: false,
 };
 
 export const INITIAL_USERSTATE: UserState = {
@@ -863,6 +873,22 @@ export type EventQueueType = {
   eventString: string;
 };
 
+export type MCQA = {
+  text?: string;
+  id: string;
+  question: string;
+  answers: { answer: { mid: string; text: string }; correct: boolean }[];
+};
+// [{'id': UUID('65e62cb8-860b-4320-b607-0684eda55215'),
+// 'created_at': datetime.datetime(2023, 10, 7, 8, 11, 19, 256197, tzinfo=zoneinfo.ZoneInfo(key='GMT')),
+// 'updated_at': datetime.datetime(2023, 10, 7, 8, 11, 19, 256197, tzinfo=zoneinfo.ZoneInfo(key='GMT')),
+// 'question': '1696666279264940457',
+// 'question_type': 1, 'extra_data':
+// [{'answer': '1696666279264637292', 'correct': False},
+// {'answer': '1696666279264437829', 'correct': True},
+// {'answer': '1696666279264698988', 'correct': False},
+// {'answer': '1696666279264670859', 'correct': False}],
+// 'shared': False}]
 export type RequestQueueType = {
   id: string;
   type: "registration";
@@ -874,6 +900,17 @@ export interface CommonRecord extends RaRecord {
   title: string;
   description?: string;
 
+  createdBy?: string;
+  updatedBy?: string;
+  createdAt?: number;
+  updatedAt?: number;
+
+  status?: number;
+  activateDate?: number;
+  deactivateDate?: number;
+}
+
+export interface ActivatorRecord extends RaRecord {
   createdBy?: string;
   updatedBy?: string;
   createdAt?: number;
@@ -933,6 +970,32 @@ export interface Content extends CommonRecord {
   shared: boolean;
   sourceUrl: string;
   extraData: string;
+}
+
+export interface Question extends ActivatorRecord {
+  question: string;
+  question_type: string;
+  extra_data: string;
+  shared: boolean;
+}
+
+export interface ContentQuestion extends Question {
+  contentId: string;
+  modelIds: string;
+  href: string;
+}
+
+export interface FreeQA extends Question {
+  context: string;
+}
+
+export interface QuestionAnswer extends RaRecord {
+  questionId: string;
+  studentAnswer: string;
+  feedback?: string;
+  isCorrect?: boolean;
+  createdAt?: number;
+  updatedAt?: number;
 }
 
 export interface UserDictionary extends CommonRecord {

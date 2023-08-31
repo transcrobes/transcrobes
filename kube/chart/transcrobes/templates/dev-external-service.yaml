@@ -1,0 +1,21 @@
+{{- if and .Values.transcrobes.enabled .Values.transcrobes.local.enabled -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ template "transcrobes.transcrobes.fullname" . }}-local-port
+{{- if .Values.transcrobes.service.annotations }}
+  annotations:
+{{ toYaml .Values.transcrobes.service.annotations | indent 4 }}
+{{- end }}
+  labels:
+    {{- include "transcrobes.transcrobes.labels" . | nindent 4 }}
+{{- if .Values.transcrobes.service.labels }}
+{{ toYaml .Values.transcrobes.service.labels | indent 4 }}
+{{- end }}
+spec:
+  type: ExternalName
+  externalName: host.k3d.internal
+  ports:
+    - port: {{ .Values.transcrobes.local.frontendPort }}
+      targetPort: {{ .Values.transcrobes.local.frontendPort }}
+{{- end }}

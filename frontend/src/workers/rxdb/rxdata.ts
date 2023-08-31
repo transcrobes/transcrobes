@@ -115,7 +115,6 @@ export async function processRequestQueue(url: URL, maxRequests = 500): Promise<
       allRequestIds[request.endpoint] = [];
     }
     for (const arequest of Array.isArray(requestObj) ? requestObj : [requestObj]) {
-      console.log("arequest", arequest);
       allRequests[request.endpoint].push(arequest);
       allRequestIds[request.endpoint].push(request.id.toString());
     }
@@ -126,7 +125,6 @@ export async function processRequestQueue(url: URL, maxRequests = 500): Promise<
   }
   for (const [endpoint, requests] of Object.entries(allRequests)) {
     const apiEndPoint = new URL(endpoint, url.origin).href;
-    console.log("sending requests", endpoint, apiEndPoint, requests);
     const data = await fetchPlus(apiEndPoint, JSON.stringify(requests));
     if (!data || !("successes" in data) || !("failures" in data)) {
       throw new Error("user_event update failed due to return status incorrect!");
@@ -169,7 +167,6 @@ export async function sendActivities(url: URL, maxSendEvents = 500): Promise<{ s
   }
 
   if (!allEntries.length) {
-    // console.debug("Queue empty");
     return { status: "empty_queue" };
   }
   for (let i = 0; i < allEntries.length; i++) {
@@ -250,9 +247,7 @@ export async function sendActivities(url: URL, maxSendEvents = 500): Promise<{ s
   });
 
   if (eventsToDelete.length === 0) {
-    // console.debug("Queue length:", allEntries.length);
   } else {
-    // console.debug("Deleting", eventsToDelete);
     db.activityqueue.bulkRemove(eventsToDelete);
   }
 
@@ -293,7 +288,6 @@ export async function sendUserEvents(url: URL, maxSendEvents = 500): Promise<{ s
   if (!allEntries.length) {
     return { status: "empty_queue" };
   }
-  // FIXME: externalise URL
   const apiEndPoint = new URL("/api/v1/data/user_events", url.origin).href;
   const data = await fetchPlus(apiEndPoint, JSON.stringify(allEvents));
   if (!data || !data["status"] || !(data["status"] === "success")) {
@@ -357,11 +351,43 @@ async function saveSurvey({ surveyId, dataValue }: { surveyId: string; dataValue
   } else {
     const newSurvey = {
       id: uuidv4(),
-      surveyId: surveyId,
+      surveyId,
       data: dataValue,
       title: "title",
     };
     await db.usersurveys.insert(newSurvey);
+  }
+  return "success";
+}
+
+async function saveAnswer({
+  questionId,
+  studentAnswer,
+  isCorrect,
+}: {
+  questionId: string;
+  studentAnswer: string;
+  isCorrect: boolean;
+}): Promise<string> {
+  const qa = await db.questionanswers
+    .findOne({
+      selector: { questionId: { $eq: questionId } },
+    })
+    .exec();
+  if (qa && isRxDocument(qa)) {
+    // It's an update
+    await qa.incrementalPatch({
+      studentAnswer,
+      isCorrect,
+    });
+  } else {
+    const newQA = {
+      id: uuidv4(),
+      questionId,
+      studentAnswer,
+      isCorrect,
+    };
+    await db.questionanswers.insert(newQA);
   }
   return "success";
 }
@@ -549,6 +575,7 @@ export const rxdbDataManager = {
   updateCards,
   setCardFront,
   saveSurvey,
+  saveAnswer,
   setContentConfigToStore,
   submitLookupEvents,
   submitContentEnrichRequest,

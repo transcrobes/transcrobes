@@ -1,4 +1,14 @@
-import { Box, Button, Card, CardContent, CardHeader, FormControlLabel, Switch, Typography } from "@mui/material";
+import {
+  Box,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  FormControlLabel,
+  Switch,
+  TextField,
+  Typography,
+} from "@mui/material";
 import { ReactElement, useEffect, useState } from "react";
 import { Title, TopToolbar, useTranslate } from "react-admin";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
@@ -8,12 +18,12 @@ import type { DataManager } from "../data/types";
 import { clearAuthDatabase } from "../database/authdb";
 import { setAndSaveUser } from "../features/user/userSlice";
 import { fetcher } from "../lib/fetcher";
-import { DOCS_DOMAIN, GIT_VERSION } from "../lib/types";
+import { NAME_PREFIX } from "../lib/interval/interval-decorator";
+import { DOCS_DOMAIN, GIT_VERSION, MCQA } from "../lib/types";
 import { getDatabaseName } from "../workers/rxdb/Database";
+import ChoosePreferredVoice from "./ChoosePreferredVoice";
 import ToggleIncludeIgnored from "./ToggleIncludeIgnored";
 import ToggleIncludeNonDict from "./ToggleIncludeNonDict";
-import { NAME_PREFIX } from "../lib/interval/interval-decorator";
-import ChoosePreferredVoice from "./ChoosePreferredVoice";
 
 const CONNECTION_CHECK_FREQUENCY_MS = 10000;
 
@@ -130,6 +140,7 @@ function System({ proxy }: Props): ReactElement {
   const [message, setMessage] = useState("");
   const [serverAvailableMessage, setServerAvailableMessage] = useState(translate("screens.system.waiting_for_server"));
   const [loading, setLoading] = useState(false);
+  const [testouille, setTestouille] = useState<MCQA[] | null>(null);
   const helpUrl = `//${DOCS_DOMAIN}/page/software/configure/system/`;
   const user = useAppSelector((state) => state.userData);
   const dispatch = useAppDispatch();

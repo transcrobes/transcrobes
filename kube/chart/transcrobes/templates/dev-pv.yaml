@@ -1,0 +1,19 @@
+{{- if and .Values.transcrobes.enabled .Values.transcrobes.persistence.enabled .Values.transcrobes.local.enabled -}}
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: {{ include "transcrobes.transcrobes.fullname" . }}
+  annotations:
+    "helm.sh/resource-policy": keep
+  labels:
+    type: local
+    {{- include "transcrobes.transcrobes.labels" . | nindent 4 }}
+spec:
+  storageClassName: {{ .Values.transcrobes.persistence.storageClassName }}
+  capacity:
+    storage: {{ .Values.transcrobes.persistence.size }}
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/opt/transcrobes/volumes/transcrobes-app"
+{{- end }}

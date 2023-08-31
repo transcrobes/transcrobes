@@ -1,0 +1,854 @@
+## Inspired by the default template made by helm create and https://github.com/helm/charts/tree/master/stable/prometheus
+
+commonAnnotations: {} # see https://github.com/bitnami/charts/tree/master/bitnami/common
+
+commonLabels: {} # see https://github.com/bitnami/charts/tree/master/bitnami/common
+
+## Define serviceAccount names for components. Defaults to component's fully qualified name.
+## TODO: these aren't used yet
+##
+serviceAccounts:
+  corenlp:
+    create: false
+    # name:
+  transcrobes:
+    create: false
+    # name:
+
+## Download container for things like locally hosting the Brocrobes extension as a zip file, etc.
+##
+downloads:
+  ## If false, downloads will not be installed
+  ##
+  enabled: false
+
+  ## Ingress related configuration for setting up the SSL ingress
+  ##
+  ingress:
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt-staging
+      nginx.ingress.kubernetes.io/ssl-redirect: "true"
+      nginx.ingress.kubernetes.io/proxy-body-size: "50m"  # increased to 50m for the dbs
+    className: nginx
+    tls:
+      enabled: true
+      secretName: "transcrobes-downloads-cert"
+  hosts:
+    - dl.transcrobes.example.com
+
+  ## corenlp container name
+  ##
+  name: downloads
+
+  ## corenlp container image
+  ##
+  image:
+    repository: transcrobes/downloads
+    tag: 0.0.1
+    pullPolicy: IfNotPresent
+
+  ## Annotations to be added to downloads pods
+  ##
+  podAnnotations: {}
+
+  ## Number of replicas, one should be plenty - it's just an nginx with static files
+  ##
+  replicaCount: 1
+
+  ## Additional downloads container environment variable
+  ## For instance to add a http_proxy
+  ##
+  extraEnv: {}
+
+  ## Strategy
+  ##
+  strategy:
+    type: Recreate
+
+  ## TODO: document
+  service:
+    annotations: {}  # TODO: unused???
+    labels: {}  # TODO: unused???
+    clusterIP: ""  # TODO: unused???
+
+    loadBalancerIP: ""  # TODO: unused???
+    loadBalancerSourceRanges: []  # TODO: unused???
+    servicePort: 80
+    type: ClusterIP  # TODO: unused???
+
+  ## application parameters
+  application:
+    listenPort: 80
+
+  ## Additional downloads container arguments
+  ##
+  extraArgs: {}
+
+## Stanford's CoreNLP with English model
+##
+corenlpEn:
+  ## If false, corenlp will not be installed
+  ##
+  enabled: true
+
+  ## corenlp container name
+  ##
+  name: corenlpen
+
+  ## corenlp container image
+  ##
+  image:
+    repository: transcrobes/corenlp-english
+    tag: 4.5.1
+    pullPolicy: IfNotPresent
+
+  ## Annotations to be added to corenlp pods
+  ##
+  podAnnotations: {}
+
+  ## Number of replicas of CoreNLP. CoreNLP takes at least 800MB of RAM for Chinese, even using a special,
+  ## reduced model that they (very nicely!) specially created for us, and is a huge consumer of CPU and
+  ## bandwidth. Best performance will probably have one of these everywhere, with the possible exception
+  ## of the master DB.
+  ## TODO: Maybe use taints somehow?
+  ##
+  replicaCount: 1
+
+  ## Additional corenlp container environment variable
+  ## For instance to add a http_proxy
+  ##
+  extraEnv: {}
+
+  ## Strategy
+  ##
+  strategy:
+    type: Recreate
+
+  ## Ingress
+  ## typically useful for a local k3d environment
+  ingress:
+    enabled: false
+    className: nginx
+    hostName: corenlp-en.localhost
+
+  ## TODO: document
+  service:
+    annotations: {}  # TODO: unused???
+    labels: {}  # TODO: unused???
+    clusterIP: ""  # TODO: unused???
+
+    loadBalancerIP: ""  # TODO: unused???
+    loadBalancerSourceRanges: []  # TODO: unused???
+    servicePort: 80
+    type: ClusterIP  # TODO: unused???
+
+  ## Configuration for the liveness and readiness probes
+  ## liveness, see https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-probes
+  ## WARNING! These are high by default for a reason - when doing "large" chunks (> a few kbytes) it can take
+  ## many seconds, particularly when depparse is used. When the queue gets many real, large chunks to proceess
+  ## there can be many seconds before a readiness probe will get scheduled. This means if the timeout is too
+  ## low, the container will get killed just when it's doing its job
+  ##
+  liveness:
+    initialDelaySeconds: 60
+    periodSeconds: 60
+    timeoutSeconds: 30
+
+  ## readiness, see https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-probes
+  readiness:
+    initialDelaySeconds: 20
+    periodSeconds: 20
+    timeoutSeconds: 30
+
+  ## CoreNLP java launch parameters, see
+  ## https://stanfordnlp.github.io/CoreNLP/corenlp-server.html#command-line-flags
+  ## for details. Only the below values are currently supported
+  application:
+    listenPort: 9000
+    queryTimeoutMs: 60000
+    javaXmx: 1000m
+    coreNlpNbThreads: 4
+
+  ## Additional corenlp container arguments
+  ##
+  extraArgs: {}
+
+  ## The URL prefix at which the container can be accessed. Useful in the case the '-web.external-url' includes a slug
+  ## so that the various internal URLs are still able to access as they are in the default case.
+  ## (Optional)
+  prefixURL: ""
+
+
+## Stanford's CoreNLP with minimal Chinese model
+##
+corenlpZh:
+  ## If false, corenlp will not be installed
+  ##
+  enabled: true
+
+  ## corenlp container name
+  ##
+  name: corenlpzh
+
+  ## corenlp container image
+  ##
+  image:
+    repository: transcrobes/corenlp-chinese
+    tag: 4.5.1
+    pullPolicy: IfNotPresent
+
+  ## Annotations to be added to corenlp pods
+  ##
+  podAnnotations: {}
+
+  ## Number of replicas of CoreNLP. CoreNLP takes at least 800MB of RAM for Chinese, even using a special,
+  ## reduced model that they (very nicely!) specially created for us, and is a huge consumer of CPU and
+  ## bandwidth. Best performance will probably have one of these everywhere, with the possible exception
+  ## of the master DB.
+  ## TODO: Maybe use taints somehow?
+  ##
+  replicaCount: 1
+
+  ## Additional corenlp container environment variable
+  ## For instance to add a http_proxy
+  ##
+  extraEnv: {}
+
+  ## Strategy
+  ##
+  strategy:
+    type: Recreate
+
+  ## Ingress
+  ## typically useful for a local k3d environment
+  ingress:
+    enabled: false
+    className: nginx
+    hostName: corenlp-zh.localhost
+
+  ## TODO: document
+  service:
+    annotations: {}  # TODO: unused???
+    labels: {}  # TODO: unused???
+    clusterIP: ""  # TODO: unused???
+
+    loadBalancerIP: ""  # TODO: unused???
+    loadBalancerSourceRanges: []  # TODO: unused???
+    servicePort: 80
+    type: ClusterIP  # TODO: unused???
+
+  ## Configuration for the liveness and readiness probes
+  ## liveness, see https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-probes
+  ## WARNING! These are high by default for a reason - when doing "large" chunks (> a few kbytes) it can take
+  ## many seconds, particularly when depparse is used. When the queue gets many real, large chunks to proceess
+  ## there can be many seconds before a readiness probe will get scheduled. This means if the timeout is too
+  ## low, the container will get killed just when it's doing its job
+  ##
+  liveness:
+    initialDelaySeconds: 60
+    periodSeconds: 60
+    timeoutSeconds: 30
+
+  ## readiness, see https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-probes
+  readiness:
+    initialDelaySeconds: 20
+    periodSeconds: 20
+    timeoutSeconds: 30
+
+  ## CoreNLP java launch parameters, see
+  ## https://stanfordnlp.github.io/CoreNLP/corenlp-server.html#command-line-flags
+  ## for details. Only the below values are currently supported
+  application:
+    listenPort: 9000
+    queryTimeoutMs: 60000
+    javaXmx: 1000m
+    coreNlpNbThreads: 4
+
+  ## Additional corenlp container arguments
+  ##
+  extraArgs: {}
+
+  ## The URL prefix at which the container can be accessed. Useful in the case the '-web.external-url' includes a slug
+  ## so that the various internal URLs are still able to access as they are in the default case.
+  ## (Optional)
+  prefixURL: ""
+
+
+## FastAPI App providing the glue and intelligence between other services
+##
+transcrobes:
+  ## If false, transcrobes will not be installed
+  ##
+  enabled: true
+  debug: false
+
+  ## Development using k3d and local python/TS code
+  local:
+    enabled: false
+    # ## the volume mount for the local python code. This is the path to the root of the python code
+    # ## If not set, it will use the code compiled into the container
+    # srcFrom: src
+    # ## a port to use for the dev-local frontend for serving the frontend code.
+    # ## If not set, the frontend will be served from the container
+    # frontendPort: 5000
+
+  ## transcrobes container name
+  ##
+  name: transcrobes
+
+  ## Transcrobes "friendly" name, used in emails, etc.
+  ##
+  projectName: "Transcrobes Language Learning"
+
+  ## Initial superuser for bootstrap
+  ##
+  firstSuperuser: a_good_username
+  firstSuperuserPassword: a_good_password
+
+  ## Registration
+  ##
+  usersOpenRegistration: false
+
+  ## Email configuration
+  ##
+  email:
+    enabled: false
+    smtpTls: true
+    smtpPort: 587
+    smtpUser: an_smtp_user
+    smtpPassword: an_smtp_password
+    emailsFromEmail: afrom@example.com
+    emailsFromName: "Me from Transcrobes"
+    emailResetTokenExpireHours: 48
+    emailTemplatesDir: "/app/app/email-templates/build"
+    emailTestUser: test@example.com
+
+  # OpenReplay https://github.com/openreplay/openreplay tracking
+  tracking:
+    key: your_openreplay_key
+    endpoint: "https://your.openreplay.endpoint/injest"
+
+  ## Override DB host, set this if you DON'T
+  ## want to use the default, kubernetes pgpool
+  ##
+  # overrideDBHost: tck-pgha-postgresql
+  # overrideStatsDBHost: tck-statsdb-postgresql
+
+  ## Ingress related configuration for setting up the SSL ingress
+  ##
+  ingress:
+    className: nginx
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt-staging
+      nginx.ingress.kubernetes.io/ssl-redirect: "true"
+      nginx.ingress.kubernetes.io/proxy-body-size: "50m"  # increased to 50m for the dbs
+    tls:
+      enabled: true
+      secretName: "transcrobes-transcrobes-cert"
+
+  ## transcrobes container image
+  ##
+  image:
+    repository: transcrobes/transcrobes-web
+    tag: 0.7.0
+    pullPolicy: IfNotPresent
+
+  ## Annotations to be added to transcrobes pods
+  ##
+  podAnnotations: {}
+
+  ## Number of instances of the main FastAPI app. Should probably be 3-4 per node, or thereabouts depending on mem
+  ##
+  replicaCount: 1
+
+  ## This persistence houses the static data files (dictionaries, wordlists) for the service
+  ## TODO: these should eventually probably both be dealt with otherwise, like via object storage
+  ##
+  persistence:
+    enabled: true
+    accessMode: ReadWriteMany
+    size: 10Gi
+    # storageClassName: -  # something like longhorn is REQUIRED
+
+    ## App config passed as env var and used for volume mount
+    ##
+    dataRoot: '/opt/transcrobes/'
+    localDataRoot: '/opt/transcrobesLocal/'
+    mediaPath: 'media'
+    dataPath: 'data'
+
+  ## This persistence houses the database and user media backups for the service
+  ## TODO: these should eventually probably both be dealt with otherwise, like via object storage
+  ##
+  backups:
+    enabled: true
+
+    ## transcrobes container image
+    ##
+    image:
+      repository: transcrobes/transcrobes-backups
+      tag: 0.3.0
+      pullPolicy: IfNotPresent
+
+    cronSchedule: '0 * * * *'
+    accessMode: ReadWriteMany
+    size: 10Gi
+
+    # storageClassName: -  # something like longhorn is REQUIRED
+
+    ## App config passed as env var and used for volume mount
+    ##
+    dataRoot: '/opt/backups/'
+    mediaPath: 'media'
+    databasePath: 'data'
+
+    extraEnv: {}
+
+    ## If ssh is enabled, then will attempt to rsync to the remote destination after backup
+    ## The destination server needs to be already set up to accept ssh login via key, with
+    ## the public key that corresponds to a secret that you have already set up, and the details
+    ## of which you must provide via `keyName` and `keyKey` below. Your secret should be created
+    ## to achieve the same format/result as:
+    ## `kubectl create secret generic secret-ssh-auth --from-file=ssh-privatekey=/path/to/your/private.key`
+    ##
+    ## You need to either use the image created by
+    ## https://github.com/transcrobes/transcrobes/blob/0.6.1/Dockerfile.backups
+    ## or something that achieves the same/similar result
+    ##
+    ssh:
+      enabled: false
+      keysDirectory: /etc/backups
+      remotePath: /opt/backups/
+      keyName: secret-ssh-auth
+      keyKey: ssh-privatekey
+      host: backup-host.local
+      port: 22
+      user: backups
+      rsyncOptions: ""  # rsync ??? source dest IN ADDITION to the existing -ah
+
+  ## Configuration for the liveness and readiness probes
+  ## liveness, see https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
+  ##
+  liveness:
+    periodSeconds: 60
+    initialDelaySeconds: 5
+    timeoutSeconds: 60
+    failureThreshold: 3
+
+  ## readiness, see https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
+  ##
+  readiness:
+    periodSeconds: 60
+    initialDelaySeconds: 5
+    timeoutSeconds: 60
+    failureThreshold: 3
+    successThreshold: 1
+
+  ## startup, see https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
+  ##
+  startup:
+    periodSeconds: 10
+    initialDelaySeconds: 3
+    timeoutSeconds: 120
+    failureThreshold: 15
+
+  ## UNUSED but REQUIRED FIXME:!!!
+  ## Sentry config
+  sentryDsn: ""
+
+  ## These are turned into env vars that are required for the applications
+  ##
+  bingSubscriptionKey: "your_bing_subscription_key"
+  bingApiHost: 'api.cognitive.microsofttranslator.com'
+  secretKey: 'not_a_very_good_secret'  # FIXME: do as a secret
+  openaiApiKey: "an_openai_key"
+
+  ## Files mounted into the dataRoot
+  ## TODO: see notes in the persistence section above
+  ## TODO: move this to memcached?
+  ##
+  zhEnCedict:
+    path: 'data/zh_en_cedict.txt'
+    inmem: False
+  zhEnAbcDict:
+    path: 'data/zh_en_abc_dict.txt'
+    inmem: False
+  zhHskLists:
+    path: 'data/zh_hsk{}.txt'
+    inmem: False
+  zhSubtlexFreq:
+    path: 'data/zh_subtlex.utf8.txt'
+    inmem: False
+  enZhAbcDict:
+    path: 'data/en_zh_abc_dict.txt'
+    inmem: False
+  enSubtlexFreq:
+    path: 'data/en_subtlex.utf8.txt'
+    inmem: False
+
+  ## Bing results are cached to the db, also cache in memory?
+  ## TODO: move this to memcached?
+  ##
+  bingTransliterator:
+    inmem: False
+  bingTranslator:
+    inmem: False
+
+  ## RxDB sync broadcast layer tech
+  ## kafka and postgres should work, redis might but hasn't been tested
+  ##
+  broadcasterMessagingLayer: postgres
+
+  ## Additional transcrobes container environment variable
+  ## For instance to add a http_proxy
+  ##
+  extraEnv:
+    PYTHONDONTWRITEBYTECODE: "1"
+
+    ## JWT configs
+    ##
+    # ACCESS_TOKEN_EXPIRE_MINUTES: 10
+    # REFRESH_TOKEN_EXPIRE_MINUTES: 43200  # one month
+
+  ## Strategy
+  ##
+  strategy:
+    type: RollingUpdate
+
+  ## Publicly defined and accessible FQDN pointing to this kubernetes cluster
+  ## Having a public host for each
+  ##
+  nodeHosts: ['tc1.example.com']  # one for each publicly configured node - TODO: investigate doing this automatically!
+
+  ## the name users will use, will have multiple A-records associated with all the node hosts
+  ##
+  haHost: transcrobes.example.com
+
+  ## per-domain static files available at https://node_host/a_string_here/...
+  ## Files should be put in source at frontend/public/node_host/a_string_here/...
+  ##
+  perDomain: []
+
+  ## TODO: document
+  service:
+    annotations: {}
+    labels: {}
+    clusterIP: ""
+
+    loadBalancerIP: ""
+    loadBalancerSourceRanges: []
+    servicePort: 80
+    type: ClusterIP
+
+  ## app config passed as env vars
+  ##
+  application:
+    ## Internal IP for transcrobes to listen on
+    ##
+    listenAddress: 0.0.0.0
+    ## Internal port for transcrobes to listen on
+    ##
+    listenPort: 8000
+
+    ## Use uvicorn via gunicorn, if false calls uvicorn directly
+    ## WARNING, currently there is an issue with awaits when run via gunicorn, so this should be false
+    ## until the reason for this is understood!!!
+    #
+    useGunicorn: false
+
+    ## Absolute number of workers, override value for both straight uvicorn and uvicorn via gunicorn
+    #
+    webConcurrency: 1
+
+    ## Max number of gunicorn workers, only used if webConcurrency == 0
+    ##
+    maxWorkers: 1
+
+    ## Number of gunicorn workers per core
+    workersPerCore: 1
+
+    ## gunicorn process timeout, see http://docs.gunicorn.org/en/latest/settings.html#timeout
+    ##
+    gunicornTimeout: 120
+
+    imports:
+      ## maximum user list import file size in KB
+      ## nginx.ingress.kubernetes.io/proxy-body-size above might also need to be increased, if the below is larger
+      maxListImportSizeKB: 5120
+
+  ## Additional transcrobes container arguments
+  ##
+  extraArgs: {}
+
+  ## The URL prefix at which the container can be accessed. Useful in the case the '-web.external-url' includes a slug
+  ## so that the various internal URLs are still able to access as they are in the default case.
+  ## (Optional)
+  prefixURL: ""
+
+  ## Prometheus exporter parameters
+  ##
+  metrics:
+    service:
+      port: 9123
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "{{ .Values.transcrobes.metrics.service.port }}"
+    enabled: false
+    serviceMonitor:
+      enabled: false
+
+      ## Specify a namespace if needed
+      # namespace: monitoring
+      # selector:  # so the metrics get picked up with the default settings for kube-prometheus-stack
+      #   release: prometheus
+      # fallback to the prometheus default unless specified
+      # interval: 10s
+      # scrapeTimeout: 10s
+
+## This section inspired by
+## https://github.com/helm/charts/blob/cbd5e811a44c7bac6226b019f1d1810ef5ee45fa/stable/quassel/values.yaml
+## Configuration values for the postgresql dependency.
+## ref: https://github.com/kubernetes/charts/blob/master/stable/postgresql/README.md
+##
+
+pgha:
+  enabled: true
+  # Needed because of a bug when specifying extendedConf
+  volumePermissions:
+    enabled: true
+
+  ## Override of upstream pullPolicy
+  ##
+  postgresql:
+    ## Use the PostgreSQL chart dependency.
+    ##
+    enabled: true
+
+    image:
+      tag: 16
+      pullPolicy: IfNotPresent
+
+    ### PostgreSQL User to create.
+    ##
+    username: postgres
+
+    ## PostgreSQL Password for the new user.
+    ## If not set, a random 10 characters password will be used.
+    ##
+    password: transpass
+    repmgrPassword: transpass
+
+    ## PostgreSQL Database to create.
+    ##
+    database: transcrobes
+
+    ## PostgreSQL override parameters added to main config
+    ##
+    ## password_encryption = md5 is currently required when using the postgres 15 image
+    extendedConf: |-
+      password_encryption = md5
+
+    ## PostgreSQL max_connections parameter
+    ##
+    # maxConnections: 100
+
+
+  ## Persistent Volume Storage configuration.
+  ## ref: https://kubernetes.io/docs/user-guide/persistent-volumes
+  ##
+  persistence:
+    ## Enable PostgreSQL persistence using Persistent Volume Claims.
+    ##
+    enabled: true
+    ## Persistent Volume Storage Class
+    ## If defined, storageClassName: <storageClass>
+    ## If set to "-", storageClassName: "", which disables dynamic provisioning
+    ## If undefined (the default) or set to null, no storageClassName spec is
+    ##   set, choosing the default provisioner.  (gp2 on AWS, standard on
+    ##   GKE, AWS & OpenStack)
+    ##
+    # storageClass: "-"
+
+    ## A manually managed Persistent Volume and Claim
+    ## Requires persistence.enabled: true
+    ## If defined, PVC must be created manually before volume will be bound
+    # existingClaim:
+
+    accessMode: ReadWriteOnce
+
+    size: 10Gi
+
+  ## Don't always pull image
+  volumePermissionsImage:
+    pullPolicy: IfNotPresent
+
+statsdb:
+  enabled: true
+  # Needed because of a bug when specifying extendedConf
+  volumePermissions:
+    enabled: true
+
+  ## Override of upstream pullPolicy
+  ##
+  postgresql:
+    ## Use the PostgreSQL chart dependency.
+    ##
+    enabled: true
+
+    image:
+      tag: 16
+      pullPolicy: IfNotPresent
+
+    ### PostgreSQL User to create.
+    ##
+    username: postgres
+
+    ## PostgreSQL Password for the new user.
+    ## If not set, a random 10 characters password will be used.
+    ##
+    password: transpass
+    repmgrPassword: transpass
+
+    ## PostgreSQL Database to create.
+    ##
+    database: transcrobes
+
+    ## PostgreSQL override parameters added to main config
+    ##
+    ## password_encryption = md5 is currently required when using the postgres 15 image
+    extendedConf: |-
+      password_encryption = md5
+
+    ## PostgreSQL max_connections parameter
+    ##
+    # maxConnections: 100
+
+
+  ## Persistent Volume Storage configuration.
+  ## ref: https://kubernetes.io/docs/user-guide/persistent-volumes
+  ##
+  persistence:
+    ## Enable PostgreSQL persistence using Persistent Volume Claims.
+    ##
+    enabled: true
+    ## Persistent Volume Storage Class
+    ## If defined, storageClassName: <storageClass>
+    ## If set to "-", storageClassName: "", which disables dynamic provisioning
+    ## If undefined (the default) or set to null, no storageClassName spec is
+    ##   set, choosing the default provisioner.  (gp2 on AWS, standard on
+    ##   GKE, AWS & OpenStack)
+    ##
+    # storageClass: "-"
+
+    ## A manually managed Persistent Volume and Claim
+    ## Requires persistence.enabled: true
+    ## If defined, PVC must be created manually before volume will be bound
+    # existingClaim:
+
+    accessMode: ReadWriteOnce
+    size: 10Gi
+
+  ## Don't always pull image
+  volumePermissionsImage:
+    pullPolicy: IfNotPresent
+
+
+## Kafka for system user events
+kafka:
+  fullnameOverride: kafka
+  enabled: true
+  listeners:
+    client:
+      protocol: PLAINTEXT
+    controller:
+      protocol: PLAINTEXT
+  headless:
+    publishNotReadyAddresses: true
+  extraConfig: |
+    max.partition.fetch.bytes=5242880
+    max.request.size=5242880
+    message.max.bytes=5242880
+    replica.fetch.max.bytes=5242880
+
+## Worker that manages tasks
+faustworker:
+  name: faustworker
+  enabled: true
+  debug: false
+
+  ## faustworker container image
+  ##
+  image:
+    repository: transcrobes/transcrobes-worker
+    tag: 0.7.0
+    pullPolicy: IfNotPresent
+
+
+  ## desc here FIXME:
+  #
+  kafkaConnection:
+    consumerTimeoutMs: 5000  # millisecs
+    statsLoopSleepSecs: 10  # secs
+    maxPollRecords: 500  # 500 is default
+
+  ## Number of faustworkers to launch, currently this has only been tested with one
+  ##
+  replicaCount: 1
+
+  ## Additional faustworker container environment variable
+  ##
+  extraEnv:
+    PYTHONDONTWRITEBYTECODE: "1"
+
+  ## Strategy, do not change unless you know what the code actually does and know the risks
+  ##
+  strategy:
+    type: Recreate
+
+  ## Annotations to be added to faustworker pods
+  ##
+  podAnnotations: {}
+
+  ## application specific configuration
+  application:
+    importParseChunkSizeBytes: 20000  # see transcrobes settings.py for comments
+    importDetectChunkSizeBytes: 5000
+
+## Worker that manages consuming and transforming user events to the statsdb
+sworker:
+  name: sworker
+  enabled: true
+  debug: false
+
+  ## sworker container image
+  ##
+  image:
+    repository: transcrobes/transcrobes-sworker
+    tag: 0.7.0
+    pullPolicy: IfNotPresent
+
+
+  ## desc here FIXME:
+  #
+  kafkaConnection:
+    consumerTimeoutMs: 5000  # millisecs
+    statsLoopSleepSecs: 10  # secs
+    maxPollRecords: 500  # 500 is default
+
+  ## Number of sworkers to launch
+  ##
+  replicaCount: 1
+
+  ## Additional faustworker container environment variable
+  ##
+  extraEnv:
+    PYTHONDONTWRITEBYTECODE: "1"
+
+  ## Strategy, do not change unless you know what the code actually does and know the risks
+  ##
+  strategy:
+    type: Recreate
+
+  ## Annotations to be added to faustworker pods
+  ##
+  podAnnotations: {}

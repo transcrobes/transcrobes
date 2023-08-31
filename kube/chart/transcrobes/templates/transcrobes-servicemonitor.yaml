@@ -1,0 +1,28 @@
+{{- if and .Values.transcrobes.metrics.enabled .Values.transcrobes.metrics.serviceMonitor.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ template "common.names.fullname" . }}
+  {{- if .Values.transcrobes.metrics.serviceMonitor.namespace }}
+  namespace: {{ .Values.transcrobes.metrics.serviceMonitor.namespace }}
+  {{- end }}
+  labels: {{- include "transcrobes.transcrobes.labels" . | nindent 4 }}
+    {{- range $key, $value := .Values.transcrobes.metrics.serviceMonitor.selector }}
+    {{ $key }}: {{ $value | quote }}
+    {{- end }}
+spec:
+  selector:
+    matchLabels: {{- include "transcrobes.transcrobes.matchLabels" . | nindent 6 }}
+  endpoints:
+    - port: metrics
+      path: /metrics
+      {{- if .Values.transcrobes.metrics.serviceMonitor.interval }}
+      interval: {{ .Values.transcrobes.metrics.serviceMonitor.interval }}
+      {{- end }}
+      {{- if .Values.transcrobes.metrics.serviceMonitor.scrapeTimeout }}
+      scrapeTimeout: {{ .Values.transcrobes.metrics.serviceMonitor.scrapeTimeout }}
+      {{- end }}
+  namespaceSelector:
+    matchNames:
+      - {{ .Release.Namespace }}
+{{- end }}

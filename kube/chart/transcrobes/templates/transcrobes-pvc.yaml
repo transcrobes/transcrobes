@@ -1,0 +1,18 @@
+{{- if and .Values.transcrobes.enabled .Values.transcrobes.persistence.enabled -}}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "transcrobes.transcrobes.fullname" . }}
+  annotations:
+    "helm.sh/resource-policy": keep
+  labels:
+    {{- include "transcrobes.transcrobes.labels" . | nindent 4 }}
+spec:
+  accessModes:
+  - {{ .Values.transcrobes.persistence.accessMode }}
+  storageClassName: {{ .Values.transcrobes.persistence.storageClassName }}
+  resources:
+    requests:
+      storage: {{ .Values.transcrobes.persistence.size }}
+status: {}
+{{- end }}

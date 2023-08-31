@@ -31,3 +31,13 @@ class UserWord(StatsBase):
     last_checked = Column(Float, default=0)
     nb_seen_since_last_check = Column(Integer, default=0)
     updated_at = Column(Float, default=0, index=True)
+
+
+class ContentModelRead(StatsBase):
+    aid = Column(Integer, Identity(), primary_key=True)
+    user_id = Column(Integer, primary_key=True)
+    content_id = Column(String(36))
+    href = Column(String(500))
+    model_id = Column(BigInteger, nullable=False)
+    read_at = Column(Float, default=0)
+    word_count = Column(Integer, default=0)

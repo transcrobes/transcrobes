@@ -26,6 +26,7 @@ const MAX_TOKENS_FOR_PRE_ENRICHMENT = 30000;
 const proxy = window.parent.componentsConfig.proxy;
 const store = window.parent.transcrobesStore;
 const bookId = window.parent.bookId;
+const bookChapter = window.parent.bookChapter;
 const sessionId = window.parent.asessionId;
 const readerConfig = store.getState().bookReader[bookId];
 const currentModels = window.transcrobesModel;
@@ -35,7 +36,15 @@ const getReaderConfig = () => readerConfig;
 const getKnownCards = () => store.getState().knownWords;
 const user = store.getState().userData.user;
 const readObserver = new IntersectionObserver(
-  observerFunc(currentModels, getReaderConfig, getKnownCards, window.parent.onScreenModels),
+  observerFunc(
+    currentModels,
+    getReaderConfig,
+    getKnownCards,
+    bookId,
+    bookChapter,
+    window.parent.onScreenModels,
+    window.parent.questionModelCandidates,
+  ),
   {
     threshold: [1.0],
   },
@@ -52,6 +61,7 @@ store.dispatch(setLoading(true));
 // this can't be done with a hook, so just doing it like this
 jss.setup(preset());
 const sheet = jss.createStyleSheet(ETFStyles, { link: true }).attach();
+// FIXME: what is the `.classes` here for? can the next two lines not be one? was this for a log?
 sheet.update({ ...readerConfig, scriptioContinuo: isScriptioContinuo(user.fromLang) }).classes;
 
 const classes = sheet.classes;

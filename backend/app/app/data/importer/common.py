@@ -20,6 +20,7 @@ from zipfile import ZipFile
 import aiofiles
 import dawn
 import magic
+import orjson
 import pytz
 import textile
 from app.api.api_v1 import types
@@ -45,8 +46,9 @@ from app.db.session import async_session
 from app.enrich import TokenPhoneType, enrich_html_to_html
 from app.enrich.data import EnrichmentManager, managers
 from app.enrich.models import ensure_cache_preloaded
-from app.models.data import Content, Import, UserList
-from app.models.user import absolute_imports_path
+from app.generative.openai.mcq import get_multiple_choice_qa_chat
+from app.models.data import Content, ContentQuestion, Import, UserList
+from app.models.user import absolute_imports_path, absolute_resources_path
 from app.ndutils import flatten, gather_with_concurrency, lemma
 from app.schemas.files import ProcessData
 from app.worker.faustus import content_process_topic
@@ -69,6 +71,26 @@ WEBPUB_SKELETON = {
     "resources": [],
 }
 CHAPTER_MAX_LENGTH = 30000
+
+
+MCQ_QAG_OUTFILE_SUFFIX = ".mcqa.json"
+MCQ_QAG_INFILE_SUFFIX = ".parse.json"
+MAX_CHAPTER_MCQS = 20
+
+LENGTHS = {
+    "en": {
+        "MIN_MCQ_TEXT_LEN": 250,
+        "MCQ_TEXT_LEN_SKIP": 500,
+        "MIN_BLOCK_LEN": 200,
+        "MAX_BLOCK_LEN": 300,
+    },
+    "zh-Hans": {
+        "MIN_MCQ_TEXT_LEN": 250,
+        "MCQ_TEXT_LEN_SKIP": 500,
+        "MIN_BLOCK_LEN": 200,
+        "MAX_BLOCK_LEN": 300,
+    },
+}
 
 
 # FOR WEBPUB
@@ -529,7 +551,10 @@ async def enrich_parse(content: Content, manager: EnrichmentManager, available_d
         recursive=True,
     ):
         logger.debug("Enriching content file %s", fname)
-        with open(os.path.join(fname), encoding="utf8") as file_contents:
+        with open(fname, encoding="utf8") as file_contents:
+            base_outfile = fname.replace(MCQ_QAG_INFILE_SUFFIX, MCQ_QAG_OUTFILE_SUFFIX)
+            # print("going to do", fname, base_outfile)
+            create_qa_base_file(fname, base_outfile, content.created_by.from_lang)
             file_models = json.load(file_contents)
             model_futures = [
                 manager.enricher().enrich_parse_to_aids_json(
@@ -745,3 +770,155 @@ async def process_content(content_event: ProcessData):
             content.created_by,
         )
         logger.info("Finished running content %s", content.id)
+
+
+async def process_qag(qag_event: ProcessData):
+    async with async_session() as db:
+        logger.info("Starting qag processing %s", qag_event.id)
+        # FIXME: use const!!!
+        model_id = qag_event.id.rsplit(":", 1)[1]
+        user_id = qag_event.id.rsplit(":", 1)[0].split(":", 1)[0]
+        file_sub_path = qag_event.id.rsplit(":", 1)[0].split(":", 1)[1]
+
+        file_path = absolute_resources_path(int(user_id), file_sub_path)
+        with open(file_path, encoding="utf8") as file_contents:
+            qags = orjson.loads(file_contents)["qags"]
+
+        content_id = file_sub_path.split("/", 1)[0]
+
+        stmt = (
+            select(Content)
+            .where(Content.id == content_id)
+            .options(
+                joinedload(Content.created_by, innerjoin=True),
+            )
+        )
+        result = await db.execute(stmt)
+        content: Content = result.scalar_one()
+
+        manager = managers.get(content.created_by.lang_pair)
+        if not manager:
+            raise NotImplementedError(f"Server does not support language pair {content.created_by.lang_pair}")
+
+        logger.info("Starting qag processing %s", qag_event.id)
+        for qag in qags:
+            # FIXME: use const here too!!!
+            if model_id == qag["modelIds"] or qag["modelIds"].endswith(f"-{model_id}"):
+                try:
+                    model_name = json.loads(content.created_by.config)["genModel"]
+                    mcqa = await get_multiple_choice_qa_chat(
+                        db, qag["text"], content.created_by, settings.OPENAI_PROMPT_VERSION, model_name
+                    )
+                    content_questions = ContentQuestion(
+                        content_id=content_id,
+                        model_ids=qag["modelIds"],
+                        question=mcqa["question"],
+                        question_type=ContentQuestion.MCQ,
+                        extra_data=mcqa["answers"],
+                        created_by=content.created_by,
+                        updated_by=content.created_by,
+                    )
+                except json.decoder.JSONDecodeError:
+                    logger.exception("Error processing qag %s", qag["text"])
+                break
+
+        if content_questions:
+            db.add(content_questions)
+            await db.commit()
+
+            await publish_message(
+                types.ContentQuestions.__name__,
+                None,
+                await get_broadcast(),
+                content.created_by,
+            )
+            logger.info("Finished running qag %s", qag_event.id)
+
+
+def create_qa_base_file(infile, outfile, lang):
+    Path(os.path.dirname(outfile)).mkdir(parents=True, exist_ok=True)
+    if os.path.exists(outfile):
+        return
+    out_content = {"file": os.path.basename(infile), "qags": []}
+    with open(infile, encoding="utf8") as file_contents:
+        file_models = json.load(file_contents)
+        # want a maximum of 20 qs per file, minimum of 1 every MIN_MCQ_TEXT_LEN words
+
+        all_len = 0
+        models_lens = []
+        for model_id, model in file_models.items():
+            model_lens = [model_id, []]
+            for sentence in model["s"]:
+                tlen = len(sentence["t"])
+                all_len += tlen
+                model_lens[1].append(tlen)
+            models_lens.append(model_lens)
+        nb_qags = (
+            min(MAX_CHAPTER_MCQS, int(all_len / LENGTHS[lang]["MCQ_TEXT_LEN_SKIP"]))
+            if all_len > LENGTHS[lang]["MIN_MCQ_TEXT_LEN"]
+            else 0
+        )
+        step = int(all_len / nb_qags) if nb_qags > 0 else 0
+        qag_model_sets = []
+        # TODO: things to do:
+        # make sure there is a model with at least a few sentences with 5-10+ words in the block
+
+        if nb_qags > 0:
+            cum_len = 0
+            qag_models = []
+            qag_model_lens = 0
+            for model in models_lens:
+                all_sentence_len = sum(model[1])
+                if not qag_models and len(qag_model_sets) * step <= cum_len:
+                    qag_models = []
+
+                cum_len += all_sentence_len
+                if qag_models is None:
+                    continue
+
+                comb_len = qag_model_lens + all_sentence_len
+                if comb_len <= LENGTHS[lang]["MIN_BLOCK_LEN"]:
+                    qag_model_lens += all_sentence_len
+                    qag_models.append((model[0], None, qag_model_lens))
+                    # print("less than", model[0], all_sentence_len, qag_model_lens)
+                else:
+                    # FIXME: make sure it doesn't go over max_block_len
+                    nb_sents = None
+                    qag_model_lens += all_sentence_len
+                    if comb_len > LENGTHS[lang]["MAX_BLOCK_LEN"]:
+                        cum_sent_len = 0
+                        nb_sents = 0
+                        for sentence_len in model[1]:
+                            nb_sents += 1
+                            cum_sent_len += sentence_len
+                            if cum_sent_len > LENGTHS[lang]["MIN_BLOCK_LEN"]:
+                                # qag_models.append((model[0], nb_sents, cum_sent_len))
+                                qag_model_lens = cum_sent_len
+                                break
+                    # print("more than", model[0], all_sentence_len, qag_model_lens)
+                    qag_models.append((model[0], nb_sents, qag_model_lens))
+                    qag_model_sets.append(qag_models)
+                    qag_models = None
+                    qag_model_lens = 0
+
+            for qagm in qag_model_sets:
+                cum_text = ""
+                model_ids = []
+                for mods in qagm:
+                    mid, nb_sents, cum_sent_len = mods
+                    model_ids.append(mid)
+                    for sentence in file_models[mid]["s"][
+                        0 : (nb_sents if nb_sents is not None else len(file_models[mid]["s"]))
+                    ]:
+                        s = ""
+                        for token in sentence["t"]:
+                            s += token.get("b", "") + token.get("w", token["l"])
+                        cum_text += s
+                    cum_text += "\n\n"
+
+                daqag = {"text": cum_text.strip()}
+                daqag["modelIds"] = "-".join(model_ids)
+                out_content["qags"].append(daqag)
+                # print(json.dumps(daqag, ensure_ascii=False, indent=2))
+            with open(outfile, "w") as outfile_contents:
+                json.dump(out_content, outfile_contents, ensure_ascii=False, indent=2)

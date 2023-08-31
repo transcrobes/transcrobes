@@ -13,3 +13,4 @@ app = faust.App(
 content_process_topic = app.topic("content_process_topic", value_type=ProcessData)
 list_process_topic = app.topic("list_process_topic", value_type=ProcessData)
 import_process_topic = app.topic("import_process_topic", value_type=ProcessData)
+qag_process_topic = app.topic("qag_process_topic", value_type=ProcessData)

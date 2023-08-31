@@ -18,7 +18,7 @@ import { BookReaderActions } from "../../features/content/bookReaderSlice";
 import { SimpleReaderActions } from "../../features/content/simpleReaderSlice";
 import { VideoReaderActions } from "../../features/content/videoReaderSlice";
 import { isScriptioContinuo } from "../../lib/funclib";
-import { GlossPosition, ReaderState, USER_STATS_MODE } from "../../lib/types";
+import { ActiveLearningType, GlossPosition, ReaderState, USER_STATS_MODE } from "../../lib/types";
 import GlossFontOverrideConfig from "./GlossFontOverrideConfig";
 import MainTextOverrideConfig from "./MainTextOverrideConfig";
 
@@ -64,6 +64,7 @@ export default function ContentConfig({
   const id = readerConfig.id;
   const { classes: localClasses } = useStyles();
   const fromLang = useAppSelector((state) => state.userData.user.fromLang);
+  const activeEnabled = useAppSelector((state) => state.userData.user.modelEnabled);
   const changeGlossFontColour = useCallback(
     _.debounce((value: HslColor) => {
       dispatch(actions.setGlossFontColour({ id, value }));
@@ -79,6 +80,32 @@ export default function ContentConfig({
 
   return (
     <div className={classes.configContainer}>
+      {activeEnabled && (
+        <Conftainer label={translate("widgets.reader_config.active_learning.title")} id="activeLearning">
+          <ToggleButtonGroup
+            className={classes.buttonGroup || localClasses.buttonGroup}
+            // className={classes.button}
+            onChange={(event: React.MouseEvent<HTMLElement>, value: ActiveLearningType) =>
+              dispatch(actions.setActiveLearning({ id, value }))
+            }
+            value={readerConfig.activeLearning}
+            exclusive
+          >
+            <ToggleButton className={classes.button || localClasses.button} value={"none"}>
+              {translate("widgets.reader_config.active_learning.none")}
+            </ToggleButton>
+            <ToggleButton className={classes.button || localClasses.button} value={"mcq"}>
+              {translate("widgets.reader_config.active_learning.mcq")}
+            </ToggleButton>
+            {/* <ToggleButton className={classes.button} value={"short"}>
+            {translate("widgets.reader_config.active_learning.short")}
+          </ToggleButton> */}
+            {/* <ToggleButton className={classes.button} value={"all"}>
+            {translate("widgets.reader_config.active_learning.all")}
+          </ToggleButton> */}
+          </ToggleButtonGroup>
+        </Conftainer>
+      )}
       {allowMainTextOverride ? (
         <MainTextOverrideConfig
           classes={classes}

@@ -1,0 +1,32 @@
+{{- if .Values.downloads.enabled -}}
+apiVersion: v1
+kind: Service
+metadata:
+{{- if .Values.downloads.service.annotations }}
+  annotations:
+{{ toYaml .Values.downloads.service.annotations | indent 4 }}
+{{- end }}
+  labels:
+    {{- include "transcrobes.downloads.labels" . | nindent 4 }}
+{{- if .Values.downloads.service.labels }}
+{{ toYaml .Values.downloads.service.labels | indent 4 }}
+{{- end }}
+  name: {{ template "transcrobes.downloads.fullname" . }}
+spec:
+{{- if .Values.downloads.service.nodePort }}
+  type: NodePort
+{{- end }}
+  ports:
+  - name: http
+    port: {{ .Values.downloads.service.servicePort }}
+    protocol: TCP
+    targetPort: {{ .Values.downloads.application.listenPort }}
+    # TODO: This is only really useful for dev/testing
+  {{- if .Values.downloads.service.nodePort }}
+    nodePort: {{ .Values.downloads.service.nodePort }}
+  {{- end }}
+  selector:
+    {{- include "transcrobes.downloads.matchLabels" . | nindent 4 }}
+status:
+  loadBalancer: {}
+{{- end }}

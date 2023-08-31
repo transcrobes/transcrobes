@@ -1,0 +1,19 @@
+{{- if and .Values.transcrobes.enabled .Values.pgha.persistence.enabled .Values.transcrobes.local.enabled -}}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: transcrobes-transcrobes-db
+  annotations:
+    "helm.sh/resource-policy": keep
+  labels:
+    type: local
+    {{- include "transcrobes.transcrobes.labels" . | nindent 4 }}
+spec:
+  storageClassName: manual-db
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.pgha.persistence.size }}
+status: {}
+{{- end }}

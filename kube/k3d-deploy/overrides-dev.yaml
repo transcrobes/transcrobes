@@ -1,0 +1,246 @@
+corenlpEn:
+  enabled: true
+  ingress:
+    enabled: true
+    className: traefik
+    hostName: corenlp-en.localhost
+  application:
+    javaXmx: 2000m
+  replicaCount: 1
+
+corenlpZh:
+  enabled: true
+  ingress:
+    enabled: true
+    className: traefik
+    hostName: corenlp-zh.localhost
+  application:
+    javaXmx: 3000m
+  extraEnv:
+    CORENLP_CHINESE_SEGMENTER: "ctb.gz"
+
+kafka:
+  enabled: true
+  clusterDomain: cluster.local
+  controller:
+    replicaCount: 1
+  extraConfig: |
+    max.partition.fetch.bytes=5242880
+    max.request.size=5242880
+    message.max.bytes=5242880
+    replica.fetch.max.bytes=5242880
+    offsets.topic.replication.factor=1
+
+  metrics:
+    jmx:
+      enabled: false
+    kafka:
+      enabled: false
+    serviceMonitor:
+      enabled: false
+      selector:  # so the metrics get picked up with the default settings for kube-prometheus-stack
+        release: prometheus
+
+
+statsdb:
+  clusterDomain: cluster.local
+  enabled: true
+  pgpool:
+    adminPassword: 392b1cc30768f5e99deca8ff1ddd7812
+    replicaCount: 1
+    livenessProbe:
+      # due to a bug in kubernetes, the command healthcheck timeout is 15 secs, and this must be more than that
+      # see https://github.com/kubernetes/kubernetes/issues/82987
+      # and healthcheck timeout = 15 here: https://github.com/bitnami/bitnami-docker-pgpool/blob/master/4/debian-10/rootfs/opt/bitnami/scripts/libpgpool.sh#L259
+      timeoutSeconds: 20
+
+  persistence:
+    existingClaim: transcrobes-transcrobes-statsdb
+    size: 2Gi
+
+  postgresql:
+    image:
+      tag: 16
+      # pullPolicy: Always
+
+    enabled: true
+    replicaCount: 1
+    extendedConf: |-
+      huge_pages = off
+      max_stack_depth = 6MB
+
+  metrics:
+    enabled: false
+    serviceMonitor:
+      additionalLabels:  # so the metrics get picked up with the default settings for kube-prometheus-stack
+        release: prometheus
+      enabled: false
+
+pgha:
+  clusterDomain: cluster.local
+  enabled: true
+  pgpool:
+    adminPassword: 392b1cc30768f5e99deca8ff1ddd7812
+    replicaCount: 1
+    livenessProbe:
+      # due to a bug in kubernetes, the command healthcheck timeout is 15 secs, and this must be more than that
+      # see https://github.com/kubernetes/kubernetes/issues/82987
+      # and healthcheck timeout = 15 here: https://github.com/bitnami/bitnami-docker-pgpool/blob/master/4/debian-10/rootfs/opt/bitnami/scripts/libpgpool.sh#L259
+      timeoutSeconds: 20
+
+  persistence:
+    existingClaim: transcrobes-transcrobes-db
+    size: 2Gi
+
+  postgresql:
+    image:
+      tag: 16
+      # pullPolicy: Always
+
+    enabled: true
+    replicaCount: 1
+    extendedConf: |-
+      huge_pages = off
+      max_stack_depth = 6MB
+
+  metrics:
+    enabled: false
+    serviceMonitor:
+      additionalLabels:  # so the metrics get picked up with the default settings for kube-prometheus-stack
+        release: prometheus
+      enabled: false
+
+downloads:
+  enabled: false
+
+transcrobes:
+  backups:
+    enabled: false
+
+  ## Development using k3d and local python/TS code
+  local:
+    enabled: true
+    ## the volume mount for the local python code. This is the path to the root of the python code
+    ## If not set, it will use the code compiled into the container
+    srcFrom: /src
+    ## a port to use for the dev-local frontend for serving the frontend code.
+    ## If not set, the frontend will be served from the container
+    frontendPort: 5000
+
+  persistence:
+    size: 2Gi
+    # storageClassName: local-path
+    # MUST! be the same what is in the pv
+    accessMode: ReadWriteOnce
+    storageClassName: manual-app
+
+  ingress:
+    className: traefik
+    annotations:
+      ingress.kubernetes.io/ssl-redirect: "true"
+    tls:
+      enabled: true
+      secretName: transcrobes-transcrobes-cert
+
+  debug: true
+  replicaCount: 1
+
+  image:
+    pullPolicy: Never
+
+  # FIXME: temp testing
+  overrideDBHost: transcrobes-pgha-postgresql
+
+  firstSuperuser: admin@example.com
+  firstSuperuserPassword: firstsuperpassword
+  secretKey: 'not_a_very_good_secret'
+
+  strategy:
+    type: RollingUpdate
+    # rollingUpdate:
+    #   maxSurge: 2        # how many pods we can add at a time
+    #   maxUnavailable: 1  # maxUnavailable define how many pods can be unavailable
+                         # during the rolling update
+  extraEnv:
+    TRANSCROBES_LOG_LEVEL: "INFO"
+    # TRANSCROBES_DEBUG: "True"
+    TRANSCROBES_DATA_LOG_LEVEL: "INFO"
+    # TRANSCROBES_ENRICH_LOG_LEVEL: "DEBUG"
+    # TRANSCROBES_ENRICHERS_LOG_LEVEL: "DEBUG"
+    # TRANSCROBES_DEFAULT_LOG_LEVEL: "DEBUG"
+
+    ## JWT configs
+    ##
+    # ACCESS_TOKEN_EXPIRE_MINUTES: 10
+    # REFRESH_TOKEN_EXPIRE_MINUTES: 43200  # one month
+
+  haHost: transcrobes.localhost
+  nodeHosts: []
+    # - 'abc.localhost'
+
+  application:
+    webConcurrency: 1
+    useReload: true
+
+    ## Max number of gunicorn workers, only used if webConcurrency == 0
+    # maxWorkers: 1
+    # workersPerCore: 1
+    # gunicornTimeout: 240
+    # useGunicorn: false
+
+  metrics:
+    enabled: false
+    serviceMonitor:
+      enabled: false
+      selector:
+        release: prometheus
+
+  perDomain:
+    - '.well-known'
+
+  zhEnCedict:
+    inmem: false
+  zhEnAbcDict:
+    inmem: false
+  zhHskLists:
+    inmem: false
+  zhSubtlexFreq:
+    inmem: false
+  bingTransliterator:
+    inmem: false
+  bingTranslator:
+    inmem: false
+
+faustworker:
+  enabled: true
+  debug: true
+  replicaCount: 1
+
+  # FIXME: temp testing
+  overrideDBHost: tck-pgha-postgresql
+  overrideStatsDBHost: tck-statsdb-postgresql
+
+  extraEnv:
+    TRANSCROBES_DEBUG: "True"
+    TRANSCROBES_DATA_LOG_LEVEL: "DEBUG"
+    # TRANSCROBES_LOG_LEVEL: "DEBUG"
+    # TRANSCROBES_ENRICH_LOG_LEVEL: "DEBUG"
+    # TRANSCROBES_ENRICHERS_LOG_LEVEL: "DEBUG"
+    # TRANSCROBES_DEFAULT_LOG_LEVEL: "DEBUG"
+
+sworker:
+  enabled: true
+  debug: true
+  replicaCount: 1
+
+  # FIXME: temp testing
+  overrideDBHost: tck-pgha-postgresql
+  overrideStatsDBHost: tck-statsdb-postgresql
+
+  extraEnv:
+    TRANSCROBES_DEBUG: "True"
+    TRANSCROBES_DATA_LOG_LEVEL: "DEBUG"
+    # TRANSCROBES_LOG_LEVEL: "DEBUG"
+    # TRANSCROBES_ENRICH_LOG_LEVEL: "DEBUG"
+    # TRANSCROBES_ENRICHERS_LOG_LEVEL: "DEBUG"
+    TRANSCROBES_DEFAULT_LOG_LEVEL: "DEBUG"

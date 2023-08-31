@@ -22,7 +22,7 @@ interface Props {
 export default function ShortWordList(props: Props) {
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(5);
-  const [sort, setSort] = useState({ field: "id", order: "ASC" });
+  const [sort, setSort] = useState({ field: "id", order: "ASC" as "ASC" | "DESC" });
   const [data, setData] = useState<ShortWord[]>([]);
   const [ids, setIds] = useState<string[]>([]);
   const translate = useTranslate();

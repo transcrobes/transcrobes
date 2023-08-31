@@ -1,0 +1,116 @@
+{{- if .Values.sworker.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "transcrobes.transcrobes.fullname" . }}-sworker
+  labels:
+    {{- include "transcrobes.sworker.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.sworker.replicaCount }}
+  {{- if .Values.sworker.strategy }}
+  strategy:
+{{ toYaml .Values.sworker.strategy | indent 4 }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "transcrobes.sworker.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+    {{- if .Values.sworker.podAnnotations }}
+      annotations:
+{{ toYaml .Values.sworker.podAnnotations | indent 8 }}
+    {{- end }}
+      labels:
+        {{- include "transcrobes.sworker.labels" . | nindent 8 }}
+    spec:
+      initContainers:
+        - name: check-db-ready
+          image: postgres:15
+          command: ['sh', '-c',
+            'until psql -c "select 1;";
+            do echo waiting for database; sleep 2; done;']
+          env:
+            - name: PGUSER
+              value: "{{ .Values.statsdb.postgresql.username }}"
+            - name: PGDATABASE
+              value: "{{ .Values.statsdb.postgresql.database }}"
+            - name: PGPASSWORD
+              value: "{{ .Values.statsdb.postgresql.password }}"
+            - name: PGHOST
+              value: "{{ .Release.Name }}-statsdb-pgpool"
+
+      containers:
+        - name: {{ template "transcrobes.name" . }}-{{ .Values.sworker.name }}
+          image: "{{ .Values.sworker.image.repository }}:{{ .Values.sworker.image.tag }}"
+          imagePullPolicy: {{ .Values.transcrobes.image.pullPolicy }}
+          # command: ["/bin/bash", "/app/scripts/runmanage.sh"]
+          # args: ["events_processor"]
+          # command: ["/bin/bash", "/fworker-start.sh"]
+          env:
+            {{- range $key, $value := .Values.sworker.extraEnv }}
+            - name: {{ $key }}
+              value: "{{ $value }}"
+            {{- end }}
+            {{- if .Values.sworker.debug }}
+            - name: DEBUG
+              value: "True"
+            {{- end }}
+            - name: PYTHONUNBUFFERED  # MUST put or no logs printed to kube, but probably should be in values
+              value: "0"
+
+            - name: POSTGRES_USER
+              value: "{{ .Values.pgha.postgresql.username }}"
+            - name: POSTGRES_DB
+              value: "{{ .Values.pgha.postgresql.database }}"
+            - name: POSTGRES_PASSWORD
+              value: "{{ .Values.pgha.postgresql.password }}"
+            - name: POSTGRES_SERVER
+              value: {{ .Values.transcrobes.overrideDBHost | default (printf "%s-pgha-pgpool" .Release.Name) }}
+            - name: POSTGRES_PORT
+              value: "{{ .Values.pgha.service.ports.postgresql }}"
+
+            - name: STATS_POSTGRES_USER
+              value: "{{ .Values.statsdb.postgresql.username }}"
+            - name: STATS_POSTGRES_DB
+              value: "{{ .Values.statsdb.postgresql.database }}"
+            - name: STATS_POSTGRES_PASSWORD
+              value: "{{ .Values.statsdb.postgresql.password }}"
+            - name: STATS_POSTGRES_SERVER
+              value: {{ .Values.transcrobes.overrideStatsDBHost | default (printf "%s-statsdb-pgpool" .Release.Name) }}
+            - name: STATS_POSTGRES_PORT
+              value: "{{ .Values.statsdb.service.ports.postgresql }}"
+
+            - name: KAFKA_BROKER
+              value: {{ .Values.sworker.overrideKafkaHost | default .Values.kafka.fullnameOverride }}
+
+            - name: KAFKA_CONSUMER_TIMEOUT_MS
+              value: "{{ .Values.sworker.kafkaConnection.consumerTimeoutMs }}"
+            - name: KAFKA_STATS_LOOP_SLEEP_SECS
+              value: "{{ .Values.sworker.kafkaConnection.statsLoopSleepSecs }}"
+            - name: KAFKA_MAX_POLL_RECORDS
+              value: "{{ .Values.sworker.kafkaConnection.maxPollRecords }}"
+
+            - name: PROJECT_NAME
+              value: {{ include "transcrobes.transcrobes.fullname" . }}
+
+            - name: NODE_HOSTS
+              value: {{ .Values.transcrobes.nodeHosts | toJson | squote }}
+            - name: PER_DOMAIN
+              value: {{ .Values.transcrobes.perDomain | toJson | squote }}
+            - name: SERVER_NAME
+              value: {{ include "transcrobes.transcrobes.reallyFullname" . }}
+
+            - name: HA_HOST
+              value: "{{ .Values.transcrobes.haHost }}"
+
+            - name: BROACASTER_MESSAGING_LAYER
+              value: "{{ .Values.transcrobes.broadcasterMessagingLayer }}"
+
+            - name: FIRST_SUPERUSER
+              value: "{{ .Values.transcrobes.firstSuperuser }}"
+            - name: FIRST_SUPERUSER_PASSWORD
+              value: "{{ .Values.transcrobes.firstSuperuserPassword }}"
+
+      restartPolicy: Always
+status: {}
+{{- end }}

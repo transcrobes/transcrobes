@@ -6,7 +6,7 @@ import CardContent from "@mui/material/CardContent";
 import { ReactElement } from "react";
 import { Button as RAButton, Title, useTranslate } from "react-admin";
 import { ADMIN_EMAILS, DOCS_DOMAIN, YOUTUBE_CHANNEL } from "../lib/types";
-import { ReactComponent as DiscordIcon } from "../svg/Discord.svg";
+import DiscordIcon from "../svg/Discord.svg?react";
 
 export default function Help(): ReactElement {
   const translate = useTranslate();

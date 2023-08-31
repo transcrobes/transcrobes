@@ -6,6 +6,7 @@ from app import crud, models, schemas
 from app.core import security
 from app.core.config import settings
 from app.db.session import async_session
+from app.enrich.data import managers
 from fastapi import Depends, HTTPException, status
 from fastapi.openapi.models import OAuthFlows as OAuthFlowsModel
 from fastapi.security import OAuth2
@@ -115,6 +116,12 @@ async def get_current_good_user(
     if not crud.user.is_verified(user):
         raise HTTPException(status_code=403, detail="Unverified user")
 
+    if not managers.get(user.lang_pair):
+        raise HTTPException(
+            status_code=status.HTTP_501_NOT_IMPLEMENTED,
+            detail=f"Server does not support language pair {token_data.lang_pair}",
+        )
+
     return user
 
 
@@ -182,6 +189,12 @@ def get_current_good_tokenpayload(token: str = Depends(reusable_oauth2)) -> sche
         raise HTTPException(status_code=400, detail="Inactive user")
     if not token_data.is_verified:
         raise HTTPException(status_code=403, detail="Unverified user")
+
+    if not managers.get(token_data.lang_pair):
+        raise HTTPException(
+            status_code=status.HTTP_501_NOT_IMPLEMENTED,
+            detail=f"Server does not support language pair {token_data.lang_pair}",
+        )
 
     return token_data
 

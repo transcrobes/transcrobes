@@ -222,6 +222,9 @@ class Settings(BaseSettings):
     IMPORT_DETECT_CHUNK_SIZE_BYTES: int = 5000
     IMPORT_MAX_CONCURRENT_PARSER_QUERIES: int = 10
 
+    OPENAI_API_KEY: str = "a_good_key"
+    OPENAI_PROMPT_VERSION: int = 3
+
     # TODO: give the option of doing an import to a configmap mounted file
     # and configuring from there. That will likely be useful when we have
     # proper drop-in language pairs

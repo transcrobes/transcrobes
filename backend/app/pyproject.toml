@@ -1,11 +1,13 @@
 [project]
 name = "transcrobes"
-version = "0.30.5"
+version = "0.31.0"
 description = ""
 requires-python = ">=3.11"
 authors = [{ name = "Anton Melser", email = "anton@transcrob.es" }]
 license = { file = "LICENSE" }
 dependencies = [
+  "fastjsonschema",
+  "openai",
   "anyio",
   "websockets",
   "user-agents",

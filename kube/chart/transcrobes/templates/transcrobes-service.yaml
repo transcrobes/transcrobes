@@ -1,0 +1,43 @@
+{{- if .Values.transcrobes.enabled -}}
+apiVersion: v1
+kind: Service
+metadata:
+{{- if .Values.transcrobes.service.annotations }}
+  annotations:
+{{ toYaml .Values.transcrobes.service.annotations | indent 4 }}
+{{- end }}
+  labels:
+    {{- include "transcrobes.transcrobes.labels" . | nindent 4 }}
+    # FIXME: remove this or use it!
+    # {{- include "common.labels.standard" . | nindent 4 }}
+    # {{- if .Values.commonLabels }}
+    # {{- include "common.tplvalues.render" ( dict "value" .Values.commonLabels "context" $ ) | nindent 4 }}
+    # {{- end }}
+
+{{- if .Values.transcrobes.service.labels }}
+{{ toYaml .Values.transcrobes.service.labels | indent 4 }}
+{{- end }}
+  name: {{ template "transcrobes.transcrobes.fullname" . }}
+spec:
+{{- if .Values.transcrobes.service.nodePort }}
+  type: NodePort
+{{- end }}
+  ports:
+  - name: http
+    port: {{ .Values.transcrobes.service.servicePort }}
+    protocol: TCP
+    targetPort: {{ .Values.transcrobes.application.listenPort }}
+    # TODO: This is only really useful for dev/testing
+  {{- if .Values.transcrobes.service.nodePort }}
+    nodePort: {{ .Values.transcrobes.service.nodePort }}
+  {{- end }}
+  {{- if .Values.transcrobes.metrics.enabled }}
+  - name: metrics
+    port: {{ .Values.transcrobes.metrics.service.port }}
+    targetPort: {{ .Values.transcrobes.application.listenPort }}
+  {{- end }}
+  selector:
+    {{- include "transcrobes.transcrobes.matchLabels" . | nindent 4 }}
+status:
+  loadBalancer: {}
+{{- end }}

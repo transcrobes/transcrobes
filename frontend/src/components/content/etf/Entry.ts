@@ -171,11 +171,9 @@ class Entry extends Component<StatedEntryProps, LocalEntryState> {
     let needsGloss = false;
     let unsure = false;
 
-    // FIXME: horrible!!!
-    let def = token.id
-      ? definitions[token.id]
-      : ({ ...(await getWord(token.l)), glossToggled: false } as DefinitionState);
+    let def = token.id ? definitions[token.id] : await getWord(token.l);
     if (def) {
+      def.glossToggled ??= false;
       let betterGuess: DefinitionType = def;
       let cleanGraph = affixCleaned(def.graph);
       if (hasTones(fromLang) && readerConfig.fontColour === "tones") {

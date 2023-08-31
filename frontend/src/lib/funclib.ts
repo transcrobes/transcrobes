@@ -453,7 +453,10 @@ export function toPercent(yesValue: number, noValue: number) {
 
 export function originalSentenceFromTokens(tokens: TokenType[]): string {
   // currently just use
-  return tokens.map((x) => x.l).join("");
+  return tokens
+    .map((x) => (x.b || "") + (x.w || x.l))
+    .join("")
+    .trim();
 }
 
 export function reorderArray(list: any[], startIndex: number, endIndex: number): any[] {

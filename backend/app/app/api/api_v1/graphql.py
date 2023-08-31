@@ -36,6 +36,8 @@ from app.api.api_v1.types import (
     LanguageclassesInput,
     Persons,
     PushRow,
+    Questionanswers,
+    QuestionanswersInput,
     Recentsentences,
     RecentsentencesInput,
     Return,
@@ -512,6 +514,24 @@ class Query:
             )
 
     @strawberry.field
+    async def pull_questionanswers(  # pylint: disable=E0213
+        info: Info[Context, Any],
+        limit: int,
+        checkpoint: Optional[InputCheckpoint[Questionanswers]] = None,
+    ) -> Return[Questionanswers]:
+        async with async_session() as db:
+            user = await get_user(db, info.context.request)
+            return await filter_standard(
+                db,
+                user.id,
+                limit,
+                Questionanswers,
+                models.QuestionAnswer,
+                checkpoint.id if checkpoint else "",
+                checkpoint.updated_at if checkpoint else -1,
+            )
+
+    @strawberry.field
     async def pull_usersurveys(  # pylint: disable=E0213
         info: Info[Context, Any],
         limit: int,
@@ -768,6 +788,13 @@ def fill_content(dj_obj: models.Content, obj: ContentsInput, _user: models.AuthU
     dj_obj.shared = obj.shared
     dj_obj.source_url = obj.source_url
     dj_obj.extra_data = obj.extra_data
+
+
+def fill_question_answer(dj_obj: models.QuestionAnswer, obj: QuestionanswersInput, _user: models.AuthUser = None):
+    dj_obj.question_id = obj.question_id
+    dj_obj.student_answer = obj.student_answer
+    dj_obj.feedback = obj.feedback
+    dj_obj.is_correct = obj.is_correct
 
 
 def fill_user_survey(dj_obj: models.UserSurvey, obj: UsersurveysInput, _user: models.AuthUser = None):
@@ -1177,6 +1204,22 @@ class Mutation:
 
         logger.debug(f"The info is: {info=}, and the channel {Usersurveys.__name__=} is: {obj=}")
         await set_objects(obj, models.UserSurvey, info, Usersurveys.__name__, Usersurveys, fill_user_survey)
+        return []
+
+    @strawberry.mutation
+    async def push_questionanswers(
+        self,
+        info: Info[Context, Any],
+        questionanswersPushRow: Optional[list[Optional[PushRow[QuestionanswersInput]]]] = None,
+    ) -> list[Questionanswers]:
+        obj = []
+        for row in questionanswersPushRow:
+            obj.append(row.newDocumentState)
+
+        logger.debug(f"The info is: {info=}, and the channel {Questionanswers.__name__=} is: {obj=}")
+        await set_objects(
+            obj, models.QuestionAnswer, info, Questionanswers.__name__, Questionanswers, fill_question_answer
+        )
         return []
 
 

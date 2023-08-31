@@ -8,6 +8,7 @@ from pydantic import BaseModel
 
 
 class DataType(str, Enum):
+    sqlite = "sqlite"
     definitions = "definitions"
     characters = "characters"
     all = "all"

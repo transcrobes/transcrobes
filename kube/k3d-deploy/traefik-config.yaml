@@ -1,0 +1,18 @@
+apiVersion: helm.cattle.io/v1
+kind: HelmChartConfig
+metadata:
+  name: traefik
+  namespace: kube-system
+spec:
+  valuesContent: |-
+    providers:
+      kubernetesCRD:
+        # -- Allows to reference ExternalName services in IngressRoute
+        allowExternalNameServices: true
+        # # -- Allows to return 503 when there is no endpoints available
+        # allowEmptyServices: false
+      kubernetesIngress:
+        # -- Allows to reference ExternalName services in Ingress
+        allowExternalNameServices: true
+        # # -- Allows to return 503 when there is no endpoints available
+        # allowEmptyServices: false

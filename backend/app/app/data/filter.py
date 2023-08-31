@@ -84,6 +84,7 @@ async def filter_word_model_stats(
             ]
         )
     try:
+        # updates = add_word_ids(lines, lang_pair, allow_missing=(not id and (updated_at or 0) <= 0))
         updates = add_word_ids(lines, lang_pair)
     except MissingCacheValueException:
         # This happens because broadcaster actually doesn't work... sigh... encode...
@@ -370,7 +371,7 @@ async def filter_standard(
     db: AsyncSession,
     user_id: int,
     limit: int,
-    ref: types.CommonType,
+    ref,
     model_ref: DetailedMixin,
     id: str | None = "",
     updated_at: float | None = -1,

@@ -1,0 +1,176 @@
+{{- if .Values.faustworker.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "transcrobes.transcrobes.fullname" . }}-faustworker
+  labels:
+    {{- include "transcrobes.faustworker.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.faustworker.replicaCount }}
+  {{- if .Values.faustworker.strategy }}
+  strategy:
+{{ toYaml .Values.faustworker.strategy | indent 4 }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "transcrobes.faustworker.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+    {{- if .Values.faustworker.podAnnotations }}
+      annotations:
+{{ toYaml .Values.faustworker.podAnnotations | indent 8 }}
+    {{- end }}
+      labels:
+        {{- include "transcrobes.faustworker.labels" . | nindent 8 }}
+    spec:
+      initContainers:
+        - name: check-db-ready
+          image: postgres:15
+          command: ['sh', '-c',
+            'until psql -c "select 1;";
+            do echo waiting for database; sleep 2; done;']
+          env:
+            - name: PGUSER
+              value: "{{ .Values.pgha.postgresql.username }}"
+            - name: PGDATABASE
+              value: "{{ .Values.pgha.postgresql.database }}"
+            - name: PGPASSWORD
+              value: "{{ .Values.pgha.postgresql.password }}"
+            - name: PGHOST
+              value: "{{ .Release.Name }}-pgha-pgpool"
+
+      containers:
+        - name: {{ template "transcrobes.name" . }}-{{ .Values.faustworker.name }}
+          image: "{{ .Values.faustworker.image.repository }}:{{ .Values.faustworker.image.tag }}"
+          imagePullPolicy: {{ .Values.transcrobes.image.pullPolicy }}
+          # command: ["/bin/bash", "/app/scripts/runmanage.sh"]
+          # args: ["events_processor"]
+          # command: ["/bin/bash", "/fworker-start.sh"]
+          env:
+            {{- range $key, $value := .Values.faustworker.extraEnv }}
+            - name: {{ $key }}
+              value: "{{ $value }}"
+            {{- end }}
+            {{- if .Values.faustworker.debug }}
+            - name: DEBUG
+              value: "True"
+            {{- end }}
+            - name: PYTHONUNBUFFERED  # MUST put or no logs printed to kube, but probably should be in values
+              value: "0"
+
+            - name: POSTGRES_USER
+              value: "{{ .Values.pgha.postgresql.username }}"
+            - name: POSTGRES_DB
+              value: "{{ .Values.pgha.postgresql.database }}"
+            - name: POSTGRES_PASSWORD
+              value: "{{ .Values.pgha.postgresql.password }}"
+            - name: POSTGRES_SERVER
+              value: {{ .Values.transcrobes.overrideDBHost | default (printf "%s-pgha-pgpool" .Release.Name) }}
+            - name: POSTGRES_PORT
+              value: "{{ .Values.pgha.service.ports.postgresql }}"
+
+            - name: STATS_POSTGRES_USER
+              value: "{{ .Values.statsdb.postgresql.username }}"
+            - name: STATS_POSTGRES_DB
+              value: "{{ .Values.statsdb.postgresql.database }}"
+            - name: STATS_POSTGRES_PASSWORD
+              value: "{{ .Values.statsdb.postgresql.password }}"
+            - name: STATS_POSTGRES_SERVER
+              value: {{ .Values.transcrobes.overrideStatsDBHost | default (printf "%s-statsdb-pgpool" .Release.Name) }}
+            - name: STATS_POSTGRES_PORT
+              value: "{{ .Values.statsdb.service.ports.postgresql }}"
+
+            - name: SECRET_KEY
+              value: "{{ .Values.transcrobes.secretKey }}"
+            - name: KAFKA_BROKER
+              value: {{ .Values.faustworker.overrideKafkaHost | default .Values.kafka.fullnameOverride }}
+
+            - name: KAFKA_CONSUMER_TIMEOUT_MS
+              value: "{{ .Values.faustworker.kafkaConnection.consumerTimeoutMs }}"
+            - name: KAFKA_STATS_LOOP_SLEEP_SECS
+              value: "{{ .Values.faustworker.kafkaConnection.statsLoopSleepSecs }}"
+            - name: KAFKA_MAX_POLL_RECORDS
+              value: "{{ .Values.faustworker.kafkaConnection.maxPollRecords }}"
+
+            - name: PROJECT_NAME
+              value: {{ include "transcrobes.transcrobes.fullname" . }}
+
+            - name: NODE_HOSTS
+              value: {{ .Values.transcrobes.nodeHosts | toJson | squote }}
+            - name: PER_DOMAIN
+              value: {{ .Values.transcrobes.perDomain | toJson | squote }}
+            - name: SERVER_NAME
+              value: {{ include "transcrobes.transcrobes.reallyFullname" . }}
+            - name: HA_HOST
+              value: "{{ .Values.transcrobes.haHost }}"
+
+            - name: MEDIA_ROOT
+              value: "{{ .Values.transcrobes.persistence.dataRoot }}{{ .Values.transcrobes.persistence.mediaPath }}"
+            - name: DATA_ROOT
+              value: "{{ .Values.transcrobes.persistence.dataRoot }}{{ .Values.transcrobes.persistence.dataPath }}"
+
+            - name: BING_SUBSCRIPTION_KEY
+              value: "{{ .Values.transcrobes.bingSubscriptionKey }}"
+            - name: BING_API_HOST
+              value: "{{ .Values.transcrobes.bingApiHost }}"
+            - name: BING_TRANSLATOR_INMEM
+              value: "{{ .Values.transcrobes.bingTranslator.inmem }}"
+            - name: BING_TRANSLITERATOR_INMEM
+              value: "{{ .Values.transcrobes.bingTransliterator.inmem }}"
+
+            - name: OPENAI_API_KEY
+              value: "{{ .Values.transcrobes.openaiApiKey }}"
+
+            - name: EN_CORENLP_HOST
+              value: {{ include "transcrobes.corenlpEn.fullname" . }}
+            - name: EN_ZH_ABC_DICT_PATH
+              value: "{{ .Values.transcrobes.persistence.dataRoot }}{{ .Values.transcrobes.enZhAbcDict.path }}"
+            - name: EN_ZH_ABC_DICT_INMEM
+              value: "{{ .Values.transcrobes.enZhAbcDict.inmem }}"
+            - name: EN_SUBTLEX_FREQ_PATH
+              value: "{{ .Values.transcrobes.persistence.dataRoot }}{{ .Values.transcrobes.enSubtlexFreq.path }}"
+            - name: EN_SUBTLEX_FREQ_INMEM
+              value: "{{ .Values.transcrobes.enSubtlexFreq.inmem }}"
+
+            - name: ZH_CORENLP_HOST
+              value: {{ include "transcrobes.corenlpZh.fullname" . }}
+            - name: ZH_EN_CEDICT_PATH
+              value: "{{ .Values.transcrobes.persistence.dataRoot }}{{ .Values.transcrobes.zhEnCedict.path }}"
+            - name: ZH_EN_CEDICT_INMEM
+              value: "{{ .Values.transcrobes.zhEnCedict.inmem }}"
+            - name: ZH_EN_ABC_DICT_PATH
+              value: "{{ .Values.transcrobes.persistence.dataRoot }}{{ .Values.transcrobes.zhEnAbcDict.path }}"
+            - name: ZH_EN_ABC_DICT_INMEM
+              value: "{{ .Values.transcrobes.zhEnAbcDict.inmem }}"
+            - name: ZH_HSK_LISTS_PATH
+              value: "{{ .Values.transcrobes.persistence.dataRoot }}{{ .Values.transcrobes.zhHskLists.path }}"
+            - name: ZH_HSK_LISTS_INMEM
+              value: "{{ .Values.transcrobes.zhHskLists.inmem }}"
+            - name: ZH_SUBTLEX_FREQ_PATH
+              value: "{{ .Values.transcrobes.persistence.dataRoot }}{{ .Values.transcrobes.zhSubtlexFreq.path }}"
+            - name: ZH_SUBTLEX_FREQ_INMEM
+              value: "{{ .Values.transcrobes.zhSubtlexFreq.inmem }}"
+
+            - name: BROACASTER_MESSAGING_LAYER
+              value: "{{ .Values.transcrobes.broadcasterMessagingLayer }}"
+            - name: SENTRY_DSN
+              value: "{{ .Values.transcrobes.sentryDsn }}"
+
+            - name: FIRST_SUPERUSER
+              value: "{{ .Values.transcrobes.firstSuperuser }}"
+            - name: FIRST_SUPERUSER_PASSWORD
+              value: "{{ .Values.transcrobes.firstSuperuserPassword }}"
+
+      {{- if .Values.transcrobes.persistence.enabled }}
+          volumeMounts:
+          - mountPath: "{{ .Values.transcrobes.persistence.dataRoot }}"
+            name: {{ include "transcrobes.transcrobes.fullname" . }}
+      volumes:
+        - name: {{ include "transcrobes.transcrobes.fullname" . }}
+          persistentVolumeClaim:
+            claimName: {{ include "transcrobes.transcrobes.fullname" . }}
+      {{- end }}
+
+      restartPolicy: Always
+status: {}
+{{- end }}

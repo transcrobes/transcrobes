@@ -167,22 +167,17 @@ const customChineseMessages: TranslationMessages = {
     upload: "上传",
   },
   database: {
-    retrieving_files: "检索数据文件：完成 1%",
-    files_downloaded: "数据文件已下载，加载到数据库：完成13%",
     files_loaded: "数据文件已加载到数据库中：已完成 93%",
-    synchronised: "集合已同步：已完成 98%",
-    synchronising: "正在同步 %{filename} ： %{percent}% 完成",
-    init_finished: "索引现已生成。初始化已完成！： 100% 完成",
-    importing: "正在导入文件 %{i} ： 初始化 %{percent}% 完成",
-    updating_indexes: "更新索引：初始化完成 90%",
-    cache_exports_error:
-      "下载数据文件时出错。请完全关闭浏览器，并在几分钟后重试，如果您再次收到此消息，请联系 Transcrobes 支持：错误！",
+    synchronised: "集合已同步：已完成 20%",
+    synchronising: "正在同步 %{collection}%",
     datafile: "检索到的数据文件： %{datafile}",
-    getting_cache_list: "正在检索缓存列表",
-    init_temp_storage: "初始化临时存储",
-    init_storage: "初始化存储",
     reinstalling: "重新安装数据库",
     init_structure: "初始化数据库结构",
+    install_error:
+      "安装数据库时出错。 请完全关闭您的浏览器，并在几分钟后重试，如果您再次收到此消息，请联系 Transcrobes 支持：错误！",
+    installing: "安装数据库",
+    rxinstalled: "RxDB 数据库已安装",
+    sqlinstalled: "数据库已安装",
   },
   widgets: {
     beginners: {
@@ -319,6 +314,13 @@ const customChineseMessages: TranslationMessages = {
         title: "严格的提供程序排序",
         on: "开",
         off: "关",
+      },
+      active_learning: {
+        title: "主动学习",
+        none: "无",
+        mcq: "多项选择题",
+        short: "句子",
+        all: "所有类型",
       },
     },
     content_actions: {
@@ -925,6 +927,7 @@ const customChineseMessages: TranslationMessages = {
         如果您的文本超过此长度，请将文本内容以纯文本格式放入 .txt 文件中，并使用导入系统导入。`,
       type_something_here: "在这里输入一些东西...",
       input_label: "要Transcrobe的文本",
+      generate_mcq: "生成多项选择测验",
     },
   },
 };

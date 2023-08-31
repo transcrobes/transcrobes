@@ -36,7 +36,6 @@ export default function BookReaderConfig(): React.ReactElement {
   const { id = "" } = useParams<ContentParams>();
   const readerConfig = useAppSelector((state) => state.bookReader[id] || { ...DEFAULT_BOOK_READER_CONFIG_STATE, id });
   const dispatch = useAppDispatch();
-
   return (
     <>
       <Conftainer label={translate("screens.boocrobes.config.paging.title")} id="paging">

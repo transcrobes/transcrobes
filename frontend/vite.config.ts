@@ -100,10 +100,10 @@ const replaceOptions: RollupReplaceOptions = {
   __DATE__: new Date().toISOString(),
   __FAKE_HASH__: fakeHash,
   preventAssignment: true,
+  __RELOAD_SW__: true,
+  // window: "globalThis",
 };
 const selfDestroying = process.env.SW_DESTROY === "true";
-
-replaceOptions.__RELOAD_SW__ = "true";
 
 if (selfDestroying) pwaOptions.selfDestroying = selfDestroying;
 
@@ -171,6 +171,7 @@ export default defineConfig({
       // Node.js global to browser globalThis
       define: {
         global: "globalThis",
+        // "window\\.": "globalThis.",
         "process.env.NODE_DEBUG": "false",
       },
       // @ts-ignore
