@@ -13,6 +13,7 @@ import { getDatabaseName } from "../workers/rxdb/Database";
 import ToggleIncludeIgnored from "./ToggleIncludeIgnored";
 import ToggleIncludeNonDict from "./ToggleIncludeNonDict";
 import { NAME_PREFIX } from "../lib/interval/interval-decorator";
+import ChoosePreferredVoice from "./ChoosePreferredVoice";
 
 const CONNECTION_CHECK_FREQUENCY_MS = 10000;
 
@@ -220,6 +221,9 @@ function System({ proxy }: Props): ReactElement {
         </CardContent>
         <CardContent>
           <ToggleIncludeNonDict />
+        </CardContent>
+        <CardContent>
+          <ChoosePreferredVoice />
         </CardContent>
       </>
 

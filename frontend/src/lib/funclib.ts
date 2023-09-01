@@ -281,10 +281,8 @@ function exitFullscreen(doc: Document): void {
 export function getVoices(): Promise<SpeechSynthesisVoice[]> {
   return new Promise((resolve, reject) => {
     const synth = window.speechSynthesis;
-    console.log("synth", synth);
     if (!synth) return;
     let voices = synth.getVoices();
-    console.log("voices", voices);
     if (!voices) {
       reject(new Error("No voices available"));
       return;
@@ -295,30 +293,51 @@ export function getVoices(): Promise<SpeechSynthesisVoice[]> {
     }
     synth.onvoiceschanged = () => {
       voices = synth.getVoices();
-      console.log("Voices changes", voices);
       resolve(voices);
     };
   });
 }
 
-export function say(text: string, lang: SystemLanguage, voice?: SpeechSynthesisVoice): void {
+export function getBestVoice(voices: SpeechSynthesisVoice[], lang: SystemLanguage, preferredVoice?: string) {
+  // you get all sorts of rubbish from different browsers...
+  const local: SpeechSynthesisVoice[] = [];
+  const remote: SpeechSynthesisVoice[] = [];
+  for (const voice of voices) {
+    if (voice.voiceURI === preferredVoice) {
+      return voice;
+    } else {
+      const stdLang = voice.lang.replace("_", "-");
+      for (const loc of SYSTEM_LANG_TO_LOCALE[lang]) {
+        if (loc.match(stdLang)) {
+          if (voice.localService) {
+            local.push(voice);
+          } else {
+            remote.push(voice);
+          }
+        }
+      }
+    }
+  }
+  // by sorting we get GB before US and CN before SG/HK/TW, which is what we want!
+  // TODO: though giving a choice would be even better...
+  return local.sort((a, b) => (a.lang < b.lang ? -1 : 1))[0] || remote.sort((a, b) => (a.lang < b.lang ? -1 : 1))[0];
+}
+
+export function say(text: string, lang: SystemLanguage, voice?: SpeechSynthesisVoice, preferredVoice?: string): void {
   const synth = window.speechSynthesis;
   if (!synth) return;
-  if (voice && voice.lang !== SYSTEM_LANG_TO_LOCALE[lang]) {
-    throw new Error("The language of the voice and lang must be the same");
-  }
   const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = SYSTEM_LANG_TO_LOCALE[lang];
   if (voice) {
+    utterance.lang = voice.lang;
     utterance.voice = voice;
     utterance.volume = 1;
     synth.speak(utterance);
   } else {
     getVoices()
       .then((voices) => {
-        utterance.voice =
-          voices.filter((x) => x.lang === SYSTEM_LANG_TO_LOCALE[lang] && x.localService)[0] ||
-          voices.filter((x) => x.lang === SYSTEM_LANG_TO_LOCALE[lang] && !x.localService)[0];
+        utterance.voice = getBestVoice(voices, lang, preferredVoice);
+        utterance.lang = utterance.voice.lang;
+        utterance.volume = 1;
         synth.speak(utterance);
       })
       .catch((error) => {

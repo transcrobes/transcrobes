@@ -1,10 +1,11 @@
 import { Box, Button } from "@mui/material";
 import { useEffect, useState } from "react";
-import { useTranslate } from "react-admin";
+import { useStore, useTranslate } from "react-admin";
 import { useAppSelector } from "../app/hooks";
-import { getVoices, say } from "../lib/funclib";
-import { LOCALES, SystemLanguage, SYSTEM_LANG_TO_LOCALE } from "../lib/types";
+import { getBestVoice, getVoices, say } from "../lib/funclib";
+import { LOCALES, SystemLanguage } from "../lib/types";
 import SoundBox from "./SoundBox";
+import VolumeUpIcon from "@mui/icons-material/VolumeUp";
 
 type Props = {
   graph: string;
@@ -15,14 +16,12 @@ type Props = {
 export default function SayIt({ graph, sound, lang }: Props) {
   const [voice, setVoice] = useState<SpeechSynthesisVoice | undefined>(undefined);
   const fromLang = useAppSelector((state) => state.userData.user.fromLang);
+  const [preferredVoice] = useStore("preferences.preferredVoice", "");
   const translate = useTranslate();
   useEffect(() => {
     getVoices()
       .then((voices) => {
-        setVoice(
-          voices.filter((x) => x.lang === SYSTEM_LANG_TO_LOCALE[lang] && x.localService)[0] ||
-            voices.filter((x) => x.lang === SYSTEM_LANG_TO_LOCALE[lang] && !x.localService)[0],
-        );
+        setVoice(getBestVoice(voices, lang, preferredVoice));
       })
       .catch((error) => {
         console.log("error", error);
@@ -51,6 +50,7 @@ export default function SayIt({ graph, sound, lang }: Props) {
           {sound
             ? sound.map((s, index) => <SoundBox key={`${s}${index}`} sound={s} index={index} />)
             : translate("buttons.general.say_it")}
+          <VolumeUpIcon fontSize="small" />
         </Button>
       ) : (
         sound?.map((s, index) => <SoundBox key={`${s}${index}`} sound={s} index={index} />)

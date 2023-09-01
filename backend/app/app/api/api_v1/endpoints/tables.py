@@ -31,7 +31,6 @@ logger = logging.getLogger(__name__)
 def get_cookie_good_tokenpayload(
     token: str,
 ):
-    print("my token has got to be", token)
     if token is None:
         raise WebSocketException(code=status.WS_1008_POLICY_VIOLATION)
     try:

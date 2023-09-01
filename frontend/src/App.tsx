@@ -2,6 +2,7 @@ import * as Comlink from "comlink";
 import { createHashHistory } from "history";
 import { ReactElement, useEffect } from "react";
 import { Admin, CustomRoutes, Resource } from "react-admin";
+import { useIdleTimer } from "react-idle-timer";
 import { Route } from "react-router-dom";
 import { Workbox } from "workbox-window";
 import Brocrobes from "./Brocrobes";
@@ -16,10 +17,10 @@ import Textcrobes from "./contents/textcrobes/Textcrobes";
 import { ServiceWorkerManager } from "./data/types";
 import { getUserDexie, isInitialisedAsync } from "./database/authdb";
 import dictionaries from "./dictionaries";
-import { setKnownWordsState } from "./features/word/knownWordsSlice";
 import { addDictionaryProviders } from "./features/dictionary/dictionarySlice";
 import { setMouseover, setNeedsBeginner, setRxdbInited, setSqliteInited, setTokenDetails } from "./features/ui/uiSlice";
 import { setUser } from "./features/user/userSlice";
+import { setKnownWordsState } from "./features/word/knownWordsSlice";
 import goals from "./goals";
 import Help from "./help/Help";
 import imports from "./imports";
@@ -27,9 +28,19 @@ import languageclasses from "./languageclasses";
 import { Layout } from "./layout";
 import { darkTheme, lightTheme } from "./layout/themes";
 import { ComponentsConfig } from "./lib/complexTypes";
+import { submitActivity } from "./lib/componentMethods";
 import { refreshDictionaries } from "./lib/dictionary";
 import { UUID, getLanguageFromPreferred } from "./lib/funclib";
+import { NAME_PREFIX } from "./lib/interval/interval-decorator";
 import { getDefaultLanguageDictionaries, getI18nProvider } from "./lib/libMethods";
+import {
+  ACTIVITY_DEBOUNCE,
+  ACTIVITY_EVENTS_THROTTLE,
+  ACTIVITY_TIMEOUT,
+  CacheRefresh,
+  GLOBAL_TIMER_DURATION_MS,
+  MIN_KNOWN_BEFORE_ADVANCED,
+} from "./lib/types";
 import {
   authProvider,
   history as history2,
@@ -50,6 +61,7 @@ import Login from "./system/Login";
 import RecoverPassword from "./system/RecoverPassword";
 import ResetPassword from "./system/ResetPassword";
 import Signup from "./system/Signup";
+import SqlPen from "./system/SqlPen";
 import System from "./system/System";
 import teacherregistrations from "./teacherregistrations";
 import { supported } from "./unsupported";
@@ -59,18 +71,6 @@ import { ComlinkService, WebServiceWorkerDataManager } from "./workers/proxies";
 import { RxdbDataManager, rxdbDataManagerKeys } from "./workers/rxdb/rxdata";
 import { SqliteDataManager, sqliteDataManagerKeys } from "./workers/sqlite/sqldata";
 import { serviceWorkerDataManagerKeys } from "./workers/swdata";
-import { submitActivity } from "./lib/componentMethods";
-import {
-  ACTIVITY_DEBOUNCE,
-  ACTIVITY_EVENTS_THROTTLE,
-  ACTIVITY_TIMEOUT,
-  CacheRefresh,
-  GLOBAL_TIMER_DURATION_MS,
-  MIN_KNOWN_BEFORE_ADVANCED,
-} from "./lib/types";
-import { useIdleTimer } from "react-idle-timer";
-import { NAME_PREFIX } from "./lib/interval/interval-decorator";
-import SqlPen from "./system/SqlPen";
 
 declare global {
   interface Window {
@@ -277,12 +277,10 @@ function App({ config }: Props): ReactElement {
     dispatch(setMouseover(undefined));
   }
   let unlisten: Function | undefined;
-
   useEffect(() => {
     if (!supported) {
       window.location.href = "/unsupported.html";
     }
-
     (async () => {
       const dexieUser = await getUserDexie();
       dispatch(setUser(dexieUser));
@@ -369,7 +367,7 @@ function App({ config }: Props): ReactElement {
           authProvider={authProvider}
           dataProvider={dataProvider}
           i18nProvider={getI18nProvider(getLanguageFromPreferred(navigator.languages))}
-          dashboard={() => Dashboard()}
+          dashboard={Dashboard}
           title="Transcrobes"
           layout={Layout}
           loginPage={(props) => <Login {...props} />}

@@ -178,8 +178,8 @@ export type PublicationConfig = {
 };
 
 export const SYSTEM_LANG_TO_LOCALE = {
-  "zh-Hans": "zh-CN",
-  en: "en-GB",
+  "zh-Hans": ["zh-CN", "zh-SG", ".*#Hans$"],
+  en: ["en-GB", "en-UK", "en-US", "^en-.*"],
 };
 
 export type SystemLanguage = "en" | "zh-Hans";

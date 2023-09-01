@@ -18,7 +18,7 @@ import {
   TokenType,
 } from "../../../lib/types";
 import SoundBox from "../../SoundBox";
-import { Translate, useTranslate } from "react-admin";
+import { Translate, useStore, useTranslate } from "react-admin";
 import { platformHelper } from "../../../app/createStore";
 
 export async function getPopoverTextNode(
@@ -70,6 +70,7 @@ export default function Mouseover({ readerConfig }: Props): ReactElement {
   const definitions = useAppSelector((state) => state.definitions);
   const mouseover = useAppSelector((state) => state.ui.mouseover);
   const { fromLang, toLang } = useAppSelector((state) => state.userData.user);
+  const [preferredVoice] = useStore("preferences.preferredVoice", "");
   const [timeoutId, setTimeoutId] = useState(0);
   const { ref } = useResizeObserver<HTMLDivElement>({
     box: "border-box",
@@ -108,7 +109,7 @@ export default function Mouseover({ readerConfig }: Props): ReactElement {
           setTimeoutId(
             window.setTimeout(() => {
               if (readerConfig.sayOnMouseover) {
-                say(mouseover.token.w || mouseover.token.l, fromLang);
+                say(mouseover.token.w || mouseover.token.l, fromLang, undefined, preferredVoice);
               }
             }, POPOVER_MIN_LOOKED_AT_SOUND_DURATION),
           );

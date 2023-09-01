@@ -951,6 +951,7 @@ const customEnglishMessages: TranslationMessages = {
       system_info: "System Information",
       include_ignored: "Include ignored words",
       include_non_dict: "Include non-dictionary words",
+      preferred_voice: "Preferred voice",
     },
     textcrobes: {
       name: "Textcrobes",

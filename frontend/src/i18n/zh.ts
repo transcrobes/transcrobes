@@ -915,6 +915,7 @@ const customChineseMessages: TranslationMessages = {
       system_info: "系统信息",
       include_ignored: "包括被忽略的单词",
       include_non_dict: "包括非词典单词",
+      preferred_voice: "首选语音",
     },
     textcrobes: {
       name: "Textcrobes",
