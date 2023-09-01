@@ -281,8 +281,10 @@ function exitFullscreen(doc: Document): void {
 export function getVoices(): Promise<SpeechSynthesisVoice[]> {
   return new Promise((resolve, reject) => {
     const synth = window.speechSynthesis;
+    console.log("synth", synth);
     if (!synth) return;
     let voices = synth.getVoices();
+    console.log("voices", voices);
     if (!voices) {
       reject(new Error("No voices available"));
       return;
@@ -291,8 +293,9 @@ export function getVoices(): Promise<SpeechSynthesisVoice[]> {
       resolve(voices);
       return;
     }
-    window.speechSynthesis.onvoiceschanged = () => {
-      voices = speechSynthesis.getVoices();
+    synth.onvoiceschanged = () => {
+      voices = synth.getVoices();
+      console.log("Voices changes", voices);
       resolve(voices);
     };
   });
