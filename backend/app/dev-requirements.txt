@@ -202,9 +202,9 @@ attrs==23.1.0 \
     --hash=sha256:1f28b4522cdc2fb4256ac1a020c78acf9cba2c6b461ccd2c126f3aa8e8335d04 \
     --hash=sha256:6279836d581513a26f1bf235f9acd333bc9115683f14f7e8fae46c98fc50e015
     # via aiohttp
-autoflake==2.2.0 \
-    --hash=sha256:62e1f74a0fdad898a96fee6f99fe8241af90ad99c7110c884b35855778412251 \
-    --hash=sha256:de409b009a34c1c2a7cc2aae84c4c05047f9773594317c6a6968bd497600d4a0
+autoflake==2.2.1 \
+    --hash=sha256:265cde0a43c1f44ecfb4f30d95b0437796759d07be7706a2f70e4719234c0f79 \
+    --hash=sha256:62b7b6449a692c3c9b0c916919bbc21648da7281e8506bcf8d3f8280e431ebc1
     # via transcrobes (pyproject.toml)
 bcrypt==4.0.1 \
     --hash=sha256:089098effa1bc35dc055366740a067a2fc76987e8ec75349eb9484061c54f535 \
@@ -260,9 +260,9 @@ black==23.7.0 \
 bs4==0.0.1 \
     --hash=sha256:36ecea1fd7cc5c0c6e4a1ff075df26d50da647b75376626cc186e2212886dd3a
     # via transcrobes (pyproject.toml)
-build==0.10.0 \
-    --hash=sha256:af266720050a66c893a6096a2f410989eeac74ff9a68ba194b3f6473e8e26171 \
-    --hash=sha256:d5b71264afdb5951d6704482aac78de887c80691c52b88a9ad195983ca2c9269
+build==1.0.0 \
+    --hash=sha256:49a60f212df4d9925727c2118e1cbe3abf30b393eff7d0e7287d2170eb36844d \
+    --hash=sha256:f4c7b45e70e2c345e673902253d435a9a7729ff09ab574924420cf120c60bcc9
     # via pip-tools
 cachetools==5.3.1 \
     --hash=sha256:95ef631eeaea14ba2e36f06437f36463aac3a096799e876ee55e5cdccb102590 \
