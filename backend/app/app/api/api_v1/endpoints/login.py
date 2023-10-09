@@ -81,8 +81,6 @@ async def access_from_refresh(token: TcToken, expires_delta: timedelta = None) -
     else:
         expire = datetime.utcnow() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
 
-    # FIXME: revalidate here!!!
-
     to_encode = {
         "token_use": "access",
         "exp": expire,
@@ -91,6 +89,7 @@ async def access_from_refresh(token: TcToken, expires_delta: timedelta = None) -
         "is_verified": bool(token_data.is_verified),
         "is_superuser": bool(token_data.is_superuser),
         "is_teacher": bool(token_data.is_teacher),
+        "model_enabled": bool(token_data.model_enabled),
         "lang_pair": token_data.lang_pair,
         "translation_providers": token_data.translation_providers,
         "tracking_key": str(settings.TRACKING_KEY),

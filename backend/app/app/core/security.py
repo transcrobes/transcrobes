@@ -33,10 +33,10 @@ def create_token(subject: AuthUser, token_use: str, expires_delta: timedelta = N
         "is_verified": subject.is_verified,
         "is_superuser": subject.is_superuser,
         "is_teacher": subject.is_teacher,
+        "model_enabled": model_enabled,
         "tracking_key": settings.TRACKING_KEY,
         "tracking_endpoint": str(settings.TRACKING_ENDPOINT),
         "lang_pair": f"{subject.from_lang}:{subject.to_lang}",
-        "model_enabled": model_enabled,
         "translation_providers": subject.dictionary_ordering.split(","),
         "jti": uuid.uuid4().hex,
     }

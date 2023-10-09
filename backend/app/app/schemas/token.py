@@ -1,11 +1,9 @@
-from typing import Optional
-
 from pydantic import BaseModel
 
 
 class Token(BaseModel):
     access_token: str
-    refresh_token: Optional[str]
+    refresh_token: str | None
     token_type: str
 
 
@@ -14,7 +12,8 @@ class TokenPayload(BaseModel):
     is_active: bool
     is_verified: bool
     is_superuser: bool
-    is_teacher: Optional[bool]
+    is_teacher: bool | None
+    model_enabled: bool | None
     lang_pair: str
     translation_providers: list[str]
     token_use: str
