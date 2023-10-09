@@ -1,4 +1,4 @@
-import { ConstantBackoff, Websocket, WebsocketBuilder } from "../../websocket-ts";
+import { ConstantBackoff, Websocket, WebsocketBuilder } from "websocket-ts";
 import { doLogin } from "../../features/user/userSlice";
 import { UserState } from "../../lib/types";
 import {

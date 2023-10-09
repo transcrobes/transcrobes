@@ -120,6 +120,7 @@
     "vite-plugin-svgr": "^4.0.0",
     "wa-sqlite": "github:rhashimoto/wa-sqlite#master",
     "webextension-polyfill": "^0.10.0",
+    "websocket-ts": "^2.1.5",
     "webvtt-parser": "^2.2.0",
     "zxcvbn": "^4.4.2"
   },
