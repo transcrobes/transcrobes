@@ -633,14 +633,16 @@ async def enrich_html_to_html(chapter_id, xhtml, manager: EnrichmentManager):
     return chapter_id, str(soup), slim_models
 
 
-async def enrich_plain_to_html(unique_key, start_text, manager: EnrichmentManager):
+async def enrich_plain_to_html(unique_key, start_text, manager: EnrichmentManager, force_parse: bool = False):
     lines = ""
     slim_models = {}
     text_node = manager.enricher().clean_text(str(start_text))
 
     for raw_line in text_node.splitlines():
         text = "".join(c for c in raw_line.strip() if c.isprintable())
-        if not re.search(r"\S+", text) or not to_enrich(text, manager.from_lang):
+        if not re.search(r"\S+", text):
+            template_string = text.strip()
+        elif not to_enrich(text, manager.from_lang) and not force_parse:
             template_string = text.strip()
         else:
             logger.debug(f"Starting parse for {unique_key}: {text[:100]}")

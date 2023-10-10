@@ -460,7 +460,7 @@ async def text_to_qa(
         )
     qa = await get_multiple_choice_qa_chat(db, text[:2000], current_user, settings.OPENAI_PROMPT_VERSION, gen_model)
     answers = [a["answer"] for a in qa["answers"]]
-    fragment_futures = [enrich_plain_to_html("a", qa_text, manager) for qa_text in answers + [qa["question"]]]
+    fragment_futures = [enrich_plain_to_html("a", qa_text, manager, True) for qa_text in answers + [qa["question"]]]
 
     processed_texts_list = await gather_with_concurrency(
         settings.IMPORT_MAX_CONCURRENT_PARSER_QUERIES,
