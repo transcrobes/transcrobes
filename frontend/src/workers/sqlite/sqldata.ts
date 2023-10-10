@@ -1092,8 +1092,7 @@ async function getVocabReviews({
   const sql = `
     SELECT DISTINCT
       def.id, def.graph, def.sound, def.synonyms, def.provider_translations, def.wcpm, def.wcdp,
-        def.pos, def.pos_freq, def.hsk, def.fallback_only, def.updated_at,
-      ds.ignore, ds.first_success_date
+        def.pos, def.pos_freq, def.hsk, def.fallback_only, def.updated_at
     FROM list_words lw
     INNER JOIN definitions def ON lw.word_id = def.id
       ${!includeNonDict ? " AND NOT def.fallback_only " : ""}
