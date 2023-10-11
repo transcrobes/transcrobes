@@ -29,6 +29,9 @@ downloads:
       cert-manager.io/cluster-issuer: letsencrypt-staging
       nginx.ingress.kubernetes.io/ssl-redirect: "true"
       nginx.ingress.kubernetes.io/proxy-body-size: "50m"  # increased to 50m for the dbs
+      nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"  # increased to 3600s for better websocket support
+      nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"  # increased to 3600s for better websocket support
+      nginx.ingress.kubernetes.io/enable-cors: "true"
     className: nginx
     tls:
       enabled: true
