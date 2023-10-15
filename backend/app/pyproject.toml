@@ -35,7 +35,7 @@ dependencies = [
   "asyncpg",
   "strawberry-graphql",
   "aiohttp-retry",
-  "aiohttp",
+  "aiohttp >= 3.9.0b0",
   "webvtt-py",
   "dawn",
   "bs4",
