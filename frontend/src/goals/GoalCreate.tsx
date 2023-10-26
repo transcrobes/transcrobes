@@ -20,14 +20,14 @@ export default function GoalCreate() {
         <TextInput multiline source="description" />
         <NumberInput max={10} min={1} defaultValue={5} source="priority" step={1} validate={[required()]} />
         <ReferenceInput
-          sort={{ field: "name", order: "ASC" }}
+          sort={{ field: "title", order: "ASC" }}
           source="userList"
-          reference="wordlists"
+          reference="userlists"
           validate={[required()]}
         >
           <AutocompleteInput
-            optionText="name"
-            filterToQuery={(q) => regexfilterQuery("name", q)}
+            optionText="title"
+            filterToQuery={(q) => regexfilterQuery("title", q)}
             validate={[required()]}
           />
         </ReferenceInput>
