@@ -1,8 +1,18 @@
 # -*- coding: utf-8 -*-
+# isort: skip_file
 
 from __future__ import annotations
 
 import logging
+
+# fmt: off
+import sys
+import six
+
+if sys.version_info >= (3, 12, 0):
+    sys.modules["kafka.vendor.six.moves"] = six.moves
+
+# fmt: on
 
 from app.core.config import settings
 from app.data.importer.common import process_content, process_import, process_list, process_qag

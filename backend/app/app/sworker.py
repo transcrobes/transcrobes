@@ -1,7 +1,19 @@
+# -*- coding: utf-8 -*-
+# isort: skip_file
 import asyncio
 import logging
 import logging.config
 import os
+
+# fmt: off
+import sys
+import six
+
+if sys.version_info >= (3, 12, 0):
+    sys.modules["kafka.vendor.six.moves"] = six.moves
+
+# fmt: on
+
 import time
 import traceback
 from datetime import datetime
