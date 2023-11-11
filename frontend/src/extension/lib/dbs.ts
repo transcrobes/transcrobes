@@ -1,13 +1,11 @@
 import * as SQLite from "wa-sqlite";
+import { IDBBatchAtomicVFS } from "wa-sqlite/src/examples/IDBBatchAtomicVFS";
 import { fetchPlus } from "../../lib/libMethods";
 import { DBParameters, TCDB_FILENAME, UserState } from "../../lib/types";
 import { asyncPoolAllBuffers } from "../../workers/common-db";
 import { getDb } from "../../workers/rxdb/Database";
 import { DatabaseService as RxDatabaseService } from "../../workers/rxdb/DatabaseService";
 import { ASYNC_SQLITE, DatabaseService as SqlDatabaseService } from "../../workers/sqlite/DatabaseService";
-import { IDBBatchAtomicVFS } from "../../workers/sqlite/IDBBatchAtomicVFS";
-import * as VFS from "../../workers/sqlite/sqlite-constants.js";
-import { MAX_TRANSACTION_LIFETIME_MILLIS } from "../../workers/sqlite/IDBContext";
 
 const DATA_SOURCE = "EXT_INSTALL";
 export const sqlite3Ready = ASYNC_SQLITE.esmFactory().then((module) => {
@@ -21,6 +19,12 @@ export async function installRxdb(dbConfig: DBParameters, progressCallback: (pro
 const BLOCK_SIZE = 10_485_760;
 const PAGE_SIZE = 32768;
 const FILE_ID = 0xdeadbeef;
+
+async function check(code) {
+  if ((await code) !== SQLite.SQLITE_OK) {
+    throw new Error(`Error code: ${code}`);
+  }
+}
 
 export async function installDbFromParts(userData: UserState, progressCallback: (progress: any) => void) {
   const entryBlock = async (partName: string) => {
@@ -43,26 +47,30 @@ export async function installDbFromParts(userData: UserState, progressCallback: 
     };
   };
 
-  // FIXME: nastiness!!! You MUST open a few at least MAX_TRANSACTION_LIFETIME_MILLIS before starting to write...
-  // this is because the VFS is "temperamental"...
-  const start = performance.now();
-
-  const vfs = new IDBBatchAtomicVFS(`/${TCDB_FILENAME}`);
-  await vfs.isReady;
-  const filename = TCDB_FILENAME;
-  let result = await vfs.xOpen(
-    filename,
-    FILE_ID,
-    VFS.SQLITE_OPEN_CREATE | VFS.SQLITE_OPEN_READWRITE | VFS.SQLITE_OPEN_MAIN_DB,
-    new DataView(new ArrayBuffer(8)),
-  );
-
   const data = await fetchPlus(new URL("/api/v1/enrich/dbexports.json", userData.baseUrl), undefined, 3, false, "json");
+  const onFinally: any[] = [];
   try {
     const allBuffers = await asyncPoolAllBuffers(2, data, entryBlock);
     allBuffers.sort((a, b) => a.partNo - b.partNo);
 
-    await new Promise((resolve) => setTimeout(resolve, MAX_TRANSACTION_LIFETIME_MILLIS - (performance.now() - start)));
+    const vfs = new IDBBatchAtomicVFS(`/${TCDB_FILENAME}`);
+    await vfs.isReady;
+    const filename = TCDB_FILENAME;
+    let result = await vfs.xOpen(
+      filename,
+      FILE_ID,
+      SQLite.SQLITE_OPEN_CREATE | SQLite.SQLITE_OPEN_READWRITE | SQLite.SQLITE_OPEN_MAIN_DB,
+      new DataView(new ArrayBuffer(8)),
+    );
+    // Open a "transaction".
+    await check(vfs.xLock(FILE_ID, SQLite.SQLITE_LOCK_SHARED));
+    onFinally.push(() => vfs.xUnlock(FILE_ID, SQLite.SQLITE_LOCK_NONE));
+    await check(vfs.xLock(FILE_ID, SQLite.SQLITE_LOCK_RESERVED));
+    onFinally.push(() => vfs.xUnlock(FILE_ID, SQLite.SQLITE_LOCK_SHARED));
+    await check(vfs.xLock(FILE_ID, SQLite.SQLITE_LOCK_EXCLUSIVE));
+    const ignored = new DataView(new ArrayBuffer(4));
+    await vfs.xFileControl(FILE_ID, SQLite.SQLITE_FCNTL_BEGIN_ATOMIC_WRITE, ignored);
+    await check(vfs.xTruncate(FILE_ID, 0));
 
     for (const { partNo, ab } of allBuffers) {
       if (ab.byteLength % PAGE_SIZE !== 0) throw new Error("The little file is not a multiple of the page size");
@@ -72,13 +80,18 @@ export async function installDbFromParts(userData: UserState, progressCallback: 
         result += await vfs.xWrite(FILE_ID, new Uint8Array(ab.slice(i, i + PAGE_SIZE)), blockStart + i);
       }
     }
-    console.log("xsync", await vfs.xSync(FILE_ID, 0));
-    console.log("xclose", await vfs.xClose(FILE_ID));
-    console.log("close", await vfs.close());
+    await vfs.xFileControl(FILE_ID, SQLite.SQLITE_FCNTL_COMMIT_ATOMIC_WRITE, ignored);
+    await vfs.xFileControl(FILE_ID, SQLite.SQLITE_FCNTL_SYNC, ignored);
+    await vfs.xSync(FILE_ID, SQLite.SQLITE_SYNC_NORMAL);
+
     await fetchPlus(new URL("/api/v1/enrich/decache", userData.baseUrl), undefined, 3, false, "json");
   } catch (err) {
     console.error("Error processing the datafiles");
     throw err;
+  } finally {
+    while (onFinally.length) {
+      await onFinally.pop()();
+    }
   }
 }
 

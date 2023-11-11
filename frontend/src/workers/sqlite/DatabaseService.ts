@@ -1,11 +1,11 @@
 import AsyncSQLiteESMFactory from "wa-sqlite/dist/wa-sqlite-async.mjs";
 import SQLiteESMFactory from "wa-sqlite/dist/wa-sqlite.mjs";
+import { IDBBatchAtomicVFS } from "wa-sqlite/src/examples/IDBBatchAtomicVFS";
+import { AccessHandlePoolVFS } from "wa-sqlite/src/examples/AccessHandlePoolVFS";
 import { ProgressCallbackMessage, TCDB_FILENAME } from "../../lib/types";
 import { DataService } from "../DataService";
-import { AccessHandlePoolVFS } from "./AccessHandlePoolVFS";
-import { IDBBatchAtomicVFS } from "./IDBBatchAtomicVFS";
 import { SqliteDataManager, execute, setTagfunction, sqliteDataManager } from "./sqldata";
-import type { SQLiteResults, TagFunction } from "./tag";
+import type { TagFunction } from "./tag";
 import { createTag } from "./tag";
 export type SupportedVFS = typeof AccessHandlePoolVFS | typeof IDBBatchAtomicVFS;
 

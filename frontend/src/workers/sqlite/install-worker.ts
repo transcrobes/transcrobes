@@ -6,8 +6,8 @@ import { fetchPlus } from "../../lib/libMethods";
 import { TCDB_FILENAME, type UserState } from "../../lib/types";
 import { asyncPoolAll } from "../common-db";
 import { progressCallback } from "../common-worker";
-import { AccessHandlePoolVFS } from "./AccessHandlePoolVFS";
-import * as VFS from "./sqlite-constants.js";
+import { AccessHandlePoolVFS } from "wa-sqlite/src/examples/AccessHandlePoolVFS";
+import * as VFS from "wa-sqlite";
 
 export const DATA_SOURCE = "SQLITE_INSTALL_WORKER";
 
