@@ -78,6 +78,31 @@ component: {{ .Values.transcrobes.name | quote }}
 {{- end -}}
 
 {{/*
+Return the proper image names
+*/}}
+{{- define "transcrobes.image" -}}
+{{ include "common.images.image" (dict "imageRoot" .Values.transcrobes.image "global" .Values.global) }}
+{{- end -}}
+{{- define "backups.image" -}}
+{{ include "common.images.image" (dict "imageRoot" .Values.backups.image "global" .Values.global) }}
+{{- end -}}
+{{- define "downloads.image" -}}
+{{ include "common.images.image" (dict "imageRoot" .Values.downloads.image "global" .Values.global) }}
+{{- end -}}
+{{- define "faustworker.image" -}}
+{{ include "common.images.image" (dict "imageRoot" .Values.faustworker.image "global" .Values.global) }}
+{{- end -}}
+{{- define "sworker.image" -}}
+{{ include "common.images.image" (dict "imageRoot" .Values.sworker.image "global" .Values.global) }}
+{{- end -}}
+{{- define "corenlpZh.image" -}}
+{{ include "common.images.image" (dict "imageRoot" .Values.corenlpZh.image "global" .Values.global) }}
+{{- end -}}
+{{- define "corenlpEn.image" -}}
+{{ include "common.images.image" (dict "imageRoot" .Values.corenlpEn.image "global" .Values.global) }}
+{{- end -}}
+
+{{/*
 Common labels sworker
 */}}
 {{- define "transcrobes.sworker.labels" -}}

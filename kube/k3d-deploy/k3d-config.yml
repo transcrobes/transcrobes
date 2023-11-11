@@ -4,12 +4,16 @@ kind: Simple
 metadata:
   name: transcrobes
 servers: 1
-agents: 1
+# agents: 1
 kubeAPI:
   host: "localhost"
   hostIP: "127.0.0.1"
   hostPort: "6445"
-image: rancher/k3s:v1.28.2-k3s1
+image: rancher/k3s:v1.28.3-k3s2
+
+registries: # define how registries should be created or used
+  use:
+    - k3d-registry.localhost:5111
 
 ports:
   - port: 80:80
@@ -18,12 +22,12 @@ ports:
   - port: 443:443
     nodeFilters:
       - loadbalancer
-  - port: 9100:31000
-    nodeFilters:
-      - agent:0
-  - port: 9101:31001
-    nodeFilters:
-      - agent:0
+  # - port: 9100:31000
+  #   nodeFilters:
+  #     - agent:0
+  # - port: 9101:31001
+  #   nodeFilters:
+  #     - agent:0
 
 env:
   - envVar: name=transcrobes
@@ -43,15 +47,15 @@ options:
       - arg: "--tls-san=127.0.0.1"
         nodeFilters:
           - server:*
-    nodeLabels:
-      - label: agent=one
-        nodeFilters:
-          - agent:0
+    # nodeLabels:
+    #   - label: agent=one
+    #     nodeFilters:
+    #       - agent:0
   kubeconfig:
-    updateDefaultKubeconfig: true
-    switchCurrentContext: true
-  runtime:
-    labels:
-      - label: agent=docker-one
-        nodeFilters:
-          - agent:0
+    updateDefaultKubeconfig: false
+    switchCurrentContext: false
+  # runtime:
+  #   labels:
+  #     - label: agent=docker-one
+  #       nodeFilters:
+  #         - agent:0

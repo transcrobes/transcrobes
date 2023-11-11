@@ -46,7 +46,7 @@ statsdb:
   clusterDomain: cluster.local
   enabled: true
   pgpool:
-    adminPassword: 392b1cc30768f5e99deca8ff1ddd7812
+    adminPassword: an_admin_password 392b1cc30768f5e99deca8ff1ddd7812
     replicaCount: 1
     livenessProbe:
       # due to a bug in kubernetes, the command healthcheck timeout is 15 secs, and this must be more than that
@@ -80,7 +80,7 @@ pgha:
   clusterDomain: cluster.local
   enabled: true
   pgpool:
-    adminPassword: 392b1cc30768f5e99deca8ff1ddd7812
+    adminPassword: an_admin_password
     replicaCount: 1
     livenessProbe:
       # due to a bug in kubernetes, the command healthcheck timeout is 15 secs, and this must be more than that
@@ -146,8 +146,7 @@ transcrobes:
   replicaCount: 1
 
   image:
-    pullPolicy: Never
-
+    registry: k3d-registry.localhost
   # FIXME: temp testing
   overrideDBHost: transcrobes-pgha-postgresql
 
@@ -216,6 +215,9 @@ faustworker:
   debug: true
   replicaCount: 1
 
+  image:
+    registry: k3d-registry.localhost
+
   # FIXME: temp testing
   overrideDBHost: tck-pgha-postgresql
   overrideStatsDBHost: tck-statsdb-postgresql
@@ -232,6 +234,8 @@ sworker:
   enabled: true
   debug: true
   replicaCount: 1
+  image:
+    registry: k3d-registry.localhost
 
   # FIXME: temp testing
   overrideDBHost: tck-pgha-postgresql

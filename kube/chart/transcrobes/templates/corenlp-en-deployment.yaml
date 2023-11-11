@@ -25,7 +25,7 @@ spec:
     spec:
       containers:
         - name: {{ template "transcrobes.name" . }}-{{ .Values.corenlpEn.name }}
-          image: "{{ .Values.corenlpEn.image.repository }}:{{ .Values.corenlpEn.image.tag }}"
+          image: {{ include "corenlpEn.image" . }}
           imagePullPolicy: {{ .Values.corenlpEn.image.pullPolicy }}
           ports:
             - name: http

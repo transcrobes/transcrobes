@@ -15,7 +15,7 @@ spec:
         spec:
           containers:
             - name: {{ template "transcrobes.name" . }}-backups
-              image: "{{ .Values.transcrobes.backups.image.repository }}:{{ .Values.transcrobes.backups.image.tag }}"
+              image: {{ include "backups.image" . }}
               imagePullPolicy: {{ .Values.transcrobes.backups.image.pullPolicy }}
               env:
                 - name: PGUSER

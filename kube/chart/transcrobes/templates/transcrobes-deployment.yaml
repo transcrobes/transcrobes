@@ -51,8 +51,9 @@ spec:
 
       containers:
         - name: {{ template "transcrobes.name" . }}-{{ .Values.transcrobes.name }}
-          image: "{{ .Values.transcrobes.image.repository }}:{{ .Values.transcrobes.image.tag }}"
-          imagePullPolicy: {{ .Values.transcrobes.image.pullPolicy }}
+          image: {{ include "transcrobes.image" . }}
+          imagePullPolicy: {{ .Values.transcrobes.image.pullPolicy | quote }}
+
           {{- if .Values.transcrobes.application.useReload }}
           command: ['/start-reload.sh']
           {{- else if not .Values.transcrobes.application.useGunicorn }}

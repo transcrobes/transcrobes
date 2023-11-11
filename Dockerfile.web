@@ -11,6 +11,7 @@ ENV npm_config_registry=$NPM_OVERRIDE
 ENV http_proxy=$http_proxy
 ENV https_proxy=$https_proxy
 ENV VITE_GIT_VERSION=$GIT_VERSION
+ENV PUPPETEER_SKIP_DOWNLOAD=true
 
 WORKDIR /app
 COPY ./frontend/package*.json /app/
@@ -23,7 +24,7 @@ COPY ./frontend/ /app/
 
 RUN npm run build:${ENVIRONMENT}
 
-FROM ${TRANSCROBES_DOCKER_REPO:-transcrobes}/transcrobes-backend:${TRANSCROBES_BACKEND_IMAGE_TAG:-latest}
+FROM ${TRANSCROBES_DOCKER_REPO:-transcrobes}/backend:${TRANSCROBES_BACKEND_IMAGE_TAG:-$GIT_VERSION}
 COPY --from=build-stage /app/dist /fapp
 
 CMD ["/bin/bash", "/start-uvicorn.sh"]

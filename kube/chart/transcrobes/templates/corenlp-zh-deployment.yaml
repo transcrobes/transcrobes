@@ -25,7 +25,7 @@ spec:
     spec:
       containers:
         - name: {{ template "transcrobes.name" . }}-{{ .Values.corenlpZh.name }}
-          image: "{{ .Values.corenlpZh.image.repository }}:{{ .Values.corenlpZh.image.tag }}"
+          image: {{ include "corenlpZh.image" . }}
           imagePullPolicy: {{ .Values.corenlpZh.image.pullPolicy }}
           ports:
             - name: http

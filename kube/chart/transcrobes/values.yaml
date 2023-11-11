@@ -46,6 +46,7 @@ downloads:
   ## corenlp container image
   ##
   image:
+    # registry: docker.io
     repository: transcrobes/downloads
     tag: 0.0.1
     pullPolicy: IfNotPresent
@@ -101,6 +102,7 @@ corenlpEn:
   ## corenlp container image
   ##
   image:
+    # registry: docker.io
     repository: transcrobes/corenlp-english
     tag: 4.5.1
     pullPolicy: IfNotPresent
@@ -196,6 +198,7 @@ corenlpZh:
   ## corenlp container image
   ##
   image:
+    # registry: docker.io
     repository: transcrobes/corenlp-chinese
     tag: 4.5.1
     pullPolicy: IfNotPresent
@@ -352,7 +355,8 @@ transcrobes:
   ## transcrobes container image
   ##
   image:
-    repository: transcrobes/transcrobes-web
+    # registry: docker.io
+    repository: transcrobes/web
     tag: 0.7.0
     pullPolicy: IfNotPresent
 
@@ -389,7 +393,8 @@ transcrobes:
     ## transcrobes container image
     ##
     image:
-      repository: transcrobes/transcrobes-backups
+      # registry: docker.io
+      repository: transcrobes/backups
       tag: 0.3.0
       pullPolicy: IfNotPresent
 
@@ -646,10 +651,9 @@ pgha:
     database: transcrobes
 
     ## PostgreSQL override parameters added to main config
-    ##
-    ## password_encryption = md5 is currently required when using the postgres 15 image
-    extendedConf: |-
-      password_encryption = md5
+    ## e.g,
+    # extendedConf: |-
+    #   password_encryption = md5
 
     ## PostgreSQL max_connections parameter
     ##
@@ -718,9 +722,8 @@ statsdb:
 
     ## PostgreSQL override parameters added to main config
     ##
-    ## password_encryption = md5 is currently required when using the postgres 15 image
-    extendedConf: |-
-      password_encryption = md5
+    # extendedConf: |-
+    #   password_encryption = md5
 
     ## PostgreSQL max_connections parameter
     ##
@@ -782,7 +785,8 @@ faustworker:
   ## faustworker container image
   ##
   image:
-    repository: transcrobes/transcrobes-worker
+    # registry: docker.io
+    repository: transcrobes/worker
     tag: 0.7.0
     pullPolicy: IfNotPresent
 
@@ -826,7 +830,8 @@ sworker:
   ## sworker container image
   ##
   image:
-    repository: transcrobes/transcrobes-sworker
+    # registry: docker.io
+    repository: transcrobes/sworker
     tag: 0.7.0
     pullPolicy: IfNotPresent
 

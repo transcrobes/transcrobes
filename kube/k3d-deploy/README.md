@@ -55,7 +55,7 @@ kubectl -n transcrobes get secret
 - Deploy
 
 ```sh
-TCTAG=$(git describe --tags); helm upgrade --install tck ~/dev/ntc/transcrobes/kube/chart/transcrobes/ --namespace transcrobes --create-namespace -f ~/dev/ntc/transcrobes/kube/k3d-deploy/overrides-dev.yaml --set transcrobes.image.repository=reg.transcrob.es/transcrobes/transcrobes-web --set transcrobes.image.tag=$TCTAG --set faustworker.image.repository=reg.transcrob.es/transcrobes/transcrobes-worker --set faustworker.image.tag=$TCTAG --set transcrobes.backups.image.repository=reg.transcrob.es/transcrobes/transcrobes-backups --set transcrobes.backups.image.tag=$TCTAG --set sworker.image.repository=reg.transcrob.es/transcrobes/transcrobes-sworker --set sworker.image.tag=$TCTAG
+GIT_VERSION=$(git describe --tags); helm upgrade --install tck ~/dev/ntc/transcrobes/kube/chart/transcrobes/ --namespace transcrobes --create-namespace -f ~/dev/ntc/transcrobes/kube/k3d-deploy/overrides-dev.yaml --set transcrobes.image.tag=$GIT_VERSION --set faustworker.image.tag=$GIT_VERSION --set transcrobes.backups.image.tag=$GIT_VERSION --set sworker.image.tag=$GIT_VERSION
 ```
 
 - Check out k3d containers:

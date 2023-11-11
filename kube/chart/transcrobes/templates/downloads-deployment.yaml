@@ -25,7 +25,7 @@ spec:
     spec:
       containers:
         - name: {{ template "transcrobes.name" . }}-{{ .Values.downloads.name }}
-          image: "{{ .Values.downloads.image.repository }}:{{ .Values.downloads.image.tag }}"
+          image: {{ include "downloads.image" . }}
           imagePullPolicy: {{ .Values.downloads.image.pullPolicy }}
           ports:
             - name: http

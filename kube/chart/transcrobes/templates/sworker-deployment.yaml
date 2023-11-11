@@ -25,7 +25,7 @@ spec:
     spec:
       initContainers:
         - name: check-db-ready
-          image: postgres:15
+          image: postgres:16
           command: ['sh', '-c',
             'until psql -c "select 1;";
             do echo waiting for database; sleep 2; done;']
@@ -41,7 +41,7 @@ spec:
 
       containers:
         - name: {{ template "transcrobes.name" . }}-{{ .Values.sworker.name }}
-          image: "{{ .Values.sworker.image.repository }}:{{ .Values.sworker.image.tag }}"
+          image: {{ include "sworker.image" . }}
           imagePullPolicy: {{ .Values.transcrobes.image.pullPolicy }}
           # command: ["/bin/bash", "/app/scripts/runmanage.sh"]
           # args: ["events_processor"]
