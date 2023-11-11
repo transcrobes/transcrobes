@@ -1,6 +1,6 @@
 [project]
 name = "transcrobes"
-version = "0.33.0"
+version = "0.34.0"
 description = ""
 requires-python = ">=3.12"
 authors = [{ name = "Anton Melser", email = "anton@transcrob.es" }]
