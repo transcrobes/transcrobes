@@ -2,7 +2,7 @@
 name = "transcrobes"
 version = "0.33.0"
 description = ""
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 authors = [{ name = "Anton Melser", email = "anton@transcrob.es" }]
 license = { file = "LICENSE" }
 dependencies = [
