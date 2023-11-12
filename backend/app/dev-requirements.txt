@@ -126,7 +126,7 @@ sortedcontainers==2.4.0   # via intervaltree
 soupsieve==2.5            # via beautifulsoup4
 sqlalchemy==2.0.23        # via alembic, transcrobes (pyproject.toml)
 starlette==0.27.0         # via fastapi
-strawberry-graphql==0.213.0  # via transcrobes (pyproject.toml)
+strawberry-graphql==0.211.2  # via transcrobes (pyproject.toml)
 tenacity==8.2.3           # via transcrobes (pyproject.toml)
 terminaltables==3.1.10    # via faust-streaming
 textile==4.0.2            # via transcrobes (pyproject.toml)

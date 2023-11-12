@@ -33,7 +33,7 @@ dependencies = [
   "SQLAlchemy",
   "python-jose",
   "asyncpg",
-  "strawberry-graphql",
+  "strawberry-graphql < 0.212.0",
   "aiohttp-retry",
   "aiohttp >= 3.9.0b0",
   "webvtt-py",
