@@ -146,7 +146,7 @@ transcrobes:
   replicaCount: 1
 
   image:
-    registry: k3d-registry.localhost
+    registry: k3d-registry.localhost:5111
   # FIXME: temp testing
   overrideDBHost: transcrobes-pgha-postgresql
 
@@ -216,7 +216,7 @@ faustworker:
   replicaCount: 1
 
   image:
-    registry: k3d-registry.localhost
+    registry: k3d-registry.localhost:5111
 
   # FIXME: temp testing
   overrideDBHost: tck-pgha-postgresql
@@ -235,7 +235,7 @@ sworker:
   debug: true
   replicaCount: 1
   image:
-    registry: k3d-registry.localhost
+    registry: k3d-registry.localhost:5111
 
   # FIXME: temp testing
   overrideDBHost: tck-pgha-postgresql

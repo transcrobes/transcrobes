@@ -35,9 +35,11 @@ for project in ${PROJECTS}; do
   docker push ${LOCAL_REGISTRY}/${REPO}/${project}:${TAG}
 done
 
+# ${SCRIPT_DIR}/kube/chart/${APPNAME}/ --namespace ${APPNAME} --create-namespace \
+
 HELM_COMMAND=$(cat <<- END
 helm upgrade --install ${APPNAME} \
-  ${SCRIPT_DIR}/kube/chart/${APPNAME}/ --namespace ${APPNAME} --create-namespace \
+  ${SCRIPT_DIR}/kube/chart/${APPNAME}/ \
   --debug -f ${SCRIPT_DIR}/kube/k3d-deploy/overrides-dev.yaml \
   $(if [ -f "${SCRIPT_DIR}/tmp/overrides-dev.yaml" ]; then echo " -f ${SCRIPT_DIR}/tmp/overrides-dev.yaml"; fi)
 END

@@ -12,12 +12,12 @@ export const WEBPUB_CACHE_NAME = "webpub-cache";
 export const PRECACHE_PUBLICATIONS = "precachePublications";
 export const IS_DEV = import.meta.env.DEV;
 export const IS_EXT = import.meta.env.PLATFORM === "extension";
-export const DOCS_DOMAIN = import.meta.env.VITE_DOCS_DOMAIN || "tc.tck:1313";
-export const SITE_DOMAIN = import.meta.env.VITE_SITE_DOMAIN || "tc.tck";
+export const DOCS_DOMAIN = import.meta.env.VITE_DOCS_DOMAIN || "transcrobes.localhost:1313";
+export const SITE_DOMAIN = import.meta.env.VITE_SITE_DOMAIN || "transcrobes.localhost";
 export const GIT_VERSION = import.meta.env.VITE_GIT_VERSION || import.meta.env.GIT_VERSION;
 export const DEFAULT_SERVER_URL = `https://${SITE_DOMAIN}`;
 
-export const DOWNLOAD_DOMAIN = import.meta.env.VITE_DOWNLOAD_DOMAIN || "dl.tc.tck";
+export const DOWNLOAD_DOMAIN = import.meta.env.VITE_DOWNLOAD_DOMAIN || "dl.transcrobes.localhost";
 export const KIWI_LOCAL_URL = `https://${DOWNLOAD_DOMAIN}/kiwi-browser-latest.apk`;
 export const KIWI_PLAY_URL = "https://play.google.com/store/apps/details?id=com.kiwibrowser.browser&hl=en&gl=GB";
 
