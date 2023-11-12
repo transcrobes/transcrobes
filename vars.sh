@@ -3,7 +3,7 @@
 export APPNAME=transcrobes
 export REGISTRY_NAME=reg.transcrob.es
 export REPO=transcrobes
-export PROJECTS="base backend web sworker worker backups"
+export PROJECTS="base backend transcrobes sworker faustworker backups"
 
 export ENVIRONMENT=${ENVIRONMENT:-prod}
 export LOCALHOST_NAME=${APPNAME}.localhost
