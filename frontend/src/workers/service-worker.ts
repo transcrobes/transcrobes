@@ -36,7 +36,7 @@ self.addEventListener("install", (event) => {
 if (!IS_DEV) {
   const manifest = self.__WB_MANIFEST as { revision: string; url: string }[];
   console.log("precache and route", manifest);
-  // precacheAndRoute(manifest.map(({ revision, url }) => ({ revision, url: `https://tc.tck/${url}` })));
+  // precacheAndRoute(manifest.map(({ revision, url }) => ({ revision, url: `https://transcrobes.localhost/${url}` })));
   precacheAndRoute(manifest);
 }
 

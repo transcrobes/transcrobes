@@ -65,7 +65,7 @@ function App(): ReactElement {
     if (supported) {
       location.href = "/#/";
     }
-    if (location.hostname.startsWith("qa.") || location.hostname === "tc.tck") {
+    if (location.hostname.startsWith("qa.") || location.hostname === "transcrobes.localhost") {
       const err = document.getElementById("error_message");
       if (err) {
         err.innerHTML = JSON.stringify(browser) + navigator.languages.join(", ") + navigator.userAgent;
@@ -90,7 +90,7 @@ function App(): ReactElement {
           </p>
         </>
       )}
-      {(window.location.href.includes("qa.") || window.location.hostname === "tc.tck") && (
+      {(window.location.href.includes("qa.") || window.location.hostname === "transcrobes.localhost") && (
         <>
           <p>{JSON.stringify(browser)}</p>
           <p> {navigator.languages.join(", ")}</p>

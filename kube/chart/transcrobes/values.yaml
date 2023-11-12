@@ -337,8 +337,8 @@ transcrobes:
   ## Override DB host, set this if you DON'T
   ## want to use the default, kubernetes pgpool
   ##
-  # overrideDBHost: tck-pgha-postgresql
-  # overrideStatsDBHost: tck-statsdb-postgresql
+  # overrideDBHost: transcrobes-pgha-postgresql
+  # overrideStatsDBHost: transcrobes-statsdb-postgresql
 
   ## Ingress related configuration for setting up the SSL ingress
   ##

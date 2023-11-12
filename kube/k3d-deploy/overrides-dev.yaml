@@ -219,8 +219,8 @@ faustworker:
     registry: k3d-registry.localhost:5111
 
   # FIXME: temp testing
-  overrideDBHost: tck-pgha-postgresql
-  overrideStatsDBHost: tck-statsdb-postgresql
+  overrideDBHost: transcrobes-pgha-postgresql
+  overrideStatsDBHost: transcrobes-statsdb-postgresql
 
   extraEnv:
     TRANSCROBES_DEBUG: "True"
@@ -238,8 +238,8 @@ sworker:
     registry: k3d-registry.localhost:5111
 
   # FIXME: temp testing
-  overrideDBHost: tck-pgha-postgresql
-  overrideStatsDBHost: tck-statsdb-postgresql
+  overrideDBHost: transcrobes-pgha-postgresql
+  overrideStatsDBHost: transcrobes-statsdb-postgresql
 
   extraEnv:
     TRANSCROBES_DEBUG: "True"
