@@ -356,7 +356,7 @@ transcrobes:
   ##
   image:
     # registry: docker.io
-    repository: transcrobes/web
+    repository: transcrobes/transcrobes
     tag: 0.7.0
     pullPolicy: IfNotPresent
 
@@ -786,7 +786,7 @@ faustworker:
   ##
   image:
     # registry: docker.io
-    repository: transcrobes/worker
+    repository: transcrobes/faustworker
     tag: 0.7.0
     pullPolicy: IfNotPresent
 

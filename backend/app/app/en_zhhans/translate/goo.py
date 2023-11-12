@@ -114,7 +114,6 @@ class EN_ZHHANS_GoogDictTranslator(PersistenceProvider, Translator):
                     if not defin["pos"] in std_format:
                         std_format[defin["pos"]] = []
                     for translation in defin["entry"]:
-
                         confidence = translation["score"]
                         defie = {
                             "upos": token_pos,
