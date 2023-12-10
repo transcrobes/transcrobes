@@ -21,6 +21,8 @@ export const DOWNLOAD_DOMAIN = import.meta.env.VITE_DOWNLOAD_DOMAIN || "dl.trans
 export const KIWI_LOCAL_URL = `https://${DOWNLOAD_DOMAIN}/kiwi-browser-latest.apk`;
 export const KIWI_PLAY_URL = "https://play.google.com/store/apps/details?id=com.kiwibrowser.browser&hl=en&gl=GB";
 
+export const EDITOR_EMPTY_HTML = "<p><br></p>";
+
 export const REMOVABLE_NOUN_SUFFIXES = [
   "们",
   "儿",

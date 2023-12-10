@@ -83,7 +83,7 @@ function Menu({ dense = false }: MenuProps): ReactElement {
                 dense={dense}
               >
                 <MenuItemLink
-                  placeholder={translate(`resources.repetrobes.name`, { smart_count: 2 })}
+                  placeholder={translate(`screens.repetrobes.name`, { smart_count: 2 })}
                   to={`/repetrobes`}
                   primaryText={translate(`screens.repetrobes.name`, { smart_count: 2 })}
                   leftIcon={<repetrobes.icon />}

@@ -1,7 +1,5 @@
 import CloseIcon from "@mui/icons-material/Close";
 import { Box, Button, Grid, Typography } from "@mui/material";
-import { ContentState, Editor, EditorState, convertFromHTML, convertFromRaw } from "draft-js";
-import "draft-js/dist/Draft.css";
 import { ReactElement, useState } from "react";
 import { useTranslate } from "react-admin";
 import { renderToString } from "react-dom/server";
@@ -24,7 +22,8 @@ export default function EditableDefinitionTranslations({
   onUpdate,
   onClose,
 }: EditableDefinitionTranslationsProps): ReactElement {
-  const [current, setCurrent] = useState(card.front ? convertFromRaw(JSON.parse(card.front)) : undefined);
+  // const [current, setCurrent] = useState(card.front ? convertFromRaw(JSON.parse(card.front)) : undefined);
+  const [current, setCurrent] = useState(undefined);
   const [editing, setEditing] = useState(false);
   const translate = useTranslate();
 
@@ -33,15 +32,15 @@ export default function EditableDefinitionTranslations({
   }
 
   function handleEditFromDefinition(providerTranslation: ProviderTranslationType): void {
-    const contentHTML = convertFromHTML(frontFromTranslations(providerTranslation));
-    const state = ContentState.createFromBlockArray(contentHTML.contentBlocks, contentHTML.entityMap);
-    setCurrent(state);
-    setEditing(true);
+    // const contentHTML = convertFromHTML(frontFromTranslations(providerTranslation));
+    // const state = ContentState.createFromBlockArray(contentHTML.contentBlocks, contentHTML.entityMap);
+    // setCurrent(state);
+    // setEditing(true);
   }
 
   function handleSave(newFrontString: string) {
     onUpdate(card.id, newFrontString);
-    setCurrent(convertFromRaw(JSON.parse(newFrontString)));
+    // setCurrent(convertFromRaw(JSON.parse(newFrontString)));
     setEditing(false);
   }
 
@@ -52,7 +51,7 @@ export default function EditableDefinitionTranslations({
           <Grid item>
             <Typography>{translate("widgets.editable_definition_translations.current_value")}</Typography>
             <Box sx={{ maxWidth: "500px" }}>
-              <Editor editorState={EditorState.createWithContent(current)} onChange={noop} readOnly={true} />
+              {/* <Editor editorState={EditorState.createWithContent(current)} onChange={noop} readOnly={true} /> */}
             </Box>
           </Grid>
           <Grid item>
