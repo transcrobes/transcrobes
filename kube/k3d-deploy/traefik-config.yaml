@@ -5,6 +5,11 @@ metadata:
   namespace: kube-system
 spec:
   valuesContent: |-
+    general:
+      level: DEBUG
+    logs:
+      access:
+        enabled: true
     providers:
       kubernetesCRD:
         # -- Allows to reference ExternalName services in IngressRoute

@@ -25,11 +25,11 @@ k3d cluster create ${APPNAME} --config ${SCRIPT_DIR}/k3d-config.yml \
   --volume ${SCRIPT_DIR}/../../backend/app:/src@all \
   --volume ${SCRIPT_DIR}/traefik-config.yaml:/var/lib/rancher/k3s/server/manifests/traefik-config.yaml
 
-for i in $PROJECTS; do
-  docker pull ${REGISTRY_NAME}/${REPO}/${i}:${GIT_VERSION}
-  docker tag ${REGISTRY_NAME}/${REPO}/${i}:${GIT_VERSION} ${LOCAL_REGISTRY}/${REPO}/${i}:${GIT_VERSION}
-  docker push ${LOCAL_REGISTRY}/${REPO}/${i}:${GIT_VERSION}
-done
+# for i in $PROJECTS; do
+#   docker pull ${REGISTRY_NAME}/${REPO}/${i}:${GIT_VERSION}
+#   docker tag ${REGISTRY_NAME}/${REPO}/${i}:${GIT_VERSION} ${LOCAL_REGISTRY}/${REPO}/${i}:${GIT_VERSION}
+#   docker push ${LOCAL_REGISTRY}/${REPO}/${i}:${GIT_VERSION}
+# done
 
 mkdir -p ~/.kube
 k3d kubeconfig merge ${APPNAME} --output ${KUBECONFIG}

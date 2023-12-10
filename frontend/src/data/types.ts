@@ -1,19 +1,9 @@
-import { BackgroundWorkerManager, BackgroundWorkerTabManager } from "../extension/backgroundfn";
-import {
-  ExtensionImportMessage,
-  ModelType,
-  NetflixDetails,
-  PublicationConfig,
-  StreamDetails,
-  UserState,
-} from "../lib/types";
-import { RxdbDataManager } from "../workers/rxdb/rxdata";
-import { SqliteDataManager } from "../workers/sqlite/sqldata";
+import type { BackgroundWorkerManager, BackgroundWorkerTabManager } from "../extension/backgroundfn";
+import type { PublicationConfig } from "../lib/types";
+import type { RxdbDataManager } from "../workers/rxdb/rxdata";
+import type { SqliteDataManager } from "../workers/sqlite/sqldata";
 
-export type GenericMessage = {
-  source: string;
-  value?: any;
-};
+export type GenericMessage = { source: string; value?: any };
 
 export type OnlineManager = {
   sentenceTranslation: (text) => Promise<string>;

@@ -5,6 +5,7 @@ import asyncio
 import json  # import orjson as json
 import logging
 import os
+import pathlib
 import re
 import time
 from abc import ABC, abstractmethod
@@ -89,7 +90,7 @@ def latest_db_fragments_dir_path(lang_pair: str, translation_providers: list[str
         + DB_CACHE_DIR_SUFFIX_REGEX
     )
     logger.debug(f"Looking for the latest definitions dir using regex: {find_re=}")
-    print(f"Looking for the latest definitions dir using regex: {find_re=}")
+    pathlib.Path(settings.DB_CACHE_DIR).mkdir(parents=True, exist_ok=True)
     try:
         return sorted(
             [

@@ -174,13 +174,6 @@ export function observerFunc(
               // TODO: WARNING:!!! the tstats consider that if it has been glossed, it has been looked up!!!
               // TODO: WARNING:!!! if you turn off/on glossing for a word temporarily, it considers only the
               // actual known state, not what was onscreen!!!
-              for (const [lemma, [count, lookedUp]] of Object.entries(tstats)) {
-                if (lemma === "Bioluminescence") {
-                  console.log("Bioluminescence", lookedUp, count);
-                  throw new Error("Fuck!");
-                }
-              }
-
               const userEvent = {
                 type: "bulk_vocab",
                 source: DATA_SOURCE,
