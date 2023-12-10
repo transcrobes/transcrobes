@@ -149,10 +149,12 @@ export default function Import({ dictionaryId, proxy }: Props): ReactElement {
           const newData: Record<string, UserDefinitionType> = {};
           const newInvalidData: Record<string, UserDefinitionType> = {};
           for (const error of lines.errors) {
-            newInvalidData[error.row.toString()] = {
-              id: error.row.toString(),
-              translations: [{ posTag: "OTHER", values: [error.message] }],
-            };
+            if (error.row) {
+              newInvalidData[error.row.toString()] = {
+                id: error.row.toString(),
+                translations: [{ posTag: "OTHER", values: [error.message] }],
+              };
+            }
           }
           for (const columns of lines.data.slice(headerRow ? 1 : 0) as string[][]) {
             const meanings = columns.slice(3).join("").split(itemsep);

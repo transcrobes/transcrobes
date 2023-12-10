@@ -1,14 +1,14 @@
+import { DragDropContext, Draggable, DropResult, Droppable } from "@hello-pangea/dnd";
 import { Box, FormControlLabel, Switch, TextField, Theme, useTheme } from "@mui/material";
 import _ from "lodash";
 import { ReactElement } from "react";
-import { DragDropContext, Draggable, Droppable, DropResult } from "@hello-pangea/dnd";
+import { useTranslate } from "react-admin";
 import Select, { StylesConfig } from "react-select";
 import { makeStyles } from "tss-react/mui";
 import WordOrderSelector from "../components/WordOrderSelector";
 import { reorderArray, validInt } from "../lib/funclib";
 import { GraderConfig, WordOrdering } from "../lib/types";
 import { getColour } from "./funclib";
-import { useTranslate } from "react-admin";
 
 const useStyles = makeStyles()((theme: Theme) => ({
   typography: {
@@ -35,8 +35,15 @@ export function ListrobesConfig({ graderConfig, onConfigChange }: Props): ReactE
   const theme = useTheme();
   const translate = useTranslate();
   const colourStyles: StylesConfig = {
-    control: (styles) => ({ ...styles, backgroundColor: theme.palette.background.default }),
-    menu: (styles) => ({ ...styles, backgroundColor: theme.palette.background.default, zIndex: 2 }),
+    control: (styles: any) => ({
+      ...styles,
+      backgroundColor: theme.palette.background.default,
+    }),
+    menu: (styles: any) => ({
+      ...styles,
+      backgroundColor: theme.palette.background.default,
+      zIndex: 2,
+    }),
   };
 
   function handleDragEnd(result: DropResult) {

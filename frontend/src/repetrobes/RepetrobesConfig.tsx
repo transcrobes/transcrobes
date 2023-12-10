@@ -45,8 +45,8 @@ export default function RepetrobesConfig({ activityConfig, onConfigChange }: Pro
   const theme = useTheme();
   const fromLang = useAppSelector((state) => state.userData.user.fromLang);
   const colourStyles: StylesConfig = {
-    control: (styles) => ({ ...styles, backgroundColor: theme.palette.background.default }),
-    menu: (styles) => ({ ...styles, backgroundColor: theme.palette.background.default, zIndex: 2 }),
+    control: (styles: any) => ({ ...styles, backgroundColor: theme.palette.background.default }),
+    menu: (styles: any) => ({ ...styles, backgroundColor: theme.palette.background.default, zIndex: 2 }),
   };
 
   function handleWordListsChange(sls: any) {
