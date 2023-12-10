@@ -18,7 +18,7 @@ COPY ./frontend/package*.json /app/
 
 RUN npm config set proxy $http_proxy
 RUN npm config set https-proxy $https_proxy
-RUN --mount=type=cache,target=/root/.npm npm install --loglevel silly
+RUN --mount=type=cache,target=/root/.npm npm install --loglevel silly --legacy-peer-deps
 
 COPY ./frontend/ /app/
 
