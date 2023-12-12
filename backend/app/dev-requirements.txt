@@ -83,7 +83,7 @@ opentracing==2.4.0        # via faust-streaming
 orjson==3.9.10            # via transcrobes (pyproject.toml)
 packaging==23.2           # via aiokafka, black, build, gunicorn, pytest
 passlib[bcrypt]==1.7.4    # via transcrobes (pyproject.toml)
-pathspec==0.12.0          # via black
+pathspec==0.12.1          # via black
 pep517==0.13.1            # via requirementslib
 pinyinsplit==0.1.4        # via transcrobes (pyproject.toml)
 pip-api==0.0.30           # via isort

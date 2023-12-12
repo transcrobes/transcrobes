@@ -3,13 +3,11 @@ from __future__ import annotations
 
 import importlib
 import inspect
-
-# import orjson as json
-import json
 import logging
 from abc import ABC, abstractmethod
 from typing import Any, List
 
+import orjson as json
 from app.db.session import async_session
 from app.enrich import Enricher
 from app.enrich.lemmatize import WordLemmatizer

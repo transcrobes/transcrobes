@@ -1,18 +1,8 @@
 # -*- coding: utf-8 -*-
-# isort: skip_file
 import logging
 import logging.config
 import mimetypes
 import os
-
-# fmt: off
-import sys
-import six
-
-if sys.version_info >= (3, 12, 0):
-    sys.modules["kafka.vendor.six.moves"] = six.moves
-
-# fmt: on
 
 from app.api.api_v1.api import api_router
 from app.api.api_v1.endpoints.data import aioproducer
@@ -28,7 +18,6 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.cors import CORSMiddleware
-
 
 logging.config.dictConfig(settings.LOGGING)
 

@@ -39,11 +39,11 @@ downloads:
   hosts:
     - dl.transcrobes.example.com
 
-  ## corenlp container name
+  ## downloads container name
   ##
   name: downloads
 
-  ## corenlp container image
+  ## downloads container image
   ##
   image:
     # registry: docker.io

@@ -316,8 +316,7 @@ export function onEntryId(entries: IntersectionObserverEntry[]): void {
     if (element.dataset && element.dataset.tced) return;
     change.target.childNodes.forEach(async (item) => {
       if (item.nodeType === 3 && item.nodeValue?.trim() && toEnrich(item.nodeValue, fromLang())) {
-        const wtf = await proxy.enrichText(item.nodeValue);
-        const [data] = wtf;
+        const [data] = await proxy.enrichText(item.nodeValue);
         if (!data?.id) {
           return;
         }

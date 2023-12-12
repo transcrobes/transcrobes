@@ -7,10 +7,10 @@ if [ -n "$(git status --porcelain)" ]; then
   exit 1
 fi
 
-[[ ! -z $(k3d cluster list ${APPNAME} | grep '0/1') ]] && k3d cluster stop --all && k3d cluster start ${APPNAME}
-
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 source ${SCRIPT_DIR}/vars.sh
+
+[[ ! -z $(k3d cluster list ${APPNAME} | grep '0/1') ]] && k3d cluster stop --all && k3d cluster start ${APPNAME}
 
 # Delete the images on the node - not the registry!
 # docker exec k3d-transcrobes-server-0 sh -c 'ctr image rm $(ctr image list -q)'
