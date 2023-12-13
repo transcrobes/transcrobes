@@ -12,6 +12,8 @@ source ${SCRIPT_DIR}/vars.sh
 
 [[ ! -z $(k3d cluster list ${APPNAME} | grep '0/1') ]] && k3d cluster stop --all && k3d cluster start ${APPNAME}
 
+kubectl config use-context k3d-${APPNAME}
+
 # Delete the images on the node - not the registry!
 # docker exec k3d-transcrobes-server-0 sh -c 'ctr image rm $(ctr image list -q)'
 
@@ -36,7 +38,6 @@ for project in ${PROJECTS}; do
 
   docker push ${LOCAL_REGISTRY}/${REPO}/${project}:${TAG}
 done
-
 
 HELM_COMMAND=$(cat <<- END
 helm upgrade --install ${APPNAME} \

@@ -6,9 +6,8 @@ import re
 from collections import defaultdict
 
 from app.enrich.data import PersistenceProvider
-from app.enrich.models import Token
 from app.enrich.translate import Translator
-from app.etypes import EntryDefinition
+from app.etypes import EntryDefinition, Token
 from app.models.lookups import EnZhhansABCLookup
 from app.ndutils import lemma
 from sqlalchemy.ext.asyncio.session import AsyncSession
