@@ -33,3 +33,4 @@ k3d cluster create ${APPNAME} --config ${SCRIPT_DIR}/k3d-config.yml \
 
 mkdir -p ~/.kube
 k3d kubeconfig merge ${APPNAME} --output ${KUBECONFIG}
+kubectl --kubeconfig ${KUBECONFIG} config set-context k3d-${APPNAME} --namespace=${APPNAME}

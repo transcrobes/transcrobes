@@ -8,7 +8,7 @@ servers: 1
 kubeAPI:
   host: "localhost"
   hostIP: "127.0.0.1"
-  hostPort: "6445"
+  hostPort: "6446"
 image: rancher/k3s:v1.28.3-k3s2
 
 registries: # define how registries should be created or used
