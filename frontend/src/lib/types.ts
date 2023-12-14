@@ -1215,14 +1215,6 @@ export type ProgressCallbackMessage = {
   message: PolyglotMessage;
 };
 
-export type WordDetailsTypeOrig = {
-  word: DefinitionType | null;
-  cards: CardType[];
-  characters: (CharacterType | null)[];
-  wordModelStats: WordModelStatsType | null;
-  recentPosSentences: PosSentences | null;
-};
-
 export type WordDetailsType = {
   wordlists: SortableListElementType[];
   word: DefinitionType | null;
