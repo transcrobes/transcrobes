@@ -23,7 +23,7 @@ import * as BrowserUtilities from "../utils/BrowserUtilities";
 import Store from "../store/Store";
 import BookView from "./BookView";
 import { IFrameAttributes, IFrameNavigator } from "../navigator/IFrameNavigator";
-import { debounce } from "debounce";
+import debounce from "debounce";
 
 const BUFFER_HEIGHT = 10;
 

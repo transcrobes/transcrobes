@@ -55,7 +55,7 @@ dependencies = [
   "OpenCC",
   "orjson",
   "pytest-asyncio",
-  "faust-streaming @ git+https://github.com/faust-streaming/faust.git@a0de3738b3f33f8679dede2a53113d59af36f837",
+  "faust-streaming",
 ]
 
 [project.optional-dependencies]

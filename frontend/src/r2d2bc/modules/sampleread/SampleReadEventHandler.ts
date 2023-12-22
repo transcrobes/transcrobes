@@ -17,7 +17,7 @@
  * Licensed to: Bibliotheca LLC under one or more contributor license agreements.
  */
 
-import { debounce } from "debounce";
+import debounce from "debounce";
 import { IFrameNavigator } from "../../navigator/IFrameNavigator";
 
 export default class SampleReadEventHandler {
@@ -32,11 +32,7 @@ export default class SampleReadEventHandler {
     if (this.delegate.sample?.limit) {
       valid = progress <= this.delegate.sample?.limit;
       if (this.delegate.view?.layout === "fixed") {
-        if (
-          !valid &&
-          this.delegate.sample?.minimum &&
-          position.locations.position <= this.delegate.sample?.minimum
-        ) {
+        if (!valid && this.delegate.sample?.minimum && position.locations.position <= this.delegate.sample?.minimum) {
           valid = true;
         }
       }
@@ -143,8 +139,7 @@ export default class SampleReadEventHandler {
       if (this.delegate.errorMessage) {
         this.delegate.errorMessage.style.display = "block";
         this.delegate.errorMessage.style.backgroundColor = "rgb(255, 255, 255)";
-        this.delegate.errorMessage.innerHTML =
-          this.delegate.sample?.popup ?? "";
+        this.delegate.errorMessage.innerHTML = this.delegate.sample?.popup ?? "";
       }
     } else {
       this.delegate.iframes[0].focus();

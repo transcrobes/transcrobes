@@ -32,7 +32,7 @@ import { SearchModule, SearchModuleConfig } from "../modules/search/SearchModule
 import { ContentProtectionModule, ContentProtectionModuleConfig } from "../modules/protection/ContentProtectionModule";
 import { HighlightContainer, TextHighlighter, TextHighlighterConfig } from "../modules/highlight/TextHighlighter";
 import { TimelineModule } from "../modules/positions/TimelineModule";
-import { debounce } from "debounce";
+import debounce from "debounce";
 import TouchEventHandler from "../utils/TouchEventHandler";
 import KeyboardEventHandler from "../utils/KeyboardEventHandler";
 import BookView from "../views/BookView";

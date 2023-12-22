@@ -21,7 +21,7 @@ import { ReaderModule } from "../ReaderModule";
 import * as HTMLUtilities from "../../utils/HTMLUtilities";
 import { IFrameNavigator } from "../../navigator/IFrameNavigator";
 import { addEventListenerOptional, removeEventListenerOptional } from "../../utils/EventHandler";
-import { debounce } from "debounce";
+import debounce from "debounce";
 import { delay } from "../../utils";
 import { getUserAgentRegex } from "browserslist-useragent-regexp";
 import { addListener, launch } from "devtools-detector";

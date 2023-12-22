@@ -1,7 +1,7 @@
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import fetchBuilder from "fetch-retry";
 import Cookies from "js-cookie";
-import jwtDecode from "jwt-decode";
+import { jwtDecode } from "jwt-decode";
 import type { RootState } from "../../app/createStore";
 import { setUserDexie } from "../../database/authdb";
 import { throttleAction } from "../../lib/funclib";

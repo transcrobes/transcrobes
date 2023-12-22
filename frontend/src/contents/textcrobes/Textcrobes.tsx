@@ -65,10 +65,6 @@ const useStyles = makeStyles()({
   },
 });
 
-// function minQAGCharLength(lang: InputLanguage) {
-//   return lang === "zh-Hans" ? 150 : 600;
-// }
-
 function onError(error: Error) {
   console.error(error);
 }
@@ -89,15 +85,15 @@ export default function Textcrobes({ proxy }: Props): ReactElement {
   const fromLang = useAppSelector((state) => state.userData.user.fromLang);
   const { classes } = useStyles();
   const etfClasses = useJssStyles({ ...readerConfig, scriptioContinuo: isScriptioContinuo(fromLang) });
-  const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
-  const [themeName] = useTheme(prefersDarkMode ? "dark" : "light");
-  const [theme] = useState<Theme>(
-    createTheme({
-      palette: {
-        mode: themeName as ThemeType, // Switching the dark mode on is a single property value change.
-      },
-    }),
-  );
+  // const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
+  // const [themeName] = useTheme(prefersDarkMode ? "dark" : "light");
+  // const [theme] = useState<Theme>(
+  //   createTheme({
+  //     palette: {
+  //       mode: themeName as ThemeType, // Switching the dark mode on is a single property value change.
+  //     },
+  //   }),
+  // );
 
   const initialConfig = {
     namespace: "textcrobes",
@@ -135,33 +131,6 @@ export default function Textcrobes({ proxy }: Props): ReactElement {
     }
   }, [html]);
 
-  // function handleGenerateQA() {
-  //   dispatch(setLoading(true));
-  //   // const blocks = convertToRaw(editorState.getCurrentContent()).blocks;
-  //   // const text = blocks.map((block) => (!block.text.trim() && "\n") || block.text).join("\n");
-  //
-  //   const text = "";
-  //   fetchPlus("api/v1/enrich/text_to_qa", JSON.stringify({ data: text })).then((daqa) => {
-  //     if (!daqa.models) {
-  //       setError(translate("screens.textcrobes.enrich_error"));
-  //       console.error("There was an error while generating the QA.", daqa);
-  //     }
-  //     const newMods = { ...models, ...daqa.models };
-  //     setModels(newMods);
-  //     const uniqueIds = wordIdsFromModels(daqa.models);
-  //     ensureDefinitionsLoaded(proxy, [...uniqueIds], store).then(() => {
-  //       const mqas = daqa.questions.map((qa) => {
-  //         return {
-  //           id: qa.id,
-  //           question: qa.question.mid,
-  //           answers: qa.extra_data,
-  //         };
-  //       });
-  //       setQAs(mqas);
-  //       dispatch(setLoading(undefined));
-  //     });
-  //   });
-  // }
   function onChange(_: EditorState, editor: LexicalEditor) {
     editor.update(() => {
       setHtml("");

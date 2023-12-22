@@ -28,7 +28,7 @@ import {
 import * as lodash from "lodash";
 import { searchDocDomSeek } from "./searchWithDomSeek";
 import { HighlightType, IHighlight } from "../highlight/common/highlight";
-import { debounce } from "debounce";
+import debounce from "debounce";
 import { ISelectionInfo } from "../highlight/common/selection";
 import { SHA256 } from "jscrypto/es6/SHA256";
 import { AnnotationMarker } from "../../model/Locator";
@@ -78,7 +78,7 @@ export class DefinitionsModule implements ReaderModule {
       config.publication,
       config as DefinitionsModuleProperties,
       config.highlighter,
-      config.api
+      config.api,
     );
 
     await search.start();
@@ -90,7 +90,7 @@ export class DefinitionsModule implements ReaderModule {
     publication: Publication,
     properties: DefinitionsModuleProperties,
     highlighter: TextHighlighter,
-    api?: DefinitionsModuleAPI
+    api?: DefinitionsModuleAPI,
   ) {
     this.delegate = delegate;
     this.publication = publication;
@@ -106,24 +106,17 @@ export class DefinitionsModule implements ReaderModule {
   protected async start(): Promise<void> {
     this.delegate.definitionsModule = this;
     setTimeout(() => {
-      this.properties.hideLayer
-        ? this.delegate.hideLayer("definitions")
-        : this.delegate.showLayer("definitions");
+      this.properties.hideLayer ? this.delegate.hideLayer("definitions") : this.delegate.showLayer("definitions");
     }, 10);
   }
 
   async searchAndPaint(item: Definition, callback: (result: any) => any) {
     const linkHref = this.publication.getAbsoluteHref(
-      this.publication.readingOrder
-        ? this.publication.readingOrder[this.delegate.currentResource() ?? 0]
-            .Href
-        : ""
+      this.publication.readingOrder ? this.publication.readingOrder[this.delegate.currentResource() ?? 0].Href : "",
     );
     let tocItem = this.publication.getTOCItem(linkHref);
     if (tocItem === undefined && this.publication.readingOrder) {
-      tocItem = this.publication.readingOrder[
-        this.delegate.currentResource() ?? 0
-      ];
+      tocItem = this.publication.readingOrder[this.delegate.currentResource() ?? 0];
     }
     let localSearchDefinitions: any = [];
 
@@ -136,7 +129,7 @@ export class DefinitionsModule implements ReaderModule {
             this.delegate.iframes[0].contentDocument,
             tocItem.Href,
             tocItem.Title,
-            this.delegate.definitionsModule?.properties.fullWordSearch
+            this.delegate.definitionsModule?.properties.fullWordSearch,
           ).then((result) => {
             let i: number | undefined = undefined;
             if (item.result === 1) {
@@ -149,14 +142,9 @@ export class DefinitionsModule implements ReaderModule {
                 const selectionInfo = {
                   rangeInfo: searchItem.rangeInfo,
                 };
-                const highlight = this.createDefinitionHighlight(
-                  selectionInfo,
-                  item
-                );
+                const highlight = this.createDefinitionHighlight(selectionInfo, item);
                 searchItem.highlight = highlight;
-                localSearchDefinitions.push(
-                  lodash.omit(highlight, "definition")
-                );
+                localSearchDefinitions.push(lodash.omit(highlight, "definition"));
                 this.currentChapterPopupResult.push(searchItem);
                 this.currentPopupHighlights.push(highlight);
               }
@@ -188,25 +176,18 @@ export class DefinitionsModule implements ReaderModule {
 
         if (this.api?.visible) {
           result.forEach((highlight) => {
-            let highlightParent = this.delegate.iframes[0].contentDocument?.querySelector(
-              `#${highlight.id}`
-            );
-            const highlightFragments = highlightParent?.querySelectorAll(
-              `.${CLASS_HIGHLIGHT_AREA}`
-            );
+            let highlightParent = this.delegate.iframes[0].contentDocument?.querySelector(`#${highlight.id}`);
+            const highlightFragments = highlightParent?.querySelectorAll(`.${CLASS_HIGHLIGHT_AREA}`);
             let observer = new IntersectionObserver(
               (entries, _observer) => {
                 entries.forEach((entry) => {
                   if (entry.intersectionRatio === 1) {
-                    this.api?.visible(
-                      lodash.omit(item, "callbacks"),
-                      lodash.omit(highlight, "definition")
-                    );
+                    this.api?.visible(lodash.omit(item, "callbacks"), lodash.omit(highlight, "definition"));
                     this.delegate.emit("definition.visible", item, highlight);
                   }
                 });
               },
-              { threshold: 1 }
+              { threshold: 1 },
             );
             if (highlightFragments && highlightFragments.length > 0) {
               observer.observe(highlightFragments[0]);
@@ -236,10 +217,7 @@ export class DefinitionsModule implements ReaderModule {
       const uniqueStr = `${selectionInfo.rangeInfo.startContainerElementCssSelector}${selectionInfo.rangeInfo.startContainerChildTextNodeIndex}${selectionInfo.rangeInfo.startOffset}${selectionInfo.rangeInfo.endContainerElementCssSelector}${selectionInfo.rangeInfo.endContainerChildTextNodeIndex}${selectionInfo.rangeInfo.endOffset}`;
       const sha256Hex = SHA256.hash(uniqueStr);
       const id = "R2_DEFINITION_" + sha256Hex;
-      this.highlighter.destroyHighlight(
-        this.delegate.iframes[0].contentDocument,
-        id
-      );
+      this.highlighter.destroyHighlight(this.delegate.iframes[0].contentDocument, id);
 
       const highlight: IHighlight = {
         color: createColor ? createColor : DEFAULT_BACKGROUND_COLOR,
@@ -251,10 +229,7 @@ export class DefinitionsModule implements ReaderModule {
       };
       _highlights.push(highlight);
 
-      let highlightDom = this.highlighter.createHighlightDom(
-        this.delegate.iframes[0].contentWindow as any,
-        highlight
-      );
+      let highlightDom = this.highlighter.createHighlightDom(this.delegate.iframes[0].contentWindow as any, highlight);
       if (highlightDom) {
         if (item.definition) {
           highlightDom.dataset.definition = item.definition;
@@ -262,9 +237,9 @@ export class DefinitionsModule implements ReaderModule {
         highlightDom.dataset.order = String(item.order);
         highlight.definition = item;
         highlight.position = parseInt(
-          ((highlightDom?.hasChildNodes()
-            ? highlightDom.childNodes[0]
-            : highlightDom) as HTMLDivElement).style.top.replace("px", "")
+          (
+            (highlightDom?.hasChildNodes() ? highlightDom.childNodes[0] : highlightDom) as HTMLDivElement
+          ).style.top.replace("px", ""),
         );
       }
       return highlight;
