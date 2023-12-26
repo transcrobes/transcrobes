@@ -1,9 +1,9 @@
 #!/bin/bash
 
 export APPNAME=transcrobes
-export REGISTRY_NAME=reg.transcrob.es
-export REPO=transcrobes
-export PROJECTS="base backend transcrobes sworker faustworker backups"
+export NAMESPACE=transcrobes
+# export PROJECTS="backend frontend backups"
+export PROJECTS="backend frontend"
 
 export ENVIRONMENT=${ENVIRONMENT:-prod}
 export LOCALHOST_NAME=${APPNAME}.localhost
@@ -15,4 +15,4 @@ export LOCAL_REGISTRY_PORT=5111
 export LOCAL_REGISTRY_NAME=k3d-registry.localhost
 export LOCAL_REGISTRY=${LOCAL_REGISTRY_NAME}:${LOCAL_REGISTRY_PORT}
 
-export TRANSCROBES_DOCKER_REPO=${REGISTRY_NAME}/${REPO}
+export TRANSCROBES_DOCKER_REPO=${LOCAL_REGISTRY}/${NAMESPACE}

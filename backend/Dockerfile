@@ -18,7 +18,7 @@ RUN apt-get update && apt-get upgrade -y && apt-get install -y \
 
 RUN /usr/local/bin/python -m pip install --upgrade pip setuptools
 
-COPY ./backend/app/pyproject.toml ./backend/app/requirements.txt ./backend/app/dev-requirements.txt /app/
+COPY ./app/pyproject.toml ./app/requirements.txt ./app/dev-requirements.txt /app/
 
 # Allow installing dev dependencies to run tests
 ARG INSTALL_DEV=false
@@ -30,9 +30,11 @@ RUN apt-get remove -y --purge \
   && apt-get -y autoremove && apt-get -y clean \
   && rm -rf /var/lib/apt/lists/*
 
-COPY ./backend/app /app
+COPY ./app /app
+
+COPY ./app/start-reload.sh ./app/start-uvicorn.sh ./app/fworker-start.sh \
+  ./app/sworker-start.sh ./app/start.sh ./app/gunicorn_conf.py /
+RUN chmod +x /start.sh /start-reload.sh /start-uvicorn.sh /sworker-start.sh /fworker-start.sh
 
 ENV PYTHONPATH=/app
 ENV PYTHONUNBUFFERED=1
-
-EXPOSE 80

@@ -1,0 +1,26 @@
+{{- if and .Values.transcrobes.enabled .Values.transcrobes.local.enabled .Values.transcrobes.local.enableDbNodePorts -}}
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: primary
+    app.kubernetes.io/instance: ilearner
+    app.kubernetes.io/name: ilearndb
+    app.kubernetes.io/component: postgresql
+    app.kubernetes.io/instance: transcrobes
+    app.kubernetes.io/name: pgha
+  name: transcrobes-pgha-nodeport
+spec:
+  ports:
+  - name: 5432-5432
+    nodePort: 30432
+    port: 5432
+    protocol: TCP
+    targetPort: 5432
+  selector:
+    app.kubernetes.io/component: postgresql
+    app.kubernetes.io/instance: transcrobes
+    app.kubernetes.io/name: pgha
+    role: data
+  type: NodePort
+{{- end -}}

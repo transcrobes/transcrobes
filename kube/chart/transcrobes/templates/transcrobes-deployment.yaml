@@ -54,10 +54,17 @@ spec:
           image: {{ include "transcrobes.image" . }}
           imagePullPolicy: {{ .Values.transcrobes.image.pullPolicy | quote }}
 
-          {{- if .Values.transcrobes.application.useReload }}
-          command: ['/start-reload.sh']
-          {{- else if not .Values.transcrobes.application.useGunicorn }}
-          command: ['/start-uvicorn.sh']
+          {{- if .Values.faustworker.diagnosticMode.enabled }}
+          command: {{- include "common.tplvalues.render" (dict "value" .Values.faustworker.diagnosticMode.command "context" $) | nindent 12 }}
+          {{- else if .Values.faustworker.command }}
+          command: {{- include "common.tplvalues.render" (dict "value" .Values.faustworker.command "context" $) | nindent 12 }}
+          {{- else }}
+          command: ["/bin/bash", "/start-uvicorn.sh"]
+          {{- end }}
+          {{- if .Values.faustworker.diagnosticMode.enabled }}
+          args: {{- include "common.tplvalues.render" (dict "value" .Values.faustworker.diagnosticMode.args "context" $) | nindent 12 }}
+          {{- else if .Values.faustworker.args }}
+          args: {{- include "common.tplvalues.render" (dict "value" .Values.faustworker.args "context" $) | nindent 12 }}
           {{- end }}
 
           livenessProbe:

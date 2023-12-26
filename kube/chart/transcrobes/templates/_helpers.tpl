@@ -83,18 +83,24 @@ Return the proper image names
 {{- define "transcrobes.image" -}}
 {{ include "common.images.image" (dict "imageRoot" .Values.transcrobes.image "global" .Values.global) }}
 {{- end -}}
-{{- define "backups.image" -}}
-{{ include "common.images.image" (dict "imageRoot" .Values.backups.image "global" .Values.global) }}
+{{- define "transcrobes.imagePullSecrets" -}}
+{{ include "common.images.pullSecrets" (dict "images" (list .Values.transcrobes.image .Values.transcrobes.volumePermissions.image) "global" .Values.global) }}
 {{- end -}}
+
+{{- define "backups.image" -}}
+{{ include "common.images.image" (dict "imageRoot" .Values.transcrobes.backups.image "global" .Values.global) }}
+{{- end -}}
+{{- define "backups.imagePullSecrets" -}}
+{{ include "common.images.pullSecrets" (dict "images" (list .Values.transcrobes.backups.image .Values.transcrobes.backups.volumePermissions.image) "global" .Values.global) }}
+{{- end -}}
+
 {{- define "downloads.image" -}}
 {{ include "common.images.image" (dict "imageRoot" .Values.downloads.image "global" .Values.global) }}
 {{- end -}}
-{{- define "faustworker.image" -}}
-{{ include "common.images.image" (dict "imageRoot" .Values.faustworker.image "global" .Values.global) }}
+{{- define "downloads.imagePullSecrets" -}}
+{{ include "common.images.pullSecrets" (dict "images" (list .Values.downloads.image .Values.downloads.volumePermissions.image) "global" .Values.global) }}
 {{- end -}}
-{{- define "sworker.image" -}}
-{{ include "common.images.image" (dict "imageRoot" .Values.sworker.image "global" .Values.global) }}
-{{- end -}}
+
 {{- define "corenlpZh.image" -}}
 {{ include "common.images.image" (dict "imageRoot" .Values.corenlpZh.image "global" .Values.global) }}
 {{- end -}}

@@ -41,6 +41,9 @@ HANZI_JSON_CACHE_DIRECTORY_REGEX = r"\d{10}"
 HANZI_JSON_CACHE_FILE_REGEX = r"hanzi-\d{3}\.json"
 
 
+pathlib.Path(settings.HANZI_CACHE_DIR).mkdir(parents=True, exist_ok=True)
+
+
 class TokenPhoneType(Enum):
     NONE = 0
     DEFAULT = 1

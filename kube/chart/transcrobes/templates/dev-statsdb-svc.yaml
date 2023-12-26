@@ -1,0 +1,23 @@
+{{- if and .Values.pgha.enabled .Values.transcrobes.local.enabled .Values.transcrobes.local.enableDbNodePorts -}}
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: postgresql
+    app.kubernetes.io/instance: transcrobes
+    app.kubernetes.io/name: statsdb
+  name: transcrobes-statsdb-nodeport
+spec:
+  ports:
+  - name: 5432-5432
+    nodePort: 30433
+    port: 5432
+    protocol: TCP
+    targetPort: 5432
+  selector:
+    app.kubernetes.io/component: postgresql
+    app.kubernetes.io/instance: transcrobes
+    app.kubernetes.io/name: statsdb
+    role: data
+  type: NodePort
+{{- end -}}

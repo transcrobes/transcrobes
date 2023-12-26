@@ -47,8 +47,8 @@ downloads:
   ##
   image:
     # registry: docker.io
-    repository: transcrobes/downloads
-    tag: 0.0.1
+    repository: transcrobes/transcrobes-downloads
+    tag: 0.0.5
     pullPolicy: IfNotPresent
 
   ## Annotations to be added to downloads pods
@@ -297,6 +297,8 @@ transcrobes:
     # ## a port to use for the dev-local frontend for serving the frontend code.
     # ## If not set, the frontend will be served from the container
     # frontendPort: 5000
+    ## expose db ports for the local postgresqls
+    # enableDbNodePorts: false
 
   ## transcrobes container name
   ##
@@ -314,6 +316,13 @@ transcrobes:
   ## Registration
   ##
   usersOpenRegistration: false
+
+  diagnosticMode:
+    enabled: false
+    command:
+      - sleep
+    args:
+      - infinity
 
   ## Email configuration
   ##
@@ -356,9 +365,10 @@ transcrobes:
   ##
   image:
     # registry: docker.io
-    repository: transcrobes/transcrobes
-    tag: 0.7.0
+    repository: transcrobes/transcrobes-frontend
+    tag: 0.33.0
     pullPolicy: IfNotPresent
+    pullSecrets: []
 
   ## Annotations to be added to transcrobes pods
   ##
@@ -394,9 +404,10 @@ transcrobes:
     ##
     image:
       # registry: docker.io
-      repository: transcrobes/backups
-      tag: 0.3.0
+      repository: transcrobes/transcrobes-backups
+      tag: 0.33.0
       pullPolicy: IfNotPresent
+      pullSecrets: []
 
     cronSchedule: '0 * * * *'
     accessMode: ReadWriteMany
@@ -557,12 +568,6 @@ transcrobes:
     ## Internal port for transcrobes to listen on
     ##
     listenPort: 8000
-
-    ## Use uvicorn via gunicorn, if false calls uvicorn directly
-    ## WARNING, currently there is an issue with awaits when run via gunicorn, so this should be false
-    ## until the reason for this is understood!!!
-    #
-    useGunicorn: false
 
     ## Absolute number of workers, override value for both straight uvicorn and uvicorn via gunicorn
     #
@@ -786,10 +791,17 @@ faustworker:
   ##
   image:
     # registry: docker.io
-    repository: transcrobes/faustworker
-    tag: 0.7.0
+    repository: transcrobes/transcrobes-backend
+    tag: 0.33.0
     pullPolicy: IfNotPresent
+    pullSecrets: []
 
+  diagnosticMode:
+    enabled: false
+    command:
+      - sleep
+    args:
+      - infinity
 
   ## desc here FIXME:
   #
@@ -831,10 +843,17 @@ sworker:
   ##
   image:
     # registry: docker.io
-    repository: transcrobes/sworker
-    tag: 0.7.0
+    repository: transcrobes/transcrobes-backend
+    tag: 0.33.0
     pullPolicy: IfNotPresent
+    pullSecrets: []
 
+  diagnosticMode:
+    enabled: false
+    command:
+      - sleep
+    args:
+      - infinity
 
   ## desc here FIXME:
   #

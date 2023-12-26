@@ -41,11 +41,22 @@ spec:
 
       containers:
         - name: {{ template "transcrobes.name" . }}-{{ .Values.sworker.name }}
-          image: {{ include "sworker.image" . }}
+          image: {{ include "transcrobes.image" . }}
           imagePullPolicy: {{ .Values.transcrobes.image.pullPolicy }}
-          # command: ["/bin/bash", "/app/scripts/runmanage.sh"]
-          # args: ["events_processor"]
-          # command: ["/bin/bash", "/fworker-start.sh"]
+
+          {{- if .Values.sworker.diagnosticMode.enabled }}
+          command: {{- include "common.tplvalues.render" (dict "value" .Values.sworker.diagnosticMode.command "context" $) | nindent 12 }}
+          {{- else if .Values.sworker.command }}
+          command: {{- include "common.tplvalues.render" (dict "value" .Values.sworker.command "context" $) | nindent 12 }}
+          {{- else }}
+          command: ["/bin/bash", "/sworker-start.sh"]
+          {{- end }}
+          {{- if .Values.sworker.diagnosticMode.enabled }}
+          args: {{- include "common.tplvalues.render" (dict "value" .Values.sworker.diagnosticMode.args "context" $) | nindent 12 }}
+          {{- else if .Values.sworker.args }}
+          args: {{- include "common.tplvalues.render" (dict "value" .Values.sworker.args "context" $) | nindent 12 }}
+          {{- end }}
+
           env:
             {{- range $key, $value := .Values.sworker.extraEnv }}
             - name: {{ $key }}

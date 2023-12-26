@@ -14,17 +14,17 @@ ENV VITE_GIT_VERSION=$GIT_VERSION
 ENV PUPPETEER_SKIP_DOWNLOAD=true
 
 WORKDIR /app
-COPY ./frontend/package*.json /app/
+COPY ./package*.json /app/
 
 RUN npm config set proxy $http_proxy
 RUN npm config set https-proxy $https_proxy
-RUN --mount=type=cache,target=/root/.npm npm install --loglevel silly --legacy-peer-deps
+RUN --mount=type=cache,target=/root/.npm npm install --loglevel silly
 
-COPY ./frontend/ /app/
+COPY ./ /app/
 
 RUN npm run build:${ENVIRONMENT}
 
-FROM ${TRANSCROBES_DOCKER_REPO:-transcrobes}/backend:${TRANSCROBES_BACKEND_IMAGE_TAG:-$GIT_VERSION}
+FROM ${TRANSCROBES_DOCKER_REPO:-transcrobes}/transcrobes-backend:${TRANSCROBES_BACKEND_IMAGE_TAG:-$GIT_VERSION}
 COPY --from=build-stage /app/dist /fapp
 
 CMD ["/bin/bash", "/start-uvicorn.sh"]

@@ -41,11 +41,22 @@ spec:
 
       containers:
         - name: {{ template "transcrobes.name" . }}-{{ .Values.faustworker.name }}
-          image: {{ include "faustworker.image" . }}
+          image: {{ include "transcrobes.image" . }}
           imagePullPolicy: {{ .Values.transcrobes.image.pullPolicy }}
-          # command: ["/bin/bash", "/app/scripts/runmanage.sh"]
-          # args: ["events_processor"]
-          # command: ["/bin/bash", "/fworker-start.sh"]
+
+          {{- if .Values.faustworker.diagnosticMode.enabled }}
+          command: {{- include "common.tplvalues.render" (dict "value" .Values.faustworker.diagnosticMode.command "context" $) | nindent 12 }}
+          {{- else if .Values.faustworker.command }}
+          command: {{- include "common.tplvalues.render" (dict "value" .Values.faustworker.command "context" $) | nindent 12 }}
+          {{- else }}
+          command: ["/bin/bash", "/fworker-start.sh"]
+          {{- end }}
+          {{- if .Values.faustworker.diagnosticMode.enabled }}
+          args: {{- include "common.tplvalues.render" (dict "value" .Values.faustworker.diagnosticMode.args "context" $) | nindent 12 }}
+          {{- else if .Values.faustworker.args }}
+          args: {{- include "common.tplvalues.render" (dict "value" .Values.faustworker.args "context" $) | nindent 12 }}
+          {{- end }}
+
           env:
             {{- range $key, $value := .Values.faustworker.extraEnv }}
             - name: {{ $key }}
