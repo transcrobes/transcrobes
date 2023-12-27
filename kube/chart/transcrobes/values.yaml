@@ -638,7 +638,6 @@ pgha:
     enabled: true
 
     image:
-      tag: 16
       pullPolicy: IfNotPresent
 
     ### PostgreSQL User to create.
@@ -708,7 +707,6 @@ statsdb:
     enabled: true
 
     image:
-      tag: 16
       pullPolicy: IfNotPresent
 
     ### PostgreSQL User to create.
