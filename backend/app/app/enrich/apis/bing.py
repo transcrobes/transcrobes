@@ -64,8 +64,9 @@ class BingAPI(ABC):
                         text = await response.text()
                         logger.debug("Received '%s' back from Bing", text[:100])
                         return text
-                except aiohttp.client_exceptions.ClientOSError:
+                except aiohttp.client_exceptions.ClientOSError as ex:
                     logger.error("Failure to send to Bing API with ClientOSError: %s", content)
+                    logger.exception(ex)
                     conn_retries -= 1
                     if conn_retries <= 0:
                         raise

@@ -28,10 +28,7 @@ downloads:
     annotations:
       cert-manager.io/cluster-issuer: letsencrypt-staging
       nginx.ingress.kubernetes.io/ssl-redirect: "true"
-      nginx.ingress.kubernetes.io/proxy-body-size: "50m"  # increased to 50m for the dbs
-      nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"  # increased to 3600s for better websocket support
-      nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"  # increased to 3600s for better websocket support
-      nginx.ingress.kubernetes.io/enable-cors: "true"
+      nginx.ingress.kubernetes.io/proxy-body-size: "100m"  # increased to 50m for the dbs
     className: nginx
     tls:
       enabled: true
@@ -356,7 +353,10 @@ transcrobes:
     annotations:
       cert-manager.io/cluster-issuer: letsencrypt-staging
       nginx.ingress.kubernetes.io/ssl-redirect: "true"
-      nginx.ingress.kubernetes.io/proxy-body-size: "50m"  # increased to 50m for the dbs
+      nginx.ingress.kubernetes.io/proxy-body-size: "30m"  # increased to 50m for the dbs
+      nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"  # increased to 3600s for better websocket support
+      nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"  # increased to 3600s for better websocket support
+      nginx.ingress.kubernetes.io/enable-cors: "true"
     tls:
       enabled: true
       secretName: "transcrobes-transcrobes-cert"
@@ -477,10 +477,11 @@ transcrobes:
 
   ## These are turned into env vars that are required for the applications
   ##
-  bingSubscriptionKey: "your_bing_subscription_key"
+  bingSubscriptionKeySecretName: bing-api-token
   bingApiHost: 'api.cognitive.microsofttranslator.com'
-  secretKey: 'not_a_very_good_secret'  # FIXME: do as a secret
-  openaiApiKey: "an_openai_key"
+
+  secretKeySecretName: secret-key
+  openaiApiKeySecretName: openai-api-token
 
   ## Files mounted into the dataRoot
   ## TODO: see notes in the persistence section above

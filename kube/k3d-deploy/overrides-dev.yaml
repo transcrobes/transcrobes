@@ -153,7 +153,6 @@ transcrobes:
 
   firstSuperuser: admin@example.com
   firstSuperuserPassword: firstsuperpassword
-  secretKey: 'not_a_very_good_secret'
 
   strategy:
     type: RollingUpdate

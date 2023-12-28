@@ -132,6 +132,7 @@ spec:
               value: "{{ .Values.pgha.postgresql.database }}"
             - name: POSTGRES_PASSWORD
               value: "{{ .Values.pgha.postgresql.password }}"
+
             - name: POSTGRES_SERVER
               value: {{ .Values.transcrobes.overrideDBHost | default (printf "%s-pgha-pgpool" .Release.Name) }}
             - name: POSTGRES_PORT
@@ -167,7 +168,10 @@ spec:
             - name: SERVER_HOST
               value: "http{{ if .Values.transcrobes.ingress.tls.enabled }}s{{ end }}://{{ .Values.transcrobes.haHost }}"
             - name: SECRET_KEY
-              value: "{{ .Values.transcrobes.secretKey }}"
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.transcrobes.secretKeySecretName }}
+                  key: secret-key
             {{- if gt .Values.transcrobes.application.webConcurrency 0.0 }}
             - name: WEB_CONCURRENCY
               value: "{{ .Values.transcrobes.application.webConcurrency }}"
@@ -190,7 +194,10 @@ spec:
             {{- end }}
 
             - name: BING_SUBSCRIPTION_KEY
-              value: "{{ .Values.transcrobes.bingSubscriptionKey }}"
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.transcrobes.bingSubscriptionKeySecretName }}
+                  key: bing-api-token
             - name: BING_API_HOST
               value: "{{ .Values.transcrobes.bingApiHost }}"
             - name: BING_TRANSLATOR_INMEM
@@ -199,7 +206,10 @@ spec:
               value: "{{ .Values.transcrobes.bingTransliterator.inmem }}"
 
             - name: OPENAI_API_KEY
-              value: "{{ .Values.transcrobes.openaiApiKey }}"
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.transcrobes.openaiApiKeySecretName }}
+                  key: openai-api-token
 
             - name: EN_CORENLP_HOST
               value: {{ include "transcrobes.corenlpEn.fullname" . }}

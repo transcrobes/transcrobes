@@ -92,7 +92,11 @@ spec:
               value: "{{ .Values.statsdb.service.ports.postgresql }}"
 
             - name: SECRET_KEY
-              value: "{{ .Values.transcrobes.secretKey }}"
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.transcrobes.secretKeySecretName }}
+                  key: secret-key
+
             - name: KAFKA_BROKER
               value: {{ .Values.faustworker.overrideKafkaHost | default .Values.kafka.fullnameOverride }}
 
@@ -121,7 +125,11 @@ spec:
               value: "{{ .Values.transcrobes.persistence.dataRoot }}{{ .Values.transcrobes.persistence.dataPath }}"
 
             - name: BING_SUBSCRIPTION_KEY
-              value: "{{ .Values.transcrobes.bingSubscriptionKey }}"
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.transcrobes.bingSubscriptionKeySecretName }}
+                  key: bing-api-token
+
             - name: BING_API_HOST
               value: "{{ .Values.transcrobes.bingApiHost }}"
             - name: BING_TRANSLATOR_INMEM
@@ -130,7 +138,10 @@ spec:
               value: "{{ .Values.transcrobes.bingTransliterator.inmem }}"
 
             - name: OPENAI_API_KEY
-              value: "{{ .Values.transcrobes.openaiApiKey }}"
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.transcrobes.openaiApiKeySecretName }}
+                  key: openai-api-token
 
             - name: EN_CORENLP_HOST
               value: {{ include "transcrobes.corenlpEn.fullname" . }}

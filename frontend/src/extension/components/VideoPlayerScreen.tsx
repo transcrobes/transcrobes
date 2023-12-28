@@ -16,9 +16,8 @@ import useWindowDimensions from "../../hooks/WindowDimensions";
 import { getNetflixData } from "../../lib/componentMethods";
 import { ensureDefinitionsLoaded } from "../../lib/dictionary";
 import { getSubsURL, missingWordIdsFromModels } from "../../lib/funclib";
-import { getDefaultLanguageDictionaries, streamingSite, streamContentIdCacheKey } from "../../lib/libMethods";
+import { getDefaultLanguageDictionaries, streamContentIdCacheKey, streamingSite } from "../../lib/libMethods";
 import {
-  ContentProps,
   DEFAULT_VIDEO_READER_CONFIG_STATE,
   DOCS_DOMAIN,
   InputLanguage,
@@ -30,7 +29,6 @@ import {
   VideoReaderState,
   translationProviderOrder,
 } from "../../lib/types";
-import { ExtDataManager } from "../../data/types";
 import { BackgroundWorkerDataManager, BackgroundWorkerManager } from "../backgroundfn";
 
 export async function getStreamDetails(url: string, proxy: BackgroundWorkerManager, fromLang: InputLanguage) {

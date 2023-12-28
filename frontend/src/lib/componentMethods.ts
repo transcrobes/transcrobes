@@ -2,7 +2,7 @@ import _ from "lodash";
 import { platformHelper } from "../app/createStore";
 import { DataManager } from "../data/types";
 import type { BackgroundWorkerManager } from "../extension/backgroundfn";
-import { soundWithSeparators, UUID } from "./funclib";
+import { soundWithSeparators } from "./funclib";
 import { affixCleaned, bestGuess, cleanedSound, filterKnown, isFakeL1, toSimplePos } from "./libMethods";
 import {
   ACTIVITY_DEBOUNCE,
@@ -32,10 +32,8 @@ import {
   SystemLanguage,
   TokenType,
   USER_STATS_MODE,
-  UserActivityType,
 } from "./types";
 
-const DATA_SOURCE = "componentMethods.ts";
 const NUMBER_POS = new Set<AnyTreebankPosType>(["OD", "NT", "CD"]);
 
 export async function getNetflixData(proxy: BackgroundWorkerManager, fromLang: InputLanguage, url: string) {
@@ -43,8 +41,7 @@ export async function getNetflixData(proxy: BackgroundWorkerManager, fromLang: I
   const streamerId = parseInt(urlMatch?.[2] || "");
   const canonicalUrl = "https://" + urlMatch?.[1]!;
   if (!streamerId) return { error: "screens.extension.streamer.no_id" };
-
-  const dataUrl = `https://www.netflix.com/nq/website/memberapi/v88abde99/metadata?movieid=${streamerId}&_=${Date.now()}`;
+  const dataUrl = `https://www.netflix.com/nq/website/memberapi/va7b420b8/metadata?movieid=${streamerId}&_=${Date.now()}`;
   const dataResp = await fetch(dataUrl, { credentials: "include" }); // does need credentials
   if (!dataResp.ok) {
     console.warn("Bad dataResp", dataResp);

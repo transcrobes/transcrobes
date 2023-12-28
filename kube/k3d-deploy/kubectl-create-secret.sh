@@ -16,4 +16,4 @@ mkcert -cert-file ${SCRIPT_DIR}/local-secrets/${LOCALHOST_NAME}.pem -key-file ${
 kubectl -n ${APPNAME} create secret tls ${TLS_SECRET_NAME} --key ${SCRIPT_DIR}/local-secrets/${LOCALHOST_NAME}-key.pem --cert ${SCRIPT_DIR}/local-secrets/${LOCALHOST_NAME}.pem
 
 echo '---'
-kubectl -n ${APPNAME} apply -f ${SCRIPT_DIR}/
+kubectl -n ${APPNAME} apply -f ${SCRIPT_DIR}/secrets
