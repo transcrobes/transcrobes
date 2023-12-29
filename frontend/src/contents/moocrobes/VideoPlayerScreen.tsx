@@ -28,6 +28,7 @@ import {
 } from "../../lib/types";
 import VideoPlayer, { VideoPlayerHandle } from "./VideoPlayer";
 import VideoReaderConfigLauncher from "./VideoReaderConfigLauncher";
+import ReactPlayer from "react-player";
 
 export default function VideoPlayerScreen({ proxy }: ContentProps): ReactElement {
   const { id = "" } = useParams<ContentParams>();
@@ -108,6 +109,7 @@ export default function VideoPlayerScreen({ proxy }: ContentProps): ReactElement
         </Container>
       ) : (
         <VideoPlayer
+          ReactPlayer={ReactPlayer}
           id={id}
           models={models}
           ref={vpHandle as any}

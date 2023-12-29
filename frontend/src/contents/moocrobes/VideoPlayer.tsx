@@ -2,7 +2,6 @@ import { Box, Container, Grid } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import useEventListener from "@use-it/event-listener";
 import { ReactElement, forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
-import ReactPlayer from "react-player";
 import useStateRef from "react-usestateref";
 import { Cue } from "webvtt-parser";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
@@ -14,12 +13,18 @@ import useWindowDimensions from "../../hooks/WindowDimensions";
 import useFullscreen from "../../hooks/useFullscreen";
 import { overrideTextTrackListeners } from "../../lib/eventlisteners";
 import { getStreamerId } from "../../lib/libMethods";
+import { BaseReactPlayerProps } from "../../lib/react-player";
+// import ReactPlayer from "../../extension/rp";
 import { DEFAULT_VIDEO_READER_CONFIG_STATE, KeyedModels } from "../../lib/types";
 import PrettoSlider, { ValueLabelComponent } from "./PrettoSlider";
 import SubtitleControl from "./SubtitleControl";
 import VideoBottomControls from "./VideoBottomControls";
 import VideoCentralControls from "./VideoCentralControls";
 import VideoHeaderControls from "./VideoHeaderControls";
+
+export interface ReactPlayerProps extends BaseReactPlayerProps {
+  config?: any;
+}
 
 overrideTextTrackListeners();
 
@@ -45,6 +50,7 @@ function format(seconds: number) {
 }
 
 interface Props {
+  ReactPlayer: any;
   id: string;
   topToolbar?: ReactElement;
   models: KeyedModels;
@@ -69,8 +75,11 @@ export interface OnProgressProps {
 }
 
 const VideoPlayer = forwardRef<VideoPlayerHandle, Props>(
-  ({ cues, models, subsUrl, videoUrl, contentLabel, srcLang, id, topToolbar, progressInterval = 500 }, ref) => {
-    const playerRef = useRef<ReactPlayer>(null);
+  (
+    { ReactPlayer, cues, models, subsUrl, videoUrl, contentLabel, srcLang, id, topToolbar, progressInterval = 500 },
+    ref,
+  ) => {
+    const playerRef = useRef<any>(null);
     const playerContainerRef = useRef<HTMLDivElement>(null);
     const [playing, setPlaying, playingRef] = useStateRef(true);
     const [seeking, setSeeking] = useState(false);
@@ -425,7 +434,6 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, Props>(
                 progressInterval={progressInterval || 500}
                 onReady={handleReady}
                 config={{
-                  // @ts-ignore
                   transcrobesLayer: { cues },
                   file: {
                     attributes: {

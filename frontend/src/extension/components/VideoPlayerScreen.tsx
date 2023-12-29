@@ -30,6 +30,12 @@ import {
   translationProviderOrder,
 } from "../../lib/types";
 import { BackgroundWorkerDataManager, BackgroundWorkerManager } from "../backgroundfn";
+// import { createReactPlayer } from "../rp/ReactPlayer";
+import TranscrobesLayerPlayer from "./TranscrobesLayerPlayer";
+import { ReactPlayer } from "./ReactPlayer";
+
+// const ReactPlayer = createReactPlayer([TranscrobesLayerPlayer], {});
+// const ReactPlayer =   createReactPlayer([TranscrobesLayerPlayer], {});
 
 export async function getStreamDetails(url: string, proxy: BackgroundWorkerManager, fromLang: InputLanguage) {
   const streamer = streamingSite(url);
@@ -183,6 +189,7 @@ export default function VideoPlayerScreen({ proxy }: { proxy: BackgroundWorkerDa
       }}
     >
       <VideoPlayer
+        ReactPlayer={ReactPlayer}
         topToolbar={
           <TopToolbar
             sx={{

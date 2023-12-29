@@ -11,7 +11,6 @@ import _ from "lodash";
 import rangy from "rangy";
 import { I18nContextProvider } from "react-admin";
 import { createRoot } from "react-dom/client";
-import ReactPlayer from "react-player";
 import { QueryClient, QueryClientProvider } from "react-query";
 import { Provider } from "react-redux";
 import { Runtime } from "webextension-polyfill";
@@ -22,16 +21,17 @@ import EnrichedTextFragment from "../components/content/etf/EnrichedTextFragment
 import Mouseover from "../components/content/td/Mouseover";
 import TokenDetails from "../components/content/td/TokenDetails";
 import { DataManager } from "../data/types";
-import { setKnownWordsState } from "../features/word/knownWordsSlice";
 import { getRefreshedState } from "../features/content/contentSlice";
 import { extensionReaderActions } from "../features/content/extensionReaderSlice";
 import { addModelsToState } from "../features/stats/statsSlice";
 import { setLoading, setTokenDetails } from "../features/ui/uiSlice";
 import { setUser } from "../features/user/userSlice";
+import { setKnownWordsState } from "../features/word/knownWordsSlice";
 import { popupDarkTheme, popupLightTheme } from "../layout/themes";
 import { sessionActivityUpdate, submitActivity } from "../lib/componentMethods";
 import { ensureDefinitionsLoaded, refreshDictionaries } from "../lib/dictionary";
 import { UUID, getLanguageFromPreferred, isScriptioContinuo, missingWordIdsFromModels, toEnrich } from "../lib/funclib";
+import { NAME_PREFIX } from "../lib/interval/interval-decorator";
 import {
   enrichNodes,
   getDefaultLanguageDictionaries,
@@ -51,15 +51,13 @@ import {
   SerialisableStringSet,
   translationProviderOrder,
 } from "../lib/types";
+import type { BackgroundWorkerDataManager } from "./backgroundfn";
 import ContentAnalysisAccuracyBrocrobes from "./components/ContentAnalysisAccuracyBrocrobes";
 import ContentAnalysisBrocrobes from "./components/ContentAnalysisBrocrobes";
-import TranscrobesLayerPlayer from "./components/TranscrobesLayerPlayer";
 import VideoPlayerScreen from "./components/VideoPlayerScreen";
 import { createEndpoint } from "./lib/adapter";
 import { fontHack } from "./lib/fontHack";
 import { streamOverrides } from "./lib/streaming";
-import type { BackgroundWorkerDataManager } from "./backgroundfn";
-import { NAME_PREFIX } from "../lib/interval/interval-decorator";
 
 store.dispatch(setLoading(true));
 
@@ -73,9 +71,6 @@ const models: KeyedModels = {};
 const queryClient = new QueryClient();
 const streamingSiteName = streamingSite(location.href);
 const sessionId = UUID().toString();
-if (streamingSiteName) {
-  ReactPlayer.addCustomPlayer(TranscrobesLayerPlayer as any); // FIXME: the upstream typing is wrong here
-}
 
 let classes: ETFStylesProps["classes"] | null = null;
 

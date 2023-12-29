@@ -2,7 +2,7 @@ import { Box } from "@mui/material";
 import * as Comlink from "comlink";
 import React, { Component } from "react";
 import { I18nContext } from "react-admin";
-import { BaseReactPlayerProps } from "react-player/base";
+import { BaseReactPlayerProps } from "../../lib/react-player";
 import type { Runtime } from "webextension-polyfill";
 import { Cue } from "webvtt-parser";
 import { store } from "../../app/createStore";
